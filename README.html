@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
+<title>pycparser v1.06</title>
+<meta name="author" content="Eli Bendersky" />
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 5951 2009-05-18 18:03:10Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left{
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: left }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="pycparser-v1-06">
+<h1 class="title">pycparser v1.06</h1>
+<table class="docinfo" frame="void" rules="none">
+<col class="docinfo-name" />
+<col class="docinfo-content" />
+<tbody valign="top">
+<tr><th class="docinfo-name">Author:</th>
+<td><a class="first reference external" href="http://eli.thegreenplace.net">Eli Bendersky</a></td></tr>
+</tbody>
+</table>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#introduction" id="id1">Introduction</a><ul>
+<li><a class="reference internal" href="#what-is-pycparser" id="id2">What is pycparser?</a></li>
+<li><a class="reference internal" href="#what-is-it-good-for" id="id3">What is it good for?</a></li>
+<li><a class="reference internal" href="#which-version-of-c-does-pycparser-support" id="id4">Which version of C does pycparser support?</a></li>
+<li><a class="reference internal" href="#what-grammar-does-pycparser-follow" id="id5">What grammar does pycparser follow?</a></li>
+<li><a class="reference internal" href="#what-is-an-ast" id="id6">What is an AST?</a></li>
+<li><a class="reference internal" href="#how-is-pycparser-licensed" id="id7">How is pycparser licensed?</a></li>
+<li><a class="reference internal" href="#contact-details" id="id8">Contact details</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#installing" id="id9">Installing</a><ul>
+<li><a class="reference internal" href="#prerequisites" id="id10">Prerequisites</a></li>
+<li><a class="reference internal" href="#installation-process" id="id11">Installation process</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#using" id="id12">Using</a><ul>
+<li><a class="reference internal" href="#interaction-with-the-c-preprocessor" id="id13">Interaction with the C preprocessor</a></li>
+<li><a class="reference internal" href="#what-about-the-standard-c-library-headers" id="id14">What about the standard C library headers?</a></li>
+<li><a class="reference internal" href="#basic-usage" id="id15">Basic usage</a></li>
+<li><a class="reference internal" href="#advanced-usage" id="id16">Advanced usage</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#modifying" id="id17">Modifying</a></li>
+<li><a class="reference internal" href="#package-contents" id="id18">Package contents</a></li>
+<li><a class="reference internal" href="#changelog" id="id19">Changelog</a><ul>
+<li><a class="reference internal" href="#version-1-07-18-05-2010" id="id20">Version 1.07 (18.05.2010)</a></li>
+<li><a class="reference internal" href="#version-1-06-10-04-2010" id="id21">Version 1.06 (10.04.2010)</a></li>
+<li><a class="reference internal" href="#version-1-05-16-10-2009" id="id22">Version 1.05 (16.10.2009)</a></li>
+<li><a class="reference internal" href="#version-1-04-22-05-2009" id="id23">Version 1.04 (22.05.2009)</a></li>
+<li><a class="reference internal" href="#version-1-03-31-01-2009" id="id24">Version 1.03 (31.01.2009)</a></li>
+<li><a class="reference internal" href="#version-1-02-16-01-2009" id="id25">Version 1.02 (16.01.2009)</a></li>
+<li><a class="reference internal" href="#version-1-01-09-01-2009" id="id26">Version 1.01 (09.01.2009)</a></li>
+<li><a class="reference internal" href="#version-1-0-15-11-2008" id="id27">Version 1.0 (15.11.2008)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h1><a class="toc-backref" href="#id1">Introduction</a></h1>
+<div class="section" id="what-is-pycparser">
+<h2><a class="toc-backref" href="#id2">What is pycparser?</a></h2>
+<p><tt class="docutils literal"><span class="pre">pycparser</span></tt> is a parser for the C language, written in pure Python. It is a module designed to be easily integrated into applications that need to parse C source code.</p>
+</div>
+<div class="section" id="what-is-it-good-for">
+<h2><a class="toc-backref" href="#id3">What is it good for?</a></h2>
+<p>Anything that needs C code to be parsed. The following are some uses for <tt class="docutils literal"><span class="pre">pycparser</span></tt>, taken from real user reports:</p>
+<ul class="simple">
+<li>C code obfuscator</li>
+<li>Front-end for various specialized C compilers</li>
+<li>Static code checker</li>
+<li>Automatic unit-test discovery</li>
+<li>Adding specialized extensions to the C language</li>
+</ul>
+<p><tt class="docutils literal"><span class="pre">pycparser</span></tt> is unique in the sense that it's written in pure Python - a very high level language that's easy to experiment with and tweak. To people familiar with Lex and Yacc, <tt class="docutils literal"><span class="pre">pycparser</span></tt>'s code will be simple to understand.</p>
+</div>
+<div class="section" id="which-version-of-c-does-pycparser-support">
+<h2><a class="toc-backref" href="#id4">Which version of C does pycparser support?</a></h2>
+<p>At the moment, <tt class="docutils literal"><span class="pre">pycparser</span></tt> supports ANSI/ISO C89, the language described by Kernighan and Ritchie in &quot;The C Programming language, 2nd edition&quot; (K&amp;R2), with only selected extensions from C99. The currently supported C99 features are:</p>
+<ul class="simple">
+<li>Allowing a comma after the last value in an enumeration list</li>
+</ul>
+<p><tt class="docutils literal"><span class="pre">pycparser</span></tt> doesn't support any GCC extensions.</p>
+</div>
+<div class="section" id="what-grammar-does-pycparser-follow">
+<h2><a class="toc-backref" href="#id5">What grammar does pycparser follow?</a></h2>
+<p><tt class="docutils literal"><span class="pre">pycparser</span></tt> very closely follows the ANSI C grammar provided in the end of K&amp;R2. Listings of this grammar (often in Yacc syntax) can be easily found by a simple web search. Google for <cite>ansi c grammar</cite> to get started.</p>
+</div>
+<div class="section" id="what-is-an-ast">
+<h2><a class="toc-backref" href="#id6">What is an AST?</a></h2>
+<p><a class="reference external" href="http://en.wikipedia.org/wiki/Abstract_syntax_tree">AST</a> - Abstract Syntax Tree. It is a tree representation of the syntax of source code - a convenient hierarchical data structure that's built from the code and is readily suitable for exploration and manipulation.</p>
+</div>
+<div class="section" id="how-is-pycparser-licensed">
+<h2><a class="toc-backref" href="#id7">How is pycparser licensed?</a></h2>
+<p><a class="reference external" href="http://www.gnu.org/licenses/lgpl.html">LGPL</a></p>
+</div>
+<div class="section" id="contact-details">
+<h2><a class="toc-backref" href="#id8">Contact details</a></h2>
+<p>Drop me an email to <a class="reference external" href="mailto:eliben&#64;gmail.com">eliben&#64;gmail.com</a> for any questions regarding <tt class="docutils literal"><span class="pre">pycparser</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="installing">
+<h1><a class="toc-backref" href="#id9">Installing</a></h1>
+<div class="section" id="prerequisites">
+<h2><a class="toc-backref" href="#id10">Prerequisites</a></h2>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">pycparser</span></tt> was tested on Python 2.5, 2.6 and 3.1, on both Linux and Windows</li>
+<li><tt class="docutils literal"><span class="pre">pycparser</span></tt> uses the PLY module for the actual lexer and parser construction. You'll also need to install PLY version 3.2 (earlier versions work at least since 2.5) from <a class="reference external" href="http://www.dabeaz.com/ply/">its website</a>.</li>
+<li>If you want to modify <tt class="docutils literal"><span class="pre">pycparser</span></tt>'s code, you'll need to install <a class="reference external" href="http://pyyaml.org/">PyYAML</a>, since it's used by <tt class="docutils literal"><span class="pre">pycparser</span></tt> to store the AST configuration in a YAML file.</li>
+</ul>
+</div>
+<div class="section" id="installation-process">
+<h2><a class="toc-backref" href="#id11">Installation process</a></h2>
+<p>Installing <tt class="docutils literal"><span class="pre">pycparser</span></tt> is very simple. Once you download it from its <a class="reference external" href="http://code.google.com/p/pycparser/">website</a> and unzip the package, you just have to execute the standard <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></tt>. The setup script will then place the <tt class="docutils literal"><span class="pre">pycparser</span></tt> module into <tt class="docutils literal"><span class="pre">site-packages</span></tt> in your Python's installation library.</p>
+<p>It's recommended to run <tt class="docutils literal"><span class="pre">_build_tables.py</span></tt> in the <tt class="docutils literal"><span class="pre">pycparser</span></tt> code directory to make sure the parsing tables of PLY are pre-generated. This can make your code run faster.</p>
+</div>
+</div>
+<div class="section" id="using">
+<h1><a class="toc-backref" href="#id12">Using</a></h1>
+<div class="section" id="interaction-with-the-c-preprocessor">
+<h2><a class="toc-backref" href="#id13">Interaction with the C preprocessor</a></h2>
+<p>In order to be compilable, C code must be preprocessed by the C preprocessor - <tt class="docutils literal"><span class="pre">cpp</span></tt>. <tt class="docutils literal"><span class="pre">cpp</span></tt> handles preprocessing directives like <tt class="docutils literal"><span class="pre">#include</span></tt> and <tt class="docutils literal"><span class="pre">#define</span></tt>, removes comments, and does other minor tasks that prepare the C code for compilation.</p>
+<p>For all but the most trivial snippets of C code, <tt class="docutils literal"><span class="pre">pycparser</span></tt>, like a C compiler, must receive preprocessed C code in order to function correctly. If you import the top-level <tt class="docutils literal"><span class="pre">parse_file</span></tt> function from the <tt class="docutils literal"><span class="pre">pycparser</span></tt> package, it will interact with <tt class="docutils literal"><span class="pre">cpp</span></tt> for you, as long as it's in your PATH, or you provide a path to it.</p>
+<p>On the vast majority of Linux systems, <tt class="docutils literal"><span class="pre">cpp</span></tt> is installed and is in the PATH. If you're on Windows and don't have <tt class="docutils literal"><span class="pre">cpp</span></tt> somewhere, you can use the one provided in the <tt class="docutils literal"><span class="pre">utils</span></tt> directory in <tt class="docutils literal"><span class="pre">pycparser</span></tt>'s distribution. This <tt class="docutils literal"><span class="pre">cpp</span></tt> executable was compiled from the <a class="reference external" href="http://www.cs.princeton.edu/software/lcc/">LCC distribution</a>, and is provided under LCC's license terms.</p>
+</div>
+<div class="section" id="what-about-the-standard-c-library-headers">
+<h2><a class="toc-backref" href="#id14">What about the standard C library headers?</a></h2>
+<p>C code almost always includes various header files from the standard C library, like <tt class="docutils literal"><span class="pre">stdio.h</span></tt>. While, with some effort, <tt class="docutils literal"><span class="pre">pycparser</span></tt> can be made to parse the standard headers from any C compiler, it's much simpler to use the provided &quot;fake&quot; standard in includes in <tt class="docutils literal"><span class="pre">utils/fake_libc_include</span></tt>. These are standard C header files that contain only the bare necessities to allow valid compilation of the files that use them. As a bonus, since they're minimal, it can significantly improve the performance of parsing C files.</p>
+<p>See the <tt class="docutils literal"><span class="pre">using_cpp_libc.py</span></tt> example for more details.</p>
+</div>
+<div class="section" id="basic-usage">
+<h2><a class="toc-backref" href="#id15">Basic usage</a></h2>
+<p>Take a look at the <tt class="docutils literal"><span class="pre">examples</span></tt> directory of the distribution for a few examples of using <tt class="docutils literal"><span class="pre">pycparser</span></tt>. These should be enough to get you started.</p>
+</div>
+<div class="section" id="advanced-usage">
+<h2><a class="toc-backref" href="#id16">Advanced usage</a></h2>
+<p>The public interface of <tt class="docutils literal"><span class="pre">pycparser</span></tt> is well documented with comments in <tt class="docutils literal"><span class="pre">pycparser/c_parser.py</span></tt>. For a detailed overview of the various AST nodes created by the parser, see <tt class="docutils literal"><span class="pre">pycparser/_c_ast.yaml</span></tt>.</p>
+<p>In any case, you can always drop me an <a class="reference external" href="mailto:eliben&#64;gmail.com">email</a> for help.</p>
+</div>
+</div>
+<div class="section" id="modifying">
+<h1><a class="toc-backref" href="#id17">Modifying</a></h1>
+<p>There are a few points to keep in mind when modifying <tt class="docutils literal"><span class="pre">pycparser</span></tt>:</p>
+<ul class="simple">
+<li>The code for <tt class="docutils literal"><span class="pre">pycparser</span></tt>'s AST nodes is automatically generated from a YAML configuration file - <tt class="docutils literal"><span class="pre">_c_ast.yaml</span></tt>, by <tt class="docutils literal"><span class="pre">_ast_gen.py</span></tt>. If you modify the AST configuration, make sure to re-generate the code.</li>
+<li>Make sure you understand the optimized mode of <tt class="docutils literal"><span class="pre">pycparser</span></tt> - for that you must read the docstring in the constructor of the <tt class="docutils literal"><span class="pre">CParser</span></tt> class. For development you should create the parser without optimizations, so that it will regenerate the Yacc and Lex tables when you change the grammar.</li>
+<li>The script <tt class="docutils literal"><span class="pre">_build_tables.py</span></tt> can be helpful - it regenerates all the tables needed by <tt class="docutils literal"><span class="pre">pycparser</span></tt>, and the AST code from YAML.</li>
+</ul>
+</div>
+<div class="section" id="package-contents">
+<h1><a class="toc-backref" href="#id18">Package contents</a></h1>
+<p>Once you unzip the <tt class="docutils literal"><span class="pre">pycparser</span></tt> package, you'll see the following files and directories:</p>
+<dl class="docutils">
+<dt>README.txt/html:</dt>
+<dd>This README file.</dd>
+<dt>setup.py:</dt>
+<dd>Installation script</dd>
+<dt>examples/:</dt>
+<dd>A directory with some examples of using <tt class="docutils literal"><span class="pre">pycparser</span></tt></dd>
+<dt>pycparser/:</dt>
+<dd>The <tt class="docutils literal"><span class="pre">pycparser</span></tt> module source code.</dd>
+<dt>tests/:</dt>
+<dd>Unit tests.</dd>
+<dt>utils/cpp.exe:</dt>
+<dd>A Windows executable of the C pre-processor suitable for working with pycparser</dd>
+<dt>utils/fake_libc_include:</dt>
+<dd>Minimal standard C library include files that should allow to parse any C code.</dd>
+<dt>utils/internal/:</dt>
+<dd>Internal utilities for my own use. You probably don't need them.</dd>
+</dl>
+</div>
+<div class="section" id="changelog">
+<h1><a class="toc-backref" href="#id19">Changelog</a></h1>
+<div class="section" id="version-1-07-18-05-2010">
+<h2><a class="toc-backref" href="#id20">Version 1.07 (18.05.2010)</a></h2>
+<ul class="simple">
+<li>Python 3.1 compatibility: <tt class="docutils literal"><span class="pre">pycparser</span></tt> was modified to run on Python 3.1 as well as 2.6</li>
+</ul>
+</div>
+<div class="section" id="version-1-06-10-04-2010">
+<h2><a class="toc-backref" href="#id21">Version 1.06 (10.04.2010)</a></h2>
+<ul class="simple">
+<li>Bug fixes:<ul>
+<li>coord not propagated to FuncCall nodes</li>
+<li>lexing of the ^= token (XOREQUALS)</li>
+<li>parsing failed on some abstract declarator rules</li>
+</ul>
+</li>
+<li>Linux compatibility: fixed end-of-line and <tt class="docutils literal"><span class="pre">cpp</span></tt> path issues to allow all tests and examples run on Linux</li>
+</ul>
+</div>
+<div class="section" id="version-1-05-16-10-2009">
+<h2><a class="toc-backref" href="#id22">Version 1.05 (16.10.2009)</a></h2>
+<ul class="simple">
+<li>Fixed the <tt class="docutils literal"><span class="pre">parse_file</span></tt> auxiliary function to handle multiple arguments to <tt class="docutils literal"><span class="pre">cpp</span></tt> correctly</li>
+</ul>
+</div>
+<div class="section" id="version-1-04-22-05-2009">
+<h2><a class="toc-backref" href="#id23">Version 1.04 (22.05.2009)</a></h2>
+<ul class="simple">
+<li>Added the <tt class="docutils literal"><span class="pre">fake_libc_include</span></tt> directory to allow parsing of C code that uses standard C library include files without dependency on a real C library.</li>
+<li>Tested with Python 2.6 and PLY 3.2</li>
+</ul>
+</div>
+<div class="section" id="version-1-03-31-01-2009">
+<h2><a class="toc-backref" href="#id24">Version 1.03 (31.01.2009)</a></h2>
+<ul class="simple">
+<li>Accept enumeration lists with a comma after the last item (C99 feature).</li>
+</ul>
+</div>
+<div class="section" id="version-1-02-16-01-2009">
+<h2><a class="toc-backref" href="#id25">Version 1.02 (16.01.2009)</a></h2>
+<ul class="simple">
+<li>Fixed problem of parsing struct/enum/union names that were named similarly to previously defined <tt class="docutils literal"><span class="pre">typedef</span></tt> types.</li>
+</ul>
+</div>
+<div class="section" id="version-1-01-09-01-2009">
+<h2><a class="toc-backref" href="#id26">Version 1.01 (09.01.2009)</a></h2>
+<ul class="simple">
+<li>Fixed subprocess invocation in the helper function parse_file - now it's more portable</li>
+</ul>
+</div>
+<div class="section" id="version-1-0-15-11-2008">
+<h2><a class="toc-backref" href="#id27">Version 1.0 (15.11.2008)</a></h2>
+<ul class="simple">
+<li>Initial release</li>
+<li>Support for ANSI C89</li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>

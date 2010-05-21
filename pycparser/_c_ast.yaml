@@ -1,0 +1,164 @@
+#-----------------------------------------------------------------
+# pycparser: _c_ast_gen.yaml
+#
+# Defines the AST Node classes used in pycparser.
+# 
+# Each entry is a Node sub-class name, listing the attributes
+# and child nodes of the class:
+#   <name>*     - a child node
+#   <name>**    - a sequence of child nodes
+#   <name>      - an attribute
+#
+# Copyright (C) 2008-2009, Eli Bendersky
+# License: LGPL
+#-----------------------------------------------------------------
+
+
+ArrayDecl: [type*, dim*]
+
+ArrayRef: [name*, subscript*]
+
+# op: =, +=, /= etc.
+#
+Assignment: [op, lvalue*, rvalue*]
+
+BinaryOp: [op, left*, right*]
+
+Break: []
+
+Case: [expr*, stmt*]
+
+Cast: [to_type*, expr*]
+
+# Compound statement: { declarations... statements...}
+#
+Compound: [decls**, stmts**]
+
+# type: int, char, float, etc. see CLexer for constant token types
+#
+Constant: [type, value]
+
+Continue: []
+
+# name: the variable being declared
+# quals: list of qualifiers (const, volatile)
+# storage: list of storage specifiers (extern, register, etc.)
+# type: declaration type (probably nested with all the modifiers)
+# init: initialization value, or None
+# bitsize: bit field size, or None
+#
+Decl: [name, quals, storage, type*, init*, bitsize*]
+
+Default: [stmt*]
+
+DoWhile: [cond*, stmt*]
+
+# Represents the ellipsis (...) parameter in a function 
+# declaration
+#
+EllipsisParam: []
+
+# Enumeration type specifier
+# name: an optional ID
+# values: an EnumeratorList
+#
+Enum: [name, values*]
+
+# A name/value pair for enumeration values
+#
+Enumerator: [name, value*]
+
+# A list of enumerators
+#
+EnumeratorList: [enumerators**]
+
+# a list of comma separated expressions
+#
+ExprList: [exprs**]
+
+# This is the top of the AST, representing a single C file (a 
+# translation unit in K&R jargon). It contains a list of 
+# "external-declaration"s, which is either declarations (Decl),
+# Typedef or function definitions (FuncDef).
+# 
+FileAST: [ext**]
+
+# for (init; cond; next) stmt
+#
+For: [init*, cond*, next*, stmt*]
+
+# name: Id
+# args: ExprList
+#
+FuncCall: [name*, args*]
+
+# type <decl>(args)
+#
+FuncDecl: [args*, type*]
+
+# Function definition: a declarator for the function name and
+# a body, which is a compound statement. 
+# There's an optional list of parameter declarations for old
+# K&R-style definitions
+#
+FuncDef: [decl*, param_decls**, body*]
+
+Goto: [name]
+
+ID: [name]
+
+# Holder for types that are a simple identifier (e.g. the built
+# ins void, char etc. and typedef-defined types)
+#
+IdentifierType: [names]
+
+If: [cond*, iftrue*, iffalse*]
+
+Label: [name, stmt*]
+
+# a list of comma separated function parameter declarations
+#
+ParamList: [params**]
+
+PtrDecl: [quals, type*]
+
+Return: [expr*]
+
+# name: struct tag name
+# decls: declaration of members
+#
+Struct: [name, decls**]
+
+# type: . or ->
+# name.field or name->field
+#
+StructRef: [name*, type, field*]
+
+Switch: [cond*, stmt*]
+
+# cond ? iftrue : iffalse
+#
+TernaryOp: [cond*, iftrue*, iffalse*]
+
+# A base type declaration
+#
+TypeDecl: [declname, quals, type*]
+
+# A typedef declaration.
+# Very similar to Decl, but without some attributes
+#
+Typedef: [name, quals, storage, type*]
+
+Typename: [quals, type*]
+
+UnaryOp: [op, expr*]
+
+# name: union tag name
+# decls: declaration of members
+#
+Union: [name, decls**]
+
+While: [cond*, stmt*]
+
+
+
