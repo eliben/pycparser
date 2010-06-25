@@ -860,7 +860,11 @@ class TestCParser_whole_code(unittest.TestCase):
             'preorder' appearance) in the chunk of code is as 
             given.
         """
-        parsed = self.parse(code)
+        if isinstance(code, str):
+            parsed = self.parse(code)
+        else:
+            parsed = code
+            
         cv = self.ConstantVisitor()
         cv.visit(parsed)
         self.assertEqual(cv.values, constants)
@@ -972,6 +976,25 @@ class TestCParser_whole_code(unittest.TestCase):
         # declarations don't count
         self.assert_num_ID_refs(ps2, 'hash', 6)
         self.assert_num_ID_refs(ps2, 'i', 4)
+        
+        s3 = r'''
+        void x(void) {
+          int a, b;
+          if (a < b)
+            do {
+              a = 0;
+            } while (0);
+          else if (a == b) {
+            a = 1;
+          }
+        }
+        '''
+        
+        ps3 = self.parse(s3)
+        self.assert_num_klass_nodes(ps3, DoWhile, 1)
+        self.assert_num_ID_refs(ps3, 'a', 4)
+        self.assert_all_Constants(ps3, ['0', '0', '1'])
+        
 
     def test_whole_file(self):
         # See how pycparser handles a whole, real C file.

@@ -996,7 +996,7 @@ class CParser(PLYParser):
         p[0] = c_ast.While(p[3], p[5], self._coord(p.lineno(1)))
     
     def p_iteration_statement_2(self, p):
-        """ iteration_statement : DO statement WHILE LPAREN expression RPAREN """
+        """ iteration_statement : DO statement WHILE LPAREN expression RPAREN SEMI """
         p[0] = c_ast.DoWhile(p[5], p[2], self._coord(p.lineno(1)))
     
     def p_iteration_statement_3(self, p):
