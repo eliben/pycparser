@@ -1183,11 +1183,10 @@ class CParser(PLYParser):
         p[0] = p[1]
         
     def p_primary_expression_3(self, p):
-        """ primary_expression  : STRING_LITERAL 
-                                | WSTRING_LITERAL
+        """ primary_expression  : unified_string_literal 
+                                | unified_wstring_literal
         """
-        p[0] = c_ast.Constant(
-            'string', p[1], self._coord(p.lineno(1)))
+        p[0] = p[1]
             
     def p_primary_expression_4(self, p):
         """ primary_expression  : LPAREN expression RPAREN """
@@ -1226,7 +1225,34 @@ class CParser(PLYParser):
         """
         p[0] = c_ast.Constant(
             'char', p[1], self._coord(p.lineno(1)))
-        
+    
+    # The "unified" string and wstring literal rules are for supporting 
+    # concatenation of adjacent string literals.
+    # I.e. "hello " "world" is seen by the C compiler as a single string literal
+    # with the value "hello world"
+    #
+    def p_unified_string_literal(self, p):
+        """ unified_string_literal  : STRING_LITERAL
+                                    | unified_string_literal STRING_LITERAL  
+        """
+        if len(p) == 2: # single literal
+            p[0] = c_ast.Constant(
+                'string', p[1], self._coord(p.lineno(1)))
+        else:
+            p[1].value = p[1].value.rstrip('"') + p[2].lstrip('"')
+            p[0] = p[1]
+            
+    def p_unified_wstring_literal(self, p):
+        """ unified_wstring_literal : WSTRING_LITERAL
+                                    | unified_wstring_literal WSTRING_LITERAL  
+        """
+        if len(p) == 2: # single literal
+            p[0] = c_ast.Constant(
+                'string', p[1], self._coord(p.lineno(1)))
+        else:
+            p[1].value = p[1].value.rstrip('"') + p[2].lstrip('"')
+            p[0] = p[1]
+            
     def p_empty(self, p):
         'empty : '
         p[0] = None

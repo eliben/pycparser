@@ -807,6 +807,30 @@ class TestCParser_fundamentals(unittest.TestCase):
         self.assertEqual(expand_decl(f3.param_decls[1]),
             ['Decl', 'c', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['long']]]]])
 
+    def test_unified_string_literals(self):
+        # simple string, for reference
+        d1 = self.get_decl_init('char* s = "hello";')
+        self.assertEqual(d1, ['Constant', 'string', '"hello"'])
+        
+        d2 = self.get_decl_init('char* s = "hello" " world";')
+        self.assertEqual(d2, ['Constant', 'string', '"hello world"'])
+        
+        # the test case from issue 6
+        d3 = self.parse(r'''
+            int main() {
+                fprintf(stderr,
+                "Wrong Params?\n"
+                "Usage:\n"
+                "%s <binary_file_path>\n",
+                argv[0]
+                );
+            }
+        ''')
+        
+        self.assertEqual(
+            d3.ext[0].body.stmts[0].args.exprs[1].value,
+            r'"Wrong Params?\nUsage:\n%s <binary_file_path>\n"')
+
 
 class TestCParser_whole_code(unittest.TestCase):
     """ Testing of parsing whole chunks of code.

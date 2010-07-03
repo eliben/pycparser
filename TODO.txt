@@ -1,6 +1,7 @@
 Fixes since last:
 ------------------
 
+* bugfix: correct handling of do{} while statements in some cases
 
 
 Version Update
