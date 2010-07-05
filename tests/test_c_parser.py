@@ -830,6 +830,12 @@ class TestCParser_fundamentals(unittest.TestCase):
         self.assertEqual(
             d3.ext[0].body.stmts[0].args.exprs[1].value,
             r'"Wrong Params?\nUsage:\n%s <binary_file_path>\n"')
+        
+        d4 = self.get_decl_init('char* s = "" "foobar";')
+        self.assertEqual(d4, ['Constant', 'string', '"foobar"'])
+        
+        d5 = self.get_decl_init(r'char* s = "foo\"" "bar";')
+        self.assertEqual(d5, ['Constant', 'string', r'"foo\"bar"'])
 
 
 class TestCParser_whole_code(unittest.TestCase):

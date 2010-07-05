@@ -1239,7 +1239,7 @@ class CParser(PLYParser):
             p[0] = c_ast.Constant(
                 'string', p[1], self._coord(p.lineno(1)))
         else:
-            p[1].value = p[1].value.rstrip('"') + p[2].lstrip('"')
+            p[1].value = p[1].value[:-1] + p[2][1:]
             p[0] = p[1]
             
     def p_unified_wstring_literal(self, p):
@@ -1250,7 +1250,7 @@ class CParser(PLYParser):
             p[0] = c_ast.Constant(
                 'string', p[1], self._coord(p.lineno(1)))
         else:
-            p[1].value = p[1].value.rstrip('"') + p[2].lstrip('"')
+            p[1].value = p[1].value.rstrip[:-1] + p[2][1:]
             p[0] = p[1]
             
     def p_empty(self, p):
