@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
-<title>pycparser v1.06</title>
+<title>pycparser v1.07</title>
 <meta name="author" content="Eli Bendersky" />
 <style type="text/css">
 
@@ -305,8 +305,8 @@ ul.auto-toc {
 </style>
 </head>
 <body>
-<div class="document" id="pycparser-v1-06">
-<h1 class="title">pycparser v1.06</h1>
+<div class="document" id="pycparser-v1-07">
+<h1 class="title">pycparser v1.07</h1>
 <table class="docinfo" frame="void" rules="none">
 <col class="docinfo-name" />
 <col class="docinfo-content" />
@@ -342,15 +342,16 @@ ul.auto-toc {
 </li>
 <li><a class="reference internal" href="#modifying" id="id17">Modifying</a></li>
 <li><a class="reference internal" href="#package-contents" id="id18">Package contents</a></li>
-<li><a class="reference internal" href="#changelog" id="id19">Changelog</a><ul>
-<li><a class="reference internal" href="#version-1-07-18-05-2010" id="id20">Version 1.07 (18.05.2010)</a></li>
-<li><a class="reference internal" href="#version-1-06-10-04-2010" id="id21">Version 1.06 (10.04.2010)</a></li>
-<li><a class="reference internal" href="#version-1-05-16-10-2009" id="id22">Version 1.05 (16.10.2009)</a></li>
-<li><a class="reference internal" href="#version-1-04-22-05-2009" id="id23">Version 1.04 (22.05.2009)</a></li>
-<li><a class="reference internal" href="#version-1-03-31-01-2009" id="id24">Version 1.03 (31.01.2009)</a></li>
-<li><a class="reference internal" href="#version-1-02-16-01-2009" id="id25">Version 1.02 (16.01.2009)</a></li>
-<li><a class="reference internal" href="#version-1-01-09-01-2009" id="id26">Version 1.01 (09.01.2009)</a></li>
-<li><a class="reference internal" href="#version-1-0-15-11-2008" id="id27">Version 1.0 (15.11.2008)</a></li>
+<li><a class="reference internal" href="#contributors" id="id19">Contributors</a></li>
+<li><a class="reference internal" href="#changelog" id="id20">Changelog</a><ul>
+<li><a class="reference internal" href="#version-1-07-18-05-2010" id="id21">Version 1.07 (18.05.2010)</a></li>
+<li><a class="reference internal" href="#version-1-06-10-04-2010" id="id22">Version 1.06 (10.04.2010)</a></li>
+<li><a class="reference internal" href="#version-1-05-16-10-2009" id="id23">Version 1.05 (16.10.2009)</a></li>
+<li><a class="reference internal" href="#version-1-04-22-05-2009" id="id24">Version 1.04 (22.05.2009)</a></li>
+<li><a class="reference internal" href="#version-1-03-31-01-2009" id="id25">Version 1.03 (31.01.2009)</a></li>
+<li><a class="reference internal" href="#version-1-02-16-01-2009" id="id26">Version 1.02 (16.01.2009)</a></li>
+<li><a class="reference internal" href="#version-1-01-09-01-2009" id="id27">Version 1.01 (09.01.2009)</a></li>
+<li><a class="reference internal" href="#version-1-0-15-11-2008" id="id28">Version 1.0 (15.11.2008)</a></li>
 </ul>
 </li>
 </ul>
@@ -468,16 +469,20 @@ ul.auto-toc {
 <dd>Internal utilities for my own use. You probably don't need them.</dd>
 </dl>
 </div>
+<div class="section" id="contributors">
+<h1><a class="toc-backref" href="#id19">Contributors</a></h1>
+<p>Some people have contributed to <tt class="docutils literal"><span class="pre">pycparser</span></tt> by opening issues on bugs they've found and/or submitting patches. The list of contributors is at <a class="reference external" href="http://code.google.com/p/pycparser/wiki/Contributors">this pycparser Wiki page</a>.</p>
+</div>
 <div class="section" id="changelog">
-<h1><a class="toc-backref" href="#id19">Changelog</a></h1>
+<h1><a class="toc-backref" href="#id20">Changelog</a></h1>
 <div class="section" id="version-1-07-18-05-2010">
-<h2><a class="toc-backref" href="#id20">Version 1.07 (18.05.2010)</a></h2>
+<h2><a class="toc-backref" href="#id21">Version 1.07 (18.05.2010)</a></h2>
 <ul class="simple">
 <li>Python 3.1 compatibility: <tt class="docutils literal"><span class="pre">pycparser</span></tt> was modified to run on Python 3.1 as well as 2.6</li>
 </ul>
 </div>
 <div class="section" id="version-1-06-10-04-2010">
-<h2><a class="toc-backref" href="#id21">Version 1.06 (10.04.2010)</a></h2>
+<h2><a class="toc-backref" href="#id22">Version 1.06 (10.04.2010)</a></h2>
 <ul class="simple">
 <li>Bug fixes:<ul>
 <li>coord not propagated to FuncCall nodes</li>
@@ -489,38 +494,38 @@ ul.auto-toc {
 </ul>
 </div>
 <div class="section" id="version-1-05-16-10-2009">
-<h2><a class="toc-backref" href="#id22">Version 1.05 (16.10.2009)</a></h2>
+<h2><a class="toc-backref" href="#id23">Version 1.05 (16.10.2009)</a></h2>
 <ul class="simple">
 <li>Fixed the <tt class="docutils literal"><span class="pre">parse_file</span></tt> auxiliary function to handle multiple arguments to <tt class="docutils literal"><span class="pre">cpp</span></tt> correctly</li>
 </ul>
 </div>
 <div class="section" id="version-1-04-22-05-2009">
-<h2><a class="toc-backref" href="#id23">Version 1.04 (22.05.2009)</a></h2>
+<h2><a class="toc-backref" href="#id24">Version 1.04 (22.05.2009)</a></h2>
 <ul class="simple">
 <li>Added the <tt class="docutils literal"><span class="pre">fake_libc_include</span></tt> directory to allow parsing of C code that uses standard C library include files without dependency on a real C library.</li>
 <li>Tested with Python 2.6 and PLY 3.2</li>
 </ul>
 </div>
 <div class="section" id="version-1-03-31-01-2009">
-<h2><a class="toc-backref" href="#id24">Version 1.03 (31.01.2009)</a></h2>
+<h2><a class="toc-backref" href="#id25">Version 1.03 (31.01.2009)</a></h2>
 <ul class="simple">
 <li>Accept enumeration lists with a comma after the last item (C99 feature).</li>
 </ul>
 </div>
 <div class="section" id="version-1-02-16-01-2009">
-<h2><a class="toc-backref" href="#id25">Version 1.02 (16.01.2009)</a></h2>
+<h2><a class="toc-backref" href="#id26">Version 1.02 (16.01.2009)</a></h2>
 <ul class="simple">
 <li>Fixed problem of parsing struct/enum/union names that were named similarly to previously defined <tt class="docutils literal"><span class="pre">typedef</span></tt> types.</li>
 </ul>
 </div>
 <div class="section" id="version-1-01-09-01-2009">
-<h2><a class="toc-backref" href="#id26">Version 1.01 (09.01.2009)</a></h2>
+<h2><a class="toc-backref" href="#id27">Version 1.01 (09.01.2009)</a></h2>
 <ul class="simple">
 <li>Fixed subprocess invocation in the helper function parse_file - now it's more portable</li>
 </ul>
 </div>
 <div class="section" id="version-1-0-15-11-2008">
-<h2><a class="toc-backref" href="#id27">Version 1.0 (15.11.2008)</a></h2>
+<h2><a class="toc-backref" href="#id28">Version 1.0 (15.11.2008)</a></h2>
 <ul class="simple">
 <li>Initial release</li>
 <li>Support for ANSI C89</li>

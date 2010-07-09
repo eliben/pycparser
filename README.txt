@@ -148,6 +148,10 @@ utils/fake_libc_include:
 utils/internal/:
   Internal utilities for my own use. You probably don't need them.
 
+Contributors
+============
+
+Some people have contributed to ``pycparser`` by opening issues on bugs they've found and/or submitting patches. The list of contributors is at `this pycparser Wiki page <http://code.google.com/p/pycparser/wiki/Contributors>`_.
 
 Changelog
 =========
