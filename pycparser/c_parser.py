@@ -332,7 +332,7 @@ class CParser(PLYParser):
         """
         # Note: external_declaration is already a list
         #
-        p[0] = c_ast.AST(p[1])
+        p[0] = c_ast.FileAST(p[1])
     
     def p_translation_unit_2(self, p):
         """ translation_unit    : translation_unit external_declaration
