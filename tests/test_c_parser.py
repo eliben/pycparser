@@ -610,7 +610,7 @@ class TestCParser_fundamentals(unittest.TestCase):
                         ['PtrDecl', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['Node']]]]]]]]]])
     
     def test_struct_bitfields(self):
-        # a struct with two bitfields, one anonymous
+        # a struct with two bitfields, one unnamed
         s1 = """
             struct {
                 int k:6;
@@ -620,7 +620,7 @@ class TestCParser_fundamentals(unittest.TestCase):
 
         parsed_struct = self.parse(s1).ext[0]
 
-        # We can see here the name of the decl for the anonymous bitfield is 
+        # We can see here the name of the decl for the unnamed bitfield is 
         # None, but expand_decl doesn't show bitfield widths
         # ...
         self.assertEqual(expand_decl(parsed_struct),

@@ -49,12 +49,8 @@ if __name__ == "__main__":
     source_code = """
     int main()
     {
+        p++;
         int a;
-        struct joe {
-            int :6;
-            int blbl:2;
-        } kwa;
-        a = sizeof(int());
     }
     """
 

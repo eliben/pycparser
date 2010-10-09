@@ -1,11 +1,15 @@
 ===============
-pycparser v1.07
+pycparser v1.08
 ===============
 
 :Author: `Eli Bendersky <http://eli.thegreenplace.net>`_
 
 
 .. contents::
+    :backlinks: none
+
+.. sectnum::
+
 
 Introduction
 ============
@@ -36,6 +40,8 @@ At the moment, ``pycparser`` supports ANSI/ISO C89, the language described by Ke
 
 * Allowing a comma after the last value in an enumeration list
 
+Additionally, since ``pycparser`` lets you use your own C preprocessor (``cpp``), C99 features implemented in the preprocessor (such as variadic macros or ``//`` comments) can be supported in a manner transparent to ``pycparser``.
+
 ``pycparser`` doesn't support any GCC extensions.
 
 What grammar does pycparser follow?
@@ -57,7 +63,7 @@ How is pycparser licensed?
 Contact details
 ---------------
 
-Drop me an email to eliben@gmail.com for any questions regarding ``pycparser``.
+Drop me an email to eliben@gmail.com for any questions regarding ``pycparser``. For reporting problems with ``pycparser`` or submitting feature requests, the best way is to open an issue on the `pycparser page at Google Code <http://code.google.com/p/pycparser/>`_.
 
 
 Installing
@@ -67,7 +73,7 @@ Prerequisites
 -------------
 
 * ``pycparser`` was tested on Python 2.5, 2.6 and 3.1, on both Linux and Windows
-* ``pycparser`` uses the PLY module for the actual lexer and parser construction. You'll also need to install PLY version 3.2 (earlier versions work at least since 2.5) from `its website <http://www.dabeaz.com/ply/>`_.
+* ``pycparser`` uses the PLY module for the actual lexer and parser construction. Install PLY version 3.3 (earlier versions work at least since 2.5) from `its website <http://www.dabeaz.com/ply/>`_.
 * If you want to modify ``pycparser``'s code, you'll need to install `PyYAML <http://pyyaml.org/>`_, since it's used by ``pycparser`` to store the AST configuration in a YAML file.
 
 Installation process
@@ -155,6 +161,15 @@ Some people have contributed to ``pycparser`` by opening issues on bugs they've 
 
 Changelog
 =========
+
+Version 1.08 (09.10.2010)
+-------------------------
+
+* Bug fixes:
+
+  + Correct handling of ``do{} ... while`` statements in some cases
+  + Issues 6 & 7: Concatenation of string literals
+  + Issue 9: Support for unnamed bitfields in structs
 
 Version 1.07 (18.05.2010)
 -------------------------

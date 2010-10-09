@@ -1,8 +1,7 @@
 Fixes since last:
 ------------------
 
-* bugfix: correct handling of do{} while statements in some cases
-* bugfix: Issues 6 & 7 (concatenation of string literals)
+* 
 
 Version Update
 --------------
