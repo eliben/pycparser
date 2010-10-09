@@ -45,31 +45,21 @@ def expand_decl(decl):
 
 #-----------------------------------------------------------------
 
-source_code = """
-int main()
-{
-    int a;
-    a = sizeof(int());
-}
-"""
+if __name__ == "__main__":    
+    source_code = """
+    int main()
+    {
+        int a;
+        struct joe {
+            int :6;
+            int blbl:2;
+        } kwa;
+        a = sizeof(int());
+    }
+    """
 
-parser = CParser()
-ast = parser.parse(source_code)
-function_body = ast.ext[0].body #hardcoded to the main() function
+    parser = CParser()
+    ast = parser.parse(source_code)
 
-for stmt in function_body.stmts:
-    print stmt.coord, expand_decl(stmt.rvalue.expr.type)
-    
-#~ class StructRefVisitor(c_ast.NodeVisitor):
-    #~ def visit_StructRef(self, node):
-        #~ print node.name.name, node.field.name
-
-
-#~ parser = c_parser.CParser()
-#~ ast = parser.parse(code)
-
-#~ ast.show()
-
-#~ v = StructRefVisitor()
-#~ v.visit(ast)
+    ast.show()
 

@@ -630,6 +630,11 @@ class CParser(PLYParser):
         decls = []
         
         for struct_decl in p[2]:
+            if struct_decl['decl'] is not None:
+                decl_coord = struct_decl['decl'].coord
+            else:
+                decl_coord = struct_decl['bitsize'].coord
+            
             decl = c_ast.Decl(
                 name=None,
                 quals=spec['qual'],
@@ -637,7 +642,7 @@ class CParser(PLYParser):
                 type=struct_decl['decl'],
                 init=None,
                 bitsize=struct_decl['bitsize'],
-                coord=struct_decl['decl'].coord)
+                coord=decl_coord)
             
             typename = spec['type']
             decls.append(self._fix_decl_name_type(decl, typename))
@@ -665,7 +670,7 @@ class CParser(PLYParser):
         if len(p) > 3:
             p[0] = {'decl': p[1], 'bitsize': p[3]}
         else:
-            p[0] = {'decl': None, 'bitsize': p[2]}
+            p[0] = {'decl': c_ast.TypeDecl(None, None, None), 'bitsize': p[2]}
     
     def p_enum_specifier_1(self, p):
         """ enum_specifier  : ENUM ID

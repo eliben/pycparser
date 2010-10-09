@@ -609,6 +609,35 @@ class TestCParser_fundamentals(unittest.TestCase):
                     ['Decl', 'heads', 
                         ['PtrDecl', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['Node']]]]]]]]]])
     
+    def test_struct_bitfields(self):
+        # a struct with two bitfields, one anonymous
+        s1 = """
+            struct {
+                int k:6;
+                int :2;
+            } joe;
+            """
+
+        parsed_struct = self.parse(s1).ext[0]
+
+        # We can see here the name of the decl for the anonymous bitfield is 
+        # None, but expand_decl doesn't show bitfield widths
+        # ...
+        self.assertEqual(expand_decl(parsed_struct),
+            ['Decl', 'joe', 
+                ['TypeDecl', ['Struct', None, 
+                    [   ['Decl', 'k', 
+                            ['TypeDecl', 
+                                ['IdentifierType', ['int']]]], 
+                        ['Decl', None, 
+                            ['TypeDecl', 
+                                ['IdentifierType', ['int']]]]]]]])
+    
+        # ...
+        # so we test them manually
+        self.assertEqual(parsed_struct.type.type.decls[0].bitsize.value, '6')
+        self.assertEqual(parsed_struct.type.type.decls[1].bitsize.value, '2')       
+    
     def test_tags_namespace(self):
         """ Tests that the tags of structs/unions/enums reside in a separate namespace and
             can be named after existing types.
