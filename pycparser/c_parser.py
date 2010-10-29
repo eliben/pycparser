@@ -76,7 +76,7 @@ class CParser(PLYParser):
         
         rules_with_opt = [
             'abstract_declarator',
-            'constant_expression',
+            'assignment_expression',
             'declaration_list',
             'declaration_specifiers',
             'expression',
@@ -756,7 +756,7 @@ class CParser(PLYParser):
         p[0] = p[2]
         
     def p_direct_declarator_3(self, p):
-        """ direct_declarator   : direct_declarator LBRACKET constant_expression_opt RBRACKET 
+        """ direct_declarator   : direct_declarator LBRACKET assignment_expression_opt RBRACKET 
         """
         arr = c_ast.ArrayDecl(
             type=None,
@@ -765,7 +765,19 @@ class CParser(PLYParser):
         
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
 
+    # Special for VLAs
+    #
     def p_direct_declarator_4(self, p):
+        """ direct_declarator   : direct_declarator LBRACKET TIMES RBRACKET 
+        """
+        arr = c_ast.ArrayDecl(
+            type=None,
+            dim=c_ast.ID(p[3], self._coord(p.lineno(3))),
+            coord=p[1].coord)
+        
+        p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
+
+    def p_direct_declarator_5(self, p):
         """ direct_declarator   : direct_declarator LPAREN parameter_type_list RPAREN 
                                 | direct_declarator LPAREN identifier_list_opt RPAREN
         """
@@ -917,7 +929,7 @@ class CParser(PLYParser):
         p[0] = p[2]
     
     def p_direct_abstract_declarator_2(self, p):
-        """ direct_abstract_declarator  : direct_abstract_declarator LBRACKET constant_expression_opt RBRACKET 
+        """ direct_abstract_declarator  : direct_abstract_declarator LBRACKET assignment_expression_opt RBRACKET 
         """
         arr = c_ast.ArrayDecl(
             type=None,
@@ -927,14 +939,32 @@ class CParser(PLYParser):
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
         
     def p_direct_abstract_declarator_3(self, p):
-        """ direct_abstract_declarator  : LBRACKET constant_expression_opt RBRACKET 
+        """ direct_abstract_declarator  : LBRACKET assignment_expression_opt RBRACKET 
         """
         p[0] = c_ast.ArrayDecl(
             type=c_ast.TypeDecl(None, None, None),
             dim=p[2],
             coord=self._coord(p.lineno(1)))
-        
+
     def p_direct_abstract_declarator_4(self, p):
+        """ direct_abstract_declarator  : direct_abstract_declarator LBRACKET TIMES RBRACKET 
+        """
+        arr = c_ast.ArrayDecl(
+            type=None,
+            dim=c_ast.ID(p[3], self._coord(p.lineno(3))),
+            coord=p[1].coord)
+        
+        p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
+
+    def p_direct_abstract_declarator_5(self, p):
+        """ direct_abstract_declarator  : LBRACKET TIMES RBRACKET 
+        """
+        p[0] = c_ast.ArrayDecl(
+            type=c_ast.TypeDecl(None, None, None),
+            dim=c_ast.ID(p[3], self._coord(p.lineno(3))),
+            coord=self._coord(p.lineno(1)))
+
+    def p_direct_abstract_declarator_6(self, p):
         """ direct_abstract_declarator  : direct_abstract_declarator LPAREN parameter_type_list_opt RPAREN 
         """
         func = c_ast.FuncDecl(
@@ -944,7 +974,7 @@ class CParser(PLYParser):
         
         p[0] = self._type_modify_decl(decl=p[1], modifier=func)
         
-    def p_direct_abstract_declarator_5(self, p):
+    def p_direct_abstract_declarator_7(self, p):
         """ direct_abstract_declarator  : LPAREN parameter_type_list_opt RPAREN 
         """
         p[0] = c_ast.FuncDecl(

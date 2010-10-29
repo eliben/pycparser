@@ -878,6 +878,19 @@ class TestCParser_fundamentals(unittest.TestCase):
     def test_inline_specifier(self):                
         ps2 = self.parse('static inline void inlinefoo(void);')
         self.assertEqual(ps2.ext[0].funcspec, ['inline'])
+    
+    # variable length array
+    def test_vla(self):
+        ps2 = self.parse(r'''
+            int main() {
+                int size;
+                int var[size = 5];
+                
+                int var2[*];
+            }
+        ''')
+        self.failUnless(isinstance(ps2.ext[0].body.decls[1].type.dim, Assignment))
+        self.failUnless(isinstance(ps2.ext[0].body.decls[2].type.dim, ID))
 
 
 class TestCParser_whole_code(unittest.TestCase):

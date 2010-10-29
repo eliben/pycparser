@@ -5,7 +5,7 @@ Pycparser 2: the idea is to "mostly" support C99
 
 Implement:
 
-- new keywords restrict, inline
+V- new keywords restrict, inline
 - mix declarations and statements inside a block
 - VLAs (non-constants in arr[n]), including [*] for parameter lists
 V- declarations in the first expression of "for" loops
