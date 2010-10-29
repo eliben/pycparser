@@ -49,6 +49,8 @@ Continue: []
 #
 Decl: [name, quals, storage, type*, init*, bitsize*]
 
+DeclList: [decls**]
+
 Default: [stmt*]
 
 DoWhile: [cond*, stmt*]

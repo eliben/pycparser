@@ -346,6 +346,28 @@ class FuncDef(Node):
             c.show(buf, offset + 2, attrnames, showcoord)
 
 
+class DeclList(Node):
+    def __init__(self, decls, coord=None):
+        self.decls = decls
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.decls is not None: nodelist.extend(self.decls)
+        return tuple(nodelist)
+
+    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
+        lead = ' ' * offset
+        buf.write(lead + 'DeclList: ')
+
+        if showcoord:
+            buf.write(' (at %s)' % self.coord)
+        buf.write('\n')
+
+        for c in self.children():
+            c.show(buf, offset + 2, attrnames, showcoord)
+
+
 class Enumerator(Node):
     def __init__(self, name, value, coord=None):
         self.name = name

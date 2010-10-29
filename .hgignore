@@ -6,3 +6,4 @@ tests/*tab.py
 
 
 
+glob:utils/z.c

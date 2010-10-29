@@ -1053,7 +1053,39 @@ class TestCParser_whole_code(unittest.TestCase):
         self.assert_num_klass_nodes(ps3, DoWhile, 1)
         self.assert_num_ID_refs(ps3, 'a', 4)
         self.assert_all_Constants(ps3, ['0', '0', '1'])
+
+    def test_for_statement(self):
+        s2 = r'''
+        void x(void)
+        {
+            int i;
+            for (i = 0; i < 5; ++i) {
+                x = 50;
+            }
+        }
+        '''
+        ps2 = self.parse(s2)
+        self.assert_num_klass_nodes(ps2, For, 1)
+        # here there are 3 refs to 'i' since the declaration doesn't count as 
+        # a ref in the visitor
+        #
+        self.assert_num_ID_refs(ps2, 'i', 3)
         
+        s3 = r'''
+        void x(void)
+        {
+            for (int i = 0; i < 5; ++i) {
+                x = 50;
+            }
+        }
+        '''
+        ps3 = self.parse(s3)
+        ps3.show()
+        self.assert_num_klass_nodes(ps3, For, 1)
+        # here there are 2 refs to 'i' since the declaration doesn't count as 
+        # a ref in the visitor
+        #
+        self.assert_num_ID_refs(ps3, 'i', 2)
 
     def test_whole_file(self):
         # See how pycparser handles a whole, real C file.

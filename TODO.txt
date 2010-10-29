@@ -1,3 +1,17 @@
+Todo
+----
+
+Pycparser 2: the idea is to "mostly" support C99
+
+Implement:
+
+- new keywords restrict, inline
+- mix declarations and statements inside a block
+- VLAs (non-constants in arr[n]), including [*] for parameter lists
+- declarations in the first expression of "for" loops
+- named initializers for structs and arrays
+
+
 Fixes since last:
 ------------------
 
@@ -9,14 +23,14 @@ Version Update
 setup.py, __init__.py, README.txt
 
 
+Build docs and distribution
+---------------------------
 
 rst2html readme.txt > readme.html
-
 setup.py sdist
 
-
-
-
+Misc
+----
 
 yacc optimization: 
 - If parsetab.py/pyc doesn't exist in the path, the table will be reconstructed anyway, regardless of the optimize parameter
