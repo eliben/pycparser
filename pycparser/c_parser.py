@@ -84,7 +84,7 @@ class CParser(PLYParser):
             'init_declarator_list',
             'parameter_type_list',
             'specifier_qualifier_list',
-            'statement_list',
+            'block_item_list',
             'type_qualifier_list',
         ]
         
@@ -981,43 +981,29 @@ class CParser(PLYParser):
             args=p[2],
             type=c_ast.TypeDecl(None, None, None),
             coord=self._coord(p.lineno(1)))
-        
-    def p_compound_statement_1(self, p):
-        """ compound_statement : LBRACE statement_list_opt RBRACE """
-        p[0] = c_ast.Compound(
-            decls=None, 
-            stmts=p[2], 
-            coord=self._coord(p.lineno(1)))
     
-    def p_compound_statement_2(self, p):
-        """ compound_statement : LBRACE declaration_list RBRACE """
-        p[0] = c_ast.Compound(
-            decls=p[2], 
-            stmts=None, 
-            coord=self._coord(p.lineno(1)))
-    
-    def p_compound_statement_3(self, p):
-        """ compound_statement : LBRACE declaration_list statement_list RBRACE """
-        #~ print '(((((('
-        #~ print p[2]
-        #~ print p[3]
-        #~ print '(((((('
-        p[0] = c_ast.Compound(
-            decls=p[2], 
-            stmts=p[3], 
-            coord=self._coord(p.lineno(1)))
-    
-    # Note: this doesn't create an AST node, but a list of AST 
-    # nodes that will be used as the statement list of a compound
+    # declaration is a list, statement isn't. To make it consistent, block_item
+    # will always be a list
     #
-    def p_statement_list(self, p):
-        """ statement_list  : statement 
-                            | statement_list statement
+    def p_block_item(self, p):
+        """ block_item  : declaration
+                        | statement
         """
-        if len(p) == 2: # single expr
-            p[0] = [p[1]] if p[1] else [] 
-        else:
-            p[0] = p[1] + ([p[2]] if p[2] else [])
+        p[0] = p[1] if isinstance(p[1], list) else [p[1]]
+    
+    # Since we made block_item a list, this just combines lists
+    # 
+    def p_block_item_list(self, p):
+        """ block_item_list : block_item 
+                            | block_item_list block_item
+        """
+        p[0] = p[1] if len(p) == 2 else p[1] + p[2]
+    
+    def p_compound_statement_1(self, p):
+        """ compound_statement : LBRACE block_item_list_opt RBRACE """
+        p[0] = c_ast.Compound(
+            block_items=p[2], 
+            coord=self._coord(p.lineno(1)))
     
     def p_labeled_statement_1(self, p):
         """ labeled_statement : ID COLON statement """

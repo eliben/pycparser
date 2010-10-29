@@ -17,7 +17,7 @@
 # =>
 # ar is a pointer to array[10] of pointer to const Node
 #
-# Copyright (C) 2008, Eli Bendersky
+# Copyright (C) 2008-2010, Eli Bendersky
 # License: LGPL
 #-----------------------------------------------------------------
 import sys

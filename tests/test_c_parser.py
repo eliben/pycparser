@@ -136,8 +136,8 @@ class TestCParser_fundamentals(unittest.TestCase):
             return 0;
         }'''
         f1_1 = self.parse(t1_1, filename='test.c')
-        self.assert_coord(f1_1.ext[0].body.stmts[0], 3, 'test.c')
-        self.assert_coord(f1_1.ext[0].body.stmts[1], 4, 'test.c')
+        self.assert_coord(f1_1.ext[0].body.block_items[0], 3, 'test.c')
+        self.assert_coord(f1_1.ext[0].body.block_items[1], 4, 'test.c')
         
         t2 = """
         #line 99
@@ -350,17 +350,17 @@ class TestCParser_fundamentals(unittest.TestCase):
         """
         compound = self.parse(e).ext[0].body
         
-        s1 = compound.decls[0].init
+        s1 = compound.block_items[0].init
         self.assertTrue(isinstance(s1, UnaryOp))
         self.assertEqual(s1.op, 'sizeof')
         self.assertTrue(isinstance(s1.expr, ID))
         self.assertEqual(s1.expr.name, 'k')
         
-        s2 = compound.decls[1].init
+        s2 = compound.block_items[1].init
         self.assertEqual(expand_decl(s2.expr),
             ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]])
         
-        s3 = compound.decls[2].init
+        s3 = compound.block_items[2].init
         self.assertEqual(expand_decl(s3.expr),
             ['Typename', 
                 ['PtrDecl', 
@@ -791,8 +791,7 @@ class TestCParser_fundamentals(unittest.TestCase):
                     [['Decl', 'p', ['TypeDecl', ['IdentifierType', ['int']]]]], 
                     ['TypeDecl', ['IdentifierType', ['int']]]]])
         
-        self.assertEqual(type(f1.body.stmts[0]), Return)
-        self.assertEqual(f1.body.decls, None)
+        self.assertEqual(type(f1.body.block_items[0]), Return)
         
         f2 = parse_fdef('''
         char* zzz(int p, char* c)
@@ -813,9 +812,8 @@ class TestCParser_fundamentals(unittest.TestCase):
                                         ['TypeDecl', ['IdentifierType', ['char']]]]]], 
                     ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]]])
             
-        self.assertEqual(list(map(type, f2.body.stmts)), 
-            [Assignment, Return])
-        self.assertEqual(len(f2.body.decls), 2)
+        self.assertEqual(list(map(type, f2.body.block_items)), 
+            [Decl, Decl, Assignment, Return])
         
         f3 = parse_fdef('''
         char* zzz(p, c)
@@ -836,9 +834,8 @@ class TestCParser_fundamentals(unittest.TestCase):
                         ['ID', 'c']],
                     ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]]])
         
-        self.assertEqual(list(map(type, f3.body.stmts)), 
-            [Assignment, Return])
-        self.assertEqual(len(f3.body.decls), 2)
+        self.assertEqual(list(map(type, f3.body.block_items)), 
+            [Decl, Decl, Assignment, Return])
         
         self.assertEqual(expand_decl(f3.param_decls[0]),
             ['Decl', 'p', ['TypeDecl', ['IdentifierType', ['long']]]])
@@ -866,7 +863,7 @@ class TestCParser_fundamentals(unittest.TestCase):
         ''')
         
         self.assertEqual(
-            d3.ext[0].body.stmts[0].args.exprs[1].value,
+            d3.ext[0].body.block_items[0].args.exprs[1].value,
             r'"Wrong Params?\nUsage:\n%s <binary_file_path>\n"')
         
         d4 = self.get_decl_init('char* s = "" "foobar";')
@@ -889,8 +886,8 @@ class TestCParser_fundamentals(unittest.TestCase):
                 int var2[*];
             }
         ''')
-        self.failUnless(isinstance(ps2.ext[0].body.decls[1].type.dim, Assignment))
-        self.failUnless(isinstance(ps2.ext[0].body.decls[2].type.dim, ID))
+        self.failUnless(isinstance(ps2.ext[0].body.block_items[1].type.dim, Assignment))
+        self.failUnless(isinstance(ps2.ext[0].body.block_items[2].type.dim, ID))
 
 
 class TestCParser_whole_code(unittest.TestCase):

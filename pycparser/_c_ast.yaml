@@ -30,9 +30,10 @@ Case: [expr*, stmt*]
 
 Cast: [to_type*, expr*]
 
-# Compound statement: { declarations... statements...}
+# Compound statement in C99 is a list of block items (declarations or 
+# statements).
 #
-Compound: [decls**, stmts**]
+Compound: [block_items**]
 
 # type: int, char, float, etc. see CLexer for constant token types
 #

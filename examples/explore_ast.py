@@ -9,7 +9,7 @@
 # information from the AST.
 # It helps to have the _c_ast.yaml file in front of you.
 #
-# Copyright (C) 2008, Eli Bendersky
+# Copyright (C) 2008-2010, Eli Bendersky
 # License: LGPL
 #-----------------------------------------------------------------
 import sys
@@ -92,23 +92,19 @@ ast = parser.parse(text, filename='<none>')
 #
 function_body = ast.ext[2].body
 
-# The following displays the variable declarations in the function
+# The following displays the declarations and statements in the function
 # body
 #
-#~ for decl in function_body.decls:
+#~ for decl in function_body.block_items:
     #~ decl.show()
 
-# We can see a single variable, i, declared to be a simple type
-# declaration of type 'unsigned int'.
+# We can see a single variable declaration, i, declared to be a simple type
+# declaration of type 'unsigned int', followed by statements.
 #
-# Let's look at the statemts now:
-#
-#~ for stmt in function_body.stmts:
-    #~ stmt.show()
 
-# stmts is a list, so the second element is the For statement:
+# block_items is a list, so the third element is the For statement:
 #
-for_stmt = function_body.stmts[1]
+for_stmt = function_body.block_items[2]
 #~ for_stmt.show()
 
 # As you can see in _c_ast.yaml, For's children are 'init, cond,
@@ -118,7 +114,7 @@ for_stmt = function_body.stmts[1]
 #
 # Let's dig deeper, to the while statement inside the for loop:
 #
-while_stmt = for_stmt.stmt.stmts[0]
+while_stmt = for_stmt.stmt.block_items[1]
 #~ while_stmt.show()
 
 # While is simpler, it only has a condition node and a stmt node.

@@ -637,15 +637,13 @@ class BinaryOp(Node):
 
 
 class Compound(Node):
-    def __init__(self, decls, stmts, coord=None):
-        self.decls = decls
-        self.stmts = stmts
+    def __init__(self, block_items, coord=None):
+        self.block_items = block_items
         self.coord = coord
 
     def children(self):
         nodelist = []
-        if self.decls is not None: nodelist.extend(self.decls)
-        if self.stmts is not None: nodelist.extend(self.stmts)
+        if self.block_items is not None: nodelist.extend(self.block_items)
         return tuple(nodelist)
 
     def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):

@@ -71,8 +71,7 @@ class TestNodeVisitor(unittest.TestCase):
             right=c2)
 
         comp = c_ast.Compound(
-            decls=[b1, b2],
-            stmts=[c1, c2])
+            block_items=[b1, b2, c1, c2])
         
         cv = self.ConstantVisitor()
         cv.visit(comp)
