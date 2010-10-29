@@ -42,12 +42,13 @@ Continue: []
 
 # name: the variable being declared
 # quals: list of qualifiers (const, volatile)
+# funcspec: list function specifiers (i.e. inline in C99)
 # storage: list of storage specifiers (extern, register, etc.)
 # type: declaration type (probably nested with all the modifiers)
 # init: initialization value, or None
 # bitsize: bit field size, or None
 #
-Decl: [name, quals, storage, type*, init*, bitsize*]
+Decl: [name, quals, storage, funcspec, type*, init*, bitsize*]
 
 DeclList: [decls**]
 

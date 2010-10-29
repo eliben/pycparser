@@ -984,10 +984,11 @@ class Goto(Node):
 
 
 class Decl(Node):
-    def __init__(self, name, quals, storage, type, init, bitsize, coord=None):
+    def __init__(self, name, quals, storage, funcspec, type, init, bitsize, coord=None):
         self.name = name
         self.quals = quals
         self.storage = storage
+        self.funcspec = funcspec
         self.type = type
         self.init = init
         self.bitsize = bitsize
@@ -1005,9 +1006,9 @@ class Decl(Node):
         buf.write(lead + 'Decl: ')
 
         if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name)), ("quals", repr(self.quals)), ("storage", repr(self.storage))])
+            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name)), ("quals", repr(self.quals)), ("storage", repr(self.storage)), ("funcspec", repr(self.funcspec))])
         else:
-            attrstr = ', '.join('%s' % v for v in [self.name, self.quals, self.storage])
+            attrstr = ', '.join('%s' % v for v in [self.name, self.quals, self.storage, self.funcspec])
         buf.write(attrstr)
 
         if showcoord:

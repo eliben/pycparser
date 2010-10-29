@@ -8,7 +8,7 @@ Implement:
 - new keywords restrict, inline
 - mix declarations and statements inside a block
 - VLAs (non-constants in arr[n]), including [*] for parameter lists
-- declarations in the first expression of "for" loops
+V- declarations in the first expression of "for" loops
 - named initializers for structs and arrays
 
 

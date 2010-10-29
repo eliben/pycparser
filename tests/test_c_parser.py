@@ -307,6 +307,15 @@ class TestCParser_fundamentals(unittest.TestCase):
                             ['TypeDecl', ['IdentifierType', ['int']]]]], 
                         ['TypeDecl', ['IdentifierType', ['int']]]]]])
         
+        # restrict qualifier
+        self.assertEqual(self.get_decl('int (*k)(restrict int* q);'),
+            ['Decl', 'k', 
+                ['PtrDecl', 
+                    ['FuncDecl', 
+                        [['Decl', ['restrict'], 'q', 
+                            ['PtrDecl',
+                                ['TypeDecl', ['IdentifierType', ['int']]]]]], 
+                        ['TypeDecl', ['IdentifierType', ['int']]]]]])
         
     def test_qualifiers_storage_specifiers(self):
         def assert_qs(txt, index, quals, storage):
@@ -866,6 +875,10 @@ class TestCParser_fundamentals(unittest.TestCase):
         d5 = self.get_decl_init(r'char* s = "foo\"" "bar";')
         self.assertEqual(d5, ['Constant', 'string', r'"foo\"bar"'])
 
+    def test_inline_specifier(self):                
+        ps2 = self.parse('static inline void inlinefoo(void);')
+        self.assertEqual(ps2.ext[0].funcspec, ['inline'])
+
 
 class TestCParser_whole_code(unittest.TestCase):
     """ Testing of parsing whole chunks of code.
@@ -1080,7 +1093,6 @@ class TestCParser_whole_code(unittest.TestCase):
         }
         '''
         ps3 = self.parse(s3)
-        ps3.show()
         self.assert_num_klass_nodes(ps3, For, 1)
         # here there are 2 refs to 'i' since the declaration doesn't count as 
         # a ref in the visitor

@@ -264,17 +264,18 @@ class CParser(PLYParser):
     
     def _add_declaration_specifier(self, declspec, newspec, kind):
         """ Declaration specifiers are represented by a dictionary
-            with 3 entries:
+            with the entries:
             * qual: a list of type qualifiers
             * storage: a list of storage type qualifiers
             * type: a list of type specifiers
+            * function: a list of function specifiers
             
             This method is given a declaration specifier, and a 
             new specifier of a given kind.
             Returns the declaration specifier, with the new 
             specifier incorporated.
         """
-        spec = declspec or dict(qual=[], storage=[], type=[])
+        spec = declspec or dict(qual=[], storage=[], type=[], function=[])
         spec[kind].append(newspec)
         return spec
     
@@ -285,6 +286,7 @@ class CParser(PLYParser):
             name=None,
             quals=spec['qual'],
             storage=spec['storage'],
+            funcspec=spec['function'],
             type=decl, 
             init=None, 
             bitsize=None, 
@@ -438,6 +440,7 @@ class CParser(PLYParser):
                 name=None,
                 quals=spec['qual'],
                 storage=spec['storage'],
+                funcspec=spec['function'],
                 type=type[0],
                 init=None,
                 bitsize=None,
@@ -457,6 +460,7 @@ class CParser(PLYParser):
                         name=None,
                         quals=spec['qual'],
                         storage=spec['storage'],
+                        funcspec=spec['function'],
                         type=decl, 
                         init=init, 
                         bitsize=None, 
@@ -521,6 +525,11 @@ class CParser(PLYParser):
         """
         p[0] = self._add_declaration_specifier(p[2], p[1], 'storage')
         
+    def p_declaration_specifiers_4(self, p):
+        """ declaration_specifiers  : function_specifier declaration_specifiers_opt
+        """
+        p[0] = self._add_declaration_specifier(p[2], p[1], 'function')
+    
     def p_storage_class_specifier(self, p):
         """ storage_class_specifier : AUTO
                                     | REGISTER
@@ -529,7 +538,12 @@ class CParser(PLYParser):
                                     | TYPEDEF
         """
         p[0] = p[1]
-        
+    
+    def p_function_specifier(self, p):
+        """ function_specifier  : INLINE
+        """
+        p[0] = p[1]
+    
     def p_type_specifier_1(self, p):
         """ type_specifier  : VOID
                             | CHAR
@@ -548,6 +562,7 @@ class CParser(PLYParser):
     
     def p_type_qualifier(self, p):
         """ type_qualifier  : CONST
+                            | RESTRICT
                             | VOLATILE
         """
         p[0] = p[1]
@@ -638,6 +653,7 @@ class CParser(PLYParser):
             decl = c_ast.Decl(
                 name=None,
                 quals=spec['qual'],
+                funcspec=spec['function'],
                 storage=spec['storage'],
                 type=struct_decl['decl'],
                 init=None,
@@ -806,6 +822,7 @@ class CParser(PLYParser):
             name=None,
             quals=spec['qual'],
             storage=spec['storage'],
+            funcspec=spec['function'],
             type=decl, 
             init=None, 
             bitsize=None, 
