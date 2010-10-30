@@ -4,12 +4,12 @@
 # This package file exports some convenience functions for 
 # interacting with pycparser
 #
-# Copyright (C) 2008-2009, Eli Bendersky
+# Copyright (C) 2008-2010, Eli Bendersky
 # License: LGPL
 #-----------------------------------------------------------------
 
 __all__ = ['c_lexer', 'c_parser', 'c_ast']
-__version__ = '1.08'
+__version__ = '2.00'
 
 from subprocess import Popen, PIPE
 

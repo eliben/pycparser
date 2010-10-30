@@ -1,5 +1,5 @@
 ===============
-pycparser v1.08
+pycparser v2.00
 ===============
 
 :Author: `Eli Bendersky <http://eli.thegreenplace.net>`_
@@ -36,18 +36,14 @@ Anything that needs C code to be parsed. The following are some uses for ``pycpa
 Which version of C does pycparser support?
 ------------------------------------------
 
-At the moment, ``pycparser`` supports ANSI/ISO C89, the language described by Kernighan and Ritchie in "The C Programming language, 2nd edition" (K&R2), with only selected extensions from C99. The currently supported C99 features are:
-
-* Allowing a comma after the last value in an enumeration list
-
-Additionally, since ``pycparser`` lets you use your own C preprocessor (``cpp``), C99 features implemented in the preprocessor (such as variadic macros or ``//`` comments) can be supported in a manner transparent to ``pycparser``.
+``pycparser`` aims to support the full C99 language (according to the standard ISO/IEC 9899). This is a new feature in the version 2.x series - earlier versions only supported C89. For more information on the change, read `this wiki page <http://code.google.com/p/pycparser/wiki/C99support>`_.
 
 ``pycparser`` doesn't support any GCC extensions.
 
 What grammar does pycparser follow?
 -----------------------------------
 
-``pycparser`` very closely follows the ANSI C grammar provided in the end of K&R2. Listings of this grammar (often in Yacc syntax) can be easily found by a simple web search. Google for `ansi c grammar` to get started.
+``pycparser`` very closely follows the C grammar provided in the end of the C99 standard document
 
 
 What is an AST?
@@ -99,7 +95,7 @@ On the vast majority of Linux systems, ``cpp`` is installed and is in the PATH. 
 What about the standard C library headers?
 ------------------------------------------
 
-C code almost always includes various header files from the standard C library, like ``stdio.h``. While, with some effort, ``pycparser`` can be made to parse the standard headers from any C compiler, it's much simpler to use the provided "fake" standard in includes in ``utils/fake_libc_include``. These are standard C header files that contain only the bare necessities to allow valid compilation of the files that use them. As a bonus, since they're minimal, it can significantly improve the performance of parsing C files.
+C code almost always includes various header files from the standard C library, like ``stdio.h``. While, with some effort, ``pycparser`` can be made to parse the standard headers from any C compiler, it's much simpler to use the provided "fake" standard in includes in ``utils/fake_libc_include``. These are standard C header files that contain only the bare necessities to allow valid parsing of the files that use them. As a bonus, since they're minimal, it can significantly improve the performance of parsing C files.
 
 See the ``using_cpp_libc.py`` example for more details.
 
@@ -162,65 +158,58 @@ Some people have contributed to ``pycparser`` by opening issues on bugs they've 
 Changelog
 =========
 
-Version 1.08 (09.10.2010)
--------------------------
++ Version 2.00 (31.10.2010)
 
-* Bug fixes:
+  * Support for C99 (read `this wiki page <http://code.google.com/p/pycparser/wiki/C99support>`_ for more information).
 
-  + Correct handling of ``do{} ... while`` statements in some cases
-  + Issues 6 & 7: Concatenation of string literals
-  + Issue 9: Support for unnamed bitfields in structs
++ Version 1.08 (09.10.2010)
 
-Version 1.07 (18.05.2010)
--------------------------
+  * Bug fixes:
 
-* Python 3.1 compatibility: ``pycparser`` was modified to run on Python 3.1 as well as 2.6
+    + Correct handling of ``do{} ... while`` statements in some cases
+    + Issues 6 & 7: Concatenation of string literals
+    + Issue 9: Support for unnamed bitfields in structs
 
++ Version 1.07 (18.05.2010)
 
-Version 1.06 (10.04.2010)
--------------------------
+  * Python 3.1 compatibility: ``pycparser`` was modified to run on Python 3.1 as well as 2.6
 
-* Bug fixes: 
++ Version 1.06 (10.04.2010)
 
-  + coord not propagated to FuncCall nodes
-  + lexing of the ^= token (XOREQUALS)
-  + parsing failed on some abstract declarator rules
+  * Bug fixes: 
 
-* Linux compatibility: fixed end-of-line and ``cpp`` path issues to allow all tests and examples run on Linux
+    + coord not propagated to FuncCall nodes
+    + lexing of the ^= token (XOREQUALS)
+    + parsing failed on some abstract declarator rules
 
-
-Version 1.05 (16.10.2009)
--------------------------
-
-* Fixed the ``parse_file`` auxiliary function to handle multiple arguments to ``cpp`` correctly
-
-Version 1.04 (22.05.2009)
--------------------------
-
-* Added the ``fake_libc_include`` directory to allow parsing of C code that uses standard C library include files without dependency on a real C library.
-* Tested with Python 2.6 and PLY 3.2
+  * Linux compatibility: fixed end-of-line and ``cpp`` path issues to allow all tests and examples run on Linux
 
 
-Version 1.03 (31.01.2009)
--------------------------
++ Version 1.05 (16.10.2009)
 
-* Accept enumeration lists with a comma after the last item (C99 feature).
+  * Fixed the ``parse_file`` auxiliary function to handle multiple arguments to ``cpp`` correctly
 
-Version 1.02 (16.01.2009)
--------------------------
++ Version 1.04 (22.05.2009)
 
-* Fixed problem of parsing struct/enum/union names that were named similarly to previously defined ``typedef`` types. 
+  * Added the ``fake_libc_include`` directory to allow parsing of C code that uses standard C library include files without dependency on a real C library.
+  * Tested with Python 2.6 and PLY 3.2
 
-Version 1.01 (09.01.2009)
--------------------------
++ Version 1.03 (31.01.2009)
 
-* Fixed subprocess invocation in the helper function parse_file - now it's more portable
+  * Accept enumeration lists with a comma after the last item (C99 feature).
 
-Version 1.0 (15.11.2008)
-------------------------
++ Version 1.02 (16.01.2009)
 
-* Initial release
-* Support for ANSI C89
+  * Fixed problem of parsing struct/enum/union names that were named similarly to previously defined ``typedef`` types. 
+
++ Version 1.01 (09.01.2009)
+
+  * Fixed subprocess invocation in the helper function parse_file - now it's more portable
+
++ Version 1.0 (15.11.2008)
+
+  * Initial release
+  * Support for ANSI C89
 
 
 

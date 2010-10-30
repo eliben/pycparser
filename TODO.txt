@@ -10,8 +10,8 @@ V- new keywords restrict, inline
 V- mix declarations and statements inside a block
 V- VLAs (non-constants in arr[n]), including [*] for parameter lists
 V- declarations in the first expression of "for" loops
-- named initializers for structs and arrays
-  - including unnamed objects 
+V- named initializers for structs and arrays
+  V- including unnamed objects 
 
 * Make the changelog in the readme a normal bullet list
 

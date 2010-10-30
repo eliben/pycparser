@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
-<title>pycparser v1.08</title>
+<title>pycparser v2.00</title>
 <meta name="author" content="Eli Bendersky" />
 <style type="text/css">
 
@@ -305,8 +305,8 @@ ul.auto-toc {
 </style>
 </head>
 <body>
-<div class="document" id="pycparser-v1-08">
-<h1 class="title">pycparser v1.08</h1>
+<div class="document" id="pycparser-v2-00">
+<h1 class="title">pycparser v2.00</h1>
 <table class="docinfo" frame="void" rules="none">
 <col class="docinfo-name" />
 <col class="docinfo-content" />
@@ -318,43 +318,32 @@ ul.auto-toc {
 <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="auto-toc simple">
-<li><a class="reference internal" href="#introduction" id="id1">1&nbsp;&nbsp;&nbsp;Introduction</a><ul class="auto-toc">
-<li><a class="reference internal" href="#what-is-pycparser" id="id2">1.1&nbsp;&nbsp;&nbsp;What is pycparser?</a></li>
-<li><a class="reference internal" href="#what-is-it-good-for" id="id3">1.2&nbsp;&nbsp;&nbsp;What is it good for?</a></li>
-<li><a class="reference internal" href="#which-version-of-c-does-pycparser-support" id="id4">1.3&nbsp;&nbsp;&nbsp;Which version of C does pycparser support?</a></li>
-<li><a class="reference internal" href="#what-grammar-does-pycparser-follow" id="id5">1.4&nbsp;&nbsp;&nbsp;What grammar does pycparser follow?</a></li>
-<li><a class="reference internal" href="#what-is-an-ast" id="id6">1.5&nbsp;&nbsp;&nbsp;What is an AST?</a></li>
-<li><a class="reference internal" href="#how-is-pycparser-licensed" id="id7">1.6&nbsp;&nbsp;&nbsp;How is pycparser licensed?</a></li>
-<li><a class="reference internal" href="#contact-details" id="id8">1.7&nbsp;&nbsp;&nbsp;Contact details</a></li>
+<li><a class="reference internal" href="#introduction" id="id2">1&nbsp;&nbsp;&nbsp;Introduction</a><ul class="auto-toc">
+<li><a class="reference internal" href="#what-is-pycparser" id="id3">1.1&nbsp;&nbsp;&nbsp;What is pycparser?</a></li>
+<li><a class="reference internal" href="#what-is-it-good-for" id="id4">1.2&nbsp;&nbsp;&nbsp;What is it good for?</a></li>
+<li><a class="reference internal" href="#which-version-of-c-does-pycparser-support" id="id5">1.3&nbsp;&nbsp;&nbsp;Which version of C does pycparser support?</a></li>
+<li><a class="reference internal" href="#what-grammar-does-pycparser-follow" id="id6">1.4&nbsp;&nbsp;&nbsp;What grammar does pycparser follow?</a></li>
+<li><a class="reference internal" href="#what-is-an-ast" id="id7">1.5&nbsp;&nbsp;&nbsp;What is an AST?</a></li>
+<li><a class="reference internal" href="#how-is-pycparser-licensed" id="id8">1.6&nbsp;&nbsp;&nbsp;How is pycparser licensed?</a></li>
+<li><a class="reference internal" href="#contact-details" id="id9">1.7&nbsp;&nbsp;&nbsp;Contact details</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#installing" id="id9">2&nbsp;&nbsp;&nbsp;Installing</a><ul class="auto-toc">
-<li><a class="reference internal" href="#prerequisites" id="id10">2.1&nbsp;&nbsp;&nbsp;Prerequisites</a></li>
-<li><a class="reference internal" href="#installation-process" id="id11">2.2&nbsp;&nbsp;&nbsp;Installation process</a></li>
+<li><a class="reference internal" href="#installing" id="id10">2&nbsp;&nbsp;&nbsp;Installing</a><ul class="auto-toc">
+<li><a class="reference internal" href="#prerequisites" id="id11">2.1&nbsp;&nbsp;&nbsp;Prerequisites</a></li>
+<li><a class="reference internal" href="#installation-process" id="id12">2.2&nbsp;&nbsp;&nbsp;Installation process</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#using" id="id12">3&nbsp;&nbsp;&nbsp;Using</a><ul class="auto-toc">
-<li><a class="reference internal" href="#interaction-with-the-c-preprocessor" id="id13">3.1&nbsp;&nbsp;&nbsp;Interaction with the C preprocessor</a></li>
-<li><a class="reference internal" href="#what-about-the-standard-c-library-headers" id="id14">3.2&nbsp;&nbsp;&nbsp;What about the standard C library headers?</a></li>
-<li><a class="reference internal" href="#basic-usage" id="id15">3.3&nbsp;&nbsp;&nbsp;Basic usage</a></li>
-<li><a class="reference internal" href="#advanced-usage" id="id16">3.4&nbsp;&nbsp;&nbsp;Advanced usage</a></li>
+<li><a class="reference internal" href="#using" id="id13">3&nbsp;&nbsp;&nbsp;Using</a><ul class="auto-toc">
+<li><a class="reference internal" href="#interaction-with-the-c-preprocessor" id="id14">3.1&nbsp;&nbsp;&nbsp;Interaction with the C preprocessor</a></li>
+<li><a class="reference internal" href="#what-about-the-standard-c-library-headers" id="id15">3.2&nbsp;&nbsp;&nbsp;What about the standard C library headers?</a></li>
+<li><a class="reference internal" href="#basic-usage" id="id16">3.3&nbsp;&nbsp;&nbsp;Basic usage</a></li>
+<li><a class="reference internal" href="#advanced-usage" id="id17">3.4&nbsp;&nbsp;&nbsp;Advanced usage</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#modifying" id="id17">4&nbsp;&nbsp;&nbsp;Modifying</a></li>
-<li><a class="reference internal" href="#package-contents" id="id18">5&nbsp;&nbsp;&nbsp;Package contents</a></li>
-<li><a class="reference internal" href="#contributors" id="id19">6&nbsp;&nbsp;&nbsp;Contributors</a></li>
-<li><a class="reference internal" href="#changelog" id="id20">7&nbsp;&nbsp;&nbsp;Changelog</a><ul class="auto-toc">
-<li><a class="reference internal" href="#version-1-08-09-10-2010" id="id21">7.1&nbsp;&nbsp;&nbsp;Version 1.08 (09.10.2010)</a></li>
-<li><a class="reference internal" href="#version-1-07-18-05-2010" id="id22">7.2&nbsp;&nbsp;&nbsp;Version 1.07 (18.05.2010)</a></li>
-<li><a class="reference internal" href="#version-1-06-10-04-2010" id="id23">7.3&nbsp;&nbsp;&nbsp;Version 1.06 (10.04.2010)</a></li>
-<li><a class="reference internal" href="#version-1-05-16-10-2009" id="id24">7.4&nbsp;&nbsp;&nbsp;Version 1.05 (16.10.2009)</a></li>
-<li><a class="reference internal" href="#version-1-04-22-05-2009" id="id25">7.5&nbsp;&nbsp;&nbsp;Version 1.04 (22.05.2009)</a></li>
-<li><a class="reference internal" href="#version-1-03-31-01-2009" id="id26">7.6&nbsp;&nbsp;&nbsp;Version 1.03 (31.01.2009)</a></li>
-<li><a class="reference internal" href="#version-1-02-16-01-2009" id="id27">7.7&nbsp;&nbsp;&nbsp;Version 1.02 (16.01.2009)</a></li>
-<li><a class="reference internal" href="#version-1-01-09-01-2009" id="id28">7.8&nbsp;&nbsp;&nbsp;Version 1.01 (09.01.2009)</a></li>
-<li><a class="reference internal" href="#version-1-0-15-11-2008" id="id29">7.9&nbsp;&nbsp;&nbsp;Version 1.0 (15.11.2008)</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#modifying" id="id18">4&nbsp;&nbsp;&nbsp;Modifying</a></li>
+<li><a class="reference internal" href="#package-contents" id="id19">5&nbsp;&nbsp;&nbsp;Package contents</a></li>
+<li><a class="reference internal" href="#contributors" id="id20">6&nbsp;&nbsp;&nbsp;Contributors</a></li>
+<li><a class="reference internal" href="#changelog" id="id21">7&nbsp;&nbsp;&nbsp;Changelog</a></li>
 </ul>
 </div>
 <div class="section" id="introduction">
@@ -377,16 +366,12 @@ ul.auto-toc {
 </div>
 <div class="section" id="which-version-of-c-does-pycparser-support">
 <h2>1.3&nbsp;&nbsp;&nbsp;Which version of C does pycparser support?</h2>
-<p>At the moment, <tt class="docutils literal"><span class="pre">pycparser</span></tt> supports ANSI/ISO C89, the language described by Kernighan and Ritchie in &quot;The C Programming language, 2nd edition&quot; (K&amp;R2), with only selected extensions from C99. The currently supported C99 features are:</p>
-<ul class="simple">
-<li>Allowing a comma after the last value in an enumeration list</li>
-</ul>
-<p>Additionally, since <tt class="docutils literal"><span class="pre">pycparser</span></tt> lets you use your own C preprocessor (<tt class="docutils literal"><span class="pre">cpp</span></tt>), C99 features implemented in the preprocessor (such as variadic macros or <tt class="docutils literal"><span class="pre">//</span></tt> comments) can be supported in a manner transparent to <tt class="docutils literal"><span class="pre">pycparser</span></tt>.</p>
+<p><tt class="docutils literal"><span class="pre">pycparser</span></tt> aims to support the full C99 language (according to the standard ISO/IEC 9899). This is a new feature in the version 2.x series - earlier versions only supported C89. For more information on the change, read <a class="reference external" href="http://code.google.com/p/pycparser/wiki/C99support">this wiki page</a>.</p>
 <p><tt class="docutils literal"><span class="pre">pycparser</span></tt> doesn't support any GCC extensions.</p>
 </div>
 <div class="section" id="what-grammar-does-pycparser-follow">
 <h2>1.4&nbsp;&nbsp;&nbsp;What grammar does pycparser follow?</h2>
-<p><tt class="docutils literal"><span class="pre">pycparser</span></tt> very closely follows the ANSI C grammar provided in the end of K&amp;R2. Listings of this grammar (often in Yacc syntax) can be easily found by a simple web search. Google for <cite>ansi c grammar</cite> to get started.</p>
+<p><tt class="docutils literal"><span class="pre">pycparser</span></tt> very closely follows the C grammar provided in the end of the C99 standard document</p>
 </div>
 <div class="section" id="what-is-an-ast">
 <h2>1.5&nbsp;&nbsp;&nbsp;What is an AST?</h2>
@@ -427,7 +412,7 @@ ul.auto-toc {
 </div>
 <div class="section" id="what-about-the-standard-c-library-headers">
 <h2>3.2&nbsp;&nbsp;&nbsp;What about the standard C library headers?</h2>
-<p>C code almost always includes various header files from the standard C library, like <tt class="docutils literal"><span class="pre">stdio.h</span></tt>. While, with some effort, <tt class="docutils literal"><span class="pre">pycparser</span></tt> can be made to parse the standard headers from any C compiler, it's much simpler to use the provided &quot;fake&quot; standard in includes in <tt class="docutils literal"><span class="pre">utils/fake_libc_include</span></tt>. These are standard C header files that contain only the bare necessities to allow valid compilation of the files that use them. As a bonus, since they're minimal, it can significantly improve the performance of parsing C files.</p>
+<p>C code almost always includes various header files from the standard C library, like <tt class="docutils literal"><span class="pre">stdio.h</span></tt>. While, with some effort, <tt class="docutils literal"><span class="pre">pycparser</span></tt> can be made to parse the standard headers from any C compiler, it's much simpler to use the provided &quot;fake&quot; standard in includes in <tt class="docutils literal"><span class="pre">utils/fake_libc_include</span></tt>. These are standard C header files that contain only the bare necessities to allow valid parsing of the files that use them. As a bonus, since they're minimal, it can significantly improve the performance of parsing C files.</p>
 <p>See the <tt class="docutils literal"><span class="pre">using_cpp_libc.py</span></tt> example for more details.</p>
 </div>
 <div class="section" id="basic-usage">
@@ -477,9 +462,12 @@ ul.auto-toc {
 </div>
 <div class="section" id="changelog">
 <h1>7&nbsp;&nbsp;&nbsp;Changelog</h1>
-<div class="section" id="version-1-08-09-10-2010">
-<h2>7.1&nbsp;&nbsp;&nbsp;Version 1.08 (09.10.2010)</h2>
 <ul class="simple">
+<li>Version 2.00 (31.10.2010)<ul>
+<li>Support for C99 (read <a class="reference external" href="http://code.google.com/p/pycparser/wiki/C99support">this wiki page</a> for more information).</li>
+</ul>
+</li>
+<li>Version 1.08 (09.10.2010)<ul>
 <li>Bug fixes:<ul>
 <li>Correct handling of <tt class="docutils literal"><span class="pre">do{}</span> <span class="pre">...</span> <span class="pre">while</span></tt> statements in some cases</li>
 <li>Issues 6 &amp; 7: Concatenation of string literals</li>
@@ -487,16 +475,12 @@ ul.auto-toc {
 </ul>
 </li>
 </ul>
-</div>
-<div class="section" id="version-1-07-18-05-2010">
-<h2>7.2&nbsp;&nbsp;&nbsp;Version 1.07 (18.05.2010)</h2>
-<ul class="simple">
+</li>
+<li>Version 1.07 (18.05.2010)<ul>
 <li>Python 3.1 compatibility: <tt class="docutils literal"><span class="pre">pycparser</span></tt> was modified to run on Python 3.1 as well as 2.6</li>
 </ul>
-</div>
-<div class="section" id="version-1-06-10-04-2010">
-<h2>7.3&nbsp;&nbsp;&nbsp;Version 1.06 (10.04.2010)</h2>
-<ul class="simple">
+</li>
+<li>Version 1.06 (10.04.2010)<ul>
 <li>Bug fixes:<ul>
 <li>coord not propagated to FuncCall nodes</li>
 <li>lexing of the ^= token (XOREQUALS)</li>
@@ -505,45 +489,34 @@ ul.auto-toc {
 </li>
 <li>Linux compatibility: fixed end-of-line and <tt class="docutils literal"><span class="pre">cpp</span></tt> path issues to allow all tests and examples run on Linux</li>
 </ul>
-</div>
-<div class="section" id="version-1-05-16-10-2009">
-<h2>7.4&nbsp;&nbsp;&nbsp;Version 1.05 (16.10.2009)</h2>
-<ul class="simple">
+</li>
+<li>Version 1.05 (16.10.2009)<ul>
 <li>Fixed the <tt class="docutils literal"><span class="pre">parse_file</span></tt> auxiliary function to handle multiple arguments to <tt class="docutils literal"><span class="pre">cpp</span></tt> correctly</li>
 </ul>
-</div>
-<div class="section" id="version-1-04-22-05-2009">
-<h2>7.5&nbsp;&nbsp;&nbsp;Version 1.04 (22.05.2009)</h2>
-<ul class="simple">
+</li>
+<li>Version 1.04 (22.05.2009)<ul>
 <li>Added the <tt class="docutils literal"><span class="pre">fake_libc_include</span></tt> directory to allow parsing of C code that uses standard C library include files without dependency on a real C library.</li>
 <li>Tested with Python 2.6 and PLY 3.2</li>
 </ul>
-</div>
-<div class="section" id="version-1-03-31-01-2009">
-<h2>7.6&nbsp;&nbsp;&nbsp;Version 1.03 (31.01.2009)</h2>
-<ul class="simple">
+</li>
+<li>Version 1.03 (31.01.2009)<ul>
 <li>Accept enumeration lists with a comma after the last item (C99 feature).</li>
 </ul>
-</div>
-<div class="section" id="version-1-02-16-01-2009">
-<h2>7.7&nbsp;&nbsp;&nbsp;Version 1.02 (16.01.2009)</h2>
-<ul class="simple">
+</li>
+<li>Version 1.02 (16.01.2009)<ul>
 <li>Fixed problem of parsing struct/enum/union names that were named similarly to previously defined <tt class="docutils literal"><span class="pre">typedef</span></tt> types.</li>
 </ul>
-</div>
-<div class="section" id="version-1-01-09-01-2009">
-<h2>7.8&nbsp;&nbsp;&nbsp;Version 1.01 (09.01.2009)</h2>
-<ul class="simple">
+</li>
+<li>Version 1.01 (09.01.2009)<ul>
 <li>Fixed subprocess invocation in the helper function parse_file - now it's more portable</li>
 </ul>
-</div>
-<div class="section" id="version-1-0-15-11-2008">
-<h2>7.9&nbsp;&nbsp;&nbsp;Version 1.0 (15.11.2008)</h2>
-<ul class="simple">
+</li>
+<li>Version 1.0 (15.11.2008)<ul>
 <li>Initial release</li>
 <li>Support for ANSI C89</li>
 </ul>
-</div>
+</li>
+</ul>
 </div>
 </div>
 </body>
