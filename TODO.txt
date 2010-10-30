@@ -5,12 +5,14 @@ Pycparser 2: the idea is to "mostly" support C99
 
 Implement:
 
+- long long: including literal endings LL in lexer
 V- new keywords restrict, inline
-- mix declarations and statements inside a block
+V- mix declarations and statements inside a block
 V- VLAs (non-constants in arr[n]), including [*] for parameter lists
 V- declarations in the first expression of "for" loops
 - named initializers for structs and arrays
 
+* Make the changelog in the readme a normal bullet list
 
 Fixes since last:
 ------------------

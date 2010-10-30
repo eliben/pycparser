@@ -55,6 +55,8 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes('12', ['INT_CONST_DEC'])
         self.assertTokensTypes('12u', ['INT_CONST_DEC'])
         self.assertTokensTypes('199872Ul', ['INT_CONST_DEC'])
+        self.assertTokensTypes('199872LL', ['INT_CONST_DEC'])
+        self.assertTokensTypes('199872ull', ['INT_CONST_DEC'])
         
         self.assertTokensTypes('077', ['INT_CONST_OCT'])
         self.assertTokensTypes('0123456L', ['INT_CONST_OCT'])

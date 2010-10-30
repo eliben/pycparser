@@ -549,6 +549,7 @@ class CParser(PLYParser):
                             | CHAR
                             | SHORT
                             | INT
+                            | LONG LONG
                             | LONG
                             | FLOAT
                             | DOUBLE
@@ -558,7 +559,9 @@ class CParser(PLYParser):
                             | enum_specifier
                             | struct_or_union_specifier
         """
-        p[0] = p[1]
+        # The join is currently aimed only at the 'long long' type
+        #
+        p[0] = ' '.join(p[1:]) if len(p) > 2 else p[1]
     
     def p_type_qualifier(self, p):
         """ type_qualifier  : CONST

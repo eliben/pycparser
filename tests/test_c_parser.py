@@ -194,6 +194,11 @@ class TestCParser_fundamentals(unittest.TestCase):
             ['Decl', 'ar', 
                 ['ArrayDecl', '15', 
                     ['TypeDecl', ['IdentifierType', ['long']]]]])
+
+        self.assertEqual(self.get_decl('long long ar[15];'), 
+            ['Decl', 'ar', 
+                ['ArrayDecl', '15', 
+                    ['TypeDecl', ['IdentifierType', ['long long']]]]])
         
         self.assertEqual(self.get_decl('unsigned ar[];'), 
             ['Decl', 'ar', 
