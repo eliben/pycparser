@@ -37,7 +37,7 @@ Compound: [block_items**]
 
 # Compound literal (anonymous aggregate) for C99.
 # (type-name) {initializer_list}
-# type: the type decl
+# type: the typename
 # init: ExprList for the initializer list
 #
 CompoundLiteral: [type*, init*]

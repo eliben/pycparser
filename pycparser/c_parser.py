@@ -1239,7 +1239,8 @@ class CParser(PLYParser):
         p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
 
     def p_postfix_expression_6(self, p):
-        """ postfix_expression  : LPAREN type_name RPAREN LBRACE initializer_list LBRACE
+        """ postfix_expression  : LPAREN type_name RPAREN LBRACE initializer_list RBRACE
+                                | LPAREN type_name RPAREN LBRACE initializer_list COMMA RBRACE
         """
         p[0] = c_ast.CompoundLiteral(p[2], p[5])
 

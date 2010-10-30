@@ -376,14 +376,28 @@ class TestCParser_fundamentals(unittest.TestCase):
                         ['TypeDecl', 
                             ['IdentifierType', ['int']]]]]])
     
+    # The C99 compound literal feature
+    #
     def test_compound_literals(self):
-        s1 = r'''
+        ps1 = self.parse(r'''
             void foo() {
-                int p = (int []){.kwa = 4};
-            }'''
+                p = (long long){k};
+                tc = (struct jk){.a = {1, 2}, .b[0] = t};
+            }''')
         
-        self.parse(s1).show()
-
+        compound = ps1.ext[0].body.block_items[0].rvalue
+        self.assertEqual(expand_decl(compound.type),
+            ['Typename', ['TypeDecl', ['IdentifierType', ['long', 'long']]]])
+        self.assertEqual(expand_init(compound.init),
+            [['ID', 'k']])
+        
+        compound = ps1.ext[0].body.block_items[1].rvalue  
+        self.assertEqual(expand_decl(compound.type),
+            ['Typename', ['TypeDecl', ['Struct', 'jk', []]]])
+        self.assertEqual(expand_init(compound.init),
+            [
+                ([['ID', 'a']], [['Constant', 'int', '1'], ['Constant', 'int', '2']]), 
+                ([['ID', 'b'], ['Constant', 'int', '0']], ['ID', 't'])])
         
     def test_enums(self):
         e1 = "enum mycolor op;"
