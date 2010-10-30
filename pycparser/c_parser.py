@@ -79,6 +79,7 @@ class CParser(PLYParser):
             'assignment_expression',
             'declaration_list',
             'declaration_specifiers',
+            'designation',
             'expression',
             'identifier_list',
             'init_declarator_list',
@@ -549,7 +550,6 @@ class CParser(PLYParser):
                             | CHAR
                             | SHORT
                             | INT
-                            | LONG LONG
                             | LONG
                             | FLOAT
                             | DOUBLE
@@ -559,9 +559,7 @@ class CParser(PLYParser):
                             | enum_specifier
                             | struct_or_union_specifier
         """
-        # The join is currently aimed only at the 'long long' type
-        #
-        p[0] = ' '.join(p[1:]) if len(p) > 2 else p[1]
+        p[0] = p[1]
     
     def p_type_qualifier(self, p):
         """ type_qualifier  : CONST
@@ -576,7 +574,7 @@ class CParser(PLYParser):
         """
         p[0] = p[1] + [p[3]] if len(p) == 4 else [p[1]]
 
-    # Returns a (declarator, intializer) pair
+    # Returns a (declarator, initializer) pair
     # If there's no initializer, returns (declarator, None)
     #
     def p_init_declarator(self, p):
@@ -855,7 +853,6 @@ class CParser(PLYParser):
             type=p[2] or c_ast.TypeDecl(None, None, None))
             
         typename = spec['type'] or ['int']
-        
         p[0] = self._fix_decl_name_type(decl, typename)        
     
     def p_identifier_list(self, p):
@@ -880,15 +877,37 @@ class CParser(PLYParser):
         p[0] = p[2]
 
     def p_initializer_list(self, p):
-        """ initializer_list    : initializer
-                                | initializer_list COMMA initializer
+        """ initializer_list    : designation_opt initializer
+                                | initializer_list COMMA designation_opt initializer
         """
-        if len(p) == 2: # single initializer
-            p[0] = c_ast.ExprList([p[1]], p[1].coord)
+        if len(p) == 3: # single initializer
+            init = p[2] if p[1] is None else c_ast.NamedInitializer(p[1], p[2])
+            p[0] = c_ast.ExprList([init], p[2].coord)
         else:
-            p[1].exprs.append(p[3])
+            init = p[4] if p[3] is None else c_ast.NamedInitializer(p[3], p[4])
+            p[1].exprs.append(init)
             p[0] = p[1]
-        
+    
+    def p_designation(self, p):
+        """ designation : designator_list EQUALS
+        """
+        p[0] = p[1]
+    
+    # Designators are represented as a list of nodes, in the order in which
+    # they're written in the code.
+    #
+    def p_designator_list(self, p):
+        """ designator_list : designator
+                            | designator_list designator
+        """
+        p[0] = [p[1]] if len(p) == 2 else p[1] + [p[2]]
+    
+    def p_designator(self, p):
+        """ designator  : LBRACKET constant_expression RBRACKET
+                        | PERIOD identifier
+        """
+        p[0] = p[2]
+    
     def p_type_name(self, p):
         """ type_name   : specifier_qualifier_list abstract_declarator_opt 
         """
@@ -1218,6 +1237,11 @@ class CParser(PLYParser):
                                 | postfix_expression MINUSMINUS
         """
         p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
+
+    def p_postfix_expression_6(self, p):
+        """ postfix_expression  : LPAREN type_name RPAREN LBRACE initializer_list LBRACE
+        """
+        p[0] = c_ast.CompoundLiteral(p[2], p[5])
 
     def p_primary_expression_1(self, p):
         """ primary_expression  : identifier """

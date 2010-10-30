@@ -5,7 +5,7 @@
 # compiling them into .pyc for faster execution in optimized mode.
 # Also generates AST code from the _c_ast.yaml configuration file.
 #
-# Copyright (C) 2008, Eli Bendersky
+# Copyright (C) 2008-2010, Eli Bendersky
 # License: LGPL
 #-----------------------------------------------------------------
 

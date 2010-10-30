@@ -9,7 +9,7 @@
 #   <name>**    - a sequence of child nodes
 #   <name>      - an attribute
 #
-# Copyright (C) 2008-2009, Eli Bendersky
+# Copyright (C) 2008-2010, Eli Bendersky
 # License: LGPL
 #-----------------------------------------------------------------
 
@@ -34,6 +34,13 @@ Cast: [to_type*, expr*]
 # statements).
 #
 Compound: [block_items**]
+
+# Compound literal (anonymous aggregate) for C99.
+# (type-name) {initializer_list}
+# type: the type decl
+# init: ExprList for the initializer list
+#
+CompoundLiteral: [type*, init*]
 
 # type: int, char, float, etc. see CLexer for constant token types
 #
@@ -119,6 +126,10 @@ IdentifierType: [names]
 If: [cond*, iftrue*, iffalse*]
 
 Label: [name, stmt*]
+
+# A named initializer for C99
+#
+NamedInitializer: [name, expr*]
 
 # a list of comma separated function parameter declarations
 #

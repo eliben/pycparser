@@ -156,21 +156,25 @@ class Struct(Node):
             c.show(buf, offset + 2, attrnames, showcoord)
 
 
-class FuncCall(Node):
-    def __init__(self, name, args, coord=None):
-        self.name = name
-        self.args = args
+class For(Node):
+    def __init__(self, init, cond, next, stmt, coord=None):
+        self.init = init
+        self.cond = cond
+        self.next = next
+        self.stmt = stmt
         self.coord = coord
 
     def children(self):
         nodelist = []
-        if self.name is not None: nodelist.append(self.name)
-        if self.args is not None: nodelist.append(self.args)
+        if self.init is not None: nodelist.append(self.init)
+        if self.cond is not None: nodelist.append(self.cond)
+        if self.next is not None: nodelist.append(self.next)
+        if self.stmt is not None: nodelist.append(self.stmt)
         return tuple(nodelist)
 
     def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
         lead = ' ' * offset
-        buf.write(lead + 'FuncCall: ')
+        buf.write(lead + 'For: ')
 
         if showcoord:
             buf.write(' (at %s)' % self.coord)
@@ -229,6 +233,30 @@ class Union(Node):
         else:
             attrstr = ', '.join('%s' % v for v in [self.name])
         buf.write(attrstr)
+
+        if showcoord:
+            buf.write(' (at %s)' % self.coord)
+        buf.write('\n')
+
+        for c in self.children():
+            c.show(buf, offset + 2, attrnames, showcoord)
+
+
+class CompoundLiteral(Node):
+    def __init__(self, type, init, coord=None):
+        self.type = type
+        self.init = init
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.type is not None: nodelist.append(self.type)
+        if self.init is not None: nodelist.append(self.init)
+        return tuple(nodelist)
+
+    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
+        lead = ' ' * offset
+        buf.write(lead + 'CompoundLiteral: ')
 
         if showcoord:
             buf.write(' (at %s)' % self.coord)
@@ -397,25 +425,21 @@ class Enumerator(Node):
             c.show(buf, offset + 2, attrnames, showcoord)
 
 
-class For(Node):
-    def __init__(self, init, cond, next, stmt, coord=None):
-        self.init = init
-        self.cond = cond
-        self.next = next
-        self.stmt = stmt
+class FuncCall(Node):
+    def __init__(self, name, args, coord=None):
+        self.name = name
+        self.args = args
         self.coord = coord
 
     def children(self):
         nodelist = []
-        if self.init is not None: nodelist.append(self.init)
-        if self.cond is not None: nodelist.append(self.cond)
-        if self.next is not None: nodelist.append(self.next)
-        if self.stmt is not None: nodelist.append(self.stmt)
+        if self.name is not None: nodelist.append(self.name)
+        if self.args is not None: nodelist.append(self.args)
         return tuple(nodelist)
 
     def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
         lead = ' ' * offset
-        buf.write(lead + 'For: ')
+        buf.write(lead + 'FuncCall: ')
 
         if showcoord:
             buf.write(' (at %s)' % self.coord)
@@ -1106,6 +1130,35 @@ class While(Node):
     def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
         lead = ' ' * offset
         buf.write(lead + 'While: ')
+
+        if showcoord:
+            buf.write(' (at %s)' % self.coord)
+        buf.write('\n')
+
+        for c in self.children():
+            c.show(buf, offset + 2, attrnames, showcoord)
+
+
+class NamedInitializer(Node):
+    def __init__(self, name, expr, coord=None):
+        self.name = name
+        self.expr = expr
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.expr is not None: nodelist.append(self.expr)
+        return tuple(nodelist)
+
+    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
+        lead = ' ' * offset
+        buf.write(lead + 'NamedInitializer: ')
+
+        if attrnames:
+            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name))])
+        else:
+            attrstr = ', '.join('%s' % v for v in [self.name])
+        buf.write(attrstr)
 
         if showcoord:
             buf.write(' (at %s)' % self.coord)

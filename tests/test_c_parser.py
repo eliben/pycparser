@@ -66,12 +66,15 @@ def expand_init(init):
     """
     typ = type(init)
     
-    if typ == Constant:
+    if typ == NamedInitializer:
+        des = [expand_init(dp) for dp in init.name]
+        return (des, expand_init(init.expr))
+    elif typ == ExprList:
+        return [expand_init(expr) for expr in init.exprs]
+    elif typ == Constant:
         return ['Constant', init.type, init.value]
     elif typ == ID:
         return ['ID', init.name]
-    elif typ == ExprList:
-        return [expand_init(expr) for expr in init.exprs]
 
 
 class TestCParser_fundamentals(unittest.TestCase):
@@ -198,7 +201,7 @@ class TestCParser_fundamentals(unittest.TestCase):
         self.assertEqual(self.get_decl('long long ar[15];'), 
             ['Decl', 'ar', 
                 ['ArrayDecl', '15', 
-                    ['TypeDecl', ['IdentifierType', ['long long']]]]])
+                    ['TypeDecl', ['IdentifierType', ['long', 'long']]]]])
         
         self.assertEqual(self.get_decl('unsigned ar[];'), 
             ['Decl', 'ar', 
@@ -373,6 +376,15 @@ class TestCParser_fundamentals(unittest.TestCase):
                         ['TypeDecl', 
                             ['IdentifierType', ['int']]]]]])
     
+    def test_compound_literals(self):
+        s1 = r'''
+            void foo() {
+                int p = (int []){.kwa = 4};
+            }'''
+        
+        self.parse(s1).show()
+
+        
     def test_enums(self):
         e1 = "enum mycolor op;"
         e1_type = self.parse(e1).ext[0].type.type
@@ -738,12 +750,14 @@ class TestCParser_fundamentals(unittest.TestCase):
     
     def test_decl_inits(self):
         d1 = 'int a = 16;'
+        #~ self.parse(d1).show()
         self.assertEqual(self.get_decl(d1),
             ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['int']]]])
         self.assertEqual(self.get_decl_init(d1),
             ['Constant', 'int', '16'])
         
         d2 = 'long ar[] = {7, 8, 9};'
+        #~ self.parse(d2).show()
         self.assertEqual(self.get_decl(d2),
             ['Decl', 'ar', 
                 ['ArrayDecl', '',
@@ -751,7 +765,7 @@ class TestCParser_fundamentals(unittest.TestCase):
         self.assertEqual(self.get_decl_init(d2),
             [   ['Constant', 'int', '7'],
                 ['Constant', 'int', '8'],
-                ['Constant', 'int', '9'],])
+                ['Constant', 'int', '9']])
         
         d3 = 'char p = j;'
         self.assertEqual(self.get_decl(d3),
@@ -768,13 +782,36 @@ class TestCParser_fundamentals(unittest.TestCase):
             ['Decl', 'p', 
                 ['PtrDecl',
                     ['TypeDecl', ['IdentifierType', ['char']]]]])
+        
         self.assertEqual(self.get_decl_init(d4, 1),
             [   ['Constant', 'int', '0'], 
                 ['Constant', 'int', '1'], 
                 ['Constant', 'int', '2'], 
-                [   ['Constant', 'int', '4'], 
-                    ['Constant', 'int', '5']], 
+                [['Constant', 'int', '4'], 
+                 ['Constant', 'int', '5']], 
                 ['Constant', 'int', '6']])
+        
+    def test_decl_named_inits(self):
+        d1 = 'int a = {.k = 16};'
+        self.assertEqual(self.get_decl_init(d1),
+            [(   [['ID', 'k']],
+                 ['Constant', 'int', '16'])])
+
+        d2 = 'int a = { [0].a = {1}, [1].a[0] = 2 };'
+        self.assertEqual(self.get_decl_init(d2),
+            [
+                ([['Constant', 'int', '0'], ['ID', 'a']], 
+                    [['Constant', 'int', '1']]), 
+                ([['Constant', 'int', '1'], ['ID', 'a'], ['Constant', 'int', '0']], 
+                    ['Constant', 'int', '2'])])
+
+        d3 = 'int a = { .a = 1, .c = 3, 4, .b = 5};'
+        self.assertEqual(self.get_decl_init(d3),
+            [
+                ([['ID', 'a']], ['Constant', 'int', '1']), 
+                ([['ID', 'c']], ['Constant', 'int', '3']), 
+                ['Constant', 'int', '4'], 
+                ([['ID', 'b']], ['Constant', 'int', '5'])])
 
     def test_function_definitions(self):
         def parse_fdef(str):
