@@ -1,19 +1,6 @@
 Todo
 ----
 
-Pycparser 2: the idea is to "mostly" support C99
-
-Implement:
-
-V- long long: including literal endings LL in lexer
-V- new keywords restrict, inline
-V- mix declarations and statements inside a block
-V- VLAs (non-constants in arr[n]), including [*] for parameter lists
-V- declarations in the first expression of "for" loops
-V- named initializers for structs and arrays
-  V- including unnamed objects 
-
-* Make the changelog in the readme a normal bullet list
 
 Fixes since last:
 ------------------
@@ -24,6 +11,7 @@ Version Update
 --------------
 
 setup.py, __init__.py, README.txt
+- Tag in hg
 
 
 Build docs and distribution

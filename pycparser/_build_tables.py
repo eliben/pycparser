@@ -15,7 +15,7 @@ from _ast_gen import ASTCodeGenerator
 ast_gen = ASTCodeGenerator('_c_ast.yaml')
 ast_gen.generate(open('c_ast.py', 'w'))
 
-import c_parser
+from pycparser import c_parser
 
 # Generates the tables
 #

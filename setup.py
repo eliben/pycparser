@@ -21,6 +21,7 @@ setup(
     platforms='Cross Platform',
     
     packages=['pycparser'],
+    package_data={'pycparser': ['*.yaml']},
 )
 
     
