@@ -28,7 +28,6 @@ import sys
 sys.path.insert(0, '..')
 
 from pycparser import c_parser, c_ast
-from pycparser.portability import printme
 
 
 def explain_c_declaration(c_decl):
@@ -104,5 +103,6 @@ if __name__ == "__main__":
     else:
         c_decl = "char *(*(**foo[][8])())[];"
 
-    printme(["Explaining the declaration:", c_decl])
-    printme(["\n", explain_c_declaration(c_decl)])
+    print("Explaining the declaration: " + c_decl + "\n")
+    print(explain_c_declaration(c_decl) + "\n") 
+

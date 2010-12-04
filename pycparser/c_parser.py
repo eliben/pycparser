@@ -6,7 +6,6 @@
 # Copyright (C) 2008-2010, Eli Bendersky
 # License: LGPL
 #-----------------------------------------------------------------
-
 import re
 
 import ply.yacc

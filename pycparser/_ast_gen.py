@@ -10,24 +10,17 @@
 # Copyright (C) 2008-2010, Eli Bendersky
 # License: LGPL
 #-----------------------------------------------------------------
-
 import pprint
 from string import Template
 
-import yaml
-
 
 class ASTCodeGenerator(object):
-    def __init__(self, cfg_filename='_c_ast.yaml'):
+    def __init__(self, cfg_filename='_c_ast.cfg'):
         """ Initialize the code generator from a configuration
             file.
         """
         self.cfg_filename = cfg_filename
-        cfg = yaml.load(open(cfg_filename).read())
-        self.node_cfg = [NodeCfg(name, cfg[name]) for name in cfg]
-
-        #~ pprint.pprint(self.node_cfg)
-        #~ print ''
+        self.node_cfg = [NodeCfg(name, contents) for (name, contents) in self.parse_cfgfile(cfg_filename)]
 
     def generate(self, file=None):
         """ Generates the code into file, an open file buffer.
@@ -41,15 +34,41 @@ class ASTCodeGenerator(object):
         
         file.write(src)
 
+    def parse_cfgfile(self, filename):
+        """ Parse the configuration file and yield pairs of
+            (name, contents) for each node.
+        """
+        with open(filename, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                colon_i = line.find(':')
+                lbracket_i = line.find('[')
+                rbracket_i = line.find(']')
+                if colon_i < 1 or lbracket_i <= colon_i or rbracket_i <= lbracket_i:
+                    raise RuntimeError("Invalid line in %s:\n%s\n" % (filename, line))
+
+                name = line[:colon_i]
+                val = line[lbracket_i + 1:rbracket_i]
+                vallist = [v.strip() for v in val.split(',')] if val else []
+                yield name, vallist
+
 
 class NodeCfg(object):
+    """ Node configuration. 
+
+        name: node name
+        contents: a list of contents - attributes and child nodes 
+        See comment at the top of the configuration file for details.
+    """
     def __init__(self, name, contents):
         self.name = name
         self.all_entries = []
         self.attr = []
         self.child = []
         self.seq_child = []
-        
+
         for entry in contents:
             clean_entry = entry.rstrip('*')
             self.all_entries.append(clean_entry)
@@ -148,7 +167,7 @@ r'''#-----------------------------------------------------------------
 #
 # AST Node classes.
 #
-# Copyright (C) 2008, Eli Bendersky
+# Copyright (C) 2008-2010, Eli Bendersky
 # License: LGPL
 #-----------------------------------------------------------------
 
@@ -238,12 +257,8 @@ class NodeVisitor(object):
 '''
 
 
-
 if __name__ == "__main__":
     import sys
-    
-    ast_gen = ASTCodeGenerator('_c_ast.yaml')
+    ast_gen = ASTCodeGenerator('_c_ast.cfg')
     ast_gen.generate(open('c_ast.py', 'w'))
-    
-    
-    
+

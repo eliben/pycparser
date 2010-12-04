@@ -3,7 +3,8 @@
 #
 # A dummy for generating the lexing/parsing tables and and 
 # compiling them into .pyc for faster execution in optimized mode.
-# Also generates AST code from the _c_ast.yaml configuration file.
+# Also generates AST code from the configuration file.
+# Should be called from the installation directory.
 #
 # Copyright (C) 2008-2010, Eli Bendersky
 # License: LGPL
@@ -12,7 +13,7 @@
 # Generate c_ast.py
 #
 from _ast_gen import ASTCodeGenerator
-ast_gen = ASTCodeGenerator('_c_ast.yaml')
+ast_gen = ASTCodeGenerator('_c_ast.cfg')
 ast_gen.generate(open('c_ast.py', 'w'))
 
 from pycparser import c_parser

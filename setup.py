@@ -13,7 +13,7 @@ setup(
         C compilers or analysis tools.
     """,
     license='LGPL',
-    version='2.00',
+    version='2.01',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',
@@ -21,7 +21,7 @@ setup(
     platforms='Cross Platform',
     
     packages=['pycparser'],
-    package_data={'pycparser': ['*.yaml']},
+    package_data={'pycparser': ['*.cfg']},
 )
 
     
