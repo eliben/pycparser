@@ -860,17 +860,12 @@ class NamedInitializer(Node):
     def children(self):
         nodelist = []
         if self.expr is not None: nodelist.append(self.expr)
+        if self.name is not None: nodelist.extend(self.name)
         return tuple(nodelist)
 
     def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
         lead = ' ' * offset
         buf.write(lead + 'NamedInitializer: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.name])
-        buf.write(attrstr)
 
         if showcoord:
             buf.write(' (at %s)' % self.coord)

@@ -49,6 +49,9 @@ if __name__ == "__main__":
     source_code = """
     int main()
     {
+        const union blahunion tt = {
+            .joe = {0, 1},
+            .boo.bar[2] = 4};
         p++;
         int a;
     }
