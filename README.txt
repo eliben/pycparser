@@ -1,5 +1,5 @@
 ===============
-pycparser v2.01
+pycparser v2.02
 ===============
 
 :Author: `Eli Bendersky <http://eli.thegreenplace.net>`_
@@ -78,6 +78,10 @@ Installing ``pycparser`` is very simple. Once you download it from its `website 
 
 It's recommended to run ``_build_tables.py`` in the ``pycparser`` code directory after installation to make sure the parsing tables of PLY are pre-generated. This can make your code run faster.
 
+Known problems
+--------------
+
+* Some users who've installed a new version of ``pycparser`` over an existing version ran into a problem using the newly installed library. This has to do with parse tables staying around as ``.pyc`` files from the older version. If you see unexplained errors from ``pycparser`` after an upgrade, remove it (by deleting the ``pycparser`` directory in your Python's ``site-packages``, or wherever you installed it) and install again.
 
 Using
 =====
@@ -155,6 +159,12 @@ Some people have contributed to ``pycparser`` by opening issues on bugs they've 
 
 Changelog
 =========
+
++ Version 2.02 (10.12.2010)
+
+  * The name of a ``NamedInitializer`` node was turned into a sequence of nodes 
+    instead of an attribute, to make it discoverable by the AST node visitor.  
+  * Documentation updates
 
 + Version 2.01 (04.12.2010)
 

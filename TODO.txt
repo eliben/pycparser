@@ -7,6 +7,7 @@ Fixes since last:
 
 * The name of a NamedInitializer node was turned into a sequence of nodes 
   instead of an attribute, to make it discoverable by the AST node visitor.
+* Documentation updates
 
 Version Update
 --------------

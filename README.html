@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
-<title>pycparser v2.01</title>
+<title>pycparser v2.02</title>
 <meta name="author" content="Eli Bendersky" />
 <style type="text/css">
 
@@ -305,8 +305,8 @@ ul.auto-toc {
 </style>
 </head>
 <body>
-<div class="document" id="pycparser-v2-01">
-<h1 class="title">pycparser v2.01</h1>
+<div class="document" id="pycparser-v2-02">
+<h1 class="title">pycparser v2.02</h1>
 <table class="docinfo" frame="void" rules="none">
 <col class="docinfo-name" />
 <col class="docinfo-content" />
@@ -331,30 +331,31 @@ ul.auto-toc {
 <li><a class="reference internal" href="#installing" id="id10">2&nbsp;&nbsp;&nbsp;Installing</a><ul class="auto-toc">
 <li><a class="reference internal" href="#prerequisites" id="id11">2.1&nbsp;&nbsp;&nbsp;Prerequisites</a></li>
 <li><a class="reference internal" href="#installation-process" id="id12">2.2&nbsp;&nbsp;&nbsp;Installation process</a></li>
+<li><a class="reference internal" href="#known-problems" id="id13">2.3&nbsp;&nbsp;&nbsp;Known problems</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#using" id="id13">3&nbsp;&nbsp;&nbsp;Using</a><ul class="auto-toc">
-<li><a class="reference internal" href="#interaction-with-the-c-preprocessor" id="id14">3.1&nbsp;&nbsp;&nbsp;Interaction with the C preprocessor</a></li>
-<li><a class="reference internal" href="#what-about-the-standard-c-library-headers" id="id15">3.2&nbsp;&nbsp;&nbsp;What about the standard C library headers?</a></li>
-<li><a class="reference internal" href="#basic-usage" id="id16">3.3&nbsp;&nbsp;&nbsp;Basic usage</a></li>
-<li><a class="reference internal" href="#advanced-usage" id="id17">3.4&nbsp;&nbsp;&nbsp;Advanced usage</a></li>
+<li><a class="reference internal" href="#using" id="id14">3&nbsp;&nbsp;&nbsp;Using</a><ul class="auto-toc">
+<li><a class="reference internal" href="#interaction-with-the-c-preprocessor" id="id15">3.1&nbsp;&nbsp;&nbsp;Interaction with the C preprocessor</a></li>
+<li><a class="reference internal" href="#what-about-the-standard-c-library-headers" id="id16">3.2&nbsp;&nbsp;&nbsp;What about the standard C library headers?</a></li>
+<li><a class="reference internal" href="#basic-usage" id="id17">3.3&nbsp;&nbsp;&nbsp;Basic usage</a></li>
+<li><a class="reference internal" href="#advanced-usage" id="id18">3.4&nbsp;&nbsp;&nbsp;Advanced usage</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#modifying" id="id18">4&nbsp;&nbsp;&nbsp;Modifying</a></li>
-<li><a class="reference internal" href="#package-contents" id="id19">5&nbsp;&nbsp;&nbsp;Package contents</a></li>
-<li><a class="reference internal" href="#contributors" id="id20">6&nbsp;&nbsp;&nbsp;Contributors</a></li>
-<li><a class="reference internal" href="#changelog" id="id21">7&nbsp;&nbsp;&nbsp;Changelog</a></li>
+<li><a class="reference internal" href="#modifying" id="id19">4&nbsp;&nbsp;&nbsp;Modifying</a></li>
+<li><a class="reference internal" href="#package-contents" id="id20">5&nbsp;&nbsp;&nbsp;Package contents</a></li>
+<li><a class="reference internal" href="#contributors" id="id21">6&nbsp;&nbsp;&nbsp;Contributors</a></li>
+<li><a class="reference internal" href="#changelog" id="id22">7&nbsp;&nbsp;&nbsp;Changelog</a></li>
 </ul>
 </div>
 <div class="section" id="introduction">
 <h1>1&nbsp;&nbsp;&nbsp;Introduction</h1>
 <div class="section" id="what-is-pycparser">
 <h2>1.1&nbsp;&nbsp;&nbsp;What is pycparser?</h2>
-<p><tt class="docutils literal">pycparser</tt> is a parser for the C language, written in pure Python. It is a module designed to be easily integrated into applications that need to parse C source code.</p>
+<p><tt class="docutils literal"><span class="pre">pycparser</span></tt> is a parser for the C language, written in pure Python. It is a module designed to be easily integrated into applications that need to parse C source code.</p>
 </div>
 <div class="section" id="what-is-it-good-for">
 <h2>1.2&nbsp;&nbsp;&nbsp;What is it good for?</h2>
-<p>Anything that needs C code to be parsed. The following are some uses for <tt class="docutils literal">pycparser</tt>, taken from real user reports:</p>
+<p>Anything that needs C code to be parsed. The following are some uses for <tt class="docutils literal"><span class="pre">pycparser</span></tt>, taken from real user reports:</p>
 <ul class="simple">
 <li>C code obfuscator</li>
 <li>Front-end for various specialized C compilers</li>
@@ -362,16 +363,16 @@ ul.auto-toc {
 <li>Automatic unit-test discovery</li>
 <li>Adding specialized extensions to the C language</li>
 </ul>
-<p><tt class="docutils literal">pycparser</tt> is unique in the sense that it's written in pure Python - a very high level language that's easy to experiment with and tweak. To people familiar with Lex and Yacc, <tt class="docutils literal">pycparser</tt>'s code will be simple to understand.</p>
+<p><tt class="docutils literal"><span class="pre">pycparser</span></tt> is unique in the sense that it's written in pure Python - a very high level language that's easy to experiment with and tweak. To people familiar with Lex and Yacc, <tt class="docutils literal"><span class="pre">pycparser</span></tt>'s code will be simple to understand.</p>
 </div>
 <div class="section" id="which-version-of-c-does-pycparser-support">
 <h2>1.3&nbsp;&nbsp;&nbsp;Which version of C does pycparser support?</h2>
-<p><tt class="docutils literal">pycparser</tt> aims to support the full C99 language (according to the standard ISO/IEC 9899). This is a new feature in the version 2.x series - earlier versions only supported C89. For more information on the change, read <a class="reference external" href="http://code.google.com/p/pycparser/wiki/C99support">this wiki page</a>.</p>
-<p><tt class="docutils literal">pycparser</tt> doesn't support any GCC extensions.</p>
+<p><tt class="docutils literal"><span class="pre">pycparser</span></tt> aims to support the full C99 language (according to the standard ISO/IEC 9899). This is a new feature in the version 2.x series - earlier versions only supported C89. For more information on the change, read <a class="reference external" href="http://code.google.com/p/pycparser/wiki/C99support">this wiki page</a>.</p>
+<p><tt class="docutils literal"><span class="pre">pycparser</span></tt> doesn't support any GCC extensions.</p>
 </div>
 <div class="section" id="what-grammar-does-pycparser-follow">
 <h2>1.4&nbsp;&nbsp;&nbsp;What grammar does pycparser follow?</h2>
-<p><tt class="docutils literal">pycparser</tt> very closely follows the C grammar provided in the end of the C99 standard document</p>
+<p><tt class="docutils literal"><span class="pre">pycparser</span></tt> very closely follows the C grammar provided in the end of the C99 standard document</p>
 </div>
 <div class="section" id="what-is-an-ast">
 <h2>1.5&nbsp;&nbsp;&nbsp;What is an AST?</h2>
@@ -383,7 +384,7 @@ ul.auto-toc {
 </div>
 <div class="section" id="contact-details">
 <h2>1.7&nbsp;&nbsp;&nbsp;Contact details</h2>
-<p>Drop me an email to <a class="reference external" href="mailto:eliben&#64;gmail.com">eliben&#64;gmail.com</a> for any questions regarding <tt class="docutils literal">pycparser</tt>. For reporting problems with <tt class="docutils literal">pycparser</tt> or submitting feature requests, the best way is to open an issue on the <a class="reference external" href="http://code.google.com/p/pycparser/">pycparser page at Google Code</a>.</p>
+<p>Drop me an email to <a class="reference external" href="mailto:eliben&#64;gmail.com">eliben&#64;gmail.com</a> for any questions regarding <tt class="docutils literal"><span class="pre">pycparser</span></tt>. For reporting problems with <tt class="docutils literal"><span class="pre">pycparser</span></tt> or submitting feature requests, the best way is to open an issue on the <a class="reference external" href="http://code.google.com/p/pycparser/">pycparser page at Google Code</a>.</p>
 </div>
 </div>
 <div class="section" id="installing">
@@ -391,59 +392,65 @@ ul.auto-toc {
 <div class="section" id="prerequisites">
 <h2>2.1&nbsp;&nbsp;&nbsp;Prerequisites</h2>
 <ul class="simple">
-<li><tt class="docutils literal">pycparser</tt> was tested on Python 2.5, 2.6 and 3.1, on both Linux and Windows</li>
-<li><tt class="docutils literal">pycparser</tt> uses the PLY module for the actual lexer and parser construction. Install PLY version 3.3 (earlier versions work at least since 2.5) from <a class="reference external" href="http://www.dabeaz.com/ply/">its website</a>.</li>
+<li><tt class="docutils literal"><span class="pre">pycparser</span></tt> was tested on Python 2.5, 2.6 and 3.1, on both Linux and Windows</li>
+<li><tt class="docutils literal"><span class="pre">pycparser</span></tt> uses the PLY module for the actual lexer and parser construction. Install PLY version 3.3 (earlier versions work at least since 2.5) from <a class="reference external" href="http://www.dabeaz.com/ply/">its website</a>.</li>
 </ul>
 </div>
 <div class="section" id="installation-process">
 <h2>2.2&nbsp;&nbsp;&nbsp;Installation process</h2>
-<p>Installing <tt class="docutils literal">pycparser</tt> is very simple. Once you download it from its <a class="reference external" href="http://code.google.com/p/pycparser/">website</a> and unzip the package, you just have to execute the standard <tt class="docutils literal">python setup.py install</tt>. The setup script will then place the <tt class="docutils literal">pycparser</tt> module into <tt class="docutils literal"><span class="pre">site-packages</span></tt> in your Python's installation library.</p>
-<p>It's recommended to run <tt class="docutils literal">_build_tables.py</tt> in the <tt class="docutils literal">pycparser</tt> code directory after installation to make sure the parsing tables of PLY are pre-generated. This can make your code run faster.</p>
+<p>Installing <tt class="docutils literal"><span class="pre">pycparser</span></tt> is very simple. Once you download it from its <a class="reference external" href="http://code.google.com/p/pycparser/">website</a> and unzip the package, you just have to execute the standard <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></tt>. The setup script will then place the <tt class="docutils literal"><span class="pre">pycparser</span></tt> module into <tt class="docutils literal"><span class="pre">site-packages</span></tt> in your Python's installation library.</p>
+<p>It's recommended to run <tt class="docutils literal"><span class="pre">_build_tables.py</span></tt> in the <tt class="docutils literal"><span class="pre">pycparser</span></tt> code directory after installation to make sure the parsing tables of PLY are pre-generated. This can make your code run faster.</p>
+</div>
+<div class="section" id="known-problems">
+<h2>2.3&nbsp;&nbsp;&nbsp;Known problems</h2>
+<ul class="simple">
+<li>Some users who've installed a new version of <tt class="docutils literal"><span class="pre">pycparser</span></tt> over an existing version ran into a problem using the newly installed library. This has to do with parse tables staying around as <tt class="docutils literal"><span class="pre">.pyc</span></tt> files from the older version. If you see unexplained errors from <tt class="docutils literal"><span class="pre">pycparser</span></tt> after an upgrade, remove it (by deleting the <tt class="docutils literal"><span class="pre">pycparser</span></tt> directory in your Python's <tt class="docutils literal"><span class="pre">site-packages</span></tt>, or wherever you installed it) and install again.</li>
+</ul>
 </div>
 </div>
 <div class="section" id="using">
 <h1>3&nbsp;&nbsp;&nbsp;Using</h1>
 <div class="section" id="interaction-with-the-c-preprocessor">
 <h2>3.1&nbsp;&nbsp;&nbsp;Interaction with the C preprocessor</h2>
-<p>In order to be compilable, C code must be preprocessed by the C preprocessor - <tt class="docutils literal">cpp</tt>. <tt class="docutils literal">cpp</tt> handles preprocessing directives like <tt class="docutils literal">#include</tt> and <tt class="docutils literal">#define</tt>, removes comments, and does other minor tasks that prepare the C code for compilation.</p>
-<p>For all but the most trivial snippets of C code, <tt class="docutils literal">pycparser</tt>, like a C compiler, must receive preprocessed C code in order to function correctly. If you import the top-level <tt class="docutils literal">parse_file</tt> function from the <tt class="docutils literal">pycparser</tt> package, it will interact with <tt class="docutils literal">cpp</tt> for you, as long as it's in your PATH, or you provide a path to it.</p>
-<p>On the vast majority of Linux systems, <tt class="docutils literal">cpp</tt> is installed and is in the PATH. If you're on Windows and don't have <tt class="docutils literal">cpp</tt> somewhere, you can use the one provided in the <tt class="docutils literal">utils</tt> directory in <tt class="docutils literal">pycparser</tt>'s distribution. This <tt class="docutils literal">cpp</tt> executable was compiled from the <a class="reference external" href="http://www.cs.princeton.edu/software/lcc/">LCC distribution</a>, and is provided under LCC's license terms.</p>
+<p>In order to be compilable, C code must be preprocessed by the C preprocessor - <tt class="docutils literal"><span class="pre">cpp</span></tt>. <tt class="docutils literal"><span class="pre">cpp</span></tt> handles preprocessing directives like <tt class="docutils literal"><span class="pre">#include</span></tt> and <tt class="docutils literal"><span class="pre">#define</span></tt>, removes comments, and does other minor tasks that prepare the C code for compilation.</p>
+<p>For all but the most trivial snippets of C code, <tt class="docutils literal"><span class="pre">pycparser</span></tt>, like a C compiler, must receive preprocessed C code in order to function correctly. If you import the top-level <tt class="docutils literal"><span class="pre">parse_file</span></tt> function from the <tt class="docutils literal"><span class="pre">pycparser</span></tt> package, it will interact with <tt class="docutils literal"><span class="pre">cpp</span></tt> for you, as long as it's in your PATH, or you provide a path to it.</p>
+<p>On the vast majority of Linux systems, <tt class="docutils literal"><span class="pre">cpp</span></tt> is installed and is in the PATH. If you're on Windows and don't have <tt class="docutils literal"><span class="pre">cpp</span></tt> somewhere, you can use the one provided in the <tt class="docutils literal"><span class="pre">utils</span></tt> directory in <tt class="docutils literal"><span class="pre">pycparser</span></tt>'s distribution. This <tt class="docutils literal"><span class="pre">cpp</span></tt> executable was compiled from the <a class="reference external" href="http://www.cs.princeton.edu/software/lcc/">LCC distribution</a>, and is provided under LCC's license terms.</p>
 </div>
 <div class="section" id="what-about-the-standard-c-library-headers">
 <h2>3.2&nbsp;&nbsp;&nbsp;What about the standard C library headers?</h2>
-<p>C code almost always includes various header files from the standard C library, like <tt class="docutils literal">stdio.h</tt>. While, with some effort, <tt class="docutils literal">pycparser</tt> can be made to parse the standard headers from any C compiler, it's much simpler to use the provided &quot;fake&quot; standard in includes in <tt class="docutils literal">utils/fake_libc_include</tt>. These are standard C header files that contain only the bare necessities to allow valid parsing of the files that use them. As a bonus, since they're minimal, it can significantly improve the performance of parsing C files.</p>
-<p>See the <tt class="docutils literal">using_cpp_libc.py</tt> example for more details.</p>
+<p>C code almost always includes various header files from the standard C library, like <tt class="docutils literal"><span class="pre">stdio.h</span></tt>. While, with some effort, <tt class="docutils literal"><span class="pre">pycparser</span></tt> can be made to parse the standard headers from any C compiler, it's much simpler to use the provided &quot;fake&quot; standard in includes in <tt class="docutils literal"><span class="pre">utils/fake_libc_include</span></tt>. These are standard C header files that contain only the bare necessities to allow valid parsing of the files that use them. As a bonus, since they're minimal, it can significantly improve the performance of parsing C files.</p>
+<p>See the <tt class="docutils literal"><span class="pre">using_cpp_libc.py</span></tt> example for more details.</p>
 </div>
 <div class="section" id="basic-usage">
 <h2>3.3&nbsp;&nbsp;&nbsp;Basic usage</h2>
-<p>Take a look at the <tt class="docutils literal">examples</tt> directory of the distribution for a few examples of using <tt class="docutils literal">pycparser</tt>. These should be enough to get you started.</p>
+<p>Take a look at the <tt class="docutils literal"><span class="pre">examples</span></tt> directory of the distribution for a few examples of using <tt class="docutils literal"><span class="pre">pycparser</span></tt>. These should be enough to get you started.</p>
 </div>
 <div class="section" id="advanced-usage">
 <h2>3.4&nbsp;&nbsp;&nbsp;Advanced usage</h2>
-<p>The public interface of <tt class="docutils literal">pycparser</tt> is well documented with comments in <tt class="docutils literal">pycparser/c_parser.py</tt>. For a detailed overview of the various AST nodes created by the parser, see <tt class="docutils literal">pycparser/_c_ast.cfg</tt>.</p>
+<p>The public interface of <tt class="docutils literal"><span class="pre">pycparser</span></tt> is well documented with comments in <tt class="docutils literal"><span class="pre">pycparser/c_parser.py</span></tt>. For a detailed overview of the various AST nodes created by the parser, see <tt class="docutils literal"><span class="pre">pycparser/_c_ast.cfg</span></tt>.</p>
 <p>In any case, you can always drop me an <a class="reference external" href="mailto:eliben&#64;gmail.com">email</a> for help.</p>
 </div>
 </div>
 <div class="section" id="modifying">
 <h1>4&nbsp;&nbsp;&nbsp;Modifying</h1>
-<p>There are a few points to keep in mind when modifying <tt class="docutils literal">pycparser</tt>:</p>
+<p>There are a few points to keep in mind when modifying <tt class="docutils literal"><span class="pre">pycparser</span></tt>:</p>
 <ul class="simple">
-<li>The code for <tt class="docutils literal">pycparser</tt>'s AST nodes is automatically generated from a configuration file - <tt class="docutils literal">_c_ast.cfg</tt>, by <tt class="docutils literal">_ast_gen.py</tt>. If you modify the AST configuration, make sure to re-generate the code.</li>
-<li>Make sure you understand the optimized mode of <tt class="docutils literal">pycparser</tt> - for that you must read the docstring in the constructor of the <tt class="docutils literal">CParser</tt> class. For development you should create the parser without optimizations, so that it will regenerate the Yacc and Lex tables when you change the grammar.</li>
+<li>The code for <tt class="docutils literal"><span class="pre">pycparser</span></tt>'s AST nodes is automatically generated from a configuration file - <tt class="docutils literal"><span class="pre">_c_ast.cfg</span></tt>, by <tt class="docutils literal"><span class="pre">_ast_gen.py</span></tt>. If you modify the AST configuration, make sure to re-generate the code.</li>
+<li>Make sure you understand the optimized mode of <tt class="docutils literal"><span class="pre">pycparser</span></tt> - for that you must read the docstring in the constructor of the <tt class="docutils literal"><span class="pre">CParser</span></tt> class. For development you should create the parser without optimizations, so that it will regenerate the Yacc and Lex tables when you change the grammar.</li>
 </ul>
 </div>
 <div class="section" id="package-contents">
 <h1>5&nbsp;&nbsp;&nbsp;Package contents</h1>
-<p>Once you unzip the <tt class="docutils literal">pycparser</tt> package, you'll see the following files and directories:</p>
+<p>Once you unzip the <tt class="docutils literal"><span class="pre">pycparser</span></tt> package, you'll see the following files and directories:</p>
 <dl class="docutils">
 <dt>README.txt/html:</dt>
 <dd>This README file.</dd>
 <dt>setup.py:</dt>
 <dd>Installation script</dd>
 <dt>examples/:</dt>
-<dd>A directory with some examples of using <tt class="docutils literal">pycparser</tt></dd>
+<dd>A directory with some examples of using <tt class="docutils literal"><span class="pre">pycparser</span></tt></dd>
 <dt>pycparser/:</dt>
-<dd>The <tt class="docutils literal">pycparser</tt> module source code.</dd>
+<dd>The <tt class="docutils literal"><span class="pre">pycparser</span></tt> module source code.</dd>
 <dt>tests/:</dt>
 <dd>Unit tests.</dd>
 <dt>utils/cpp.exe:</dt>
@@ -456,11 +463,17 @@ ul.auto-toc {
 </div>
 <div class="section" id="contributors">
 <h1>6&nbsp;&nbsp;&nbsp;Contributors</h1>
-<p>Some people have contributed to <tt class="docutils literal">pycparser</tt> by opening issues on bugs they've found and/or submitting patches. The list of contributors is at <a class="reference external" href="http://code.google.com/p/pycparser/wiki/Contributors">this pycparser Wiki page</a>.</p>
+<p>Some people have contributed to <tt class="docutils literal"><span class="pre">pycparser</span></tt> by opening issues on bugs they've found and/or submitting patches. The list of contributors is at <a class="reference external" href="http://code.google.com/p/pycparser/wiki/Contributors">this pycparser Wiki page</a>.</p>
 </div>
 <div class="section" id="changelog">
 <h1>7&nbsp;&nbsp;&nbsp;Changelog</h1>
 <ul class="simple">
+<li>Version 2.02 (10.12.2010)<ul>
+<li>The name of a <tt class="docutils literal"><span class="pre">NamedInitializer</span></tt> node was turned into a sequence of nodes
+instead of an attribute, to make it discoverable by the AST node visitor.</li>
+<li>Documentation updates</li>
+</ul>
+</li>
 <li>Version 2.01 (04.12.2010)<ul>
 <li>Removed dependency on YAML. Parsing of the AST node configuration file is done with a simple parser.</li>
 <li>Fixed issue 12: installation problems</li>
@@ -472,7 +485,7 @@ ul.auto-toc {
 </li>
 <li>Version 1.08 (09.10.2010)<ul>
 <li>Bug fixes:<ul>
-<li>Correct handling of <tt class="docutils literal">do{} ... while</tt> statements in some cases</li>
+<li>Correct handling of <tt class="docutils literal"><span class="pre">do{}</span> <span class="pre">...</span> <span class="pre">while</span></tt> statements in some cases</li>
 <li>Issues 6 &amp; 7: Concatenation of string literals</li>
 <li>Issue 9: Support for unnamed bitfields in structs</li>
 </ul>
@@ -480,7 +493,7 @@ ul.auto-toc {
 </ul>
 </li>
 <li>Version 1.07 (18.05.2010)<ul>
-<li>Python 3.1 compatibility: <tt class="docutils literal">pycparser</tt> was modified to run on Python 3.1 as well as 2.6</li>
+<li>Python 3.1 compatibility: <tt class="docutils literal"><span class="pre">pycparser</span></tt> was modified to run on Python 3.1 as well as 2.6</li>
 </ul>
 </li>
 <li>Version 1.06 (10.04.2010)<ul>
@@ -490,15 +503,15 @@ ul.auto-toc {
 <li>parsing failed on some abstract declarator rules</li>
 </ul>
 </li>
-<li>Linux compatibility: fixed end-of-line and <tt class="docutils literal">cpp</tt> path issues to allow all tests and examples run on Linux</li>
+<li>Linux compatibility: fixed end-of-line and <tt class="docutils literal"><span class="pre">cpp</span></tt> path issues to allow all tests and examples run on Linux</li>
 </ul>
 </li>
 <li>Version 1.05 (16.10.2009)<ul>
-<li>Fixed the <tt class="docutils literal">parse_file</tt> auxiliary function to handle multiple arguments to <tt class="docutils literal">cpp</tt> correctly</li>
+<li>Fixed the <tt class="docutils literal"><span class="pre">parse_file</span></tt> auxiliary function to handle multiple arguments to <tt class="docutils literal"><span class="pre">cpp</span></tt> correctly</li>
 </ul>
 </li>
 <li>Version 1.04 (22.05.2009)<ul>
-<li>Added the <tt class="docutils literal">fake_libc_include</tt> directory to allow parsing of C code that uses standard C library include files without dependency on a real C library.</li>
+<li>Added the <tt class="docutils literal"><span class="pre">fake_libc_include</span></tt> directory to allow parsing of C code that uses standard C library include files without dependency on a real C library.</li>
 <li>Tested with Python 2.6 and PLY 3.2</li>
 </ul>
 </li>
@@ -507,7 +520,7 @@ ul.auto-toc {
 </ul>
 </li>
 <li>Version 1.02 (16.01.2009)<ul>
-<li>Fixed problem of parsing struct/enum/union names that were named similarly to previously defined <tt class="docutils literal">typedef</tt> types.</li>
+<li>Fixed problem of parsing struct/enum/union names that were named similarly to previously defined <tt class="docutils literal"><span class="pre">typedef</span></tt> types.</li>
 </ul>
 </li>
 <li>Version 1.01 (09.01.2009)<ul>

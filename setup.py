@@ -13,7 +13,7 @@ setup(
         C compilers or analysis tools.
     """,
     license='LGPL',
-    version='2.01',
+    version='2.02',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',
