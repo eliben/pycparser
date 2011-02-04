@@ -110,16 +110,25 @@ class TestCParser_fundamentals(unittest.TestCase):
         self.failUnless(isinstance(t, FileAST))
         self.assertEqual(len(t.ext), 2)
 
-    """ Tests the "coordinates" of parsed elements - file 
-        name and line numbers, with modification insterted by
-        #line directives.
-    """
+    def test_empty_toplevel_decl(self):
+        code = 'int foo;;'
+        t = self.parse(code)
+        self.failUnless(isinstance(t, FileAST))
+        self.assertEqual(len(t.ext), 1)
+        self.assertEqual(self.get_decl(code),
+            ['Decl', 'foo', 
+                ['TypeDecl', ['IdentifierType', ['int']]]])
+
     def assert_coord(self, node, line, file=None):
         self.assertEqual(node.coord.line, line)
         if file:
             self.assertEqual(node.coord.file, file)
 
     def test_coords(self):
+        """ Tests the "coordinates" of parsed elements - file 
+            name and line numbers, with modification insterted by
+            #line directives.
+        """
         self.assert_coord(self.parse('int a;').ext[0], 1)
         
         t1 = """

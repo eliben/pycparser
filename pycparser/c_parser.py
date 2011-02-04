@@ -339,7 +339,8 @@ class CParser(PLYParser):
     def p_translation_unit_2(self, p):
         """ translation_unit    : translation_unit external_declaration
         """
-        p[1].ext.extend(p[2])
+        if p[2] is not None:
+            p[1].ext.extend(p[2])
         p[0] = p[1]
     
     # Declarations always come as lists (because they can be
@@ -361,6 +362,11 @@ class CParser(PLYParser):
         """ external_declaration    : pp_directive
         """
         p[0] = p[1]
+    
+    def p_external_declaration_4(self, p):
+        """ external_declaration    : SEMI
+        """
+        p[0] = None
 
     def p_pp_directive(self, p):
         """ pp_directive  : PPHASH 

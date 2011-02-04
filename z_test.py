@@ -1,5 +1,7 @@
+import sys
 from pycparser.c_ast import *
 from pycparser.c_parser import CParser, Coord, ParseError
+from pycparser.c_lexer import CLexer
 
 
 def expand_decl(decl):
@@ -57,6 +59,27 @@ if __name__ == "__main__":
     }
     """
 
+    source_code = """
+    int foo;;
+    
+    """
+
+    #--------------- Lexing 
+    #~ from pycparser.portability import printme
+    #~ def errfoo(msg, a, b):
+        #~ printme(msg)
+        #~ sys.exit()
+    #~ clex = CLexer(errfoo, lambda t: False)
+    #~ clex.build()
+    #~ clex.input(source_code)
+    
+    #~ while 1:
+        #~ tok = clex.token()
+        #~ if not tok: break
+            
+        #~ printme([tok.value, tok.type, tok.lineno, clex.filename, tok.lexpos])
+
+    #--------------- Parsing
     parser = CParser()
     ast = parser.parse(source_code)
 
