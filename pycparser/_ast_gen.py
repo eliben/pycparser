@@ -127,29 +127,7 @@ class NodeCfg(object):
         return src
 
     def _gen_show(self):
-        src = '    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):\n'
-        src += "        lead = ' ' * offset\n"
-        
-        src += "        buf.write(lead + '%s: ')\n\n" % self.name
-        
-        if self.attr:
-            src += "        if attrnames:\n"
-            src += "            attrstr = ', '.join('%s=%s' % nv for nv in ["
-            src += ', '.join('("%s", repr(%s))' % (nv, 'self.%s' % nv) for nv in self.attr)
-            src += '])\n'
-            src += "        else:\n"
-            src += "            attrstr = ', '.join('%s' % v for v in ["
-            src += ', '.join('self.%s' % v for v in self.attr)
-            src += '])\n'
-            src += "        buf.write(attrstr)\n\n"
-        
-        src += "        if showcoord:\n"
-        src += "            buf.write(' (at %s)' % self.coord)\n"
-        src += "        buf.write('\\n')\n\n"
-        
-        src += "        for c in self.children():\n"
-        src += "            c.show(buf, offset + 2, attrnames, showcoord)\n"
-        
+        src = "    attr_names = (" + ''.join("%r," % nm for nm in self.attr) + ')' 
         return src
 
 
@@ -203,7 +181,24 @@ class Node(object):
                 Do you want the coordinates of each Node to be
                 displayed.
         """
-        pass
+        lead = ' ' * offset
+        buf.write(lead + self.__class__.__name__+': ')
+
+        if self.attr_names:
+            if attrnames:
+                nvlist = [(n, getattr(self,n)) for n in self.attr_names]
+                attrstr = ', '.join('%s=%s' % nv for nv in nvlist)
+            else:
+                vlist = [getattr(self, n) for n in self.attr_names]
+                attrstr = ', '.join('%s' % v for v in vlist)
+            buf.write(attrstr)
+
+        if showcoord:
+            buf.write(' (at %s)' % self.coord)
+        buf.write('\n')
+
+        for c in self.children():
+            c.show(buf, offset + 2, attrnames, showcoord)
 
 
 class NodeVisitor(object):

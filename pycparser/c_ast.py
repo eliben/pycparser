@@ -45,7 +45,24 @@ class Node(object):
                 Do you want the coordinates of each Node to be
                 displayed.
         """
-        pass
+        lead = ' ' * offset
+        buf.write(lead + self.__class__.__name__+': ')
+
+        if self.attr_names:
+            if attrnames:
+                nvlist = [(n, getattr(self,n)) for n in self.attr_names]
+                attrstr = ', '.join('%s=%s' % nv for nv in nvlist)
+            else:
+                vlist = [getattr(self, n) for n in self.attr_names]
+                attrstr = ', '.join('%s' % v for v in vlist)
+            buf.write(attrstr)
+
+        if showcoord:
+            buf.write(' (at %s)' % self.coord)
+        buf.write('\n')
+
+        for c in self.children():
+            c.show(buf, offset + 2, attrnames, showcoord)
 
 
 class NodeVisitor(object):
@@ -108,17 +125,7 @@ class ArrayDecl(Node):
         if self.dim is not None: nodelist.append(self.dim)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'ArrayDecl: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class ArrayRef(Node):
     def __init__(self, name, subscript, coord=None):
@@ -132,17 +139,7 @@ class ArrayRef(Node):
         if self.subscript is not None: nodelist.append(self.subscript)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'ArrayRef: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class Assignment(Node):
     def __init__(self, op, lvalue, rvalue, coord=None):
@@ -157,23 +154,7 @@ class Assignment(Node):
         if self.rvalue is not None: nodelist.append(self.rvalue)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Assignment: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("op", repr(self.op))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.op])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('op',)
 
 class BinaryOp(Node):
     def __init__(self, op, left, right, coord=None):
@@ -188,23 +169,7 @@ class BinaryOp(Node):
         if self.right is not None: nodelist.append(self.right)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'BinaryOp: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("op", repr(self.op))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.op])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('op',)
 
 class Break(Node):
     def __init__(self, coord=None):
@@ -213,17 +178,7 @@ class Break(Node):
     def children(self):
         return ()
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Break: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class Case(Node):
     def __init__(self, expr, stmt, coord=None):
@@ -237,17 +192,7 @@ class Case(Node):
         if self.stmt is not None: nodelist.append(self.stmt)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Case: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class Cast(Node):
     def __init__(self, to_type, expr, coord=None):
@@ -261,17 +206,7 @@ class Cast(Node):
         if self.expr is not None: nodelist.append(self.expr)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Cast: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class Compound(Node):
     def __init__(self, block_items, coord=None):
@@ -283,17 +218,7 @@ class Compound(Node):
         if self.block_items is not None: nodelist.extend(self.block_items)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Compound: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class CompoundLiteral(Node):
     def __init__(self, type, init, coord=None):
@@ -307,17 +232,7 @@ class CompoundLiteral(Node):
         if self.init is not None: nodelist.append(self.init)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'CompoundLiteral: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class Constant(Node):
     def __init__(self, type, value, coord=None):
@@ -329,23 +244,7 @@ class Constant(Node):
         nodelist = []
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Constant: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("type", repr(self.type)), ("value", repr(self.value))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.type, self.value])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('type','value',)
 
 class Continue(Node):
     def __init__(self, coord=None):
@@ -354,17 +253,7 @@ class Continue(Node):
     def children(self):
         return ()
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Continue: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class Decl(Node):
     def __init__(self, name, quals, storage, funcspec, type, init, bitsize, coord=None):
@@ -384,23 +273,7 @@ class Decl(Node):
         if self.bitsize is not None: nodelist.append(self.bitsize)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Decl: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name)), ("quals", repr(self.quals)), ("storage", repr(self.storage)), ("funcspec", repr(self.funcspec))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.name, self.quals, self.storage, self.funcspec])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('name','quals','storage','funcspec',)
 
 class DeclList(Node):
     def __init__(self, decls, coord=None):
@@ -412,17 +285,7 @@ class DeclList(Node):
         if self.decls is not None: nodelist.extend(self.decls)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'DeclList: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class Default(Node):
     def __init__(self, stmt, coord=None):
@@ -434,17 +297,7 @@ class Default(Node):
         if self.stmt is not None: nodelist.append(self.stmt)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Default: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class DoWhile(Node):
     def __init__(self, cond, stmt, coord=None):
@@ -458,17 +311,7 @@ class DoWhile(Node):
         if self.stmt is not None: nodelist.append(self.stmt)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'DoWhile: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class EllipsisParam(Node):
     def __init__(self, coord=None):
@@ -477,17 +320,7 @@ class EllipsisParam(Node):
     def children(self):
         return ()
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'EllipsisParam: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class Enum(Node):
     def __init__(self, name, values, coord=None):
@@ -500,23 +333,7 @@ class Enum(Node):
         if self.values is not None: nodelist.append(self.values)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Enum: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.name])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('name',)
 
 class Enumerator(Node):
     def __init__(self, name, value, coord=None):
@@ -529,23 +346,7 @@ class Enumerator(Node):
         if self.value is not None: nodelist.append(self.value)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Enumerator: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.name])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('name',)
 
 class EnumeratorList(Node):
     def __init__(self, enumerators, coord=None):
@@ -557,17 +358,7 @@ class EnumeratorList(Node):
         if self.enumerators is not None: nodelist.extend(self.enumerators)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'EnumeratorList: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class ExprList(Node):
     def __init__(self, exprs, coord=None):
@@ -579,17 +370,7 @@ class ExprList(Node):
         if self.exprs is not None: nodelist.extend(self.exprs)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'ExprList: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class FileAST(Node):
     def __init__(self, ext, coord=None):
@@ -601,17 +382,7 @@ class FileAST(Node):
         if self.ext is not None: nodelist.extend(self.ext)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'FileAST: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class For(Node):
     def __init__(self, init, cond, next, stmt, coord=None):
@@ -629,17 +400,7 @@ class For(Node):
         if self.stmt is not None: nodelist.append(self.stmt)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'For: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class FuncCall(Node):
     def __init__(self, name, args, coord=None):
@@ -653,17 +414,7 @@ class FuncCall(Node):
         if self.args is not None: nodelist.append(self.args)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'FuncCall: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class FuncDecl(Node):
     def __init__(self, args, type, coord=None):
@@ -677,17 +428,7 @@ class FuncDecl(Node):
         if self.type is not None: nodelist.append(self.type)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'FuncDecl: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class FuncDef(Node):
     def __init__(self, decl, param_decls, body, coord=None):
@@ -703,17 +444,7 @@ class FuncDef(Node):
         if self.param_decls is not None: nodelist.extend(self.param_decls)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'FuncDef: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class Goto(Node):
     def __init__(self, name, coord=None):
@@ -724,23 +455,7 @@ class Goto(Node):
         nodelist = []
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Goto: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.name])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('name',)
 
 class ID(Node):
     def __init__(self, name, coord=None):
@@ -751,23 +466,7 @@ class ID(Node):
         nodelist = []
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'ID: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.name])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('name',)
 
 class IdentifierType(Node):
     def __init__(self, names, coord=None):
@@ -778,23 +477,7 @@ class IdentifierType(Node):
         nodelist = []
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'IdentifierType: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("names", repr(self.names))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.names])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('names',)
 
 class If(Node):
     def __init__(self, cond, iftrue, iffalse, coord=None):
@@ -810,17 +493,7 @@ class If(Node):
         if self.iffalse is not None: nodelist.append(self.iffalse)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'If: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class Label(Node):
     def __init__(self, name, stmt, coord=None):
@@ -833,23 +506,7 @@ class Label(Node):
         if self.stmt is not None: nodelist.append(self.stmt)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Label: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.name])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('name',)
 
 class NamedInitializer(Node):
     def __init__(self, name, expr, coord=None):
@@ -863,17 +520,7 @@ class NamedInitializer(Node):
         if self.name is not None: nodelist.extend(self.name)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'NamedInitializer: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class ParamList(Node):
     def __init__(self, params, coord=None):
@@ -885,17 +532,7 @@ class ParamList(Node):
         if self.params is not None: nodelist.extend(self.params)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'ParamList: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class PtrDecl(Node):
     def __init__(self, quals, type, coord=None):
@@ -908,23 +545,7 @@ class PtrDecl(Node):
         if self.type is not None: nodelist.append(self.type)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'PtrDecl: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("quals", repr(self.quals))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.quals])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('quals',)
 
 class Return(Node):
     def __init__(self, expr, coord=None):
@@ -936,17 +557,7 @@ class Return(Node):
         if self.expr is not None: nodelist.append(self.expr)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Return: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class Struct(Node):
     def __init__(self, name, decls, coord=None):
@@ -959,23 +570,7 @@ class Struct(Node):
         if self.decls is not None: nodelist.extend(self.decls)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Struct: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.name])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('name',)
 
 class StructRef(Node):
     def __init__(self, name, type, field, coord=None):
@@ -990,23 +585,7 @@ class StructRef(Node):
         if self.field is not None: nodelist.append(self.field)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'StructRef: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("type", repr(self.type))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.type])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('type',)
 
 class Switch(Node):
     def __init__(self, cond, stmt, coord=None):
@@ -1020,17 +599,7 @@ class Switch(Node):
         if self.stmt is not None: nodelist.append(self.stmt)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Switch: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class TernaryOp(Node):
     def __init__(self, cond, iftrue, iffalse, coord=None):
@@ -1046,17 +615,7 @@ class TernaryOp(Node):
         if self.iffalse is not None: nodelist.append(self.iffalse)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'TernaryOp: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
 class TypeDecl(Node):
     def __init__(self, declname, quals, type, coord=None):
@@ -1070,23 +629,7 @@ class TypeDecl(Node):
         if self.type is not None: nodelist.append(self.type)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'TypeDecl: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("declname", repr(self.declname)), ("quals", repr(self.quals))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.declname, self.quals])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('declname','quals',)
 
 class Typedef(Node):
     def __init__(self, name, quals, storage, type, coord=None):
@@ -1101,23 +644,7 @@ class Typedef(Node):
         if self.type is not None: nodelist.append(self.type)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Typedef: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name)), ("quals", repr(self.quals)), ("storage", repr(self.storage))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.name, self.quals, self.storage])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('name','quals','storage',)
 
 class Typename(Node):
     def __init__(self, quals, type, coord=None):
@@ -1130,23 +657,7 @@ class Typename(Node):
         if self.type is not None: nodelist.append(self.type)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Typename: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("quals", repr(self.quals))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.quals])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('quals',)
 
 class UnaryOp(Node):
     def __init__(self, op, expr, coord=None):
@@ -1159,23 +670,7 @@ class UnaryOp(Node):
         if self.expr is not None: nodelist.append(self.expr)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'UnaryOp: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("op", repr(self.op))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.op])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('op',)
 
 class Union(Node):
     def __init__(self, name, decls, coord=None):
@@ -1188,23 +683,7 @@ class Union(Node):
         if self.decls is not None: nodelist.extend(self.decls)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'Union: ')
-
-        if attrnames:
-            attrstr = ', '.join('%s=%s' % nv for nv in [("name", repr(self.name))])
-        else:
-            attrstr = ', '.join('%s' % v for v in [self.name])
-        buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ('name',)
 
 class While(Node):
     def __init__(self, cond, stmt, coord=None):
@@ -1218,15 +697,5 @@ class While(Node):
         if self.stmt is not None: nodelist.append(self.stmt)
         return tuple(nodelist)
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
-        lead = ' ' * offset
-        buf.write(lead + 'While: ')
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
-
+    attr_names = ()
 
