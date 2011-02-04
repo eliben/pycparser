@@ -425,7 +425,7 @@ class CParser(PLYParser):
         spec = p[1]
         is_typedef = 'typedef' in spec['storage']
         decls = []
-
+        
         # p[2] (init_declarator_list_opt) is either a list or None
         #
         if p[2] is None:
@@ -1024,7 +1024,8 @@ class CParser(PLYParser):
         """ block_item_list : block_item 
                             | block_item_list block_item
         """
-        p[0] = p[1] if len(p) == 2 else p[1] + p[2]
+        # Empty block items (plain ';') produce [None], so ignore them
+        p[0] = p[1] if (len(p) == 2 or p[2] == [None]) else p[1] + p[2]
     
     def p_compound_statement_1(self, p):
         """ compound_statement : LBRACE block_item_list_opt RBRACE """

@@ -359,7 +359,7 @@ class TestCParser_fundamentals(unittest.TestCase):
             {
                 int a = sizeof k;
                 int b = sizeof(int);
-                int c = sizeof(int**);
+                int c = sizeof(int**);;
                 
                 char* p = "just to make sure this parses w/o error...";
                 int d = sizeof(int());

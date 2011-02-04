@@ -60,8 +60,10 @@ if __name__ == "__main__":
     """
 
     source_code = """
-    int foo;;
-    
+    int main() {
+        int foo, bar;;;
+        float sdf;
+    }
     """
 
     #--------------- Lexing 
