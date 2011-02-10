@@ -45,12 +45,6 @@ What grammar does pycparser follow?
 
 ``pycparser`` very closely follows the C grammar provided in the end of the C99 standard document
 
-
-What is an AST?
----------------
-
-`AST <http://en.wikipedia.org/wiki/Abstract_syntax_tree>`_ - Abstract Syntax Tree. It is a tree representation of the syntax of source code - a convenient hierarchical data structure that's built from the code and is readily suitable for exploration and manipulation.
-
 How is pycparser licensed?
 --------------------------
 
@@ -112,7 +106,7 @@ Advanced usage
 
 The public interface of ``pycparser`` is well documented with comments in ``pycparser/c_parser.py``. For a detailed overview of the various AST nodes created by the parser, see ``pycparser/_c_ast.cfg``.
 
-In any case, you can always drop me an `email <eliben@gmail.com>`_ for help.
+There's also a `FAQ available here <http://code.google.com/p/pycparser/wiki/FAQ>`_. In any case, you can always drop me an `email <eliben@gmail.com>`_ for help.
 
 Modifying
 =========
