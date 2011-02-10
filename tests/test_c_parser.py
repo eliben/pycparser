@@ -768,6 +768,14 @@ class TestCParser_fundamentals(unittest.TestCase):
                             ['TypeDecl',
                                 ['IdentifierType', ['int']]]]]]]])
 
+        s4 = """
+            struct v {
+                int i;
+                float;
+            } v2;"""
+            
+        self.assertRaises(ParseError, self.parse, s4)
+
     def test_struct_bitfields(self):
         # a struct with two bitfields, one unnamed
         s1 = """

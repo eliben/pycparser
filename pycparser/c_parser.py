@@ -682,8 +682,11 @@ class CParser(PLYParser):
                     type=node,
                     init=None,
                     bitsize=None,
-                    coord=self._coord(p.lineno(2)))
+                    coord=self._coord(p.lineno(3)))
                 decls.append(decl)
+            else:
+                self._parse_error("Anonymous field of invalid type", 
+                    self._coord(p.lineno(3)))
         
         p[0] = decls
     

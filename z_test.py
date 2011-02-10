@@ -64,6 +64,7 @@ if __name__ == "__main__":
     {
         long sa;
         int sb;
+        float;
     };
     """
 
