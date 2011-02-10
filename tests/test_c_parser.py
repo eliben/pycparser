@@ -11,7 +11,6 @@ from pycparser import c_parser
 from pycparser.c_ast import *
 from pycparser.c_parser import CParser, Coord, ParseError
 
-
 _c_parser = c_parser.CParser(
                 lex_optimize=False,
                 yacc_debug=True, 
@@ -658,6 +657,117 @@ class TestCParser_fundamentals(unittest.TestCase):
                     ['Decl', 'heads', 
                         ['PtrDecl', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['Node']]]]]]]]]])
     
+    def test_anonymous_struct_union(self):
+        s1 = """
+            union
+            {
+                union
+                {
+                    int i;
+                    long l;
+                };
+
+                struct
+                {
+                    int type;
+                    int intnode;
+                };
+            } u;
+        """
+
+        self.assertEqual(expand_decl(self.parse(s1).ext[0]),
+            ['Decl', 'u',
+                ['TypeDecl',
+                    ['Union', None,
+                        [['Decl', None,
+                            ['Union', None,
+                                [['Decl', 'i',
+                                    ['TypeDecl',
+                                        ['IdentifierType', ['int']]]],
+                                ['Decl', 'l',
+                                    ['TypeDecl',
+                                        ['IdentifierType', ['long']]]]]]],
+                        ['Decl', None,
+                            ['Struct', None,
+                                [['Decl', 'type',
+                                    ['TypeDecl',
+                                        ['IdentifierType', ['int']]]],
+                                ['Decl', 'intnode',
+                                    ['TypeDecl',
+                                        ['IdentifierType', ['int']]]]]]]]]]])
+
+        s2 = """
+            struct
+            {
+                int i;
+                union
+                {
+                    int id;
+                    char* name;
+                };
+                float f;
+            } joe;
+            """
+
+        self.assertEqual(expand_decl(self.parse(s2).ext[0]),
+            ['Decl', 'joe',
+                ['TypeDecl',
+                    ['Struct', None,
+                       [['Decl', 'i',
+                            ['TypeDecl',
+                                ['IdentifierType', ['int']]]],
+                        ['Decl', None,
+                            ['Union', None,
+                                [['Decl', 'id',
+                                    ['TypeDecl',
+                                        ['IdentifierType', ['int']]]],
+                                ['Decl', 'name',
+                                    ['PtrDecl',
+                                        ['TypeDecl',
+                                            ['IdentifierType', ['char']]]]]]]],
+                        ['Decl', 'f',
+                            ['TypeDecl',
+                                ['IdentifierType', ['float']]]]]]]])
+
+        # ISO/IEC 9899:201x Commitee Draft 2010-11-16, N1539
+        # section 6.7.2.1, par. 19, example 1
+        s3 = """
+            struct v {
+                union {
+                    struct { int i, j; };
+                    struct { long k, l; } w;
+                };
+                int m;
+            } v1;
+            """
+
+        self.assertEqual(expand_decl(self.parse(s3).ext[0]),
+            ['Decl', 'v1',
+                ['TypeDecl',
+                    ['Struct', 'v',
+                       [['Decl', None,
+                            ['Union', None,
+                                [['Decl', None,
+                                    ['Struct', None,
+                                        [['Decl', 'i',
+                                            ['TypeDecl',
+                                                ['IdentifierType', ['int']]]],
+                                        ['Decl', 'j',
+                                            ['TypeDecl',
+                                                ['IdentifierType', ['int']]]]]]],
+                                ['Decl', 'w',
+                                    ['TypeDecl',
+                                        ['Struct', None,
+                                            [['Decl', 'k',
+                                                ['TypeDecl',
+                                                    ['IdentifierType', ['long']]]],
+                                            ['Decl', 'l',
+                                                ['TypeDecl',
+                                                    ['IdentifierType', ['long']]]]]]]]]]],
+                        ['Decl', 'm',
+                            ['TypeDecl',
+                                ['IdentifierType', ['int']]]]]]]])
+
     def test_struct_bitfields(self):
         # a struct with two bitfields, one unnamed
         s1 = """

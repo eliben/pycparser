@@ -86,6 +86,7 @@ class CParser(PLYParser):
             'specifier_qualifier_list',
             'block_item_list',
             'type_qualifier_list',
+            'struct_declarator_list'
         ]
         
         for rule in rules_with_opt:
@@ -645,29 +646,44 @@ class CParser(PLYParser):
         p[0] = p[1] if len(p) == 2 else p[1] + p[2]
 
     def p_struct_declaration_1(self, p):
-        """ struct_declaration : specifier_qualifier_list struct_declarator_list SEMI
+        """ struct_declaration : specifier_qualifier_list struct_declarator_list_opt SEMI
         """
         spec = p[1]
         decls = []
         
-        for struct_decl in p[2]:
-            if struct_decl['decl'] is not None:
-                decl_coord = struct_decl['decl'].coord
-            else:
-                decl_coord = struct_decl['bitsize'].coord
+        if p[2] is not None:
+            for struct_decl in p[2]:
+                if struct_decl['decl'] is not None:
+                    decl_coord = struct_decl['decl'].coord
+                else:
+                    decl_coord = struct_decl['bitsize'].coord
             
-            decl = c_ast.Decl(
-                name=None,
-                quals=spec['qual'],
-                funcspec=spec['function'],
-                storage=spec['storage'],
-                type=struct_decl['decl'],
-                init=None,
-                bitsize=struct_decl['bitsize'],
-                coord=decl_coord)
+                decl = c_ast.Decl(
+                    name=None,
+                    quals=spec['qual'],
+                    funcspec=spec['function'],
+                    storage=spec['storage'],
+                    type=struct_decl['decl'],
+                    init=None,
+                    bitsize=struct_decl['bitsize'],
+                    coord=decl_coord)
             
-            typename = spec['type']
-            decls.append(self._fix_decl_name_type(decl, typename))
+                typename = spec['type']
+                decls.append(self._fix_decl_name_type(decl, typename))
+
+        else:  # anonymous struct/union, gcc extension, C1x feature
+            node = spec['type'][0]
+            if isinstance(node, c_ast.Union) or isinstance(node, c_ast.Struct):
+                decl = c_ast.Decl(
+                    name=None,
+                    quals=spec['qual'],
+                    funcspec=spec['function'],
+                    storage=spec['storage'],
+                    type=node,
+                    init=None,
+                    bitsize=None,
+                    coord=self._coord(p.lineno(2)))
+                decls.append(decl)
         
         p[0] = decls
     
