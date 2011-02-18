@@ -64,12 +64,10 @@ if __name__ == "__main__":
     {
         long sa;
         int sb;
-        float;
     };
     """
 
     #--------------- Lexing 
-    #~ from pycparser.portability import printme
     #~ def errfoo(msg, a, b):
         #~ printme(msg)
         #~ sys.exit()

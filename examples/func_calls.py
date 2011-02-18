@@ -4,9 +4,10 @@
 # Using pycparser for printing out all the calls of some function
 # in a C file.
 #
-# Copyright (C) 2008, Eli Bendersky
+# Copyright (C) 2008-2011, Eli Bendersky
 # License: LGPL
 #-----------------------------------------------------------------
+from __future__ import print_function
 import sys
 
 # This is not required if you've installed pycparser into
@@ -15,7 +16,6 @@ import sys
 sys.path.insert(0, '..')
 
 from pycparser import c_parser, c_ast, parse_file
-from pycparser.portability import printme
 
 
 # A visitor with some state information (the funcname it's 
@@ -27,7 +27,7 @@ class FuncCallVisitor(c_ast.NodeVisitor):
 
     def visit_FuncCall(self, node):
         if node.name.name == self.funcname:
-            printme('%s called at %s\n' % (
+            print('%s called at %s' % (
                     self.funcname, node.name.coord))
 
 
@@ -39,7 +39,7 @@ def show_func_calls(filename, funcname):
 
 if __name__ == "__main__":
     if len(sys.argv) > 2:
-        filename  = sys.argv[1]
+        filename = sys.argv[1]
         func = sys.argv[2]
     else:
         filename = 'c_files/hash.c'

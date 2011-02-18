@@ -3,7 +3,7 @@
 #
 # CParser class: Parser and AST builder for the C language
 #
-# Copyright (C) 2008-2010, Eli Bendersky
+# Copyright (C) 2008-2011, Eli Bendersky
 # License: LGPL
 #-----------------------------------------------------------------
 import re
@@ -1363,12 +1363,11 @@ class CParser(PLYParser):
 
 if __name__ == "__main__":
     import pprint
-    import time
-    from portability import printme
+    import time, sys
     
     t1 = time.time()
     parser = CParser(lex_optimize=True, yacc_debug=True, yacc_optimize=False)
-    printme(time.time() - t1)
+    sys.write(time.time() - t1)
     
     buf = ''' 
         int (*k)(int);

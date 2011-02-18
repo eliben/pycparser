@@ -3,7 +3,7 @@
 #
 # CLexer class: lexer for the C language
 #
-# Copyright (C) 2008-2010, Eli Bendersky
+# Copyright (C) 2008-2011, Eli Bendersky
 # License: LGPL
 #-----------------------------------------------------------------
 
@@ -410,7 +410,6 @@ class CLexer(object):
 
 
 if __name__ == "__main__":
-    from portability import printme
     filename = '../zp.c'
     text = open(filename).read()
     
@@ -424,7 +423,7 @@ if __name__ == "__main__":
     """
     
     def errfoo(msg, a, b):
-        printme(msg)
+        sys.write(msg + "\n")
         sys.exit()
     
     def typelookup(namd):
