@@ -1,12 +1,16 @@
 Todo
 ----
 
+* move changelist to wiki maybe?
+
 
 Fixes since last:
 ------------------
 
 * Issue 17: empty file-level declarations
 * Issue 18: empty statements and declarations in functions
+* Issue 19: anonymous structs & union fields
+* pycparser is now on PyPI (Python Package Index)
 * Created FAQ on the pycparser project page - the readme now points to it
 
 
@@ -21,7 +25,7 @@ Build docs and distribution
 ---------------------------
 
 rst2html readme.txt > readme.html
-setup.py sdist
+python setup.py sdist upload
 
 Misc
 ----
