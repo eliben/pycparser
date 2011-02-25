@@ -1,7 +1,8 @@
 #-----------------------------------------------------------------
 # pycparser: c-to-c.py
 #
-# Example of 
+# Example of a C code generator from pycparser AST nodes, serving 
+# as a simplistic translator from C to AST and back to C.
 #
 # Copyright (C) 2008-2011, Eli Bendersky
 # License: LGPL
@@ -17,79 +18,103 @@ sys.path.insert(0, '..')
 from pycparser import c_parser, c_ast, parse_file
 
 
-class CGenerator(c_ast.NodeVisitor):
+class CGenerator(object):
+    """ Uses the same visitor pattern as c_ast.NodeVisitor, but modified to
+        return a value from each visit method, using string accumulation in 
+        generic_visit.
+    """
     def __init__(self):
         self.output = ''
         
-    def out(self, s):
-        self.output += s
+        # Statements start with indentation of self.indent_level spaces
+        #
+        self.indent_level = 0
+    
+    def visit(self, node):
+        method = 'visit_' + node.__class__.__name__
+        return getattr(self, method, self.generic_visit)(node)
+    
+    def generic_visit(self, node):
+        #~ print('generic:', type(node))
+        if node is None:
+            return ''
+        else:
+            return ''.join(self.visit(c) for c in node.children())
     
     def visit_Constant(self, n):
-        self.out(n.value)
-
+        return n.value
+        
     def visit_ID(self, n):
-        self.out(n.name)
+        return n.name
     
     def visit_IdentifierType(self, n):
-        self.out(' '.join(n.names) + ' ')
+        return ' '.join(n.names) + ' '
     
-    def visit_TypeDecl(self, n):
-        self.generic_visit(n)
-        if n.declname: self.out(n.declname)
+    def visit_Decl(self, n):
+        s = self._generate_decl(n)
+        if n.bitsize: s += ' : ' + self.visit(n.bitsize)
+        if n.init: s += ' = ' + self.visit(n.init)
+        return s
     
-    def visit_PtrDecl(self, n):
-        self.out('*')
-        self.visit(n.type)
-    
+    def visit_FuncDef(self, n):
+        decl = self.visit(n.decl)
+        self.indent_level = 0
+        body = self.visit(n.body)
+        return decl + '\n' + body
+
     def _generate_decl(self, n):
         """ Generation from a Decl node.
         """
-        if n.funcspec: self.out(' '.join(n.funcspec) + ' ')
-        if n.storage: self.out(' '.join(n.storage) + ' ')
-        self._generate_type(n.type)
+        s = ''
+        if n.funcspec: s = ' '.join(n.funcspec) + ' '
+        if n.storage: s += ' '.join(n.storage) + ' '
+        s += self._generate_type(n.type)
+        return s
     
     def _generate_type(self, n, modifiers=[]):
         """ Recursive generation from a type node. n is the type node. 
-            modifiers collects the PtrDecl and ArrayDecl modifiers encountered
-            on the way down to a TypeDecl, to allow proper generation from it.
+            modifiers collects the PtrDecl, ArrayDecl and FuncDecl modifiers 
+            encountered on the way down to a TypeDecl, to allow proper
+            generation from it.
         """
         typ = type(n)
         #~ print(n, modifiers)
         
         if typ == c_ast.TypeDecl:
-            self.out(' '.join(n.quals) + ' ')
-            self.generic_visit(n)
+            s = ''
+            if n.quals: s += ' '.join(n.quals) + ' '
+            s += self.visit(n.type)
             
             nstr = n.declname if n.declname else ''
-            # Resolve pointer & array modifiers.
-            # Wrap in parens to distinguish pointer to array syntax
+            # Resolve odifiers.
+            # Wrap in parens to distinguish pointer to array and pointer to
+            # function syntax.
             #
             for i, modifier in enumerate(modifiers):
                 if isinstance(modifier, c_ast.ArrayDecl):
                     if (i != 0 and isinstance(modifiers[i - 1], c_ast.PtrDecl)):
                         nstr = '(' + nstr + ')'
-                    nstr += '[' + modifier.dim.value + ']'
+                    nstr += '[' + self.visit(modifier.dim) + ']'
+                elif isinstance(modifier, c_ast.FuncDecl):
+                    if (i != 0 and isinstance(modifiers[i - 1], c_ast.PtrDecl)):
+                        nstr = '(' + nstr + ')'
+                    nstr += '(' + self.visit(modifier.args) + ')'
                 elif isinstance(modifier, c_ast.PtrDecl):
                     nstr = '*' + nstr
-            self.out(nstr)
+            s += nstr
+            return s
         elif typ in (c_ast.Typename, c_ast.Decl):
-            self._generate_decl(n.type)
+            return self._generate_decl(n.type)
         elif typ == c_ast.IdentifierType:
-            self.out(' '.join(n.names) + ' ')
-        elif typ in (c_ast.ArrayDecl, c_ast.PtrDecl):
-            self._generate_type(n.type, modifiers + [n])
-        
-        
-    def visit_Decl(self, n):
-        self._generate_decl(n)
-        self.out(';\n')
+            return ' '.join(n.names) + ' '
+        elif typ in (c_ast.ArrayDecl, c_ast.PtrDecl, c_ast.FuncDecl):
+            return self._generate_type(n.type, modifiers + [n])
 
 
 def translate_to_c(filename):
     ast = parse_file(filename, use_cpp=True)
     generator = CGenerator()
-    generator.visit(ast)
-    print(generator.output)
+    print(generator.visit(ast))
 
 
 if __name__ == "__main__":
@@ -97,14 +122,17 @@ if __name__ == "__main__":
         translate_to_c(sys.argv[1])
     else:
         src = r'''
-        static const int (**c[9])[2] = t;
+        static const int (**c[chevo])[2] = t;
+        int (*joe)();
+        
+        int main() {
+            int kk;
+        }
         '''
         parser = c_parser.CParser()
         ast = parser.parse(src)
         ast.show()
         generator = CGenerator()
-        generator.visit(ast)
-        print(generator.output)
-        
+        print(generator.visit(ast))
         
         print("Please provide a filename as argument")
