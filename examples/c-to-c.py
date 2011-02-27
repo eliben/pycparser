@@ -26,9 +26,13 @@ class CGenerator(object):
     def __init__(self):
         self.output = ''
         
-        # Statements start with indentation of self.indent_level spaces
+        # Statements start with indentation of self.indent_level spaces, using
+        # the _make_indent method
         #
         self.indent_level = 0
+    
+    def _make_indent(self):
+        return ' ' * self.indent_level
     
     def visit(self, node):
         method = 'visit_' + node.__class__.__name__
@@ -46,9 +50,18 @@ class CGenerator(object):
         
     def visit_ID(self, n):
         return n.name
+
+    def visit_ArrayRef(self, n):
+        return self.visit(n.name) + '[' + self.visit(n.subscript) + ']'
+
+    def visit_BinaryOp(self, n):
+        return '%s %s %s' % (self.visit(n.left), n.op, self.visit(n.right))
+    
+    def visit_Assignment(self, n):
+        return '%s %s %s' % (self.visit(n.lvalue), n.op, self.visit(n.rvalue))
     
     def visit_IdentifierType(self, n):
-        return ' '.join(n.names) + ' '
+        return ' '.join(n.names)
     
     def visit_Decl(self, n):
         s = self._generate_decl(n)
@@ -56,11 +69,93 @@ class CGenerator(object):
         if n.init: s += ' = ' + self.visit(n.init)
         return s
     
+    def visit_Typedef(self, n):
+        s = ''
+        if n.storage: s += ' '.join(n.storage) + ' '
+        s += self._generate_type(n.type)
+        return s
+    
+    def visit_Cast(self, n):
+        s = '(' + self.visit(n.to_type) + ')' 
+        return s + ' ' + self.visit(n.expr)
+    
+    def visit_Enum(self, n):
+        s = 'enum'
+        if n.name: s += ' ' + n.name
+        if n.values:
+            s += ' {'
+            for i, enumerator in enumerate(n.values.enumerators):
+                s += enumerator.name
+                if enumerator.value: 
+                    s += ' = ' + self.visit(enumerator.value)
+                if i != len(n.values.enumerators) - 1: 
+                    s += ', '
+            s += '}'
+        return s
+    
+    def visit_Struct(self, n):
+        s = 'struct'
+        if n.name: s += ' ' + n.name
+        if n.decls:
+            s += ' { \n'
+            for decl in n.decls:
+                s += '  ' + self.visit(decl) + ';\n'
+            s += '}'
+        return s
+        
     def visit_FuncDef(self, n):
         decl = self.visit(n.decl)
         self.indent_level = 0
+        # The body is a Compound node
         body = self.visit(n.body)
-        return decl + '\n' + body
+        return decl + '\n' + body + '\n'
+
+    def visit_FileAST(self, n):
+        s = ''
+        for ext in n.ext:
+            if isinstance(ext, c_ast.FuncDef):
+                s += self.visit(ext)
+            else:
+                s += self.visit(ext) + ';\n'
+        return s
+
+    def visit_Compound(self, n):
+        s = self._make_indent() + '{\n'
+        self.indent_level += 2
+        s += ''.join(self._generate_stmt(stmt) for stmt in n.block_items)
+        self.indent_level -= 2
+        s += self._make_indent() + '}\n'
+        return s
+    
+    def visit_ParamList(self, n):
+        return ', '.join(self.visit(param) for param in n.params)
+
+    def visit_Return(self, n):
+        s = 'return'
+        if n.expr: s += ' ' + self.visit(n.expr)
+        return s + ';'
+
+    def _generate_stmt(self, n):
+        """ Generation from a statement node. This method exists as a wrapper
+            for individual visit_* methods to handle different treatment of 
+            some statements in this context.
+        """
+        typ = type(n)
+        s = self._make_indent()
+        
+        if typ in (c_ast.Decl, c_ast.Assignment, c_ast.Cast):
+            # These can also appear in an expression context so no semicolon
+            # is added to them automatically
+            #
+            return s + self.visit(n) + ';\n'
+        elif typ in (c_ast.Compound,):
+            # No extra indentation required before the opening brace of a 
+            # compound - because it consists of multiple lines it has to 
+            # compute its own indentation.
+            #
+            return self.visit(n) + '\n'
+        else:
+            return s + self.visit(n) + '\n'
 
     def _generate_decl(self, n):
         """ Generation from a Decl node.
@@ -86,7 +181,7 @@ class CGenerator(object):
             s += self.visit(n.type)
             
             nstr = n.declname if n.declname else ''
-            # Resolve odifiers.
+            # Resolve modifiers.
             # Wrap in parens to distinguish pointer to array and pointer to
             # function syntax.
             #
@@ -101,7 +196,7 @@ class CGenerator(object):
                     nstr += '(' + self.visit(modifier.args) + ')'
                 elif isinstance(modifier, c_ast.PtrDecl):
                     nstr = '*' + nstr
-            s += nstr
+            s += ' ' + nstr
             return s
         elif typ in (c_ast.Typename, c_ast.Decl):
             return self._generate_decl(n.type)
@@ -122,12 +217,24 @@ if __name__ == "__main__":
         translate_to_c(sys.argv[1])
     else:
         src = r'''
-        static const int (**c[chevo])[2] = t;
-        int (*joe)();
         
-        int main() {
-            int kk;
-        }
+typedef enum tagReturnCode {SUCCESS=99, FAIL} ReturnCode;
+
+
+typedef struct tagEntry
+{
+    char* key;
+    char* value;
+} Entry;
+
+
+
+typedef struct tagNode
+{
+    Entry* entry;
+
+    struct tagNode* next;
+} Node;
         '''
         parser = c_parser.CParser()
         ast = parser.parse(src)
@@ -136,3 +243,9 @@ if __name__ == "__main__":
         print(generator.visit(ast))
         
         print("Please provide a filename as argument")
+
+
+# ZZZ: operator precedence in expressions - especially problematic in 
+# assignments... - where to parenthesize? maybe just in BinaryOp?
+# Other precedence-important operators (such as cast) need parens as well
+
