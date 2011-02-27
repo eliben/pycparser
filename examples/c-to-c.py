@@ -54,6 +54,12 @@ class CGenerator(object):
     def visit_ArrayRef(self, n):
         return self.visit(n.name) + '[' + self.visit(n.subscript) + ']'
 
+    def visit_UnaryOp(self, n):
+        if n.op == 'p++':
+            return '%s++' % self.visit(n.expr)
+        else:
+            return '%s%s' % (n.op, self.visit(n.expr))
+
     def visit_BinaryOp(self, n):
         return '%s %s %s' % (self.visit(n.left), n.op, self.visit(n.right))
     
@@ -135,15 +141,29 @@ class CGenerator(object):
         if n.expr: s += ' ' + self.visit(n.expr)
         return s + ';'
 
-    def _generate_stmt(self, n):
+    def visit_For(self, n):
+        s = 'for ('
+        if n.init: s += self.visit(n.init)
+        s += ';'
+        if n.cond: s += ' ' + self.visit(n.cond)
+        s += ';'
+        if n.next: s += ' ' + self.visit(n.next)
+        s += ')\n'
+        s += self._generate_stmt(n.stmt, add_indent=True)
+        return s
+
+    def _generate_stmt(self, n, add_indent=False):
         """ Generation from a statement node. This method exists as a wrapper
             for individual visit_* methods to handle different treatment of 
             some statements in this context.
         """
         typ = type(n)
+        if add_indent: self.indent_level += 2
         s = self._make_indent()
+        if add_indent: self.indent_level -= 2
         
-        if typ in (c_ast.Decl, c_ast.Assignment, c_ast.Cast):
+        if typ in ( c_ast.Decl, c_ast.Assignment, c_ast.Cast, c_ast.UnaryOp,
+                    c_ast.BinaryOp):
             # These can also appear in an expression context so no semicolon
             # is added to them automatically
             #
@@ -153,7 +173,7 @@ class CGenerator(object):
             # compound - because it consists of multiple lines it has to 
             # compute its own indentation.
             #
-            return self.visit(n) + '\n'
+            return self.visit(n)
         else:
             return s + self.visit(n) + '\n'
 
@@ -217,24 +237,19 @@ if __name__ == "__main__":
         translate_to_c(sys.argv[1])
     else:
         src = r'''
-        
-typedef enum tagReturnCode {SUCCESS=99, FAIL} ReturnCode;
-
-
-typedef struct tagEntry
+static unsigned int hash_func(const char* str, unsigned int table_size)
 {
-    char* key;
-    char* value;
-} Entry;
+    unsigned int hash_value;
+    unsigned int a = 127;
+    a++;
+    ++a;
 
+    for (hash_value = 0; *str != 0; ++str)
+        {hash_value = (a*hash_value + *str) % table_size;}
 
+    return hash_value;
+}
 
-typedef struct tagNode
-{
-    Entry* entry;
-
-    struct tagNode* next;
-} Node;
         '''
         parser = c_parser.CParser()
         ast = parser.parse(src)
