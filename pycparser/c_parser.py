@@ -874,7 +874,8 @@ class CParser(PLYParser):
         spec = p[1]
         decl = c_ast.Typename(
             quals=spec['qual'], 
-            type=p[2] or c_ast.TypeDecl(None, None, None))
+            type=p[2] or c_ast.TypeDecl(None, None, None),
+            coord=self._coord(p.lineno(2)))
             
         typename = spec['type'] or ['int']
         p[0] = self._fix_decl_name_type(decl, typename)        
@@ -943,7 +944,8 @@ class CParser(PLYParser):
         
         typename = c_ast.Typename(
             quals=p[1]['qual'], 
-            type=p[2] or c_ast.TypeDecl(None, None, None))
+            type=p[2] or c_ast.TypeDecl(None, None, None),
+            coord=self._coord(p.lineno(2)))
         
         p[0] = self._fix_decl_name_type(typename, p[1]['type'])
 
@@ -1205,7 +1207,7 @@ class CParser(PLYParser):
         
     def p_cast_expression_2(self, p):
         """ cast_expression : LPAREN type_name RPAREN cast_expression """
-        p[0] = c_ast.Cast(p[2], p[4], p[2].coord)
+        p[0] = c_ast.Cast(p[2], p[4], self._coord(p.lineno(1)))
     
     def p_unary_expression_1(self, p):
         """ unary_expression    : postfix_expression """

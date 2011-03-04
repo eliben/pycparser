@@ -149,6 +149,14 @@ class TestCParser_fundamentals(unittest.TestCase):
         f1_1 = self.parse(t1_1, filename='test.c')
         self.assert_coord(f1_1.ext[0].body.block_items[0], 3, 'test.c')
         self.assert_coord(f1_1.ext[0].body.block_items[1], 4, 'test.c')
+       
+        t1_2 = '''
+        int main () {
+            int p = (int) k;
+        }'''
+        f1_2 = self.parse(t1_2, filename='test.c')
+        # make sure that the Cast has a coord (issue 23)
+        self.assert_coord(f1_2.ext[0].body.block_items[0].init, 3, 'test.c')
         
         t2 = """
         #line 99

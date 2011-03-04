@@ -141,6 +141,12 @@ class CGenerator(object):
         if n.expr: s += ' ' + self.visit(n.expr)
         return s + ';'
 
+    def visit_Break(self, n):
+        return 'break;'
+        
+    def visit_Continue(self, n):
+        return 'continue;'
+        
     def visit_For(self, n):
         s = 'for ('
         if n.init: s += self.visit(n.init)
@@ -152,6 +158,13 @@ class CGenerator(object):
         s += self._generate_stmt(n.stmt, add_indent=True)
         return s
 
+    def visit_While(self, n):
+        s = 'while ('
+        if n.cond: s += self.visit(n.cond)
+        s += ')\n'
+        s += self._generate_stmt(n.stmt, add_indent=True)
+        return s
+
     def _generate_stmt(self, n, add_indent=False):
         """ Generation from a statement node. This method exists as a wrapper
             for individual visit_* methods to handle different treatment of 
@@ -159,7 +172,7 @@ class CGenerator(object):
         """
         typ = type(n)
         if add_indent: self.indent_level += 2
-        s = self._make_indent()
+        indent = self._make_indent()
         if add_indent: self.indent_level -= 2
         
         if typ in ( c_ast.Decl, c_ast.Assignment, c_ast.Cast, c_ast.UnaryOp,
@@ -167,7 +180,7 @@ class CGenerator(object):
             # These can also appear in an expression context so no semicolon
             # is added to them automatically
             #
-            return s + self.visit(n) + ';\n'
+            return indent + self.visit(n) + ';\n'
         elif typ in (c_ast.Compound,):
             # No extra indentation required before the opening brace of a 
             # compound - because it consists of multiple lines it has to 
@@ -175,7 +188,7 @@ class CGenerator(object):
             #
             return self.visit(n)
         else:
-            return s + self.visit(n) + '\n'
+            return indent + self.visit(n) + '\n'
 
     def _generate_decl(self, n):
         """ Generation from a Decl node.
@@ -244,8 +257,10 @@ static unsigned int hash_func(const char* str, unsigned int table_size)
     a++;
     ++a;
 
-    for (hash_value = 0; *str != 0; ++str)
-        {hash_value = (a*hash_value + *str) % table_size;}
+    while (hash_value == 0) {
+        hash_value = (a*hash_value + *str) % table_size;
+        break;
+    }
 
     return hash_value;
 }
@@ -263,4 +278,6 @@ static unsigned int hash_func(const char* str, unsigned int table_size)
 # ZZZ: operator precedence in expressions - especially problematic in 
 # assignments... - where to parenthesize? maybe just in BinaryOp?
 # Other precedence-important operators (such as cast) need parens as well
+
+# ZZZ: turn self.indent_level += 2 ... -= 2 into a context manager!
 
