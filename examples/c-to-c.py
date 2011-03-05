@@ -39,7 +39,7 @@ class CGenerator(object):
         return getattr(self, method, self.generic_visit)(node)
     
     def generic_visit(self, node):
-        print('generic:', type(node))
+        #~ print('generic:', type(node))
         if node is None:
             return ''
         else:
@@ -93,7 +93,11 @@ class CGenerator(object):
         #
         s = n.name if no_type else self._generate_decl(n)
         if n.bitsize: s += ' : ' + self.visit(n.bitsize)
-        if n.init: s += ' = ' + self.visit(n.init)
+        if n.init:
+            if isinstance(n.init, c_ast.ExprList):
+                s += ' = {' + self.visit(n.init) + '}'
+            else:
+                s += ' = ' + self.visit(n.init)
         return s
     
     def visit_DeclList(self, n):
@@ -248,17 +252,30 @@ class CGenerator(object):
     def visit_Union(self, n):
         return self._generate_struct_union(n, 'union')
 
+    def visit_NamedInitializer(self, n):
+        s = ''
+        for name in n.name:
+            if isinstance(name, c_ast.ID):
+                s += '.' + name.name
+            elif isinstance(name, c_ast.Constant):
+                s += '[' + name.value + ']'
+        s += ' = ' + self.visit(n.expr)
+        return s
+
     def _generate_struct_union(self, n, name):
         """ Generates code for structs and unions. name should be either 
             'struct' or union.
         """
-        s = name + ' ' + (n.name or '') + '\n'
-        s += self._make_indent() + '{\n'
-        self.indent_level += 2
-        for decl in n.decls:
-            s += self._generate_stmt(decl)
-        self.indent_level -= 2
-        s += self._make_indent() + '}'
+        s = name + ' ' + (n.name or '')
+        if n.decls:
+            s += '\n'
+            s += self._make_indent() 
+            self.indent_level += 2
+            s += '{\n'
+            for decl in n.decls:
+                s += self._generate_stmt(decl)
+            self.indent_level -= 2
+            s += self._make_indent() + '}'
         return s
 
     def _generate_stmt(self, n, add_indent=False):
@@ -360,26 +377,10 @@ if __name__ == "__main__":
     else:
         src = r'''
 
-int mydecl(float joe, ...);
-
-struct blah_t
+void v(void)
 {
-    int k;
-    float b;
-    
-    union {
-        int bla : 5;
-        int asd : 3;
-        int : 4;
-    } uu;
-};
-
-typedef int koe;
-static unsigned int hash_func(const char* str, unsigned int table_size)
-{
-    for (int j = 8; k < n; ++k) 
-        printf(k);
-    return hash_value;
+    int poa = {5, 6};
+    int ka = {.ko[4] = 8, [5] = 3};
 }
 
         '''
@@ -392,5 +393,8 @@ static unsigned int hash_func(const char* str, unsigned int table_size)
         print("Please provide a filename as argument")
 
 
-# ZZZ: turn self.indent_level += 2 ... -= 2 into a context manager!
-
+# ZZZ: 
+# 1. (*hash)->heads turns to *hash->heads. need to parenthesize left side if it
+#    isn't simple
+# 2. sizeof should have parens around argument
+#
