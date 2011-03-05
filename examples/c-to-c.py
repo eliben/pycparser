@@ -39,7 +39,7 @@ class CGenerator(object):
         return getattr(self, method, self.generic_visit)(node)
     
     def generic_visit(self, node):
-        #~ print('generic:', type(node))
+        print('generic:', type(node))
         if node is None:
             return ''
         else:
@@ -87,10 +87,20 @@ class CGenerator(object):
     def visit_IdentifierType(self, n):
         return ' '.join(n.names)
     
-    def visit_Decl(self, n):
-        s = self._generate_decl(n)
+    def visit_Decl(self, n, no_type=False):
+        # no_type is used when a Decl is part of a DeclList, where the type is
+        # explicitly only for the first delaration in a list.
+        #
+        s = n.name if no_type else self._generate_decl(n)
         if n.bitsize: s += ' : ' + self.visit(n.bitsize)
         if n.init: s += ' = ' + self.visit(n.init)
+        return s
+    
+    def visit_DeclList(self, n):
+        s = self.visit(n.decls[0])
+        if len(n.decls) > 1:
+            s += ', ' + ', '.join(self.visit_Decl(decl, no_type=True) 
+                                    for decl in n.decls[1:])
         return s
     
     def visit_Typedef(self, n):
@@ -210,8 +220,46 @@ class CGenerator(object):
         s += ');'
         return s
 
+    def visit_Switch(self, n):
+        s = 'switch (' + self.visit(n.cond) + ')\n'
+        s += self._generate_stmt(n.stmt, add_indent=True)
+        return s
+    
+    def visit_Case(self, n):
+        s = 'case ' + self.visit(n.expr) + ':\n'
+        s += self._generate_stmt(n.stmt, add_indent=True)
+        return s
+    
+    def visit_Default(self, n):
+        return 'default:\n' + self._generate_stmt(n.stmt, add_indent=True)
+
+    def visit_Label(self, n):
+        return n.name + ':\n' + self._generate_stmt(n.stmt)
+
+    def visit_Goto(self, n):
+        return 'goto ' + n.name + ';'
+
     def visit_EllipsisParam(self, n):
         return '...'
+
+    def visit_Struct(self, n):
+        return self._generate_struct_union(n, 'struct')
+
+    def visit_Union(self, n):
+        return self._generate_struct_union(n, 'union')
+
+    def _generate_struct_union(self, n, name):
+        """ Generates code for structs and unions. name should be either 
+            'struct' or union.
+        """
+        s = name + ' ' + (n.name or '') + '\n'
+        s += self._make_indent() + '{\n'
+        self.indent_level += 2
+        for decl in n.decls:
+            s += self._generate_stmt(decl)
+        self.indent_level -= 2
+        s += self._make_indent() + '}'
+        return s
 
     def _generate_stmt(self, n, add_indent=False):
         """ Generation from a statement node. This method exists as a wrapper
@@ -286,6 +334,8 @@ class CGenerator(object):
             return ' '.join(n.names) + ' '
         elif typ in (c_ast.ArrayDecl, c_ast.PtrDecl, c_ast.FuncDecl):
             return self._generate_type(n.type, modifiers + [n])
+        else:
+            return self.visit(n)
 
     def _parenthesize_if(self, n, condition):
         """ Visits 'n' and returns its string representation, parenthesized
@@ -312,19 +362,23 @@ if __name__ == "__main__":
 
 int mydecl(float joe, ...);
 
+struct blah_t
+{
+    int k;
+    float b;
+    
+    union {
+        int bla : 5;
+        int asd : 3;
+        int : 4;
+    } uu;
+};
+
 typedef int koe;
 static unsigned int hash_func(const char* str, unsigned int table_size)
 {
-    foo(bar, bas, moe, callme(func));
-    print(joe ? moe : baba[4]);
-    a++;
-    ++a;
-    
-    if (k > 2) {
-        print(5);
-    } else 
-        print(888888);
-
+    for (int j = 8; k < n; ++k) 
+        printf(k);
     return hash_value;
 }
 
