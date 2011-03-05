@@ -10,6 +10,7 @@ Fixes since last:
 * Issue 17: empty file-level declarations
 * Issue 18: empty statements and declarations in functions
 * Issue 19: anonymous structs & union fields
+* Issue 23: fix coordinates of Cast nodes
 * pycparser is now on PyPI (Python Package Index)
 * Created FAQ on the pycparser project page - the readme now points to it
 * No support for Python 2.5, only starting with 2.6 and 3.x

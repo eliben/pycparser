@@ -54,6 +54,12 @@ class CGenerator(object):
     def visit_ArrayRef(self, n):
         return self.visit(n.name) + '[' + self.visit(n.subscript) + ']'
 
+    def visit_StructRef(self, n):
+        return self.visit(n.name) + n.type + self.visit(n.field)
+
+    def visit_FuncCall(self, n):
+        return self.visit(n.name) + '(' + self.visit(n.args) + ')'
+
     def visit_UnaryOp(self, n):
         if n.op == 'p++':
             return '%s++' % self.visit(n.expr)
@@ -61,10 +67,22 @@ class CGenerator(object):
             return '%s%s' % (n.op, self.visit(n.expr))
 
     def visit_BinaryOp(self, n):
-        return '%s %s %s' % (self.visit(n.left), n.op, self.visit(n.right))
+        # To avoid operator precedence issues, parenthesize both operands unless
+        # they're "simple" nodes that have precedence over all binary ops.
+        #
+        simplenodes = (
+            c_ast.Constant, c_ast.ID, c_ast.ArrayRef, c_ast.StructRef,
+            c_ast.FuncCall)
+        isnotsimple = lambda n: not isinstance(n, simplenodes)
+        lval_str = self._parenthesize_if(n.left, isnotsimple)
+        rval_str = self._parenthesize_if(n.right, isnotsimple)
+        return '%s %s %s' % (lval_str, n.op, rval_str)
     
     def visit_Assignment(self, n):
-        return '%s %s %s' % (self.visit(n.lvalue), n.op, self.visit(n.rvalue))
+        rval_str = self._parenthesize_if(
+                            n.rvalue, 
+                            lambda n: isinstance(n, c_ast.Assignment))
+        return '%s %s %s' % (self.visit(n.lvalue), n.op, rval_str)
     
     def visit_IdentifierType(self, n):
         return ' '.join(n.names)
@@ -84,6 +102,9 @@ class CGenerator(object):
     def visit_Cast(self, n):
         s = '(' + self.visit(n.to_type) + ')' 
         return s + ' ' + self.visit(n.expr)
+    
+    def visit_ExprList(self, n):
+        return ', '.join(self.visit(expr) for expr in n.exprs)
     
     def visit_Enum(self, n):
         s = 'enum'
@@ -146,7 +167,13 @@ class CGenerator(object):
         
     def visit_Continue(self, n):
         return 'continue;'
-        
+    
+    def visit_TernaryOp(self, n):
+        s = self.visit(n.cond) + ' ? '
+        s += self.visit(n.iftrue) + ' : '
+        s += self.visit(n.iffalse)
+        return s
+    
     def visit_For(self, n):
         s = 'for ('
         if n.init: s += self.visit(n.init)
@@ -175,8 +202,9 @@ class CGenerator(object):
         indent = self._make_indent()
         if add_indent: self.indent_level -= 2
         
-        if typ in ( c_ast.Decl, c_ast.Assignment, c_ast.Cast, c_ast.UnaryOp,
-                    c_ast.BinaryOp):
+        if typ in ( 
+                c_ast.Decl, c_ast.Assignment, c_ast.Cast, c_ast.UnaryOp,
+                c_ast.BinaryOp, c_ast.TernaryOp, c_ast.FuncCall):
             # These can also appear in an expression context so no semicolon
             # is added to them automatically
             #
@@ -238,6 +266,16 @@ class CGenerator(object):
         elif typ in (c_ast.ArrayDecl, c_ast.PtrDecl, c_ast.FuncDecl):
             return self._generate_type(n.type, modifiers + [n])
 
+    def _parenthesize_if(self, n, condition):
+        """ Visits 'n' and returns its string representation, parenthesized
+            if the condition function applied to the node returns True.
+        """
+        s = self.visit(n)
+        if condition(n):
+            return '(' + s + ')'
+        else:
+            return s
+
 
 def translate_to_c(filename):
     ast = parse_file(filename, use_cpp=True)
@@ -250,17 +288,14 @@ if __name__ == "__main__":
         translate_to_c(sys.argv[1])
     else:
         src = r'''
+typedef int koe;
 static unsigned int hash_func(const char* str, unsigned int table_size)
 {
-    unsigned int hash_value;
-    unsigned int a = 127;
+    print(joe ? moe : baba[4]);
     a++;
     ++a;
-
-    while (hash_value == 0) {
-        hash_value = (a*hash_value + *str) % table_size;
-        break;
-    }
+    
+    a = b->kwa = c.c + 2;
 
     return hash_value;
 }
@@ -274,10 +309,6 @@ static unsigned int hash_func(const char* str, unsigned int table_size)
         
         print("Please provide a filename as argument")
 
-
-# ZZZ: operator precedence in expressions - especially problematic in 
-# assignments... - where to parenthesize? maybe just in BinaryOp?
-# Other precedence-important operators (such as cast) need parens as well
 
 # ZZZ: turn self.indent_level += 2 ... -= 2 into a context manager!
 

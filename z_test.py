@@ -46,26 +46,52 @@ def expand_decl(decl):
             return ['FuncDecl', params, nested]
 
 #-----------------------------------------------------------------
+class NodeVisitor(object):
+    def __init__(self):
+        self.node_stack = []
+        
+    def visit(self, node):
+        """ Visit a node. 
+        """
+        method = 'visit_' + node.__class__.__name__
+        visitor = getattr(self, method, self.generic_visit)
+        return visitor(node)
+        
+    def generic_visit(self, node):
+        """ Called if no explicit visitor function exists for a 
+            node. Implements preorder visiting of the node.
+        """
+        print(node)
+        print(self.node_stack)
+        self.node_stack.append(node)
+        for c in node.children():
+            self.visit(c)
+        self.node_stack.pop()
+
 
 if __name__ == "__main__":    
     source_code = """
-    int main()
-    {
-        const union blahunion tt = {
-            .joe = {0, 1},
-            .boo.bar[2] = 4};
-        p++;
-        int a;
-    }
-    """
+    typedef int Node, Hash;
 
-    source_code = """
-    union
+    void HashPrint(Hash* hash, void (*PrintFunc)(char*, char*))
     {
-        long sa;
-        int sb;
-    };
-    """
+        unsigned int i;
+
+        if (hash == NULL || hash->heads == NULL)
+            return;
+
+        for (i = 0; i < hash->table_size; ++i)
+        {
+            Node* temp = hash->heads[i];
+
+            while (temp != NULL)
+            {
+                temp = temp->next;
+                PrintFunc(temp->entry->key, temp->entry->value);
+            }
+        }
+    }
+"""
 
     #--------------- Lexing 
     #~ def errfoo(msg, a, b):
@@ -83,7 +109,9 @@ if __name__ == "__main__":
 
     #--------------- Parsing
     parser = CParser()
-    ast = parser.parse(source_code)
-
-    ast.show()
+    ast = parser.parse(source_code, filename='zz')
+    ast.show(showcoord=True)
+    nv=NodeVisitor()
+    nv.visit(ast)
+    
 
