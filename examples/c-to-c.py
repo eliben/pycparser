@@ -174,6 +174,16 @@ class CGenerator(object):
         s += self.visit(n.iffalse)
         return s
     
+    def visit_If(self, n):
+        s = 'if ('
+        if n.cond: s += self.visit(n.cond)
+        s += ')\n'
+        s += self._generate_stmt(n.iftrue, add_indent=True)
+        if n.iffalse: 
+            s += self._make_indent() + 'else\n'
+            s += self._generate_stmt(n.iffalse, add_indent=True)
+        return s
+    
     def visit_For(self, n):
         s = 'for ('
         if n.init: s += self.visit(n.init)
@@ -191,6 +201,17 @@ class CGenerator(object):
         s += ')\n'
         s += self._generate_stmt(n.stmt, add_indent=True)
         return s
+
+    def visit_DoWhile(self, n):
+        s = 'do\n'
+        s += self._generate_stmt(n.stmt, add_indent=True)
+        s += self._make_indent() + 'while ('
+        if n.cond: s += self.visit(n.cond)
+        s += ');'
+        return s
+
+    def visit_EllipsisParam(self, n):
+        return '...'
 
     def _generate_stmt(self, n, add_indent=False):
         """ Generation from a statement node. This method exists as a wrapper
@@ -288,14 +309,21 @@ if __name__ == "__main__":
         translate_to_c(sys.argv[1])
     else:
         src = r'''
+
+int mydecl(float joe, ...);
+
 typedef int koe;
 static unsigned int hash_func(const char* str, unsigned int table_size)
 {
+    foo(bar, bas, moe, callme(func));
     print(joe ? moe : baba[4]);
     a++;
     ++a;
     
-    a = b->kwa = c.c + 2;
+    if (k > 2) {
+        print(5);
+    } else 
+        print(888888);
 
     return hash_value;
 }
