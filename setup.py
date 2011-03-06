@@ -14,7 +14,7 @@ setup(
     """,
     install_requires=['ply'],
     license='LGPL',
-    version='2.02',
+    version='2.03',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',
