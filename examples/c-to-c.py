@@ -3,6 +3,9 @@
 #
 # Example of a C code generator from pycparser AST nodes, serving 
 # as a simplistic translator from C to AST and back to C.
+# Note: at this stage, the example is "alpha release" and considered 
+# experimental. Please file any bugs you find in the Issues page on pycparser's
+# website.
 #
 # Copyright (C) 2008-2011, Eli Bendersky
 # License: LGPL
@@ -52,30 +55,29 @@ class CGenerator(object):
         return n.name
 
     def visit_ArrayRef(self, n):
-        return self.visit(n.name) + '[' + self.visit(n.subscript) + ']'
+        arrref = self._parenthesize_unless_simple(n.name)
+        return arrref + '[' + self.visit(n.subscript) + ']'
 
     def visit_StructRef(self, n):
-        return self.visit(n.name) + n.type + self.visit(n.field)
+        sref = self._parenthesize_unless_simple(n.name)
+        return sref + n.type + self.visit(n.field)
 
     def visit_FuncCall(self, n):
-        return self.visit(n.name) + '(' + self.visit(n.args) + ')'
+        fref = self._parenthesize_unless_simple(n.name)
+        return fref + '(' + self.visit(n.args) + ')'
 
     def visit_UnaryOp(self, n):
+        operand = self._parenthesize_unless_simple(n.expr)
         if n.op == 'p++':
-            return '%s++' % self.visit(n.expr)
+            return '%s++' % operand
         else:
-            return '%s%s' % (n.op, self.visit(n.expr))
+            return '%s%s' % (n.op, operand)
 
     def visit_BinaryOp(self, n):
-        # To avoid operator precedence issues, parenthesize both operands unless
-        # they're "simple" nodes that have precedence over all binary ops.
-        #
-        simplenodes = (
-            c_ast.Constant, c_ast.ID, c_ast.ArrayRef, c_ast.StructRef,
-            c_ast.FuncCall)
-        isnotsimple = lambda n: not isinstance(n, simplenodes)
-        lval_str = self._parenthesize_if(n.left, isnotsimple)
-        rval_str = self._parenthesize_if(n.right, isnotsimple)
+        lval_str = self._parenthesize_if(n.left, 
+                            lambda d: not self._is_simple_node(d))
+        rval_str = self._parenthesize_if(n.right, 
+                            lambda d: not self._is_simple_node(d))
         return '%s %s %s' % (lval_str, n.op, rval_str)
     
     def visit_Assignment(self, n):
@@ -290,7 +292,8 @@ class CGenerator(object):
         
         if typ in ( 
                 c_ast.Decl, c_ast.Assignment, c_ast.Cast, c_ast.UnaryOp,
-                c_ast.BinaryOp, c_ast.TernaryOp, c_ast.FuncCall):
+                c_ast.BinaryOp, c_ast.TernaryOp, c_ast.FuncCall, c_ast.ArrayRef,
+                c_ast.StructRef):
             # These can also appear in an expression context so no semicolon
             # is added to them automatically
             #
@@ -364,6 +367,18 @@ class CGenerator(object):
         else:
             return s
 
+    def _parenthesize_unless_simple(self, n):
+        """ Common use case for _parenthesize_if
+        """
+        return self._parenthesize_if(n, lambda d: not self._is_simple_node(d))
+
+    def _is_simple_node(self, n):
+        """ Returns True for nodes that are "simple" - i.e. nodes that always
+            have higher precedence than operators.
+        """
+        return isinstance(n,(   c_ast.Constant, c_ast.ID, c_ast.ArrayRef, 
+                                c_ast.StructRef, c_ast.FuncCall))
+
 
 def translate_to_c(filename):
     ast = parse_file(filename, use_cpp=True)
@@ -371,30 +386,28 @@ def translate_to_c(filename):
     print(generator.visit(ast))
 
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        translate_to_c(sys.argv[1])
-    else:
+def zz_test_translate():
+    # internal use
         src = r'''
-
-void v(void)
-{
-    int poa = {5, 6};
-    int ka = {.ko[4] = 8, [5] = 3};
-}
-
+        void v(void)
+        {
+            int poa = {5, 6};
+            int ka = {.ko[4] = 8, [5] = 3};
+            joker[2][4];
+            **ptr;
+        }
         '''
         parser = c_parser.CParser()
         ast = parser.parse(src)
         ast.show()
         generator = CGenerator()
         print(generator.visit(ast))
-        
+
+
+#------------------------------------------------------------------------------
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        translate_to_c(sys.argv[1])
+    else:
         print("Please provide a filename as argument")
 
-
-# ZZZ: 
-# 1. (*hash)->heads turns to *hash->heads. need to parenthesize left side if it
-#    isn't simple
-# 2. sizeof should have parens around argument
-#
