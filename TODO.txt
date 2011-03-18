@@ -1,6 +1,13 @@
 Todo
 ----
 
+- change license to BSD
+
+Changes since last
+------------------
+
+* Added new C99 integer types to the fake headers.
+
 
 Version Update
 --------------

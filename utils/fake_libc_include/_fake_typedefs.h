@@ -77,4 +77,14 @@ typedef int __tzrule_type;
 typedef int __tzinfo_type;
 typedef int mbstate_t;
 
+/* C99 integer types */
+typedef int int8_t;
+typedef int uint8_t;
+typedef int int16_t;
+typedef int uint16_t;
+typedef int int32_t;
+typedef int uint32_t;
+typedef int int64_t;
+typedef int uint64_t;
+
 #endif

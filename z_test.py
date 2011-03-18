@@ -48,7 +48,7 @@ def expand_decl(decl):
 #-----------------------------------------------------------------
 class NodeVisitor(object):
     def __init__(self):
-        self.node_stack = []
+        self.current_parent = None
         
     def visit(self, node):
         """ Visit a node. 
@@ -56,17 +56,22 @@ class NodeVisitor(object):
         method = 'visit_' + node.__class__.__name__
         visitor = getattr(self, method, self.generic_visit)
         return visitor(node)
-        
+    
+    def visit_FuncCall(self, node):
+        print("Visiting FuncCall")
+        print(node.show())
+        print('---- parent ----')
+        print(self.current_parent.show())
+    
     def generic_visit(self, node):
         """ Called if no explicit visitor function exists for a 
             node. Implements preorder visiting of the node.
         """
-        print(node)
-        print(self.node_stack)
-        self.node_stack.append(node)
+        oldparent = self.current_parent
+        self.current_parent = node
         for c in node.children():
             self.visit(c)
-        self.node_stack.pop()
+        self.current_parent = oldparent
 
 
 if __name__ == "__main__":    
