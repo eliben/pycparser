@@ -1239,15 +1239,15 @@ class CParser(PLYParser):
         """
         p[0] = p[1]
                                 
-    def p_postfix_exptession_1(self, p):
+    def p_postfix_expression_1(self, p):
         """ postfix_expression  : primary_expression """
         p[0] = p[1]
     
-    def p_postfix_exptession_2(self, p):
+    def p_postfix_expression_2(self, p):
         """ postfix_expression  : postfix_expression LBRACKET expression RBRACKET """
         p[0] = c_ast.ArrayRef(p[1], p[3], p[1].coord)
     
-    def p_postfix_exptession_3(self, p):
+    def p_postfix_expression_3(self, p):
         """ postfix_expression  : postfix_expression LPAREN argument_expression_list RPAREN
                                 | postfix_expression LPAREN RPAREN
         """
