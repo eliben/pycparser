@@ -5,7 +5,7 @@
 # interacting with pycparser
 #
 # Copyright (C) 2008-2011, Eli Bendersky
-# License: LGPL
+# License: BSD
 #-----------------------------------------------------------------
 
 __all__ = ['c_lexer', 'c_parser', 'c_ast']

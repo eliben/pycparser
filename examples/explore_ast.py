@@ -9,8 +9,8 @@
 # information from the AST.
 # It helps to have the _c_ast.yaml file in front of you.
 #
-# Copyright (C) 2008-2010, Eli Bendersky
-# License: LGPL
+# Copyright (C) 2008-2011, Eli Bendersky
+# License: BSD
 #-----------------------------------------------------------------
 import sys
 

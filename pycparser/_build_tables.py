@@ -6,8 +6,8 @@
 # Also generates AST code from the configuration file.
 # Should be called from the installation directory.
 #
-# Copyright (C) 2008-2010, Eli Bendersky
-# License: LGPL
+# Copyright (C) 2008-2011, Eli Bendersky
+# License: BSD
 #-----------------------------------------------------------------
 
 # Generate c_ast.py

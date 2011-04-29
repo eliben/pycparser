@@ -5,7 +5,7 @@
 # in a C file.
 #
 # Copyright (C) 2008-2011, Eli Bendersky
-# License: LGPL
+# License: BSD
 #-----------------------------------------------------------------
 from __future__ import print_function
 import sys

@@ -48,7 +48,7 @@ What grammar does pycparser follow?
 How is pycparser licensed?
 --------------------------
 
-`LGPL <http://www.gnu.org/licenses/lgpl.html>`_
+`New BSD License <http://www.opensource.org/licenses/bsd-license.php>`_
 
 Contact details
 ---------------

@@ -7,8 +7,8 @@
 # The design of this module was inspired by astgen.py from the
 # Python 2.5 code-base.
 #
-# Copyright (C) 2008-2010, Eli Bendersky
-# License: LGPL
+# Copyright (C) 2008-2011, Eli Bendersky
+# License: BSD
 #-----------------------------------------------------------------
 import pprint
 from string import Template
@@ -145,8 +145,8 @@ r'''#-----------------------------------------------------------------
 #
 # AST Node classes.
 #
-# Copyright (C) 2008-2010, Eli Bendersky
-# License: LGPL
+# Copyright (C) 2008-2011, Eli Bendersky
+# License: BSD
 #-----------------------------------------------------------------
 
 '''

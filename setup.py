@@ -13,7 +13,7 @@ setup(
         C compilers or analysis tools.
     """,
     install_requires=['ply'],
-    license='LGPL',
+    license='BSD',
     version='2.03',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',

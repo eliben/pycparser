@@ -76,26 +76,18 @@ class NodeVisitor(object):
 
 if __name__ == "__main__":    
     source_code = """
-    typedef int Node, Hash;
+typedef char FlagType;
 
-    void HashPrint(Hash* hash, void (*PrintFunc)(char*, char*))
-    {
-        unsigned int i;
+int main()
+{
+}
 
-        if (hash == NULL || hash->heads == NULL)
-            return;
+int myproc( int FlagType)
+{
+    
+}
 
-        for (i = 0; i < hash->table_size; ++i)
-        {
-            Node* temp = hash->heads[i];
 
-            while (temp != NULL)
-            {
-                temp = temp->next;
-                PrintFunc(temp->entry->key, temp->entry->value);
-            }
-        }
-    }
 """
 
     #--------------- Lexing 
