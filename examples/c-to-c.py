@@ -116,7 +116,7 @@ class CGenerator(object):
         return s
     
     def visit_Cast(self, n):
-        s = '(' + self.visit(n.to_type) + ')' 
+        s = '(' + self._generate_type(n.to_type) + ')' 
         return s + ' ' + self.visit(n.expr)
     
     def visit_ExprList(self, n):
@@ -348,8 +348,10 @@ class CGenerator(object):
                     nstr = '*' + nstr
             s += ' ' + nstr
             return s
-        elif typ in (c_ast.Typename, c_ast.Decl):
+        elif typ == c_ast.Decl:
             return self._generate_decl(n.type)
+        elif typ == c_ast.Typename:
+            return self._generate_type(n.type)
         elif typ == c_ast.IdentifierType:
             return ' '.join(n.names) + ' '
         elif typ in (c_ast.ArrayDecl, c_ast.PtrDecl, c_ast.FuncDecl):
@@ -389,13 +391,10 @@ def translate_to_c(filename):
 def zz_test_translate():
     # internal use
         src = r'''
-        void v(void)
-        {
-            int poa = {5, 6};
-            int ka = {.ko[4] = 8, [5] = 3};
-            joker[2][4];
-            **ptr;
-        }
+            int main(int** k, float ar[5][2]) {
+              int a, *b;
+              b = (int *) a;
+            }
         '''
         parser = c_parser.CParser()
         ast = parser.parse(src)
@@ -406,6 +405,7 @@ def zz_test_translate():
 
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
+    zz_test_translate()
     if len(sys.argv) > 1:
         translate_to_c(sys.argv[1])
     else:
