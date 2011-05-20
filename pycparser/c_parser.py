@@ -99,10 +99,10 @@ class CParser(PLYParser):
             optimize=yacc_optimize,
             tabmodule=yacctab)
         
-        # A table of identifiers defined as typedef types during
-        # parsing.
+        # Stack of scopes for keeping track of typedefs. _scope_stack[-1] is
+        # the current (topmost) scope.
         #
-        self.typedef_table = set([])
+        self._scope_stack = [set()]
     
     def parse(self, text, filename='', debuglevel=0):
         """ Parses C code and returns an AST.
@@ -119,11 +119,29 @@ class CParser(PLYParser):
         """
         self.clex.filename = filename
         self.clex.reset_lineno()
-        self.typedef_table = set([])
+        self._scope_stack = [set()]
         return self.cparser.parse(text, lexer=self.clex, debug=debuglevel)
     
     ######################--   PRIVATE   --######################
     
+    def _push_scope(self):
+        self._scope_stack.append(set())
+
+    def _pop_scope(self):
+        assert len(self._scope_stack) > 1
+        self._scope_stack.pop()
+
+    def _add_typedef_type(self, name):
+        """ Add a new typedef-name to the current scope
+        """
+        self._scope_stack[-1].add(name)
+        #~ print(self._scope_stack)
+
+    def _is_type_in_scope(self, name):
+        """ Is *name* a typedef-name in the current scope?
+        """
+        return any(name in scope for scope in self._scope_stack)
+
     def _lex_error_func(self, msg, line, column):
         self._parse_error(msg, self._coord(line, column))
     
@@ -133,13 +151,7 @@ class CParser(PLYParser):
             Passed to the lexer for recognizing identifiers that
             are types.
         """
-        return name in self.typedef_table
-    
-    def _add_typedef_type(self, name):
-        """ Adds names that were defined as new types with 
-            typedef.
-        """
-        self.typedef_table.add(name)
+        return self._is_type_in_scope(name)
     
     # To understand what's going on here, read sections A.8.5 and 
     # A.8.6 of K&R2 very carefully.
@@ -613,7 +625,7 @@ class CParser(PLYParser):
             coord=self._coord(p.lineno(2)))
 
     def p_struct_or_union_specifier_2(self, p):
-        """ struct_or_union_specifier : struct_or_union LBRACE struct_declaration_list RBRACE
+        """ struct_or_union_specifier : struct_or_union brace_open struct_declaration_list brace_close
         """
         klass = self._select_struct_union_class(p[1])
         p[0] = klass(
@@ -622,8 +634,8 @@ class CParser(PLYParser):
             coord=self._coord(p.lineno(2)))
 
     def p_struct_or_union_specifier_3(self, p):
-        """ struct_or_union_specifier   : struct_or_union ID LBRACE struct_declaration_list RBRACE
-                                        | struct_or_union TYPEID LBRACE struct_declaration_list RBRACE
+        """ struct_or_union_specifier   : struct_or_union ID brace_open struct_declaration_list brace_close
+                                        | struct_or_union TYPEID brace_open struct_declaration_list brace_close
         """
         klass = self._select_struct_union_class(p[1])
         p[0] = klass(
@@ -720,13 +732,13 @@ class CParser(PLYParser):
         p[0] = c_ast.Enum(p[2], None, self._coord(p.lineno(1)))
     
     def p_enum_specifier_2(self, p):
-        """ enum_specifier  : ENUM LBRACE enumerator_list RBRACE
+        """ enum_specifier  : ENUM brace_open enumerator_list brace_close
         """
         p[0] = c_ast.Enum(None, p[3], self._coord(p.lineno(1)))
     
     def p_enum_specifier_3(self, p):
-        """ enum_specifier  : ENUM ID LBRACE enumerator_list RBRACE
-                            | ENUM TYPEID LBRACE enumerator_list RBRACE
+        """ enum_specifier  : ENUM ID brace_open enumerator_list brace_close
+                            | ENUM TYPEID brace_open enumerator_list brace_close
         """
         p[0] = c_ast.Enum(p[2], p[4], self._coord(p.lineno(1)))
         
@@ -896,8 +908,8 @@ class CParser(PLYParser):
         p[0] = p[1]
     
     def p_initializer_2(self, p):
-        """ initializer : LBRACE initializer_list RBRACE
-                        | LBRACE initializer_list COMMA RBRACE
+        """ initializer : brace_open initializer_list brace_close
+                        | brace_open initializer_list COMMA brace_close
         """
         p[0] = p[2]
 
@@ -1049,7 +1061,7 @@ class CParser(PLYParser):
         p[0] = p[1] if (len(p) == 2 or p[2] == [None]) else p[1] + p[2]
     
     def p_compound_statement_1(self, p):
-        """ compound_statement : LBRACE block_item_list_opt RBRACE """
+        """ compound_statement : brace_open block_item_list_opt brace_close """
         p[0] = c_ast.Compound(
             block_items=p[2], 
             coord=self._coord(p.lineno(1)))
@@ -1266,8 +1278,8 @@ class CParser(PLYParser):
         p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
 
     def p_postfix_expression_6(self, p):
-        """ postfix_expression  : LPAREN type_name RPAREN LBRACE initializer_list RBRACE
-                                | LPAREN type_name RPAREN LBRACE initializer_list COMMA RBRACE
+        """ postfix_expression  : LPAREN type_name RPAREN brace_open initializer_list brace_close
+                                | LPAREN type_name RPAREN brace_open initializer_list COMMA brace_close
         """
         p[0] = c_ast.CompoundLiteral(p[2], p[5])
 
@@ -1349,7 +1361,19 @@ class CParser(PLYParser):
         else:
             p[1].value = p[1].value.rstrip[:-1] + p[2][1:]
             p[0] = p[1]
-            
+
+    def p_brace_open(self, p):
+        """ brace_open  :   LBRACE
+        """
+        self._push_scope()
+        p[0] = p[1]
+
+    def p_brace_close(self, p):
+        """ brace_close :   RBRACE
+        """
+        self._pop_scope()
+        p[0] = p[1]
+
     def p_empty(self, p):
         'empty : '
         p[0] = None

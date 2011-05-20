@@ -76,16 +76,15 @@ def expand_init(init):
         return ['ID', init.name]
 
 
-class TestCParser_fundamentals(unittest.TestCase):
-    """ Tests for "fundamental features" of CParser. Testing 
-        (mostly) each feature in a detailed manner.
-    """
+class TestCParser_base(unittest.TestCase):
     def parse(self, txt, filename=''):
         return self.cparser.parse(txt, filename)
     
     def setUp(self):
         self.cparser = _c_parser
     
+
+class TestCParser_fundamentals(TestCParser_base):
     def get_decl(self, txt, index=0):
         """ Given a source and an index returns the expanded
             declaration at that index.
@@ -1081,18 +1080,12 @@ class TestCParser_fundamentals(unittest.TestCase):
         self.failUnless(isinstance(ps2.ext[0].body.block_items[2].type.dim, ID))
 
 
-class TestCParser_whole_code(unittest.TestCase):
+class TestCParser_whole_code(TestCParser_base):
     """ Testing of parsing whole chunks of code.
     
         Since I don't want to rely on the structure of ASTs too
         much, most of these tests are implemented with visitors.
     """
-    def parse(self, txt, filename=''):
-        return self.cparser.parse(txt, filename)
-    
-    def setUp(self):
-        self.cparser = _c_parser
-
     # A simple helper visitor that lists the values of all the 
     # Constant nodes it sees.
     #
@@ -1339,7 +1332,37 @@ class TestCParser_whole_code(unittest.TestCase):
         self.failUnless(isinstance(p.ext[-8], Typedef))
         self.failUnless(isinstance(p.ext[-8].type, TypeDecl))
         self.assertEqual(p.ext[-8].name, 'cookie_io_functions_t')
+
+
+class TestCParser_typenames(TestCParser_base):
+    """ Test issues related to the typedef-name problem.
+    """
+    def test_innerscope_typedef(self):
+        # should fail since TT is not a type in bar
+        s1 = r'''
+            void foo() {
+              typedef char TT;
+              TT x;
+            }
+            void bar() {
+              TT y;
+            }
+            '''
+        self.assertRaises(ParseError, self.parse, s1)
         
+        # should succeed since TT is not a type in bar
+        s2 = r'''
+            void foo() {
+              typedef char TT;
+              TT x;
+            }
+            void bar() {
+                unsigned TT;
+            }
+            '''
+        self.failUnless(isinstance(self.parse(s2), FileAST))
+        
+
 
 if __name__ == '__main__':
     #~ suite = unittest.TestLoader().loadTestsFromNames(

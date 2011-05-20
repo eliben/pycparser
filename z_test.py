@@ -76,13 +76,7 @@ class NodeVisitor(object):
 
 if __name__ == "__main__":    
     source_code = """
-int main()
-{
-    x = 5 + 10;
-}
-
-
-"""
+typedef struct tagHash Hash;            """
 
     #--------------- Lexing 
     #~ def errfoo(msg, a, b):
