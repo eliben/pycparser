@@ -76,15 +76,9 @@ class NodeVisitor(object):
 
 if __name__ == "__main__":    
     source_code = """
-typedef char FlagType;
-
 int main()
 {
-}
-
-int myproc( int FlagType)
-{
-    
+    x = 5 + 10;
 }
 
 
@@ -107,7 +101,7 @@ int myproc( int FlagType)
     #--------------- Parsing
     parser = CParser()
     ast = parser.parse(source_code, filename='zz')
-    ast.show(showcoord=True)
+    ast.show(showcoord=False)
     nv=NodeVisitor()
     nv.visit(ast)
     

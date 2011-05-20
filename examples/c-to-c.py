@@ -120,7 +120,13 @@ class CGenerator(object):
         return s + ' ' + self.visit(n.expr)
     
     def visit_ExprList(self, n):
-        return ', '.join(self.visit(expr) for expr in n.exprs)
+        visited_subexprs = []
+        for expr in n.exprs:
+            if isinstance(expr, c_ast.ExprList):
+                visited_subexprs.append('{' + self.visit(expr) + '}')
+            else:
+                visited_subexprs.append(self.visit(expr))
+        return ', '.join(visited_subexprs)
     
     def visit_Enum(self, n):
         s = 'enum'
@@ -251,6 +257,9 @@ class CGenerator(object):
     def visit_Struct(self, n):
         return self._generate_struct_union(n, 'struct')
 
+    def visit_Typename(self, n):
+        return self._generate_type(n.type)
+        
     def visit_Union(self, n):
         return self._generate_struct_union(n, 'union')
 
@@ -390,17 +399,25 @@ def translate_to_c(filename):
 
 def zz_test_translate():
     # internal use
-        src = r'''
-            int main(int** k, float ar[5][2]) {
-              int a, *b;
-              b = (int *) a;
-            }
-        '''
-        parser = c_parser.CParser()
-        ast = parser.parse(src)
-        ast.show()
-        generator = CGenerator()
-        print(generator.visit(ast))
+    src = r'''
+    typedef struct 
+{
+  int a;
+} s;
+s arr[] = {{1}, {2}};
+    '''
+    parser = c_parser.CParser()
+    ast = parser.parse(src)
+    ast.show()
+    generator = CGenerator()
+    
+    print(generator.visit(ast))
+    
+    # tracing the generator for debugging
+    #~ import trace
+    #~ tr = trace.Trace(countcallers=1)
+    #~ tr.runfunc(generator.visit, ast)
+    #~ tr.results().write_results()
 
 
 #------------------------------------------------------------------------------

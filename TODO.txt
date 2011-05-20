@@ -2,6 +2,7 @@ Todo
 ----
 
 - change license to BSD
+- c-to-c fixes (were there??)
 
 Changes since last
 ------------------

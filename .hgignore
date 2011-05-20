@@ -4,7 +4,8 @@ syntax: glob
 tests/parser.out
 tests/*tab.py
 build
-
+yacctab.py
+lextab.py
 
 
 glob:utils/z.c
