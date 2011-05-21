@@ -4,6 +4,8 @@ recursive-include pycparser *.py *.cfg
 include utils/*.exe
 include utils/fake_libc_include/*.h
 include README.*
+include LICENSE
 include setup.*
 
-prune tests/yacctab.*
+recursive-exclude tests yacctab.* lextab.*
+recursive-exclude examples yacctab.* lextab.*
