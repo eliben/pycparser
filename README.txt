@@ -1,5 +1,5 @@
 ===============
-pycparser v2.03
+pycparser v2.04
 ===============
 
 :Author: `Eli Bendersky <http://eli.thegreenplace.net>`_
@@ -153,6 +153,17 @@ Some people have contributed to ``pycparser`` by opening issues on bugs they've 
 
 Changelog
 =========
+
++ Version 2.04 (21.05.2011)
+
+  - License changed from LGPL to BSD
+  - Bug fixes:
+  
+    * Issue 31: constraining the scope of typedef definitions
+    * Issues 33, 35: fixes for the c-to-c.py example
+  
+  - Added C99 integer types to fake headers
+  - Added unit tests for the c-to-c.py example
 
 + Version 2.03 (06.03.2011)
 
