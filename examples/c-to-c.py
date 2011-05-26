@@ -70,6 +70,8 @@ class CGenerator(object):
         operand = self._parenthesize_unless_simple(n.expr)
         if n.op == 'p++':
             return '%s++' % operand
+        elif n.op == 'p--':
+            return '%s--' % operand
         elif n.op == 'sizeof':
             # Always parenthesize the argument of sizeof since it can be 
             # a name.
@@ -407,9 +409,11 @@ def zz_test_translate():
     src = r'''
 int main(void)
 {
-  unsigned size;
-  size = sizeof(size);
-  return 0;
+    int a;
+    int b = a++;
+    int c = ++a;
+    int d = a--;
+    int e = --a;
 }
 '''
     parser = c_parser.CParser()

@@ -65,6 +65,17 @@ class TestCtoC(unittest.TestCase):
     def test_initlist(self):
         self._assert_ctoc_correct('int arr[] = {1, 2, 3};')
 
+    def test_exprs(self):
+        self._assert_ctoc_correct('''
+            int main(void)
+            {
+                int a;
+                int b = a++;
+                int c = ++a;
+                int d = a--;
+                int e = --a;
+            }''')
+
     def test_statements(self):
         self._assert_ctoc_correct(r'''
             int main() {
