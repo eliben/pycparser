@@ -171,7 +171,8 @@ class CGenerator(object):
     def visit_Compound(self, n):
         s = self._make_indent() + '{\n'
         self.indent_level += 2
-        s += ''.join(self._generate_stmt(stmt) for stmt in n.block_items)
+        if n.block_items:
+            s += ''.join(self._generate_stmt(stmt) for stmt in n.block_items)
         self.indent_level -= 2
         s += self._make_indent() + '}\n'
         return s
@@ -400,12 +401,7 @@ def translate_to_c(filename):
 def zz_test_translate():
     # internal use
     src = r'''
-    typedef struct 
-{
-  int a;
-} s;
-s arr[] = {{1}, {2}};
-    '''
+int main(){}    '''
     parser = c_parser.CParser()
     ast = parser.parse(src)
     ast.show()

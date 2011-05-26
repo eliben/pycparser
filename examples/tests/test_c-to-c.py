@@ -73,6 +73,10 @@ class TestCtoC(unittest.TestCase):
                 return a;
             }''')
     
+    def test_issue36(self):
+        self._assert_ctoc_correct(r'''
+            int main() {
+            }''')
     
         
 
