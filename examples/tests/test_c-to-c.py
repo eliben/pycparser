@@ -78,6 +78,15 @@ class TestCtoC(unittest.TestCase):
             int main() {
             }''')
     
+    def test_issue37(self):
+        self._assert_ctoc_correct(r'''
+            int main(void)
+            {
+              unsigned size;
+              size = sizeof(size);
+              return 0;
+            }''')
+
         
 
 if __name__ == "__main__":
