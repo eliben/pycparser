@@ -780,8 +780,8 @@ class TestCParser_fundamentals(TestCParser_base):
                 int i;
                 float;
             } v2;"""
-            
-        self.assertRaises(ParseError, self.parse, s4)
+        # just make sure this doesn't raise ParseError
+        self.parse(s4)
 
     def test_struct_bitfields(self):
         # a struct with two bitfields, one unnamed

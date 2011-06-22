@@ -76,7 +76,24 @@ class NodeVisitor(object):
 
 if __name__ == "__main__":    
     source_code = """
-typedef struct tagHash Hash;            """
+    typedef int POINT;
+    typedef int HWND;
+    typedef int UINT;
+    typedef int ULONG_PTR;
+    typedef int DWORD;
+typedef struct tagMOUSEHOOKSTRUCT {
+    POINT   pt;
+    HWND    hwnd;
+    UINT    wHitTestCode;
+    ULONG_PTR dwExtraInfo;
+} MOUSEHOOKSTRUCT,  *LPMOUSEHOOKSTRUCT, *PMOUSEHOOKSTRUCT;
+
+typedef struct tagMOUSEHOOKSTRUCTEX
+{
+    MOUSEHOOKSTRUCT;
+    DWORD   mouseData;
+} MOUSEHOOKSTRUCTEX, *LPMOUSEHOOKSTRUCTEX, *PMOUSEHOOKSTRUCTEX;
+    """
 
     #--------------- Lexing 
     #~ def errfoo(msg, a, b):
@@ -96,7 +113,7 @@ typedef struct tagHash Hash;            """
     parser = CParser()
     ast = parser.parse(source_code, filename='zz')
     ast.show(showcoord=False)
-    nv=NodeVisitor()
-    nv.visit(ast)
+    #~ nv=NodeVisitor()
+    #~ nv.visit(ast)
     
 

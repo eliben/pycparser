@@ -682,23 +682,23 @@ class CParser(PLYParser):
             
                 typename = spec['type']
                 decls.append(self._fix_decl_name_type(decl, typename))
-
-        else:  # anonymous struct/union, gcc extension, C1x feature
+        else:
+            # Anonymous struct/union, gcc extension, C1x feature.
+            # Although the standard only allows structs/unions here, I see no 
+            # reason to disallow other types since some compilers have typedefs
+            # here, and pycparser isn't about rejecting all invalid code.
+            #             
             node = spec['type'][0]
-            if isinstance(node, c_ast.Union) or isinstance(node, c_ast.Struct):
-                decl = c_ast.Decl(
-                    name=None,
-                    quals=spec['qual'],
-                    funcspec=spec['function'],
-                    storage=spec['storage'],
-                    type=node,
-                    init=None,
-                    bitsize=None,
-                    coord=self._coord(p.lineno(3)))
-                decls.append(decl)
-            else:
-                self._parse_error("Anonymous field of invalid type", 
-                    self._coord(p.lineno(3)))
+            decl = c_ast.Decl(
+                name=None,
+                quals=spec['qual'],
+                funcspec=spec['function'],
+                storage=spec['storage'],
+                type=node,
+                init=None,
+                bitsize=None,
+                coord=self._coord(p.lineno(3)))
+            decls.append(decl)
         
         p[0] = decls
     
