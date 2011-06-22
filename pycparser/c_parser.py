@@ -689,12 +689,18 @@ class CParser(PLYParser):
             # here, and pycparser isn't about rejecting all invalid code.
             #             
             node = spec['type'][0]
+
+            if isinstance(node, c_ast.Node):
+                decl_type = node
+            else:
+                decl_type = c_ast.IdentifierType(node)
+            
             decl = c_ast.Decl(
                 name=None,
                 quals=spec['qual'],
                 funcspec=spec['function'],
                 storage=spec['storage'],
-                type=node,
+                type=decl_type,
                 init=None,
                 bitsize=None,
                 coord=self._coord(p.lineno(3)))

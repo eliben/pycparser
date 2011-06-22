@@ -92,8 +92,8 @@ typedef struct tagMOUSEHOOKSTRUCTEX
 {
     MOUSEHOOKSTRUCT;
     DWORD   mouseData;
-} MOUSEHOOKSTRUCTEX, *LPMOUSEHOOKSTRUCTEX, *PMOUSEHOOKSTRUCTEX;
-    """
+} MOUSEHOOKSTRUCTEX, *LPMOUSEHOOKSTRUCTEX, *PMOUSEHOOKSTRUCTEX;    
+"""
 
     #--------------- Lexing 
     #~ def errfoo(msg, a, b):
