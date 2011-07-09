@@ -6,6 +6,7 @@ Todo
 Changes since last
 ------------------
 
+* Issue 39
 * 
 
 Version Update

@@ -81,6 +81,7 @@ if __name__ == "__main__":
     typedef int UINT;
     typedef int ULONG_PTR;
     typedef int DWORD;
+struct _MIDL_STUB_MESSAGE MIDL_STUB_MESSAGE,*PMIDL_STUB_MESSAGE; 
 typedef struct tagMOUSEHOOKSTRUCT {
     POINT   pt;
     HWND    hwnd;
