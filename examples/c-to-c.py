@@ -147,16 +147,6 @@ class CGenerator(object):
                     s += ', '
             s += '}'
         return s
-    
-    def visit_Struct(self, n):
-        s = 'struct'
-        if n.name: s += ' ' + n.name
-        if n.decls:
-            s += ' { \n'
-            for decl in n.decls:
-                s += '  ' + self.visit(decl) + ';\n'
-            s += '}'
-        return s
         
     def visit_FuncDef(self, n):
         decl = self.visit(n.decl)
@@ -362,7 +352,7 @@ class CGenerator(object):
                     nstr += '(' + self.visit(modifier.args) + ')'
                 elif isinstance(modifier, c_ast.PtrDecl):
                     nstr = '*' + nstr
-            s += ' ' + nstr
+            if nstr: s += ' ' + nstr
             return s
         elif typ == c_ast.Decl:
             return self._generate_decl(n.type)
@@ -407,6 +397,9 @@ def translate_to_c(filename):
 def zz_test_translate():
     # internal use
     src = r'''
+    
+    void f(void){}
+    
 int main(void)
 {
     int a;

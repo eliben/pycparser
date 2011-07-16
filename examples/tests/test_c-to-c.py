@@ -84,6 +84,14 @@ class TestCtoC(unittest.TestCase):
                 return a;
             }''')
     
+    def test_struct_decl(self):
+        self._assert_ctoc_correct(r'''
+            typedef struct node_t {
+                struct node_t* next;
+                int data;
+            } node;
+            ''')
+    
     def test_issue36(self):
         self._assert_ctoc_correct(r'''
             int main() {

@@ -76,7 +76,7 @@ class NodeVisitor(object):
 
 if __name__ == "__main__":    
     source_code = """
-    typedef int POINT;
+    typedef long int POINT;
     typedef int HWND;
     typedef int UINT;
     typedef int ULONG_PTR;
