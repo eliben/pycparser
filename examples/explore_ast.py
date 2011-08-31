@@ -7,11 +7,12 @@
 # Just read the code, and let the comments guide you. The lines
 # beginning with #~ can be uncommented to print out useful 
 # information from the AST.
-# It helps to have the _c_ast.yaml file in front of you.
+# It helps to have the pycparser/_c_ast.cfg file in front of you.
 #
 # Copyright (C) 2008-2011, Eli Bendersky
 # License: BSD
 #-----------------------------------------------------------------
+from __future__ import print_function
 import sys
 
 # This is not required if you've installed pycparser into
@@ -70,7 +71,7 @@ ast = parser.parse(text, filename='<none>')
 
 # OK, we've seen that the top node is FileAST. This is always the
 # top node of the AST. Its children are "external declarations",
-# and are stored in a list called ext[] (see _c_ast.yaml for the
+# and are stored in a list called ext[] (see _c_ast.cfg for the
 # names and types of Nodes and their children).
 # As you see from the printout, our AST has two Typedef children
 # and one FuncDef child.
@@ -83,9 +84,25 @@ ast = parser.parse(text, filename='<none>')
 
 # A FuncDef consists of a declaration, a list of parameter 
 # declarations (for K&R style function definitions), and a body.
-# Let's focus on the body for this example. The body is of 
-# type Compound, which is a placeholder for a block surrounded
-# by {} (You should be reading _c_ast.yaml parallel to this 
+# First, let's examine the declaration.
+#
+function_decl = ast.ext[2].decl
+
+# function_decl, like any other declaration, is a Decl. Its type child
+# is a FuncDecl, which has a return type and arguments stored in a 
+# ParamList node
+#~ function_decl.type.show()
+#~ function_decl.type.args.show()
+
+# The following displays the name and type of each argument:
+#
+#~ for param_decl in function_decl.type.args.params:
+    #~ print('Arg name: %s' % param_decl.name)
+    #~ print('Type:')
+    #~ param_decl.type.show(offset=6)
+
+# The body is of FuncDef is a Compound, which is a placeholder for a block 
+# surrounded by {} (You should be reading _c_ast.cfg parallel to this 
 # explanation and seeing these things by your own eyes).
 #
 # Let's see the block's declarations:
@@ -107,7 +124,7 @@ function_body = ast.ext[2].body
 for_stmt = function_body.block_items[2]
 #~ for_stmt.show()
 
-# As you can see in _c_ast.yaml, For's children are 'init, cond,
+# As you can see in _c_ast.cfg, For's children are 'init, cond,
 # next' for the respective parts of the 'for' loop specifier,
 # and stmt, which is either a single stmt or a Compound if there's
 # a block.

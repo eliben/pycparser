@@ -7,7 +7,7 @@ Changes since last
 ------------------
 
 * Issue 39
-* 
+* Fixed spacing issue for some type declarations
 
 Version Update
 --------------
