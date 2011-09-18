@@ -87,4 +87,7 @@ typedef int uint32_t;
 typedef int int64_t;
 typedef int uint64_t;
 
+/* C99 stdbool.h bool type */
+typedef _Bool bool;
+
 #endif

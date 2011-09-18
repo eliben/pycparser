@@ -91,17 +91,21 @@ class CLexer(object):
     ## Reserved keywords
     ##
     keywords = (
-        'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST', 'CONTINUE', 
-        'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN', 
+        'AUTO', '_BOOL', 'BREAK', 'CASE', 'CHAR', 'CONST', 'CONTINUE',
+        'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
         'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG', 'REGISTER',
         'RESTRICT', 'RETURN', 'SHORT', 'SIGNED', 'SIZEOF', 'STATIC', 'STRUCT',
-        'SWITCH', 'TYPEDEF', 'UNION', 'UNSIGNED', 'VOID', 
+        'SWITCH', 'TYPEDEF', 'UNION', 'UNSIGNED', 'VOID',
         'VOLATILE', 'WHILE',
     )
 
     keyword_map = {}
     for r in keywords:
         keyword_map[r.lower()] = r
+
+    # Hack as the C99 boolean type is not all lowercase!
+    keyword_map['_Bool'] = keyword_map['_bool']
+    del keyword_map['_bool']
 
     ##
     ## All the tokens recognized by the lexer

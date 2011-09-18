@@ -565,6 +565,7 @@ class CParser(PLYParser):
     
     def p_type_specifier_1(self, p):
         """ type_specifier  : VOID
+                            | _BOOL
                             | CHAR
                             | SHORT
                             | INT
