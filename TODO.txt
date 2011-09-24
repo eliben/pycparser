@@ -9,6 +9,7 @@ Changes since last
 * Issue 39
 * Fixed spacing issue for some type declarations
 * Expanded the explore_ast.py example a little
+* Added C99 _Bool type and supporting stdbool.h
 
 Version Update
 --------------

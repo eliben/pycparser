@@ -100,12 +100,11 @@ class CLexer(object):
     )
 
     keyword_map = {}
-    for r in keywords:
-        keyword_map[r.lower()] = r
-
-    # Hack as the C99 boolean type is not all lowercase!
-    keyword_map['_Bool'] = keyword_map['_bool']
-    del keyword_map['_bool']
+    for keyword in keywords:
+        if keyword == '_BOOL':
+            keyword_map['_Bool'] = keyword
+        else:
+            keyword_map[keyword.lower()] = keyword
 
     ##
     ## All the tokens recognized by the lexer

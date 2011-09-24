@@ -204,6 +204,9 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(self.get_decl('unsigned int a;'), 
             ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['int', 'unsigned']]]])
 
+        self.assertEqual(self.get_decl('_Bool a;'),
+            ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['_Bool']]]])
+
         self.assertEqual(self.get_decl('char* string;'), 
             ['Decl', 'string', 
                 ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]])
