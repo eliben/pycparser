@@ -1133,7 +1133,10 @@ class CParser(PLYParser):
     
     def p_expression_statement(self, p):
         """ expression_statement : expression_opt SEMI """
-        p[0] = p[1]
+        if p[1] is None:
+            p[0] = c_ast.EmptyStatement(self._coord(p.lineno(1)))
+        else:
+            p[0] = p[1]
     
     def p_expression(self, p):
         """ expression  : assignment_expression 

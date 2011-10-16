@@ -322,6 +322,15 @@ class EllipsisParam(Node):
 
     attr_names = ()
 
+class EmptyStatement(Node):
+    def __init__(self, coord=None):
+        self.coord = coord
+
+    def children(self):
+        return ()
+
+    attr_names = ()
+
 class Enum(Node):
     def __init__(self, name, values, coord=None):
         self.name = name

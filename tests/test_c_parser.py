@@ -1263,6 +1263,17 @@ class TestCParser_whole_code(TestCParser_base):
         self.assert_num_klass_nodes(ps3, DoWhile, 1)
         self.assert_num_ID_refs(ps3, 'a', 4)
         self.assert_all_Constants(ps3, ['0', '0', '1'])
+        
+    def test_empty_statement(self):
+        s1 = r'''
+        void foo(void){
+            ;
+            return;
+        }
+        '''
+        ps1 = self.parse(s1)
+        self.assert_num_klass_nodes(ps1, EmptyStatement, 1)
+        self.assert_num_klass_nodes(ps1, Return, 1)
 
     def test_for_statement(self):
         s2 = r'''

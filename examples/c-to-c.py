@@ -173,6 +173,9 @@ class CGenerator(object):
         s += self._make_indent() + '}\n'
         return s
     
+    def visit_EmptyStatement(self, n):
+        return ';'
+    
     def visit_ParamList(self, n):
         return ', '.join(self.visit(param) for param in n.params)
 
@@ -402,11 +405,8 @@ def zz_test_translate():
     
 int main(void)
 {
-    int a;
-    int b = a++;
-    int c = ++a;
-    int d = a--;
-    int e = --a;
+    ;
+    return 0;
 }
 '''
     parser = c_parser.CParser()
