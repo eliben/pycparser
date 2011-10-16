@@ -14,13 +14,15 @@ setup(
     """,
     install_requires=['ply'],
     license='BSD',
-    version='2.04',
+    version='2.05',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',
     url='http://code.google.com/p/pycparser/',
     platforms='Cross Platform',
-    
+    classifiers = [
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',],    
     packages=['pycparser'],
     package_data={'pycparser': ['*.cfg']},
 )

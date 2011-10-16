@@ -1,5 +1,5 @@
 ===============
-pycparser v2.04
+pycparser v2.05
 ===============
 
 :Author: `Eli Bendersky <http://eli.thegreenplace.net>`_
@@ -69,6 +69,10 @@ Installation process
 --------------------
 
 Installing ``pycparser`` is very simple. Once you download it from its `website <http://code.google.com/p/pycparser/>`_ and unzip the package, you just have to execute the standard ``python setup.py install``. The setup script will then place the ``pycparser`` module into ``site-packages`` in your Python's installation library.
+
+Alternatively, since ``pycparser`` is listed in the `Python Package Index <http://pypi.python.org/pypi/pycparser>`_ (PyPI), you can install it using your favorite Python packaging/distribution tool, for example with::
+
+    > pip install pycparser
 
 It's recommended to run ``_build_tables.py`` in the ``pycparser`` code directory after installation to make sure the parsing tables of PLY are pre-generated. This can make your code run faster.
 
@@ -153,6 +157,17 @@ Some people have contributed to ``pycparser`` by opening issues on bugs they've 
 
 Changelog
 =========
+
++ Version 2.05 (16.10.2011)
+
+  - Added support for the C99 ``_Bool`` type and ``stdbool.h`` header file
+  - Expanded ``examples/explore_ast.py`` with more details on working with the 
+    AST
+  - Relaxed the rules on parsing unnamed struct members (helps parse ``windows.h``)
+  - Bug fixes:
+  
+    * Fixed spacing issue for some type declarations
+    * Issue 47: display empty statements (lone ';') correctly after parsing
 
 + Version 2.04 (21.05.2011)
 

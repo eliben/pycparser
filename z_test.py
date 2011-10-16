@@ -75,26 +75,14 @@ class NodeVisitor(object):
 
 
 if __name__ == "__main__":    
-    source_code = """
-    typedef long int POINT;
-    typedef int HWND;
-    typedef int UINT;
-    typedef int ULONG_PTR;
-    typedef int DWORD;
-struct _MIDL_STUB_MESSAGE MIDL_STUB_MESSAGE,*PMIDL_STUB_MESSAGE; 
-typedef struct tagMOUSEHOOKSTRUCT {
-    POINT   pt;
-    HWND    hwnd;
-    UINT    wHitTestCode;
-    ULONG_PTR dwExtraInfo;
-} MOUSEHOOKSTRUCT,  *LPMOUSEHOOKSTRUCT, *PMOUSEHOOKSTRUCT;
+    source_code = '''
+  static void foo(int k)
+  {
+      j = p && r || q;
+      return j;
+  }
+'''
 
-typedef struct tagMOUSEHOOKSTRUCTEX
-{
-    MOUSEHOOKSTRUCT;
-    DWORD   mouseData;
-} MOUSEHOOKSTRUCTEX, *LPMOUSEHOOKSTRUCTEX, *PMOUSEHOOKSTRUCTEX;    
-"""
 
     #--------------- Lexing 
     #~ def errfoo(msg, a, b):
