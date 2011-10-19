@@ -120,7 +120,10 @@ class CParser(PLYParser):
         self.clex.filename = filename
         self.clex.reset_lineno()
         self._scope_stack = [set()]
-        return self.cparser.parse(text, lexer=self.clex, debug=debuglevel)
+        if not text or text.isspace():
+            return c_ast.FileAST([])
+        else:
+            return self.cparser.parse(text, lexer=self.clex, debug=debuglevel)
     
     ######################--   PRIVATE   --######################
     
@@ -355,11 +358,6 @@ class CParser(PLYParser):
         if p[2] is not None:
             p[1].ext.extend(p[2])
         p[0] = p[1]
-    
-    def p_translation_unit_3(self, p):
-        """ translation_unit  :
-        """
-        p[0] = c_ast.FileAST([])
     
     # Declarations always come as lists (because they can be
     # several in one line), so we wrap the function definition 
