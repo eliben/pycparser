@@ -356,6 +356,11 @@ class CParser(PLYParser):
             p[1].ext.extend(p[2])
         p[0] = p[1]
     
+    def p_translation_unit_3(self, p):
+        """ translation_unit  :
+        """
+        p[0] = c_ast.FileAST([])
+    
     # Declarations always come as lists (because they can be
     # several in one line), so we wrap the function definition 
     # into a list as well, to make the return value of 

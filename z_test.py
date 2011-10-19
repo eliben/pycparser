@@ -76,11 +76,6 @@ class NodeVisitor(object):
 
 if __name__ == "__main__":    
     source_code = '''
-  static void foo(int k)
-  {
-      j = p && r || q;
-      return j;
-  }
 '''
 
 
@@ -99,7 +94,7 @@ if __name__ == "__main__":
         #~ printme([tok.value, tok.type, tok.lineno, clex.filename, tok.lexpos])
 
     #--------------- Parsing
-    parser = CParser()
+    parser = CParser(lex_optimize=False, yacc_optimize=False)
     ast = parser.parse(source_code, filename='zz')
     ast.show(showcoord=False)
     #~ nv=NodeVisitor()

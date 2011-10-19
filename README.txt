@@ -158,6 +158,10 @@ Some people have contributed to ``pycparser`` by opening issues on bugs they've 
 Changelog
 =========
 
++ Version 2.06 (??)
+
+  - Issue 48: gracefully handle parsing of empty files
+
 + Version 2.05 (16.10.2011)
 
   - Added support for the C99 ``_Bool`` type and ``stdbool.h`` header file
