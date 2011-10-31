@@ -95,6 +95,9 @@ if __name__ == "__main__":
         #~ printme([tok.value, tok.type, tok.lineno, clex.filename, tok.lexpos])
 
     #--------------- Parsing
+    source_code = r'''#line 1 "..\..\test.h"
+    int a;
+    '''
     parser = CParser(lex_optimize=False, yacc_optimize=False, yacc_debug=True)
     ast = parser.parse(source_code, filename='zz')
     ast.show(showcoord=False)
