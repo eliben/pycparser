@@ -179,13 +179,13 @@ class CLexer(object):
     bad_octal_constant = '0[0-7]*[89]'
 
     # character constants (K&R2: A.2.5.2)
-    # Note: a-zA-Z and '.' are allowed as escape chars to support #line
+    # Note: a-zA-Z and '.-~^_!=&;,' are allowed as escape chars to support #line
     # directives with Windows paths as filenames (..\..\dir\file)
     #
-    simple_escape = r"""([a-zA-Z.\\?'"])"""
+    simple_escape = r"""([a-zA-Z._~!=&\^\-\\?'"])"""
     octal_escape = r"""([0-7]{1,3})"""
     hex_escape = r"""(x[0-9a-fA-F]+)"""
-    bad_escape = r"""([\\][^a-zA-Z.\\?'"x0-7])"""
+    bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-7])"""
 
     escape_sequence = r"""(\\("""+simple_escape+'|'+octal_escape+'|'+hex_escape+'))'
     cconst_char = r"""([^'\\\n]|"""+escape_sequence+')'    

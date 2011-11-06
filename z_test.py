@@ -96,6 +96,7 @@ if __name__ == "__main__":
 
     #--------------- Parsing
     source_code = r'''#line 1 "..\..\test.h"
+    #line 2 "..\-\~\^\_\!\=\&test.h"
     int a;
     '''
     parser = CParser(lex_optimize=False, yacc_optimize=False, yacc_debug=True)
