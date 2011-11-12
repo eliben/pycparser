@@ -83,7 +83,7 @@ class NodeCfg(object):
     def generate_source(self):
         src = self._gen_init()
         src += '\n' + self._gen_children()
-        src += '\n' + self._gen_show()
+        src += '\n' + self._gen_attr_names()
         return src
     
     def _gen_init(self):
@@ -101,32 +101,32 @@ class NodeCfg(object):
             src += "        self.%s = %s\n" % (name, name)
         
         return src
-    
+
     def _gen_children(self):
         src = '    def children(self):\n'
         
         if self.all_entries:
             src += '        nodelist = []\n'
-            
-            template = ('' +
-                '        if self.%s is not None:' +
-                ' nodelist.%s(self.%s)\n')
-            
+
             for child in self.child:
-                src += template % (
-                    child, 'append', child)
-            
+                src += (
+                    '        if self.%(child)s is not None:' +
+                    ' nodelist.append(("%(child)s", self.%(child)s))\n') % (
+                        dict(child=child))
+                
             for seq_child in self.seq_child:
-                src += template % (
-                    seq_child, 'extend', seq_child)
+                src += (
+                    '        for i, child in enumerate(self.%(child)s or []):\n'
+                    '            nodelist.append(("%(child)s[%%d]" %% i, child))\n') % (
+                        dict(child=seq_child))
                     
             src += '        return tuple(nodelist)\n'
         else:
             src += '        return ()\n'
             
-        return src
+        return src        
 
-    def _gen_show(self):
+    def _gen_attr_names(self):
         src = "    attr_names = (" + ''.join("%r," % nm for nm in self.attr) + ')' 
         return src
 
@@ -163,11 +163,11 @@ class Node(object):
         """
         pass
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
+    def show(self, buf=sys.stdout, offset=0, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None):
         """ Pretty print the Node and all its attributes and
             children (recursively) to a buffer.
             
-            file:   
+            buf:   
                 Open IO buffer into which the Node is printed.
             
             offset: 
@@ -176,13 +176,20 @@ class Node(object):
             attrnames:
                 True if you want to see the attribute names in
                 name=value pairs. False to only see the values.
+                
+            nodenames:
+                True if you want to see the actual node names 
+                within their parents.
             
             showcoord:
                 Do you want the coordinates of each Node to be
                 displayed.
         """
         lead = ' ' * offset
-        buf.write(lead + self.__class__.__name__+': ')
+        if nodenames and _my_node_name is not None:
+            buf.write(lead + self.__class__.__name__+ ' <' + _my_node_name + '>: ')
+        else:
+            buf.write(lead + self.__class__.__name__+ ': ')
 
         if self.attr_names:
             if attrnames:
@@ -197,8 +204,14 @@ class Node(object):
             buf.write(' (at %s)' % self.coord)
         buf.write('\n')
 
-        for c in self.children():
-            c.show(buf, offset + 2, attrnames, showcoord)
+        for (child_name, child) in self.children():
+            child.show(
+                buf,
+                offset=offset + 2,
+                attrnames=attrnames,
+                nodenames=nodenames,
+                showcoord=showcoord,
+                _my_node_name=child_name)
 
 
 class NodeVisitor(object):
@@ -245,7 +258,7 @@ class NodeVisitor(object):
         """ Called if no explicit visitor function exists for a 
             node. Implements preorder visiting of the node.
         """
-        for c in node.children():
+        for c_name, c in node.children():
             self.visit(c)
 
 
