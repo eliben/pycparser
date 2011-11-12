@@ -219,7 +219,7 @@ class TestCLexerNoErrors(unittest.TestCase):
         dsf
         # 9 
         armo
-        #line 10 "..\..\test.h"
+        #line 10 "..\~..\test.h"
         tok1
         #line 99999 "include/me.h"
         tok2
@@ -251,7 +251,7 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(t4.type, 'ID')
         self.assertEqual(t4.value, 'tok1')
         self.assertEqual(t4.lineno, 10)
-        self.assertEqual(self.clex.filename, r'..\..\test.h')
+        self.assertEqual(self.clex.filename, r'..\~..\test.h')
         
         t5 = self.clex.token()
         self.assertEqual(t5.type, 'ID')

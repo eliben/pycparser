@@ -161,7 +161,7 @@ Changelog
 + Version 2.06 (??)
 
   - Issue 48: gracefully handle parsing of empty files
-  - Issue 49: handle escaped dots in paths to #line - "..\..\test.h"
+  - Issues 49 & 50: handle more escaped chars in paths to #line - "..\..\test.h"
 
 + Version 2.05 (16.10.2011)
 
