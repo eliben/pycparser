@@ -87,7 +87,9 @@ typedef int uint32_t;
 typedef int int64_t;
 typedef int uint64_t;
 
-/* C99 stdbool.h bool type */
+/* C99 stdbool.h bool type. _Bool is built-in in C99 */
 typedef _Bool bool;
+
+typedef int va_list;
 
 #endif
