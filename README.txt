@@ -162,6 +162,7 @@ Changelog
 
   - Issue 48: gracefully handle parsing of empty files
   - Issues 49 & 50: handle more escaped chars in paths to #line - "..\..\test.h"
+  - Support for C99 _Complex type
 
 + Version 2.05 (16.10.2011)
 

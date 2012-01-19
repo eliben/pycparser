@@ -405,7 +405,7 @@ def zz_test_translate():
     
 int main(void)
 {
-    ;
+    unsigned int long k = 4;
     return 0;
 }
 '''

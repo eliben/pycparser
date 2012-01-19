@@ -292,7 +292,7 @@ class CParser(PLYParser):
             specifier incorporated.
         """
         spec = declspec or dict(qual=[], storage=[], type=[], function=[])
-        spec[kind].append(newspec)
+        spec[kind].insert(0, newspec)
         return spec
     
     def _build_function_definition(self, decl, spec, param_decls, body):

@@ -207,13 +207,13 @@ class TestCParser_fundamentals(TestCParser_base):
             ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['int']]]])
 
         self.assertEqual(self.get_decl('unsigned int a;'), 
-            ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['int', 'unsigned']]]])
+            ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['unsigned', 'int']]]])
 
         self.assertEqual(self.get_decl('_Bool a;'),
             ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['_Bool']]]])
 
         self.assertEqual(self.get_decl('float _Complex fcc;'),
-            ['Decl', 'fcc', ['TypeDecl', ['IdentifierType', ['_Complex', 'float']]]])
+            ['Decl', 'fcc', ['TypeDecl', ['IdentifierType', ['float', '_Complex']]]])
 
         self.assertEqual(self.get_decl('char* string;'), 
             ['Decl', 'string', 
@@ -337,7 +337,7 @@ class TestCParser_fundamentals(TestCParser_base):
             ['Decl', 'k', 
                 ['PtrDecl', 
                     ['FuncDecl', 
-                        [['Decl', ['volatile', 'const'], 'q', 
+                        [['Decl', ['const', 'volatile'], 'q', 
                             ['TypeDecl', ['IdentifierType', ['int']]]]], 
                         ['TypeDecl', ['IdentifierType', ['int']]]]]])
         
@@ -671,7 +671,7 @@ class TestCParser_fundamentals(TestCParser_base):
             ['Typedef', 'Hash', 
                 ['TypeDecl', ['Struct', 'tagHash', 
                     [['Decl', 'table_size', 
-                        ['TypeDecl', ['IdentifierType', ['int', 'unsigned']]]], 
+                        ['TypeDecl', ['IdentifierType', ['unsigned', 'int']]]], 
                     ['Decl', 'heads', 
                         ['PtrDecl', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['Node']]]]]]]]]])
     
