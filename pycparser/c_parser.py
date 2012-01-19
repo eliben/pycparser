@@ -575,6 +575,7 @@ class CParser(PLYParser):
                             | LONG
                             | FLOAT
                             | DOUBLE
+                            | _COMPLEX
                             | SIGNED
                             | UNSIGNED
                             | typedef_name

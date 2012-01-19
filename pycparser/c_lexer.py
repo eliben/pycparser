@@ -91,8 +91,8 @@ class CLexer(object):
     ## Reserved keywords
     ##
     keywords = (
-        'AUTO', '_BOOL', 'BREAK', 'CASE', 'CHAR', 'CONST', 'CONTINUE',
-        'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
+        '_BOOL', '_COMPLEX', 'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
+        'CONTINUE', 'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
         'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG', 'REGISTER',
         'RESTRICT', 'RETURN', 'SHORT', 'SIGNED', 'SIZEOF', 'STATIC', 'STRUCT',
         'SWITCH', 'TYPEDEF', 'UNION', 'UNSIGNED', 'VOID',
@@ -103,6 +103,8 @@ class CLexer(object):
     for keyword in keywords:
         if keyword == '_BOOL':
             keyword_map['_Bool'] = keyword
+        elif keyword == '_COMPLEX':
+            keyword_map['_Complex'] = keyword
         else:
             keyword_map[keyword.lower()] = keyword
 

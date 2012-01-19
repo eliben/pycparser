@@ -212,6 +212,9 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(self.get_decl('_Bool a;'),
             ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['_Bool']]]])
 
+        self.assertEqual(self.get_decl('float _Complex fcc;'),
+            ['Decl', 'fcc', ['TypeDecl', ['IdentifierType', ['_Complex', 'float']]]])
+
         self.assertEqual(self.get_decl('char* string;'), 
             ['Decl', 'string', 
                 ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]])
