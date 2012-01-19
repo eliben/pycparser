@@ -2,7 +2,7 @@
 
 import pprint
 import re
-import sys
+import os, sys
 import unittest
 
 sys.path.insert(0, '..')
@@ -1315,11 +1315,22 @@ class TestCParser_whole_code(TestCParser_base):
         #
         self.assert_num_ID_refs(ps3, 'i', 2)
 
+    def _open_c_file(self, name):
+        """ Find a c file by name, taking into account the current dir can be
+            in a couple of typical places
+        """
+        fullnames = [
+            os.path.join('c_files', name),
+            os.path.join('tests', 'c_files', name)]
+        for fullname in fullnames:
+            if os.path.exists(fullname):
+                return open(fullname, 'rU')
+        assert False, "Unreachable"
+
     def test_whole_file(self):
         # See how pycparser handles a whole, real C file.
         #
-        filename = 'c_files/memmgr_with_h.c'
-        code = open(filename, 'rU').read()
+        code = self._open_c_file('memmgr_with_h.c').read()
         p = self.parse(code)
         
         self.assert_num_klass_nodes(p, FuncDef, 5)
@@ -1339,8 +1350,7 @@ class TestCParser_whole_code(TestCParser_base):
     def test_whole_file_with_stdio(self):
         # Parse a whole file with stdio.h included by cpp
         #
-        filename = 'c_files/cppd_with_stdio_h.c'
-        code = open(filename, 'rU').read()
+        code = self._open_c_file('cppd_with_stdio_h.c').read()
         p = self.parse(code)
         
         self.failUnless(isinstance(p.ext[0], Typedef))
