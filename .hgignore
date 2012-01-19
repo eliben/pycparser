@@ -10,6 +10,9 @@ dist
 MANIFEST
 *.exe
 *.o
+parser.out
+*.orig
+*.rej
 
 
 glob:utils/z.c
