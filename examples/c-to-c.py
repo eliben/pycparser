@@ -123,7 +123,7 @@ class CGenerator(object):
     
     def visit_Cast(self, n):
         s = '(' + self._generate_type(n.to_type) + ')' 
-        return s + ' ' + self.visit(n.expr)
+        return s + ' ' + self._parenthesize_unless_simple(n.expr)
     
     def visit_ExprList(self, n):
         visited_subexprs = []

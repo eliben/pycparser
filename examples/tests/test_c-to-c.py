@@ -5,6 +5,7 @@ import unittest
 
 sys.path.insert(0, '..')        # for c-to-c.py
 sys.path.insert(0, '../..')     # for pycparser libs
+sys.path.insert(0, 'examples')  # for running from root dir
 
 from pycparser import c_parser
 c2cmodule = __import__('c-to-c')
@@ -19,6 +20,11 @@ _c_parser = c_parser.CParser(
 def compare_asts(ast1, ast2):
     if type(ast1) != type(ast2):
         return False
+    if isinstance(ast1, tuple) and isinstance(ast2, tuple):
+        if ast1[0] != ast2[0]:
+            return False
+        ast1 = ast1[1]
+        ast2 = ast2[1]
     for attr in ast1.attr_names:
         if getattr(ast1, attr) != getattr(ast2, attr):
             return False
@@ -85,6 +91,14 @@ class TestCtoC(unittest.TestCase):
                 return a;
             }''')
     
+    def test_casts(self):
+        self._assert_ctoc_correct(r'''
+            int main() {
+                int a = (int) b + 8;
+                int t = (int) c;
+            }
+        ''')
+
     def test_struct_decl(self):
         self._assert_ctoc_correct(r'''
             typedef struct node_t {

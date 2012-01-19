@@ -20,7 +20,8 @@ class ASTCodeGenerator(object):
             file.
         """
         self.cfg_filename = cfg_filename
-        self.node_cfg = [NodeCfg(name, contents) for (name, contents) in self.parse_cfgfile(cfg_filename)]
+        self.node_cfg = [NodeCfg(name, contents) 
+            for (name, contents) in self.parse_cfgfile(cfg_filename)]
 
     def generate(self, file=None):
         """ Generates the code into file, an open file buffer.
