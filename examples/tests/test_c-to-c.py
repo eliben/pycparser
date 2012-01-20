@@ -3,9 +3,9 @@
 import sys
 import unittest
 
-sys.path.insert(0, '..')        # for c-to-c.py
-sys.path.insert(0, '../..')     # for pycparser libs
-sys.path.insert(0, 'examples')  # for running from root dir
+# Run from the root dir
+sys.path.insert(0, '.')
+sys.path.insert(0, 'examples')
 
 from pycparser import c_parser
 c2cmodule = __import__('c-to-c')

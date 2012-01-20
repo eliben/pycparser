@@ -28,9 +28,10 @@ class TestParsing(unittest.TestCase):
         self.failUnless(isinstance(ast, c_ast.FileAST))
 
     def test_with_cpp(self):
+        c_files_path = os.path.join('tests', 'c_files')
         ast = parse_file(self._find_file('memmgr.c'), use_cpp=True,
             cpp_path=CPPPATH,
-            cpp_args=r'-Iutils/fake_libc_include')
+            cpp_args='-I%s' % c_files_path)
         self.failUnless(isinstance(ast, c_ast.FileAST))
     
         ast2 = parse_file(self._find_file('year.c'), use_cpp=True,
