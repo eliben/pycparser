@@ -56,6 +56,7 @@ class TestCtoC(unittest.TestCase):
     def test_complex_decls(self):
         self._assert_ctoc_correct('int** (*a)(void);')
         self._assert_ctoc_correct('int** (*a)(void*, int);')
+        self._assert_ctoc_correct('int (*b)(char * restrict k, float);')
     
     def test_casts(self):
         self._assert_ctoc_correct(r'''

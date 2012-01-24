@@ -342,7 +342,10 @@ class CGenerator(object):
                         nstr = '(' + nstr + ')'
                     nstr += '(' + self.visit(modifier.args) + ')'
                 elif isinstance(modifier, c_ast.PtrDecl):
-                    nstr = '*' + nstr
+                    if modifier.quals:
+                        nstr = '* %s %s' % (' '.join(modifier.quals), nstr)
+                    else:
+                        nstr = '*' + nstr
             if nstr: s += ' ' + nstr
             return s
         elif typ == c_ast.Decl:

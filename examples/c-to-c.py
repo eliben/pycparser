@@ -28,7 +28,7 @@ def zz_test_translate():
     # internal use
     src = r'''
     
-    void f(void){}
+    void f(char * restrict joe){}
     
 int main(void)
 {
