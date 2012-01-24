@@ -163,6 +163,7 @@ Changelog
   - Issue 48: gracefully handle parsing of empty files
   - Issues 49 & 50: handle more escaped chars in paths to #line - "..\..\test.h"
   - Support for C99 _Complex type
+  - CGenerator moves from examples/ to pycparser/ as a first-class citizen
   - Some fixes for the c-to-c.py example
 
 + Version 2.05 (16.10.2011)

@@ -1,14 +1,10 @@
-#!/usr/bin/env python
-
 import sys
 import unittest
 
 # Run from the root dir
 sys.path.insert(0, '.')
-sys.path.insert(0, 'examples')
 
-from pycparser import c_parser
-c2cmodule = __import__('c-to-c')
+from pycparser import c_parser, c_generator
 
 _c_parser = c_parser.CParser(
                 lex_optimize=False,
@@ -41,7 +37,7 @@ def parse_to_ast(src):
 class TestCtoC(unittest.TestCase):
     def _run_c_to_c(self, src):
         ast = parse_to_ast(src)
-        generator = c2cmodule.CGenerator()
+        generator = c_generator.CGenerator()
         return generator.visit(ast)
     
     def _assert_ctoc_correct(self, src):
@@ -125,3 +121,4 @@ class TestCtoC(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
