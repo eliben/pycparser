@@ -113,6 +113,10 @@ class TestCParser_fundamentals(TestCParser_base):
         self.failUnless(isinstance(t2, FileAST))
         self.assertEqual(len(t2.ext), 0)
 
+        # First statement empty
+        t = self.parse('; char c;')
+        self.assertEqual(len(t.ext), 1)
+
     def test_empty_toplevel_decl(self):
         code = 'int foo;;'
         t = self.parse(code)

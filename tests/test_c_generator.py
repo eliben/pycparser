@@ -79,11 +79,13 @@ class TestCtoC(unittest.TestCase):
             }''')
 
     def test_statements(self):
+        # note two minuses here
         self._assert_ctoc_correct(r'''
             int main() {
                 int a;
                 a = 5;
                 ;
+                b = - - a;
                 return a;
             }''')
     

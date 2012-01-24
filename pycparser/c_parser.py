@@ -355,7 +355,9 @@ class CParser(PLYParser):
     def p_translation_unit_2(self, p):
         """ translation_unit    : translation_unit external_declaration
         """
-        if p[2] is not None:
+        if p[1].ext is None:
+            p[1].ext = p[2]
+        elif p[2] is not None:
             p[1].ext.extend(p[2])
         p[0] = p[1]
     
