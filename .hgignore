@@ -13,6 +13,7 @@ MANIFEST
 parser.out
 *.orig
 *.rej
+.tox
 
 
 glob:utils/z.c
