@@ -13,7 +13,7 @@ import sys
 # This is not required if you've installed pycparser into
 # your site-packages/ with setup.py
 #
-sys.path.insert(0, '..')
+sys.path.extend(['.', '..'])
 
 from pycparser import c_parser, c_ast, parse_file
 

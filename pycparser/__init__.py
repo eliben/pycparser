@@ -46,7 +46,7 @@ def parse_file( filename, use_cpp=False,
         
         Errors from cpp will be printed out. 
     """
-    if use_cpp:   
+    if use_cpp:
         path_list = [cpp_path]
         if isinstance(cpp_args, list):
             path_list += cpp_args
@@ -54,13 +54,18 @@ def parse_file( filename, use_cpp=False,
             path_list += [cpp_args]
         path_list += [filename]
         
-        # Note the use of universal_newlines to treat all newlines
-        # as \n for Python's purpose
-        #
-        pipe = Popen(   path_list, 
-                        stdout=PIPE, 
-                        universal_newlines=True)
-        text = pipe.communicate()[0]
+        try:
+            # Note the use of universal_newlines to treat all newlines
+            # as \n for Python's purpose
+            #
+            pipe = Popen(   path_list, 
+                            stdout=PIPE, 
+                            universal_newlines=True)
+            text = pipe.communicate()[0]
+        except OSError as e:
+            raise RuntimeError("Unable to invoke 'cpp'.  " +
+                'Make sure its path was passed correctly\n' +
+                ('Original error: %s' % e))
     else:
         text = open(filename, 'rU').read()
     

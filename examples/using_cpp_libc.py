@@ -13,7 +13,7 @@ import sys
 # This is not required if you've installed pycparser into
 # your site-packages/ with setup.py
 #
-sys.path.insert(0, '..')
+sys.path.extend(['.', '..'])
 
 # Portable cpp path for Windows and Linux/Unix
 CPPPATH = '../utils/cpp.exe' if sys.platform == 'win32' else 'cpp'
