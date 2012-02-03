@@ -164,7 +164,7 @@ class CParser(PLYParser):
     #
     # int *c[5];
     #
-    # The basic declaration here is 'int x', and the pointer and
+    # The basic declaration here is 'int c', and the pointer and
     # the array are the modifiers.
     #
     # Basic declarations are represented by TypeDecl (from module
@@ -1403,18 +1403,20 @@ class CParser(PLYParser):
             self._parse_error('At end of input', '')
 
 
+#------------------------------------------------------------------------------
 if __name__ == "__main__":
     import pprint
     import time, sys
     
-    t1 = time.time()
-    parser = CParser(lex_optimize=True, yacc_debug=True, yacc_optimize=False)
-    sys.write(time.time() - t1)
+    #t1 = time.time()
+    #parser = CParser(lex_optimize=True, yacc_debug=True, yacc_optimize=False)
+    #sys.write(time.time() - t1)
     
-    buf = ''' 
-        int (*k)(int);
-    '''
+    #buf = ''' 
+        #int (*k)(int);
+    #'''
     
-    # set debuglevel to 2 for debugging
-    t = parser.parse(buf, 'x.c', debuglevel=0)
-    t.show(showcoord=True)
+    ## set debuglevel to 2 for debugging
+    #t = parser.parse(buf, 'x.c', debuglevel=0)
+    #t.show(showcoord=True)
+
