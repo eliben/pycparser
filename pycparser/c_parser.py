@@ -13,6 +13,7 @@ import ply.yacc
 from . import c_ast
 from .c_lexer import CLexer
 from .plyparser import PLYParser, Coord, ParseError
+from .ast_transforms import fix_switch_cases
 
 
 class CParser(PLYParser):    
@@ -1085,11 +1086,11 @@ class CParser(PLYParser):
     
     def p_labeled_statement_2(self, p):
         """ labeled_statement : CASE constant_expression COLON statement """
-        p[0] = c_ast.Case(p[2], p[4], self._coord(p.lineno(1)))
+        p[0] = c_ast.Case(p[2], [p[4]], self._coord(p.lineno(1)))
         
     def p_labeled_statement_3(self, p):
         """ labeled_statement : DEFAULT COLON statement """
-        p[0] = c_ast.Default(p[3], self._coord(p.lineno(1)))
+        p[0] = c_ast.Default([p[3]], self._coord(p.lineno(1)))
         
     def p_selection_statement_1(self, p):
         """ selection_statement : IF LPAREN expression RPAREN statement """
@@ -1101,7 +1102,8 @@ class CParser(PLYParser):
     
     def p_selection_statement_3(self, p):
         """ selection_statement : SWITCH LPAREN expression RPAREN statement """
-        p[0] = c_ast.Switch(p[3], p[5], self._coord(p.lineno(1)))
+        p[0] = fix_switch_cases(
+                c_ast.Switch(p[3], p[5], self._coord(p.lineno(1))))
     
     def p_iteration_statement_1(self, p):
         """ iteration_statement : WHILE LPAREN expression RPAREN statement """

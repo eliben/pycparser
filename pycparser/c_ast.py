@@ -194,15 +194,16 @@ class Break(Node):
     attr_names = ()
 
 class Case(Node):
-    def __init__(self, expr, stmt, coord=None):
+    def __init__(self, expr, stmts, coord=None):
         self.expr = expr
-        self.stmt = stmt
+        self.stmts = stmts
         self.coord = coord
 
     def children(self):
         nodelist = []
         if self.expr is not None: nodelist.append(("expr", self.expr))
-        if self.stmt is not None: nodelist.append(("stmt", self.stmt))
+        for i, child in enumerate(self.stmts or []):
+            nodelist.append(("stmts[%d]" % i, child))
         return tuple(nodelist)
 
     attr_names = ()
@@ -303,13 +304,14 @@ class DeclList(Node):
     attr_names = ()
 
 class Default(Node):
-    def __init__(self, stmt, coord=None):
-        self.stmt = stmt
+    def __init__(self, stmts, coord=None):
+        self.stmts = stmts
         self.coord = coord
 
     def children(self):
         nodelist = []
-        if self.stmt is not None: nodelist.append(("stmt", self.stmt))
+        for i, child in enumerate(self.stmts or []):
+            nodelist.append(("stmts[%d]" % i, child))
         return tuple(nodelist)
 
     attr_names = ()

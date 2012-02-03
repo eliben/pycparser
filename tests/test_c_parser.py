@@ -1284,6 +1284,14 @@ class TestCParser_whole_code(TestCParser_base):
         self.assert_num_klass_nodes(ps1, Return, 1)
 
     def test_switch_statement(self):
+        def assert_case_node(node, const_value):
+            self.failUnless(isinstance(node, Case))
+            self.failUnless(isinstance(node.expr, Constant))
+            self.assertEqual(node.expr.value, const_value)
+
+        def assert_default_node(node):
+            self.failUnless(isinstance(node, Default))
+
         s1 = r'''
         int foo(void) {
             switch (myvar) {
@@ -1301,7 +1309,46 @@ class TestCParser_whole_code(TestCParser_base):
         }
         '''
         ps1 = self.parse(s1)
-        #~ ps1.show()
+        switch = ps1.ext[0].body.block_items[0]
+
+        block = switch.stmt.block_items
+        assert_case_node(block[0], '10')
+        self.assertEqual(len(block[0].stmts), 3)
+        assert_case_node(block[1], '20')
+        self.assertEqual(len(block[1].stmts), 0)
+        assert_case_node(block[2], '30')
+        self.assertEqual(len(block[2].stmts), 1)
+        assert_default_node(block[3])
+
+        s2 = r'''
+        int foo(void) {
+            switch (myvar) {
+                default:
+                    joe = moe;
+                    return 10;
+                case 10:
+                case 20:
+                case 30:
+                case 40:
+                    break;
+            }
+            return 0;
+        }
+        '''
+        ps2 = self.parse(s2)
+        switch = ps2.ext[0].body.block_items[0]
+
+        block = switch.stmt.block_items
+        assert_default_node(block[0])
+        self.assertEqual(len(block[0].stmts), 2)
+        assert_case_node(block[1], '10')
+        self.assertEqual(len(block[1].stmts), 0)
+        assert_case_node(block[2], '20')
+        self.assertEqual(len(block[1].stmts), 0)
+        assert_case_node(block[3], '30')
+        self.assertEqual(len(block[1].stmts), 0)
+        assert_case_node(block[4], '40')
+        self.assertEqual(len(block[4].stmts), 1)
 
     def test_for_statement(self):
         s2 = r'''
