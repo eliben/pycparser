@@ -161,10 +161,13 @@ Changelog
 + Version 2.06 (??)
 
   - Issue 48: gracefully handle parsing of empty files
-  - Issues 49 & 50: handle more escaped chars in paths to #line - "..\..\test.h"
-  - Support for C99 _Complex type
-  - CGenerator moves from examples/ to pycparser/ as a first-class citizen
-  - Some fixes for the c-to-c.py example
+  - Issues 49 & 50: handle more escaped chars in paths to #line - "..\..\test.h".
+  - Support for C99 _Complex type.
+  - CGenerator moves from examples/ to pycparser/ as a first-class citizen, and
+    added some fixes to it. examples/c-to-c.py still stays as a convenience
+    wrapper.
+  - Fix problem with parsing a file in which the first statement is just a
+    semicolon.
 
 + Version 2.05 (16.10.2011)
 

@@ -3,14 +3,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.9: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>pycparser v2.05</title>
 <meta name="author" content="Eli Bendersky" />
 <style type="text/css">
 
 /*
 :Author: David Goodger (goodger@python.org)
-:Id: $Id: html4css1.css 7056 2011-06-17 10:50:48Z milde $
+:Id: $Id: html4css1.css 5951 2009-05-18 18:03:10Z milde $
 :Copyright: This stylesheet has been placed in the public domain.
 
 Default cascading style sheet for the HTML output of Docutils.
@@ -47,10 +47,6 @@ blockquote.epigraph {
 
 dl.docutils dd {
   margin-bottom: 0.5em }
-
-object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
-  overflow: hidden;
-}
 
 /* Uncomment (and remove this text!) to get bold-faced definition list terms
 dl.docutils dt {
@@ -162,21 +158,15 @@ h2.subtitle {
 hr.docutils {
   width: 75% }
 
-img.align-left, .figure.align-left, object.align-left {
+img.align-left, .figure.align-left{
   clear: left ;
   float: left ;
   margin-right: 1em }
 
-img.align-right, .figure.align-right, object.align-right {
+img.align-right, .figure.align-right {
   clear: right ;
   float: right ;
   margin-left: 1em }
-
-img.align-center, .figure.align-center, object.align-center {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
 
 .align-left {
   text-align: left }
@@ -190,7 +180,7 @@ img.align-center, .figure.align-center, object.align-center {
 
 /* reset inner alignment in figures */
 div.align-right {
-  text-align: inherit }
+  text-align: left }
 
 /* div.align-center * { */
 /*   text-align: left } */
@@ -250,7 +240,7 @@ pre.address {
   margin-top: 0 ;
   font: inherit }
 
-pre.literal-block, pre.doctest-block, pre.math {
+pre.literal-block, pre.doctest-block {
   margin-left: 2em ;
   margin-right: 2em }
 
@@ -477,6 +467,17 @@ ul.auto-toc {
 <div class="section" id="changelog">
 <h1>7&nbsp;&nbsp;&nbsp;Changelog</h1>
 <ul class="simple">
+<li>Version 2.06 (??)<ul>
+<li>Issue 48: gracefully handle parsing of empty files</li>
+<li>Issues 49 &amp; 50: handle more escaped chars in paths to #line - &quot;....test.h&quot;.</li>
+<li>Support for C99 _Complex type.</li>
+<li>CGenerator moves from examples/ to pycparser/ as a first-class citizen, and
+added some fixes to it. examples/c-to-c.py still stays as a convenience
+wrapper.</li>
+<li>Fix problem with parsing a file in which the first statement is just a
+semicolon.</li>
+</ul>
+</li>
 <li>Version 2.05 (16.10.2011)<ul>
 <li>Added support for the C99 <tt class="docutils literal">_Bool</tt> type and <tt class="docutils literal">stdbool.h</tt> header file</li>
 <li>Expanded <tt class="docutils literal">examples/explore_ast.py</tt> with more details on working with the
