@@ -1,5 +1,5 @@
 ===============
-pycparser v2.05
+pycparser v2.06
 ===============
 
 :Author: `Eli Bendersky <http://eli.thegreenplace.net>`_
@@ -38,7 +38,7 @@ Which version of C does pycparser support?
 
 ``pycparser`` aims to support the full C99 language (according to the standard ISO/IEC 9899). This is a new feature in the version 2.x series - earlier versions only supported C89. For more information on the change, read `this wiki page <http://code.google.com/p/pycparser/wiki/C99support>`_.
 
-``pycparser`` doesn't support any GCC extensions.
+``pycparser`` doesn't support any GCC extensions. See the `FAQ <http://code.google.com/p/pycparser/wiki/FAQ>`_ for more details.
 
 What grammar does pycparser follow?
 -----------------------------------
@@ -158,7 +158,7 @@ Some people have contributed to ``pycparser`` by opening issues on bugs they've 
 Changelog
 =========
 
-+ Version 2.06 (??)
++ Version 2.06 (04.02.2012)
 
   - Issue 48: gracefully handle parsing of empty files
   - Issues 49 & 50: handle more escaped chars in paths to #line - "..\..\test.h".
@@ -168,6 +168,8 @@ Changelog
     wrapper.
   - Fix problem with parsing a file in which the first statement is just a
     semicolon.
+  - Improved the AST created for switch statements, making it closer to the
+    semantic meaning than to the grammar.
 
 + Version 2.05 (16.10.2011)
 

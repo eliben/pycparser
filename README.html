@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
-<title>pycparser v2.05</title>
+<title>pycparser v2.06</title>
 <meta name="author" content="Eli Bendersky" />
 <style type="text/css">
 
@@ -305,8 +305,8 @@ ul.auto-toc {
 </style>
 </head>
 <body>
-<div class="document" id="pycparser-v2-05">
-<h1 class="title">pycparser v2.05</h1>
+<div class="document" id="pycparser-v2-06">
+<h1 class="title">pycparser v2.06</h1>
 <table class="docinfo" frame="void" rules="none">
 <col class="docinfo-name" />
 <col class="docinfo-content" />
@@ -318,32 +318,32 @@ ul.auto-toc {
 <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="auto-toc simple">
-<li><a class="reference internal" href="#introduction" id="id2">1&nbsp;&nbsp;&nbsp;Introduction</a><ul class="auto-toc">
-<li><a class="reference internal" href="#what-is-pycparser" id="id3">1.1&nbsp;&nbsp;&nbsp;What is pycparser?</a></li>
-<li><a class="reference internal" href="#what-is-it-good-for" id="id4">1.2&nbsp;&nbsp;&nbsp;What is it good for?</a></li>
-<li><a class="reference internal" href="#which-version-of-c-does-pycparser-support" id="id5">1.3&nbsp;&nbsp;&nbsp;Which version of C does pycparser support?</a></li>
-<li><a class="reference internal" href="#what-grammar-does-pycparser-follow" id="id6">1.4&nbsp;&nbsp;&nbsp;What grammar does pycparser follow?</a></li>
-<li><a class="reference internal" href="#how-is-pycparser-licensed" id="id7">1.5&nbsp;&nbsp;&nbsp;How is pycparser licensed?</a></li>
-<li><a class="reference internal" href="#contact-details" id="id8">1.6&nbsp;&nbsp;&nbsp;Contact details</a></li>
+<li><a class="reference internal" href="#introduction" id="id3">1&nbsp;&nbsp;&nbsp;Introduction</a><ul class="auto-toc">
+<li><a class="reference internal" href="#what-is-pycparser" id="id4">1.1&nbsp;&nbsp;&nbsp;What is pycparser?</a></li>
+<li><a class="reference internal" href="#what-is-it-good-for" id="id5">1.2&nbsp;&nbsp;&nbsp;What is it good for?</a></li>
+<li><a class="reference internal" href="#which-version-of-c-does-pycparser-support" id="id6">1.3&nbsp;&nbsp;&nbsp;Which version of C does pycparser support?</a></li>
+<li><a class="reference internal" href="#what-grammar-does-pycparser-follow" id="id7">1.4&nbsp;&nbsp;&nbsp;What grammar does pycparser follow?</a></li>
+<li><a class="reference internal" href="#how-is-pycparser-licensed" id="id8">1.5&nbsp;&nbsp;&nbsp;How is pycparser licensed?</a></li>
+<li><a class="reference internal" href="#contact-details" id="id9">1.6&nbsp;&nbsp;&nbsp;Contact details</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#installing" id="id9">2&nbsp;&nbsp;&nbsp;Installing</a><ul class="auto-toc">
-<li><a class="reference internal" href="#prerequisites" id="id10">2.1&nbsp;&nbsp;&nbsp;Prerequisites</a></li>
-<li><a class="reference internal" href="#installation-process" id="id11">2.2&nbsp;&nbsp;&nbsp;Installation process</a></li>
-<li><a class="reference internal" href="#known-problems" id="id12">2.3&nbsp;&nbsp;&nbsp;Known problems</a></li>
+<li><a class="reference internal" href="#installing" id="id10">2&nbsp;&nbsp;&nbsp;Installing</a><ul class="auto-toc">
+<li><a class="reference internal" href="#prerequisites" id="id11">2.1&nbsp;&nbsp;&nbsp;Prerequisites</a></li>
+<li><a class="reference internal" href="#installation-process" id="id12">2.2&nbsp;&nbsp;&nbsp;Installation process</a></li>
+<li><a class="reference internal" href="#known-problems" id="id13">2.3&nbsp;&nbsp;&nbsp;Known problems</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#using" id="id13">3&nbsp;&nbsp;&nbsp;Using</a><ul class="auto-toc">
-<li><a class="reference internal" href="#interaction-with-the-c-preprocessor" id="id14">3.1&nbsp;&nbsp;&nbsp;Interaction with the C preprocessor</a></li>
-<li><a class="reference internal" href="#what-about-the-standard-c-library-headers" id="id15">3.2&nbsp;&nbsp;&nbsp;What about the standard C library headers?</a></li>
-<li><a class="reference internal" href="#basic-usage" id="id16">3.3&nbsp;&nbsp;&nbsp;Basic usage</a></li>
-<li><a class="reference internal" href="#advanced-usage" id="id17">3.4&nbsp;&nbsp;&nbsp;Advanced usage</a></li>
+<li><a class="reference internal" href="#using" id="id14">3&nbsp;&nbsp;&nbsp;Using</a><ul class="auto-toc">
+<li><a class="reference internal" href="#interaction-with-the-c-preprocessor" id="id15">3.1&nbsp;&nbsp;&nbsp;Interaction with the C preprocessor</a></li>
+<li><a class="reference internal" href="#what-about-the-standard-c-library-headers" id="id16">3.2&nbsp;&nbsp;&nbsp;What about the standard C library headers?</a></li>
+<li><a class="reference internal" href="#basic-usage" id="id17">3.3&nbsp;&nbsp;&nbsp;Basic usage</a></li>
+<li><a class="reference internal" href="#advanced-usage" id="id18">3.4&nbsp;&nbsp;&nbsp;Advanced usage</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#modifying" id="id18">4&nbsp;&nbsp;&nbsp;Modifying</a></li>
-<li><a class="reference internal" href="#package-contents" id="id19">5&nbsp;&nbsp;&nbsp;Package contents</a></li>
-<li><a class="reference internal" href="#contributors" id="id20">6&nbsp;&nbsp;&nbsp;Contributors</a></li>
-<li><a class="reference internal" href="#changelog" id="id21">7&nbsp;&nbsp;&nbsp;Changelog</a></li>
+<li><a class="reference internal" href="#modifying" id="id19">4&nbsp;&nbsp;&nbsp;Modifying</a></li>
+<li><a class="reference internal" href="#package-contents" id="id20">5&nbsp;&nbsp;&nbsp;Package contents</a></li>
+<li><a class="reference internal" href="#contributors" id="id21">6&nbsp;&nbsp;&nbsp;Contributors</a></li>
+<li><a class="reference internal" href="#changelog" id="id22">7&nbsp;&nbsp;&nbsp;Changelog</a></li>
 </ul>
 </div>
 <div class="section" id="introduction">
@@ -367,7 +367,7 @@ ul.auto-toc {
 <div class="section" id="which-version-of-c-does-pycparser-support">
 <h2>1.3&nbsp;&nbsp;&nbsp;Which version of C does pycparser support?</h2>
 <p><tt class="docutils literal">pycparser</tt> aims to support the full C99 language (according to the standard ISO/IEC 9899). This is a new feature in the version 2.x series - earlier versions only supported C89. For more information on the change, read <a class="reference external" href="http://code.google.com/p/pycparser/wiki/C99support">this wiki page</a>.</p>
-<p><tt class="docutils literal">pycparser</tt> doesn't support any GCC extensions.</p>
+<p><tt class="docutils literal">pycparser</tt> doesn't support any GCC extensions. See the <a class="reference external" href="http://code.google.com/p/pycparser/wiki/FAQ">FAQ</a> for more details.</p>
 </div>
 <div class="section" id="what-grammar-does-pycparser-follow">
 <h2>1.4&nbsp;&nbsp;&nbsp;What grammar does pycparser follow?</h2>
@@ -467,7 +467,7 @@ ul.auto-toc {
 <div class="section" id="changelog">
 <h1>7&nbsp;&nbsp;&nbsp;Changelog</h1>
 <ul class="simple">
-<li>Version 2.06 (??)<ul>
+<li>Version 2.06 (04.02.2012)<ul>
 <li>Issue 48: gracefully handle parsing of empty files</li>
 <li>Issues 49 &amp; 50: handle more escaped chars in paths to #line - &quot;....test.h&quot;.</li>
 <li>Support for C99 _Complex type.</li>
@@ -476,6 +476,8 @@ added some fixes to it. examples/c-to-c.py still stays as a convenience
 wrapper.</li>
 <li>Fix problem with parsing a file in which the first statement is just a
 semicolon.</li>
+<li>Improved the AST created for switch statements, making it closer to the
+semantic meaning than to the grammar.</li>
 </ul>
 </li>
 <li>Version 2.05 (16.10.2011)<ul>

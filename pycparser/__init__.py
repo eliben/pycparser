@@ -9,7 +9,7 @@
 #-----------------------------------------------------------------
 
 __all__ = ['c_lexer', 'c_parser', 'c_ast']
-__version__ = '2.05'
+__version__ = '2.06'
 
 from subprocess import Popen, PIPE
 
