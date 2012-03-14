@@ -158,6 +158,10 @@ Some people have contributed to ``pycparser`` by opening issues on bugs they've 
 Changelog
 =========
 
++ Version 2.07 (??)
+
+  - Made running tests that call on 'cpp' a bit more robust.
+
 + Version 2.06 (04.02.2012)
 
   - Issue 48: gracefully handle parsing of empty files
