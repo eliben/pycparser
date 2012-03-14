@@ -1,1 +1,1 @@
-Run 'python all_tests.py' from inside this directory
+Run 'python tests/all_tests.py' from the root pycparser directory
