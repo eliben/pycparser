@@ -36,7 +36,9 @@ class TestParsing(unittest.TestCase):
     
         ast2 = parse_file(self._find_file('year.c'), use_cpp=True,
             cpp_path=CPPPATH, 
-            cpp_args=r'-Iutils/fake_libc_include')
+            cpp_args=[
+                r'-Iutils/fake_libc_include',
+                r'-I../utils/fake_libc_include'])
     
         self.failUnless(isinstance(ast2, c_ast.FileAST))
 
