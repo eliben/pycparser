@@ -87,7 +87,12 @@ class TestCLexerNoErrors(unittest.TestCase):
         
         # but this is a hex integer + 3
         self.assertTokensTypes('0x0666e+3', ['INT_CONST_HEX', 'PLUS', 'INT_CONST_DEC'])
-    
+
+    def test_hexadecimal_floating_constants(self):
+        self.assertTokensTypes('0xDE.488641p0', ['HEX_FLOAT_CONST'])
+        self.assertTokensTypes('0x.488641p0', ['HEX_FLOAT_CONST'])
+        self.assertTokensTypes('0X12.P0', ['HEX_FLOAT_CONST'])
+        
     def test_char_constants(self):
         self.assertTokensTypes(r"""'x'""", ['CHAR_CONST'])
         self.assertTokensTypes(r"""L'x'""", ['WCHAR_CONST'])

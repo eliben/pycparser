@@ -923,6 +923,10 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(self.get_decl_init(d1),
             ['Constant', 'int', '16'])
         
+        d1_1 = 'float f = 0xEF.56p1;'
+        self.assertEqual(self.get_decl_init(d1_1),
+            ['Constant', 'float', '0xEF.56p1'])
+
         d2 = 'long ar[] = {7, 8, 9};'
         #~ self.parse(d2).show()
         self.assertEqual(self.get_decl(d2),

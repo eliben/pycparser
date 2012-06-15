@@ -1342,7 +1342,9 @@ class CParser(PLYParser):
             'int', p[1], self._coord(p.lineno(1)))
             
     def p_constant_2(self, p):
-        """ constant    : FLOAT_CONST """
+        """ constant    : FLOAT_CONST
+                        | HEX_FLOAT_CONST
+        """
         p[0] = c_ast.Constant(
             'float', p[1], self._coord(p.lineno(1)))
     

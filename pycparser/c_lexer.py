@@ -121,7 +121,7 @@ class CLexer(object):
         
         # constants 
         'INT_CONST_DEC', 'INT_CONST_OCT', 'INT_CONST_HEX',
-        'FLOAT_CONST', 
+        'FLOAT_CONST', 'HEX_FLOAT_CONST',
         'CHAR_CONST',
         'WCHAR_CONST',
         
@@ -172,11 +172,14 @@ class CLexer(object):
     # valid C identifiers (K&R2: A.2.3)
     identifier = r'[a-zA-Z_][0-9a-zA-Z_]*'
 
+    hex_prefix = '0[xX]'
+    hex_digits = '[0-9a-fA-F]+'
+
     # integer constants (K&R2: A.2.5.1)
     integer_suffix_opt = r'(u?ll|U?LL|([uU][lL])|([lL][uU])|[uU]|[lL])?'
     decimal_constant = '(0'+integer_suffix_opt+')|([1-9][0-9]*'+integer_suffix_opt+')'
     octal_constant = '0[0-7]*'+integer_suffix_opt
-    hex_constant = '0[xX][0-9a-fA-F]+'+integer_suffix_opt
+    hex_constant = hex_prefix+hex_digits+integer_suffix_opt
     
     bad_octal_constant = '0[0-7]*[89]'
 
@@ -206,6 +209,9 @@ class CLexer(object):
     exponent_part = r"""([eE][-+]?[0-9]+)"""
     fractional_constant = r"""([0-9]*\.[0-9]+)|([0-9]+\.)"""
     floating_constant = '(((('+fractional_constant+')'+exponent_part+'?)|([0-9]+'+exponent_part+'))[FfLl]?)'
+    binary_exponent_part = r'''([pP][+-]?[0-9]+)'''
+    hex_fractional_constant = '((('+hex_digits+r""")?\."""+hex_digits+')|('+hex_digits+r"""\.))"""
+    hex_floating_constant = '('+hex_prefix+'('+hex_digits+'|'+hex_fractional_constant+')'+binary_exponent_part+'[FfLl]?)'
 
     ##
     ## Lexer states
@@ -238,7 +244,6 @@ class CLexer(object):
             self._error('filename before line number in #line', t)
         else:
             self.pp_filename = t.value.lstrip('"').rstrip('"')
-            #~ print "PP got filename: ", self.pp_filename
 
     @TOKEN(decimal_constant)
     def t_ppline_LINE_NUMBER(self, t):
@@ -351,6 +356,10 @@ class CLexer(object):
     def t_FLOAT_CONST(self, t):
         return t
 
+    @TOKEN(hex_floating_constant)
+    def t_HEX_FLOAT_CONST(self, t):
+        return t
+
     @TOKEN(hex_constant)
     def t_INT_CONST_HEX(self, t):
         return t
@@ -444,6 +453,5 @@ if __name__ == "__main__":
             
         #~ print type(tok)
         printme([tok.value, tok.type, tok.lineno, clex.filename, tok.lexpos])
-        
-        
 
+        

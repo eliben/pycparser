@@ -3,6 +3,7 @@
   - Issue 54: added an optional parser argument to parse_file
   - Issue 59: added some more fake headers for C99
   - Issue 62: correct coord for Ellipsis nodes
+  - Issue 57: support for C99 hexadecimal float constants
   - Made running tests that call on 'cpp' a bit more robust.
 
 + Version 2.06 (04.02.2012)
