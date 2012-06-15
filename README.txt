@@ -62,7 +62,7 @@ Installing
 Prerequisites
 -------------
 
-* ``pycparser`` was tested on Python 2.6 and 3.2, on both Linux and Windows. It should work on any later version (in both the 2.x and 3.x lines) as well.
+* ``pycparser`` was tested on Python 2.6, 2.7 and 3.2, on both Linux and Windows. It should work on any later version (in both the 2.x and 3.x lines) as well.
 * ``pycparser`` uses the PLY module for the actual lexer and parser construction. Install PLY from `its website <http://www.dabeaz.com/ply/>`_.
 
 Installation process

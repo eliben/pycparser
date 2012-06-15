@@ -4,7 +4,7 @@
 # This package file exports some convenience functions for 
 # interacting with pycparser
 #
-# Copyright (C) 2008-2011, Eli Bendersky
+# Copyright (C) 2008-2012, Eli Bendersky
 # License: BSD
 #-----------------------------------------------------------------
 
@@ -17,7 +17,7 @@ from .c_parser import CParser
 
 
 def parse_file( filename, use_cpp=False, 
-                cpp_path='cpp', cpp_args=''):
+                cpp_path='cpp', cpp_args='', parser=None):
     """ Parse a C file using pycparser.
     
         filename:
@@ -41,6 +41,9 @@ def parse_file( filename, use_cpp=False,
             If several arguments are required, pass a list of 
             strings.
         
+        parser:
+            Optional parser object to be used instead of the default CParser
+
         When successful, an AST is returned. ParseError can be 
         thrown if the file doesn't parse successfully.
         
@@ -69,7 +72,8 @@ def parse_file( filename, use_cpp=False,
     else:
         text = open(filename, 'rU').read()
     
-    parser = CParser()
+    if parser is None:
+        parser = CParser()
     return parser.parse(text, filename)
     
 
