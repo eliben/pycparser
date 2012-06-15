@@ -202,6 +202,14 @@ class TestCParser_fundamentals(TestCParser_base):
         """
         self.assert_coord(self.parse(t5).ext[0], 99)
 
+        # coord for ellipsis
+        t6 = """
+        int foo(int j,
+                ...) {
+        }"""
+        f6 = self.parse(t6, filename='z.c')
+        self.assert_coord(self.parse(t6).ext[0].decl.type.args.params[1], 3)
+
     def test_simple_decls(self):
         self.assertEqual(self.get_decl('int a;'), 
             ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['int']]]])

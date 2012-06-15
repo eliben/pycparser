@@ -861,7 +861,7 @@ class CParser(PLYParser):
                                 | parameter_list COMMA ELLIPSIS
         """
         if len(p) > 2: 
-            p[1].params.append(c_ast.EllipsisParam())
+            p[1].params.append(c_ast.EllipsisParam(self._coord(p.lineno(3))))
         
         p[0] = p[1]
 
