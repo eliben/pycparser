@@ -318,32 +318,31 @@ ul.auto-toc {
 <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="auto-toc simple">
-<li><a class="reference internal" href="#introduction" id="id3">1&nbsp;&nbsp;&nbsp;Introduction</a><ul class="auto-toc">
-<li><a class="reference internal" href="#what-is-pycparser" id="id4">1.1&nbsp;&nbsp;&nbsp;What is pycparser?</a></li>
-<li><a class="reference internal" href="#what-is-it-good-for" id="id5">1.2&nbsp;&nbsp;&nbsp;What is it good for?</a></li>
-<li><a class="reference internal" href="#which-version-of-c-does-pycparser-support" id="id6">1.3&nbsp;&nbsp;&nbsp;Which version of C does pycparser support?</a></li>
-<li><a class="reference internal" href="#what-grammar-does-pycparser-follow" id="id7">1.4&nbsp;&nbsp;&nbsp;What grammar does pycparser follow?</a></li>
-<li><a class="reference internal" href="#how-is-pycparser-licensed" id="id8">1.5&nbsp;&nbsp;&nbsp;How is pycparser licensed?</a></li>
-<li><a class="reference internal" href="#contact-details" id="id9">1.6&nbsp;&nbsp;&nbsp;Contact details</a></li>
+<li><a class="reference internal" href="#introduction" id="id1">1&nbsp;&nbsp;&nbsp;Introduction</a><ul class="auto-toc">
+<li><a class="reference internal" href="#what-is-pycparser" id="id2">1.1&nbsp;&nbsp;&nbsp;What is pycparser?</a></li>
+<li><a class="reference internal" href="#what-is-it-good-for" id="id3">1.2&nbsp;&nbsp;&nbsp;What is it good for?</a></li>
+<li><a class="reference internal" href="#which-version-of-c-does-pycparser-support" id="id4">1.3&nbsp;&nbsp;&nbsp;Which version of C does pycparser support?</a></li>
+<li><a class="reference internal" href="#what-grammar-does-pycparser-follow" id="id5">1.4&nbsp;&nbsp;&nbsp;What grammar does pycparser follow?</a></li>
+<li><a class="reference internal" href="#how-is-pycparser-licensed" id="id6">1.5&nbsp;&nbsp;&nbsp;How is pycparser licensed?</a></li>
+<li><a class="reference internal" href="#contact-details" id="id7">1.6&nbsp;&nbsp;&nbsp;Contact details</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#installing" id="id10">2&nbsp;&nbsp;&nbsp;Installing</a><ul class="auto-toc">
-<li><a class="reference internal" href="#prerequisites" id="id11">2.1&nbsp;&nbsp;&nbsp;Prerequisites</a></li>
-<li><a class="reference internal" href="#installation-process" id="id12">2.2&nbsp;&nbsp;&nbsp;Installation process</a></li>
-<li><a class="reference internal" href="#known-problems" id="id13">2.3&nbsp;&nbsp;&nbsp;Known problems</a></li>
+<li><a class="reference internal" href="#installing" id="id8">2&nbsp;&nbsp;&nbsp;Installing</a><ul class="auto-toc">
+<li><a class="reference internal" href="#prerequisites" id="id9">2.1&nbsp;&nbsp;&nbsp;Prerequisites</a></li>
+<li><a class="reference internal" href="#installation-process" id="id10">2.2&nbsp;&nbsp;&nbsp;Installation process</a></li>
+<li><a class="reference internal" href="#known-problems" id="id11">2.3&nbsp;&nbsp;&nbsp;Known problems</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#using" id="id14">3&nbsp;&nbsp;&nbsp;Using</a><ul class="auto-toc">
-<li><a class="reference internal" href="#interaction-with-the-c-preprocessor" id="id15">3.1&nbsp;&nbsp;&nbsp;Interaction with the C preprocessor</a></li>
-<li><a class="reference internal" href="#what-about-the-standard-c-library-headers" id="id16">3.2&nbsp;&nbsp;&nbsp;What about the standard C library headers?</a></li>
-<li><a class="reference internal" href="#basic-usage" id="id17">3.3&nbsp;&nbsp;&nbsp;Basic usage</a></li>
-<li><a class="reference internal" href="#advanced-usage" id="id18">3.4&nbsp;&nbsp;&nbsp;Advanced usage</a></li>
+<li><a class="reference internal" href="#using" id="id12">3&nbsp;&nbsp;&nbsp;Using</a><ul class="auto-toc">
+<li><a class="reference internal" href="#interaction-with-the-c-preprocessor" id="id13">3.1&nbsp;&nbsp;&nbsp;Interaction with the C preprocessor</a></li>
+<li><a class="reference internal" href="#what-about-the-standard-c-library-headers" id="id14">3.2&nbsp;&nbsp;&nbsp;What about the standard C library headers?</a></li>
+<li><a class="reference internal" href="#basic-usage" id="id15">3.3&nbsp;&nbsp;&nbsp;Basic usage</a></li>
+<li><a class="reference internal" href="#advanced-usage" id="id16">3.4&nbsp;&nbsp;&nbsp;Advanced usage</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#modifying" id="id19">4&nbsp;&nbsp;&nbsp;Modifying</a></li>
-<li><a class="reference internal" href="#package-contents" id="id20">5&nbsp;&nbsp;&nbsp;Package contents</a></li>
-<li><a class="reference internal" href="#contributors" id="id21">6&nbsp;&nbsp;&nbsp;Contributors</a></li>
-<li><a class="reference internal" href="#changelog" id="id22">7&nbsp;&nbsp;&nbsp;Changelog</a></li>
+<li><a class="reference internal" href="#modifying" id="id17">4&nbsp;&nbsp;&nbsp;Modifying</a></li>
+<li><a class="reference internal" href="#package-contents" id="id18">5&nbsp;&nbsp;&nbsp;Package contents</a></li>
+<li><a class="reference internal" href="#contributors" id="id19">6&nbsp;&nbsp;&nbsp;Contributors</a></li>
 </ul>
 </div>
 <div class="section" id="introduction">
@@ -463,125 +462,6 @@ ul.auto-toc {
 <div class="section" id="contributors">
 <h1>6&nbsp;&nbsp;&nbsp;Contributors</h1>
 <p>Some people have contributed to <tt class="docutils literal">pycparser</tt> by opening issues on bugs they've found and/or submitting patches. The list of contributors is at <a class="reference external" href="http://code.google.com/p/pycparser/wiki/Contributors">this pycparser Wiki page</a>.</p>
-</div>
-<div class="section" id="changelog">
-<h1>7&nbsp;&nbsp;&nbsp;Changelog</h1>
-<ul class="simple">
-<li>Version 2.06 (04.02.2012)<ul>
-<li>Issue 48: gracefully handle parsing of empty files</li>
-<li>Issues 49 &amp; 50: handle more escaped chars in paths to #line - &quot;....test.h&quot;.</li>
-<li>Support for C99 _Complex type.</li>
-<li>CGenerator moves from examples/ to pycparser/ as a first-class citizen, and
-added some fixes to it. examples/c-to-c.py still stays as a convenience
-wrapper.</li>
-<li>Fix problem with parsing a file in which the first statement is just a
-semicolon.</li>
-<li>Improved the AST created for switch statements, making it closer to the
-semantic meaning than to the grammar.</li>
-</ul>
-</li>
-<li>Version 2.05 (16.10.2011)<ul>
-<li>Added support for the C99 <tt class="docutils literal">_Bool</tt> type and <tt class="docutils literal">stdbool.h</tt> header file</li>
-<li>Expanded <tt class="docutils literal">examples/explore_ast.py</tt> with more details on working with the
-AST</li>
-<li>Relaxed the rules on parsing unnamed struct members (helps parse <tt class="docutils literal">windows.h</tt>)</li>
-<li>Bug fixes:<ul>
-<li>Fixed spacing issue for some type declarations</li>
-<li>Issue 47: display empty statements (lone ';') correctly after parsing</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>Version 2.04 (21.05.2011)<ul>
-<li>License changed from LGPL to BSD</li>
-<li>Bug fixes:<ul>
-<li>Issue 31: constraining the scope of typedef definitions</li>
-<li>Issues 33, 35: fixes for the c-to-c.py example</li>
-</ul>
-</li>
-<li>Added C99 integer types to fake headers</li>
-<li>Added unit tests for the c-to-c.py example</li>
-</ul>
-</li>
-<li>Version 2.03 (06.03.2011)<ul>
-<li>Bug fixes:<ul>
-<li>Issue 17: empty file-level declarations</li>
-<li>Issue 18: empty statements and declarations in functions</li>
-<li>Issue 19: anonymous structs &amp; union fields</li>
-<li>Issue 23: fix coordinates of Cast nodes</li>
-</ul>
-</li>
-<li>New example added (<tt class="docutils literal"><span class="pre">examples/c-to-c.py</span></tt>) for translating ASTs generated by <tt class="docutils literal">pycparser</tt> back into C code.</li>
-<li><tt class="docutils literal">pycparser</tt> is now on PyPI (Python Package Index)</li>
-<li>Created <a class="reference external" href="http://code.google.com/p/pycparser/wiki/FAQ">FAQ</a> on the <tt class="docutils literal">pycparser</tt> project page</li>
-<li>Removed support for Python 2.5. <tt class="docutils literal">pycparser</tt> supports Python 2 from 2.6 and on, and Python 3.</li>
-</ul>
-</li>
-<li>Version 2.02 (10.12.2010)<ul>
-<li>The name of a <tt class="docutils literal">NamedInitializer</tt> node was turned into a sequence of nodes
-instead of an attribute, to make it discoverable by the AST node visitor.</li>
-<li>Documentation updates</li>
-</ul>
-</li>
-<li>Version 2.01 (04.12.2010)<ul>
-<li>Removed dependency on YAML. Parsing of the AST node configuration file is done with a simple parser.</li>
-<li>Fixed issue 12: installation problems</li>
-</ul>
-</li>
-<li>Version 2.00 (31.10.2010)<ul>
-<li>Support for C99 (read <a class="reference external" href="http://code.google.com/p/pycparser/wiki/C99support">this wiki page</a> for more information).</li>
-</ul>
-</li>
-<li>Version 1.08 (09.10.2010)<ul>
-<li>Bug fixes:<ul>
-<li>Correct handling of <tt class="docutils literal">do{} ... while</tt> statements in some cases</li>
-<li>Issues 6 &amp; 7: Concatenation of string literals</li>
-<li>Issue 9: Support for unnamed bitfields in structs</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>Version 1.07 (18.05.2010)<ul>
-<li>Python 3.1 compatibility: <tt class="docutils literal">pycparser</tt> was modified to run on Python 3.1 as well as 2.6</li>
-</ul>
-</li>
-<li>Version 1.06 (10.04.2010)<ul>
-<li>Bug fixes:<ul>
-<li>coord not propagated to FuncCall nodes</li>
-<li>lexing of the ^= token (XOREQUALS)</li>
-<li>parsing failed on some abstract declarator rules</li>
-</ul>
-</li>
-<li>Linux compatibility: fixed end-of-line and <tt class="docutils literal">cpp</tt> path issues to allow all tests and examples run on Linux</li>
-</ul>
-</li>
-<li>Version 1.05 (16.10.2009)<ul>
-<li>Fixed the <tt class="docutils literal">parse_file</tt> auxiliary function to handle multiple arguments to <tt class="docutils literal">cpp</tt> correctly</li>
-</ul>
-</li>
-<li>Version 1.04 (22.05.2009)<ul>
-<li>Added the <tt class="docutils literal">fake_libc_include</tt> directory to allow parsing of C code that uses standard C library include files without dependency on a real C library.</li>
-<li>Tested with Python 2.6 and PLY 3.2</li>
-</ul>
-</li>
-<li>Version 1.03 (31.01.2009)<ul>
-<li>Accept enumeration lists with a comma after the last item (C99 feature).</li>
-</ul>
-</li>
-<li>Version 1.02 (16.01.2009)<ul>
-<li>Fixed problem of parsing struct/enum/union names that were named similarly to previously defined <tt class="docutils literal">typedef</tt> types.</li>
-</ul>
-</li>
-<li>Version 1.01 (09.01.2009)<ul>
-<li>Fixed subprocess invocation in the helper function parse_file - now it's more portable</li>
-</ul>
-</li>
-<li>Version 1.0 (15.11.2008)<ul>
-<li>Initial release</li>
-<li>Support for ANSI C89</li>
-</ul>
-</li>
-</ul>
 </div>
 </div>
 </body>
