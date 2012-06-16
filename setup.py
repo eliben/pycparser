@@ -14,7 +14,7 @@ setup(
     """,
     install_requires=['ply'],
     license='BSD',
-    version='2.06',
+    version='2.07',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',

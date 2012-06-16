@@ -5,6 +5,7 @@ include utils/*.exe
 include utils/fake_libc_include/*.h
 include README.*
 include LICENSE
+include CHANGES
 include setup.*
 
 recursive-exclude tests yacctab.* lextab.*

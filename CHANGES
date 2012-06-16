@@ -1,4 +1,4 @@
-+ Version 2.07 (??)
++ Version 2.07 (16.06.2012)
 
   - Issue 54: added an optional parser argument to parse_file
   - Issue 59: added some more fake headers for C99

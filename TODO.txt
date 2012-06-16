@@ -11,7 +11,7 @@ Changes since last
 Version Update
 --------------
 
-setup.py, __init__.py, README.txt
+setup.py, __init__.py, README.txt, CHANGES
 - Tag in hg
 
 
