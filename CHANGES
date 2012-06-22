@@ -1,6 +1,6 @@
 + Version 2.08 (??)
 
-  - Issue 64: added sys/types.h to fake includes
+  - Issues 64 & 65: added some more headers and typedefs to fake includes
 
 + Version 2.07 (16.06.2012)
 
