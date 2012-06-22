@@ -76,6 +76,20 @@ typedef int sig_atomic_t;
 typedef int __tzrule_type;
 typedef int __tzinfo_type;
 typedef int mbstate_t;
+typedef int sem_t;
+typedef int pthread_t;
+typedef int pthread_attr_t;
+typedef int pthread_mutex_t;
+typedef int pthread_mutexattr_t;
+typedef int pthread_cond_t;
+typedef int pthread_condattr_t;
+typedef int pthread_key_t;
+typedef int pthread_once_t;
+typedef int pthread_rwlock_t;
+typedef int pthread_rwlockattr_t;
+typedef int pthread_spinlock_t;
+typedef int pthread_barrier_t;
+typedef int pthread_barrierattr_t;
 
 /* C99 integer types */
 typedef int int8_t;

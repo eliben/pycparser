@@ -1,3 +1,7 @@
++ Version 2.08 (??)
+
+  - Issue 64: added sys/types.h to fake includes
+
 + Version 2.07 (16.06.2012)
 
   - Issue 54: added an optional parser argument to parse_file
