@@ -5,7 +5,7 @@
 # pycparser to understand its structure. The AST is a n-nary tree
 # of nodes, each node having several children, each with a name.
 # Just read the code, and let the comments guide you. The lines
-# beginning with #~ can be uncommented to print out useful 
+# beginning with #~ can be uncommented to print out useful
 # information from the AST.
 # It helps to have the pycparser/_c_ast.cfg file in front of you.
 #
@@ -30,7 +30,7 @@ from pycparser import c_parser, c_ast
 # Also, a C parser must have all the types declared in order to
 # build the correct AST. It doesn't matter what they're declared
 # to, so I've inserted the dummy typedef in the code to let the
-# parser know Hash and Node are types. You don't need to do it 
+# parser know Hash and Node are types. You don't need to do it
 # when parsing real, correct C code.
 #
 text = r"""
@@ -76,20 +76,20 @@ ast = parser.parse(text, filename='<none>')
 # As you see from the printout, our AST has two Typedef children
 # and one FuncDef child.
 # Let's explore FuncDef more closely. As I've mentioned, the list
-# ext[] holds the children of FileAST. Since the function 
-# definition is the third child, it's ext[2]. Uncomment the 
+# ext[] holds the children of FileAST. Since the function
+# definition is the third child, it's ext[2]. Uncomment the
 # following line to show it:
 #
 #~ ast.ext[2].show()
 
-# A FuncDef consists of a declaration, a list of parameter 
+# A FuncDef consists of a declaration, a list of parameter
 # declarations (for K&R style function definitions), and a body.
 # First, let's examine the declaration.
 #
 function_decl = ast.ext[2].decl
 
 # function_decl, like any other declaration, is a Decl. Its type child
-# is a FuncDecl, which has a return type and arguments stored in a 
+# is a FuncDecl, which has a return type and arguments stored in a
 # ParamList node
 #~ function_decl.type.show()
 #~ function_decl.type.args.show()
@@ -101,8 +101,8 @@ function_decl = ast.ext[2].decl
     #~ print('Type:')
     #~ param_decl.type.show(offset=6)
 
-# The body is of FuncDef is a Compound, which is a placeholder for a block 
-# surrounded by {} (You should be reading _c_ast.cfg parallel to this 
+# The body is of FuncDef is a Compound, which is a placeholder for a block
+# surrounded by {} (You should be reading _c_ast.cfg parallel to this
 # explanation and seeing these things by your own eyes).
 #
 # Let's see the block's declarations:
@@ -140,7 +140,7 @@ while_stmt = for_stmt.stmt.block_items[1]
 while_cond = while_stmt.cond
 #~ while_cond.show()
 
-# Note that it's a BinaryOp node - the basic constituent of 
+# Note that it's a BinaryOp node - the basic constituent of
 # expressions in our AST. BinaryOp is the expression tree, with
 # left and right nodes as children. It also has the op attribute,
 # which is just the string representation of the operator.
@@ -152,13 +152,13 @@ while_cond = while_stmt.cond
 #
 # That's if for the example. I hope you now see how easy it is to
 # explore the AST created by pycparser. Although on the surface it
-# is quite complex and has a lot of node types, this is the 
-# inherent complexity of the C language every parser/compiler 
+# is quite complex and has a lot of node types, this is the
+# inherent complexity of the C language every parser/compiler
 # designer has to cope with.
 # Using the tools provided by the c_ast package it's easy to
 # explore the structure of AST nodes and write code that processes
 # them.
-# Specifically, see the cdecl.py example for a non-trivial 
+# Specifically, see the cdecl.py example for a non-trivial
 # demonstration of what you can do by recursively going through
 # the AST.
 #

@@ -1,5 +1,6 @@
 + Version 2.08 (??)
 
+  - Issue 63: line endings cleanup for consistent LF ending
   - Issues 64 & 65: added some more headers and typedefs to fake includes
 
 + Version 2.07 (16.06.2012)
