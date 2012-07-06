@@ -1,5 +1,7 @@
 + Version 2.08 (??)
 
+  - Better error reporting in case where multiple type specifiers are provided.
+    Also fixes Issue 60.
   - Issue 63: line endings cleanup for consistent LF ending
   - Issues 64 & 65: added some more headers and typedefs to fake includes
 
