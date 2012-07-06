@@ -105,18 +105,18 @@ class TestCParser_fundamentals(TestCParser_base):
     
     def test_FileAST(self):
         t = self.parse('int a; char c;')
-        self.failUnless(isinstance(t, FileAST))
+        self.assertTrue(isinstance(t, FileAST))
         self.assertEqual(len(t.ext), 2)
         
         # empty file
         t2 = self.parse('')
-        self.failUnless(isinstance(t2, FileAST))
+        self.assertTrue(isinstance(t2, FileAST))
         self.assertEqual(len(t2.ext), 0)
 
     def test_empty_toplevel_decl(self):
         code = 'int foo;;'
         t = self.parse(code)
-        self.failUnless(isinstance(t, FileAST))
+        self.assertTrue(isinstance(t, FileAST))
         self.assertEqual(len(t.ext), 1)
         self.assertEqual(self.get_decl(code),
             ['Decl', 'foo', 
@@ -375,7 +375,7 @@ class TestCParser_fundamentals(TestCParser_base):
         d2 = "static char * const p;"
         assert_qs(d2, 0, [], ['static'])
         pdecl = self.parse(d2).ext[0].type
-        self.failUnless(isinstance(pdecl, PtrDecl))
+        self.assertTrue(isinstance(pdecl, PtrDecl))
         self.assertEqual(pdecl.quals, ['const'])
     
     def test_sizeof(self):
@@ -1099,8 +1099,8 @@ class TestCParser_fundamentals(TestCParser_base):
                 int var2[*];
             }
         ''')
-        self.failUnless(isinstance(ps2.ext[0].body.block_items[1].type.dim, Assignment))
-        self.failUnless(isinstance(ps2.ext[0].body.block_items[2].type.dim, ID))
+        self.assertTrue(isinstance(ps2.ext[0].body.block_items[1].type.dim, Assignment))
+        self.assertTrue(isinstance(ps2.ext[0].body.block_items[2].type.dim, ID))
 
 
 class TestCParser_whole_code(TestCParser_base):
@@ -1297,12 +1297,12 @@ class TestCParser_whole_code(TestCParser_base):
 
     def test_switch_statement(self):
         def assert_case_node(node, const_value):
-            self.failUnless(isinstance(node, Case))
-            self.failUnless(isinstance(node.expr, Constant))
+            self.assertTrue(isinstance(node, Case))
+            self.assertTrue(isinstance(node.expr, Constant))
             self.assertEqual(node.expr.value, const_value)
 
         def assert_default_node(node):
-            self.failUnless(isinstance(node, Default))
+            self.assertTrue(isinstance(node, Default))
 
         s1 = r'''
         int foo(void) {
@@ -1409,7 +1409,8 @@ class TestCParser_whole_code(TestCParser_base):
     def test_whole_file(self):
         # See how pycparser handles a whole, real C file.
         #
-        code = self._open_c_file('memmgr_with_h.c').read()
+        with self._open_c_file('memmgr_with_h.c') as f:
+            code = f.read()
         p = self.parse(code)
         
         self.assert_num_klass_nodes(p, FuncDef, 5)
@@ -1429,19 +1430,20 @@ class TestCParser_whole_code(TestCParser_base):
     def test_whole_file_with_stdio(self):
         # Parse a whole file with stdio.h included by cpp
         #
-        code = self._open_c_file('cppd_with_stdio_h.c').read()
+        with self._open_c_file('cppd_with_stdio_h.c') as f:
+            code = f.read()
         p = self.parse(code)
         
-        self.failUnless(isinstance(p.ext[0], Typedef))
+        self.assertTrue(isinstance(p.ext[0], Typedef))
         self.assertEqual(p.ext[0].coord.line, 213)
         self.assertEqual(p.ext[0].coord.file, "D:\eli\cpp_stuff\libc_include/stddef.h")
         
-        self.failUnless(isinstance(p.ext[-1], FuncDef))
+        self.assertTrue(isinstance(p.ext[-1], FuncDef))
         self.assertEqual(p.ext[-1].coord.line, 15)
         self.assertEqual(p.ext[-1].coord.file, "example_c_file.c")
         
-        self.failUnless(isinstance(p.ext[-8], Typedef))
-        self.failUnless(isinstance(p.ext[-8].type, TypeDecl))
+        self.assertTrue(isinstance(p.ext[-8], Typedef))
+        self.assertTrue(isinstance(p.ext[-8].type, TypeDecl))
         self.assertEqual(p.ext[-8].name, 'cookie_io_functions_t')
 
 
@@ -1471,7 +1473,7 @@ class TestCParser_typenames(TestCParser_base):
                 unsigned TT;
             }
             '''
-        self.failUnless(isinstance(self.parse(s2), FileAST))
+        self.assertTrue(isinstance(self.parse(s2), FileAST))
         
 
 

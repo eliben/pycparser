@@ -76,7 +76,6 @@ class NodeVisitor(object):
 
 if __name__ == "__main__":    
     source_code = '''
-    int a;
 '''
 
 
@@ -95,22 +94,18 @@ if __name__ == "__main__":
         #~ printme([tok.value, tok.type, tok.lineno, clex.filename, tok.lexpos])
 
     #--------------- Parsing
-    source_code = r'''#line 1 "..\..\test.h"
-    #line 2 "..\-\~\^\_\!\=\&test.h"
-    int a;
+    source_code = r'''
+    typedef int int8_t;
+    typedef signed char int8_t;
     
-    int main(int joe, float mmm) {
-        k = 2;
-        c = 8;
-    }
+    
     '''
+
     parser = CParser(lex_optimize=False, yacc_optimize=False, yacc_debug=True)
     ast = parser.parse(source_code, filename='zz')
     ast.show(showcoord=False, attrnames=True, nodenames=True)
     #~ nv=NodeVisitor()
     #~ nv.visit(ast)
-    
-    print (
-        '' + 
-        'sdf')
+
+    print('-- done --')
 

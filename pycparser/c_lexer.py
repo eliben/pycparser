@@ -1,4 +1,3 @@
-#-----------------------------------------------------------------
 # pycparser: c_lexer.py
 #
 # CLexer class: lexer for the C language
@@ -412,10 +411,8 @@ class CLexer(object):
     @TOKEN(identifier)
     def t_ID(self, t):
         t.type = self.keyword_map.get(t.value, "ID")
-        
         if t.type == 'ID' and self.type_lookup_func(t.value):
             t.type = "TYPEID"
-            
         return t
     
     def t_error(self, t):

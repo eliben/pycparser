@@ -262,13 +262,13 @@ class CParser(PLYParser):
         type.quals = decl.quals
         
         # The typename is a list of types. If any type in this 
-        # list isn't a simple string type, it must be the only
+        # list isn't an IdentifierType, it must be the only
         # type in the list (it's illegal to declare "int enum .."
         # If all the types are basic, they're collected in the
         # IdentifierType holder.
         #
         for tn in typename:
-            if not isinstance(tn, str):
+            if not isinstance(tn, c_ast.IdentifierType):
                 if len(typename) > 1:
                     self._parse_error(
                         "Invalid multiple types specified", tn.coord)
@@ -276,7 +276,11 @@ class CParser(PLYParser):
                     type.type = tn
                     return decl
         
-        type.type = c_ast.IdentifierType(typename)
+        # At this point, we know that typename is a list of IdentifierType
+        # nodes. Concatenate all the names into a single list.
+        type.type = c_ast.IdentifierType(
+            [name for id in typename for name in id.names],
+            coord=typename[0].coord)
         return decl
     
     def _add_declaration_specifier(self, declspec, newspec, kind):
@@ -451,25 +455,26 @@ class CParser(PLYParser):
             # Then it's a declaration of a struct / enum tag,
             # without an actual declarator.
             #
-            type = spec['type']
-            if len(type) > 1:
+            ty = spec['type']
+            if len(ty) > 1:
                 coord = '?'
-                for t in type:
+                for t in ty:
                     if hasattr(t, 'coord'):
                         coord = t.coord
                         break
                         
-                self._parse_error('Multiple type specifiers with a type tag', coord)
+                self._parse_error('Multiple type specifiers with a type tag',
+                        coord)
             
             decl = c_ast.Decl(
                 name=None,
                 quals=spec['qual'],
                 storage=spec['storage'],
                 funcspec=spec['function'],
-                type=type[0],
+                type=ty[0],
                 init=None,
                 bitsize=None,
-                coord=type[0].coord)
+                coord=ty[0].coord)
             decls = [decl]
         else:
             for decl, init in p[2] or []:
@@ -581,7 +586,11 @@ class CParser(PLYParser):
                             | _COMPLEX
                             | SIGNED
                             | UNSIGNED
-                            | typedef_name
+        """
+        p[0] = c_ast.IdentifierType([p[1]], coord=self._coord(p.lineno(1)))
+
+    def p_type_specifier_2(self, p):
+        """ type_specifier  : typedef_name
                             | enum_specifier
                             | struct_or_union_specifier
         """
@@ -1161,7 +1170,7 @@ class CParser(PLYParser):
 
     def p_typedef_name(self, p):
         """ typedef_name : TYPEID """
-        p[0] = p[1]
+        p[0] = c_ast.IdentifierType([p[1]], coord=self._coord(p.lineno(1)))
 
     def p_assignment_expression(self, p):
         """ assignment_expression   : conditional_expression
