@@ -914,6 +914,18 @@ class TestCParser_fundamentals(TestCParser_base):
         
         for b in bad:
             self.assertRaises(ParseError, self.parse, b)        
+
+        # Issue 60
+        badcode1 = '''
+            typedef int numbertype;
+            typedef char numbertype;
+        '''
+        try:
+            self.parse(badcode1)
+        except ParseError as err:
+            self.assertTrue(':3' in str(err))
+        else:
+            self.fail('Expected fail with ParseError')
     
     def test_decl_inits(self):
         d1 = 'int a = 16;'
