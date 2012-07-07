@@ -42,6 +42,10 @@ class TestParsing(unittest.TestCase):
     
         self.failUnless(isinstance(ast2, c_ast.FileAST))
 
+    def test_no_real_content_after_cpp(self):
+        ast = parse_file(self._find_file('empty.h'), use_cpp=True,
+            cpp_path=CPPPATH)
+        self.failUnless(isinstance(ast, c_ast.FileAST))
 
 if __name__ == '__main__':
     unittest.main()

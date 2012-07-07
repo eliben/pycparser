@@ -1,9 +1,11 @@
 + Version 2.08 (??)
 
+  - Issue 68: more correct handling of source files without any actual content.
+  - Issue 69: running all tests will now set appropriate return code.
   - Better error reporting in case where multiple type specifiers are provided.
     Also fixes Issue 60.
-  - Issue 63: line endings cleanup for consistent LF ending
-  - Issues 64 & 65: added some more headers and typedefs to fake includes
+  - Issue 63: line endings cleanup for consistent LF ending.
+  - Issues 64 & 65: added some more headers and typedefs to fake includes.
 
 + Version 2.07 (16.06.2012)
 

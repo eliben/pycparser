@@ -95,7 +95,7 @@ class CParser(PLYParser):
         
         self.cparser = ply.yacc.yacc(
             module=self, 
-            start='translation_unit',
+            start='translation_unit_or_empty',
             debug=yacc_debug,
             optimize=yacc_optimize,
             tabmodule=yacctab)
@@ -121,10 +121,7 @@ class CParser(PLYParser):
         self.clex.filename = filename
         self.clex.reset_lineno()
         self._scope_stack = [set()]
-        if not text or text.isspace():
-            return c_ast.FileAST([])
-        else:
-            return self.cparser.parse(text, lexer=self.clex, debug=debuglevel)
+        return self.cparser.parse(text, lexer=self.clex, debug=debuglevel)
     
     ######################--   PRIVATE   --######################
     
@@ -345,25 +342,36 @@ class CParser(PLYParser):
         ('left', 'PLUS', 'MINUS'),
         ('left', 'TIMES', 'DIVIDE', 'MOD')
     )
-    
+
     ##
     ## Grammar productions
     ## Implementation of the BNF defined in K&R2 A.13
     ##
+
+    # Wrapper around a translation unit, to allow for empty input.
+    # Not strictly part of the C99 Grammar, but useful in practice.
+    #
+    def p_translation_unit_or_empty(self, p):
+        """ translation_unit_or_empty   : translation_unit
+                                        | empty
+        """
+        if p[1] is None:
+            p[0] = c_ast.FileAST([])
+        else:
+            p[0] = c_ast.FileAST(p[1])
+
     def p_translation_unit_1(self, p):
         """ translation_unit    : external_declaration 
         """
         # Note: external_declaration is already a list
         #
-        p[0] = c_ast.FileAST(p[1])
+        p[0] = p[1]
     
     def p_translation_unit_2(self, p):
         """ translation_unit    : translation_unit external_declaration
         """
-        if p[1].ext is None:
-            p[1].ext = p[2]
-        elif p[2] is not None:
-            p[1].ext.extend(p[2])
+        if p[2] is not None:
+            p[1].extend(p[2])
         p[0] = p[1]
     
     # Declarations always come as lists (because they can be
