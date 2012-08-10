@@ -43,6 +43,10 @@ class TestParsing(unittest.TestCase):
         self.assertTrue(isinstance(ast2, c_ast.FileAST))
 
     def test_cpp_funkydir(self):
+        # This test contains Windows specific path escapes
+        if sys.platform != 'win32':
+            return
+
         c_files_path = os.path.join('tests', 'c_files')
         ast = parse_file(self._find_file('simplemain.c'), use_cpp=True,
             cpp_path=CPPPATH, cpp_args='-I%s' % c_files_path)

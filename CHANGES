@@ -10,6 +10,7 @@
   - Issues 64 & 65: added some more headers and typedefs to fake includes.
   - Refactoring the cpp invocation in parse_file into a separate function, which
     can also be used as a utility.
+  - Issue 74: some Windows include paths were handled incorrectly.
 
 + Version 2.07 (16.06.2012)
 
