@@ -6,6 +6,8 @@
     Also fixes Issue 60.
   - Issue 63: line endings cleanup for consistent LF ending.
   - Issues 64 & 65: added some more headers and typedefs to fake includes.
+  - Refactoring the cpp invocation in parse_file into a separate function, which
+    can also be used as a utility.
 
 + Version 2.07 (16.06.2012)
 
