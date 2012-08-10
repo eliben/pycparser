@@ -263,7 +263,30 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(t5.value, 'tok2')
         self.assertEqual(t5.lineno, 99999)
         self.assertEqual(self.clex.filename, r'include/me.h')
-        
+
+    def test_preprocessor_pragma(self):
+        str = r'''
+        42
+        #pragma helo me
+        #pragma once
+        # pragma omp parallel private(th_id)
+        #pragma {pack: 2, smack: 3}
+        #pragma <includeme.h> "nowit.h"
+        #pragma "string"
+        #pragma id 124124 and numbers 0235495
+        59
+        '''
+
+        # Check that pragmas are ignored but the line number advances
+        self.clex.input(str)
+        self.clex.reset_lineno()
+
+        t1 = self.clex.token()
+        self.assertEqual(t1.type, 'INT_CONST_DEC')
+        t2 = self.clex.token()
+        self.assertEqual(t2.type, 'INT_CONST_DEC')
+        self.assertEqual(t2.lineno, 10)
+
 
 
 # Keeps all the errors the lexer spits in one place, to allow
@@ -307,7 +330,7 @@ class TestCLexerErrors(unittest.TestCase):
         token_types(self.clex) 
         
         # compare the error to the expected
-        self.failUnless(re.search(error_like, self.error),
+        self.assertTrue(re.search(error_like, self.error),
             "\nExpected error matching: %s\nGot: %s" % 
                 (error_like, self.error))
         

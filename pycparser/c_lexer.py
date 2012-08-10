@@ -44,6 +44,8 @@ class CLexer(object):
         #
         self.line_pattern = re.compile('([ \t]*line\W)|([ \t]*\d+)')
 
+        self.pragma_pattern = re.compile('[ \t]*pragma\W')
+
     def build(self, **kwargs):
         """ Builds the lexer from the specification. Must be
             called after the lexer object is created. 
@@ -213,23 +215,25 @@ class CLexer(object):
     hex_floating_constant = '('+hex_prefix+'('+hex_digits+'|'+hex_fractional_constant+')'+binary_exponent_part+'[FfLl]?)'
 
     ##
-    ## Lexer states
+    ## Lexer states: used for preprocessor \n-terminated directives
     ##
     states = (
         # ppline: preprocessor line directives
         # 
         ('ppline', 'exclusive'),
+
+        # pppragma: pragma
+        #
+        ('pppragma', 'exclusive'),
     )
     
     def t_PPHASH(self, t):
         r'[ \t]*\#'
-        m = self.line_pattern.match(
-            t.lexer.lexdata, pos=t.lexer.lexpos)
-        
-        if m:
+        if self.line_pattern.match(t.lexer.lexdata, pos=t.lexer.lexpos):
             t.lexer.begin('ppline')
             self.pp_line = self.pp_filename = None
-            #~ print "ppline starts on line %s" % t.lexer.lineno
+        elif self.pragma_pattern.match(t.lexer.lexdata, pos=t.lexer.lexpos):
+            t.lexer.begin('pppragma')
         else:
             t.type = 'PPHASH'
             return t
@@ -273,8 +277,30 @@ class CLexer(object):
     t_ppline_ignore = ' \t'
 
     def t_ppline_error(self, t):
-        msg = 'invalid #line directive'
-        self._error(msg, t)
+        self._error('invalid #line directive', t)
+
+    ##
+    ## Rules for the pppragma state
+    ##
+    def t_pppragma_NEWLINE(self, t):
+        r'\n'
+        t.lexer.lineno += 1
+        t.lexer.begin('INITIAL')
+
+    def t_pppragma_PPPRAGMA(self, t):
+        r'pragma'
+        pass
+        
+    t_pppragma_ignore = ' \t<>.-{}();+-*/$%@&^~!?:,0123456789'
+
+    @TOKEN(string_literal)
+    def t_pppragma_STR(self, t): pass
+
+    @TOKEN(identifier)
+    def t_pppragma_ID(self, t): pass
+
+    def t_pppragma_error(self, t):
+        self._error('invalid #pragma directive', t)
 
     ##
     ## Rules for the normal state
@@ -448,7 +474,6 @@ if __name__ == "__main__":
         tok = clex.token()
         if not tok: break
             
-        #~ print type(tok)
         printme([tok.value, tok.type, tok.lineno, clex.filename, tok.lexpos])
 
         

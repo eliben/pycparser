@@ -1,5 +1,7 @@
 + Version 2.08 (??)
 
+  - Issue 73: initial support for #pragma directives. Consume them without
+    errors and ignore (no tokens are returned). Line numbers are preserved.
   - Issue 68: more correct handling of source files without any actual content.
   - Issue 69: running all tests will now set appropriate return code.
   - Better error reporting in case where multiple type specifiers are provided.
