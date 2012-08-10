@@ -214,7 +214,7 @@ class TestCLexerNoErrors(unittest.TestCase):
                         'ID', 'EQUALS', 'INT_CONST_DEC', 'SEMI', 
                 'RBRACE'])
     
-    def test_preprocessor(self):
+    def test_preprocessor_line(self):
         self.assertTokensTypes('#abracadabra', ['PPHASH', 'ID'])
         
         str = r"""
@@ -263,6 +263,20 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(t5.value, 'tok2')
         self.assertEqual(t5.lineno, 99999)
         self.assertEqual(self.clex.filename, r'include/me.h')
+
+    def test_preprocessor_line_funny(self):
+        str = r'''
+        #line 10 "..\6\joe.h"
+        10
+        '''
+        self.clex.input(str)
+        self.clex.reset_lineno()
+        
+        t1 = self.clex.token()
+        self.assertEqual(t1.type, 'INT_CONST_DEC')
+        self.assertEqual(t1.lineno, 10)
+        self.assertEqual(self.clex.filename, r'..\6\joe.h')
+
 
     def test_preprocessor_pragma(self):
         str = r'''
