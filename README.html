@@ -3,14 +3,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
-<title>pycparser v2.07</title>
+<meta name="generator" content="Docutils 0.8.1: http://docutils.sourceforge.net/" />
+<title>pycparser v2.08</title>
 <meta name="author" content="Eli Bendersky" />
 <style type="text/css">
 
 /*
 :Author: David Goodger (goodger@python.org)
-:Id: $Id: html4css1.css 5951 2009-05-18 18:03:10Z milde $
+:Id: $Id: html4css1.css 7056 2011-06-17 10:50:48Z milde $
 :Copyright: This stylesheet has been placed in the public domain.
 
 Default cascading style sheet for the HTML output of Docutils.
@@ -47,6 +47,10 @@ blockquote.epigraph {
 
 dl.docutils dd {
   margin-bottom: 0.5em }
+
+object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
+  overflow: hidden;
+}
 
 /* Uncomment (and remove this text!) to get bold-faced definition list terms
 dl.docutils dt {
@@ -158,15 +162,21 @@ h2.subtitle {
 hr.docutils {
   width: 75% }
 
-img.align-left, .figure.align-left{
+img.align-left, .figure.align-left, object.align-left {
   clear: left ;
   float: left ;
   margin-right: 1em }
 
-img.align-right, .figure.align-right {
+img.align-right, .figure.align-right, object.align-right {
   clear: right ;
   float: right ;
   margin-left: 1em }
+
+img.align-center, .figure.align-center, object.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 .align-left {
   text-align: left }
@@ -180,7 +190,7 @@ img.align-right, .figure.align-right {
 
 /* reset inner alignment in figures */
 div.align-right {
-  text-align: left }
+  text-align: inherit }
 
 /* div.align-center * { */
 /*   text-align: left } */
@@ -240,7 +250,7 @@ pre.address {
   margin-top: 0 ;
   font: inherit }
 
-pre.literal-block, pre.doctest-block {
+pre.literal-block, pre.doctest-block, pre.math {
   margin-left: 2em ;
   margin-right: 2em }
 
@@ -305,8 +315,8 @@ ul.auto-toc {
 </style>
 </head>
 <body>
-<div class="document" id="pycparser-v2-07">
-<h1 class="title">pycparser v2.07</h1>
+<div class="document" id="pycparser-v2-08">
+<h1 class="title">pycparser v2.08</h1>
 <table class="docinfo" frame="void" rules="none">
 <col class="docinfo-name" />
 <col class="docinfo-content" />
@@ -416,7 +426,7 @@ ul.auto-toc {
 </div>
 <div class="section" id="what-about-the-standard-c-library-headers">
 <h2>3.2&nbsp;&nbsp;&nbsp;What about the standard C library headers?</h2>
-<p>C code almost always includes various header files from the standard C library, like <tt class="docutils literal">stdio.h</tt>. While, with some effort, <tt class="docutils literal">pycparser</tt> can be made to parse the standard headers from any C compiler, it's much simpler to use the provided &quot;fake&quot; standard  includes in <tt class="docutils literal">utils/fake_libc_include</tt>. These are standard C header files that contain only the bare necessities to allow valid parsing of the files that use them. As a bonus, since they're minimal, it can significantly improve the performance of parsing C files.</p>
+<p>C code almost always includes various header files from the standard C library, like <tt class="docutils literal">stdio.h</tt>. While, with some effort, <tt class="docutils literal">pycparser</tt> can be made to parse the standard headers from any C compiler, it's much simpler to use the provided &quot;fake&quot; standard  includes in <tt class="docutils literal">utils/fake_libc_include</tt>. These are standard C header files that contain only the bare necessities to allow valid parsing of the files that use them. As a bonus, since they're minimal, it can significantly improve the performance of parsing large C files.</p>
 <p>See the <tt class="docutils literal">using_cpp_libc.py</tt> example for more details.</p>
 </div>
 <div class="section" id="basic-usage">
