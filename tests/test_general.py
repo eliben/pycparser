@@ -25,14 +25,14 @@ class TestParsing(unittest.TestCase):
 
     def test_without_cpp(self):
         ast = parse_file(self._find_file('example_c_file.c'))
-        self.failUnless(isinstance(ast, c_ast.FileAST))
+        self.assertTrue(isinstance(ast, c_ast.FileAST))
 
     def test_with_cpp(self):
         c_files_path = os.path.join('tests', 'c_files')
         ast = parse_file(self._find_file('memmgr.c'), use_cpp=True,
             cpp_path=CPPPATH,
             cpp_args='-I%s' % c_files_path)
-        self.failUnless(isinstance(ast, c_ast.FileAST))
+        self.assertTrue(isinstance(ast, c_ast.FileAST))
     
         ast2 = parse_file(self._find_file('year.c'), use_cpp=True,
             cpp_path=CPPPATH, 
@@ -40,12 +40,19 @@ class TestParsing(unittest.TestCase):
                 r'-Iutils/fake_libc_include',
                 r'-I../utils/fake_libc_include'])
     
-        self.failUnless(isinstance(ast2, c_ast.FileAST))
+        self.assertTrue(isinstance(ast2, c_ast.FileAST))
+
+    def test_cpp_funkydir(self):
+        c_files_path = os.path.join('tests', 'c_files')
+        ast = parse_file(self._find_file('simplemain.c'), use_cpp=True,
+            cpp_path=CPPPATH, cpp_args='-I%s' % c_files_path)
+        self.assertTrue(isinstance(ast, c_ast.FileAST))
 
     def test_no_real_content_after_cpp(self):
         ast = parse_file(self._find_file('empty.h'), use_cpp=True,
             cpp_path=CPPPATH)
-        self.failUnless(isinstance(ast, c_ast.FileAST))
+        self.assertTrue(isinstance(ast, c_ast.FileAST))
+
 
 if __name__ == '__main__':
     unittest.main()
