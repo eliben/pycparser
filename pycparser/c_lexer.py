@@ -187,13 +187,16 @@ class CLexer(object):
     # character constants (K&R2: A.2.5.2)
     # Note: a-zA-Z and '.-~^_!=&;,' are allowed as escape chars to support #line
     # directives with Windows paths as filenames (..\..\dir\file)
+    # For the same reason, decimal_escape allows all digit sequences. We want to
+    # parse all correct code, even if it means to sometimes parse incorrect
+    # code.
     #
     simple_escape = r"""([a-zA-Z._~!=&\^\-\\?'"])"""
-    octal_escape = r"""([0-7]{1,3})"""
+    decimal_escape = r"""(\d+)"""
     hex_escape = r"""(x[0-9a-fA-F]+)"""
     bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-7])"""
 
-    escape_sequence = r"""(\\("""+simple_escape+'|'+octal_escape+'|'+hex_escape+'))'
+    escape_sequence = r"""(\\("""+simple_escape+'|'+decimal_escape+'|'+hex_escape+'))'
     cconst_char = r"""([^'\\\n]|"""+escape_sequence+')'    
     char_const = "'"+cconst_char+"'"
     wchar_const = 'L'+char_const

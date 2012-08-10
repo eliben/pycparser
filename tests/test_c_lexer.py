@@ -367,8 +367,6 @@ class TestCLexerErrors(unittest.TestCase):
     
         self.assertLexerError("'jx'", ERR_INVALID_CCONST)
         self.assertLexerError("'\*'", ERR_INVALID_CCONST)
-        self.assertLexerError("'\9'", ERR_INVALID_CCONST)
-        self.assertLexerError("L'\9'", ERR_INVALID_CCONST)
     
     def test_string_literals(self):
         self.assertLexerError('"jx\9"', ERR_STRING_ESCAPE)
