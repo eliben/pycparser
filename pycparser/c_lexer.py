@@ -9,8 +9,8 @@
 import re
 import sys
 
-import ply.lex
-from ply.lex import TOKEN
+from .ply import lex
+from .ply.lex import TOKEN
 
 
 class CLexer(object):
@@ -54,7 +54,7 @@ class CLexer(object):
             manual warns against calling lex.lex inside
             __init__
         """
-        self.lexer = ply.lex.lex(object=self, **kwargs)
+        self.lexer = lex.lex(object=self, **kwargs)
 
     def reset_lineno(self):
         """ Resets the internal line number counter of the lexer.

@@ -8,7 +8,7 @@
 #------------------------------------------------------------------------------
 import re
 
-import ply.yacc
+from .ply import yacc
 
 from . import c_ast
 from .c_lexer import CLexer
@@ -93,7 +93,7 @@ class CParser(PLYParser):
         for rule in rules_with_opt:
             self._create_opt_rule(rule)
         
-        self.cparser = ply.yacc.yacc(
+        self.cparser = yacc.yacc(
             module=self, 
             start='translation_unit_or_empty',
             debug=yacc_debug,

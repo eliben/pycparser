@@ -12,9 +12,8 @@ setup(
         It parses C code into an AST and can serve as a front-end for
         C compilers or analysis tools.
     """,
-    install_requires=['ply'],
     license='BSD',
-    version='2.08',
+    version='2.09',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',
