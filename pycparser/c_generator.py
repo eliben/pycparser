@@ -139,9 +139,12 @@ class CGenerator(object):
     def visit_FuncDef(self, n):
         decl = self.visit(n.decl)
         self.indent_level = 0
-        # The body is a Compound node
         body = self.visit(n.body)
-        return decl + '\n' + body + '\n'
+        if n.param_decls:
+            knrdecls = ';\n'.join(self.visit(p) for p in n.param_decls)
+            return decl + '\n' + knrdecls + ';\n' + body + '\n'
+        else:
+            return decl + '\n' + body + '\n'
 
     def visit_FileAST(self, n):
         s = ''

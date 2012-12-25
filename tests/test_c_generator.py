@@ -89,7 +89,7 @@ class TestCtoC(unittest.TestCase):
                 b = - - a;
                 return a;
             }''')
-    
+
     def test_casts(self):
         self._assert_ctoc_correct(r'''
             int main() {
@@ -105,12 +105,22 @@ class TestCtoC(unittest.TestCase):
                 int data;
             } node;
             ''')
-    
+
+    def test_krstyle(self):
+        self._assert_ctoc_correct(r'''
+            int main(argc, argv)
+            int argc;
+            char** argv;
+            {
+                return 0;
+            }
+        ''')
+
     def test_issue36(self):
         self._assert_ctoc_correct(r'''
             int main() {
             }''')
-    
+
     def test_issue37(self):
         self._assert_ctoc_correct(r'''
             int main(void)
