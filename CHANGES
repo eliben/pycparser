@@ -1,9 +1,13 @@
 + Version 2.09 (??)
 
+  - The pycparser project has moved to Bitbucket. For this version, issue
+    numbers still refer to the old Googlecode project, unless stated otherwise.
+    Starting with the next version all issue numbers will refer to the new
+    Bitbucket project.
   - pycparser now carries its PLY dependency along. The pycparser/ply directory
     contains the source of PLY for the currently supported version. This makes
     distribution and testing easier.
-  - The pycparser project has moved to Bitbucket.
+  - Issue #87: improve location reporting for parse errors.
 
 + Version 2.08 (10.08.2012)
 

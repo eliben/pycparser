@@ -96,7 +96,7 @@ if __name__ == "__main__":
     #--------------- Parsing
     source_code = r'''
     typedef int int8_t;
-    kw*
+    int boo, 8sd;
     
     
     '''

@@ -71,11 +71,8 @@ class CLexer(object):
     def find_tok_column(self, token):
         """ Find the column of the token in its line.
         """
-        i = token.lexpos
-        while i > 0:
-            if self.lexer.lexdata[i] == '\n': break
-            i -= 1
-        return (token.lexpos - i) + 1
+        last_cr = self.lexer.lexdata.rfind('\n', 0, token.lexpos)
+        return token.lexpos - last_cr
 
     ######################--   PRIVATE   --######################
     
