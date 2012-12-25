@@ -150,7 +150,7 @@ while_cond = while_stmt.cond
 #~ while_cond.right.show()
 
 #
-# That's if for the example. I hope you now see how easy it is to
+# That's it for the example. I hope you now see how easy it is to
 # explore the AST created by pycparser. Although on the surface it
 # is quite complex and has a lot of node types, this is the
 # inherent complexity of the C language every parser/compiler
