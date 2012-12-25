@@ -19,7 +19,7 @@ setup.py, __init__.py, README.txt, CHANGES
 Build docs and distribution
 ---------------------------
 
-rst2html readme.txt > readme.html
+No need to build the doc now, README is rendered by Bitbucket
 python setup.py sdist upload
 
 Misc

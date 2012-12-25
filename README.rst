@@ -127,7 +127,7 @@ Package contents
 
 Once you unzip the ``pycparser`` package, you'll see the following files and directories:
 
-README.txt/html:
+README.rst:
   This README file.
 
 setup.py:
