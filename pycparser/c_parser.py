@@ -950,7 +950,7 @@ class CParser(PLYParser):
         """
         if len(p) == 3: # single initializer
             init = p[2] if p[1] is None else c_ast.NamedInitializer(p[1], p[2])
-            p[0] = c_ast.ExprList([init], p[2].coord)
+            p[0] = c_ast.InitList([init], p[2].coord)
         else:
             init = p[4] if p[3] is None else c_ast.NamedInitializer(p[3], p[4])
             p[1].exprs.append(init)

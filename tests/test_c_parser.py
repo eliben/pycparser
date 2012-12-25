@@ -68,7 +68,7 @@ def expand_init(init):
     if typ == NamedInitializer:
         des = [expand_init(dp) for dp in init.name]
         return (des, expand_init(init.expr))
-    elif typ == ExprList:
+    elif typ in (InitList, ExprList):
         return [expand_init(expr) for expr in init.exprs]
     elif typ == Constant:
         return ['Constant', init.type, init.value]

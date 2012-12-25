@@ -130,6 +130,13 @@ class TestCtoC(unittest.TestCase):
               return 0;
             }''')
 
+    def test_issue83(self):
+        self._assert_ctoc_correct(r'''
+            void x(void) {
+                int i = (9, k);
+            }
+            ''')
+
     def test_issue84(self):
         self._assert_ctoc_correct(r'''
             void x(void) {

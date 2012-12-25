@@ -73,16 +73,16 @@ class CGenerator(object):
         rval_str = self._parenthesize_if(n.right, 
                             lambda d: not self._is_simple_node(d))
         return '%s %s %s' % (lval_str, n.op, rval_str)
-    
+
     def visit_Assignment(self, n):
         rval_str = self._parenthesize_if(
                             n.rvalue, 
                             lambda n: isinstance(n, c_ast.Assignment))
         return '%s %s %s' % (self.visit(n.lvalue), n.op, rval_str)
-    
+
     def visit_IdentifierType(self, n):
         return ' '.join(n.names)
-    
+
     def visit_Decl(self, n, no_type=False):
         # no_type is used when a Decl is part of a DeclList, where the type is
         # explicitly only for the first delaration in a list.
@@ -90,29 +90,31 @@ class CGenerator(object):
         s = n.name if no_type else self._generate_decl(n)
         if n.bitsize: s += ' : ' + self.visit(n.bitsize)
         if n.init:
-            if isinstance(n.init, c_ast.ExprList):
+            if isinstance(n.init, c_ast.InitList):
                 s += ' = {' + self.visit(n.init) + '}'
+            elif isinstance(n.init, c_ast.ExprList):
+                s += ' = (' + self.visit(n.init) + ')'
             else:
                 s += ' = ' + self.visit(n.init)
         return s
-    
+
     def visit_DeclList(self, n):
         s = self.visit(n.decls[0])
         if len(n.decls) > 1:
             s += ', ' + ', '.join(self.visit_Decl(decl, no_type=True) 
                                     for decl in n.decls[1:])
         return s
-    
+
     def visit_Typedef(self, n):
         s = ''
         if n.storage: s += ' '.join(n.storage) + ' '
         s += self._generate_type(n.type)
         return s
-    
+
     def visit_Cast(self, n):
         s = '(' + self._generate_type(n.to_type) + ')' 
         return s + ' ' + self._parenthesize_unless_simple(n.expr)
-    
+
     def visit_ExprList(self, n):
         visited_subexprs = []
         for expr in n.exprs:
@@ -121,7 +123,16 @@ class CGenerator(object):
             else:
                 visited_subexprs.append(self.visit(expr))
         return ', '.join(visited_subexprs)
-    
+
+    def visit_InitList(self, n):
+        visited_subexprs = []
+        for expr in n.exprs:
+            if isinstance(expr, c_ast.InitList):
+                visited_subexprs.append('(' + self.visit(expr) + ')')
+            else:
+                visited_subexprs.append(self.visit(expr))
+        return ', '.join(visited_subexprs)
+
     def visit_Enum(self, n):
         s = 'enum'
         if n.name: s += ' ' + n.name
@@ -135,7 +146,7 @@ class CGenerator(object):
                     s += ', '
             s += '}'
         return s
-        
+
     def visit_FuncDef(self, n):
         decl = self.visit(n.decl)
         self.indent_level = 0
@@ -163,10 +174,10 @@ class CGenerator(object):
         self.indent_level -= 2
         s += self._make_indent() + '}\n'
         return s
-    
+
     def visit_EmptyStatement(self, n):
         return ';'
-    
+
     def visit_ParamList(self, n):
         return ', '.join(self.visit(param) for param in n.params)
 
@@ -177,16 +188,16 @@ class CGenerator(object):
 
     def visit_Break(self, n):
         return 'break;'
-        
+
     def visit_Continue(self, n):
         return 'continue;'
-    
+
     def visit_TernaryOp(self, n):
         s = self.visit(n.cond) + ' ? '
         s += self.visit(n.iftrue) + ' : '
         s += self.visit(n.iffalse)
         return s
-    
+
     def visit_If(self, n):
         s = 'if ('
         if n.cond: s += self.visit(n.cond)
@@ -196,7 +207,7 @@ class CGenerator(object):
             s += self._make_indent() + 'else\n'
             s += self._generate_stmt(n.iffalse, add_indent=True)
         return s
-    
+
     def visit_For(self, n):
         s = 'for ('
         if n.init: s += self.visit(n.init)
@@ -227,12 +238,12 @@ class CGenerator(object):
         s = 'switch (' + self.visit(n.cond) + ')\n'
         s += self._generate_stmt(n.stmt, add_indent=True)
         return s
-    
+
     def visit_Case(self, n):
         s = 'case ' + self.visit(n.expr) + ':\n'
         s += self._generate_stmt(n.stmt, add_indent=True)
         return s
-    
+
     def visit_Default(self, n):
         return 'default:\n' + self._generate_stmt(n.stmt, add_indent=True)
 

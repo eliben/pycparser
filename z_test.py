@@ -75,30 +75,10 @@ class NodeVisitor(object):
 
 
 if __name__ == "__main__":    
-    source_code = '''
-'''
-
-
-    #--------------- Lexing 
-    #~ def errfoo(msg, a, b):
-        #~ printme(msg)
-        #~ sys.exit()
-    #~ clex = CLexer(errfoo, lambda t: False)
-    #~ clex.build()
-    #~ clex.input(source_code)
-    
-    #~ while 1:
-        #~ tok = clex.token()
-        #~ if not tok: break
-            
-        #~ printme([tok.value, tok.type, tok.lineno, clex.filename, tok.lexpos])
-
-    #--------------- Parsing
     source_code = r'''
-    typedef int int8_t;
-    int boo, 8sd;
-    
-    
+    void main(void) {
+        i = (a, b);
+    }
     '''
 
     parser = CParser(lex_optimize=False, yacc_optimize=False, yacc_debug=True)
