@@ -241,11 +241,15 @@ class CGenerator(object):
 
     def visit_Case(self, n):
         s = 'case ' + self.visit(n.expr) + ':\n'
-        s += self._generate_stmt(n.stmt, add_indent=True)
+        for stmt in n.stmts:
+            s += self._generate_stmt(stmt, add_indent=True)
         return s
 
     def visit_Default(self, n):
-        return 'default:\n' + self._generate_stmt(n.stmt, add_indent=True)
+        s = 'default:\n'
+        for stmt in n.stmts:
+            s += self._generate_stmt(stmt, add_indent=True)
+        return s
 
     def visit_Label(self, n):
         return n.name + ':\n' + self._generate_stmt(n.stmt)

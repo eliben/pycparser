@@ -116,6 +116,25 @@ class TestCtoC(unittest.TestCase):
             }
         ''')
 
+    def test_switchcase(self):
+        self._assert_ctoc_correct(r'''
+        int main() {
+            switch (myvar) {
+            case 10:
+            {
+                k = 10;
+                p = k + 1;
+                break;
+            }
+            case 20:
+            case 30:
+                return 20;
+            default:
+                break;
+            }
+        }
+        ''')
+
     def test_issue36(self):
         self._assert_ctoc_correct(r'''
             int main() {
