@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.8.1: http://docutils.sourceforge.net/" />
-<title>pycparser v2.08</title>
+<title>pycparser v2.09</title>
 <meta name="author" content="Eli Bendersky" />
 <style type="text/css">
 
@@ -315,8 +315,8 @@ ul.auto-toc {
 </style>
 </head>
 <body>
-<div class="document" id="pycparser-v2-08">
-<h1 class="title">pycparser v2.08</h1>
+<div class="document" id="pycparser-v2-09">
+<h1 class="title">pycparser v2.09</h1>
 <table class="docinfo" frame="void" rules="none">
 <col class="docinfo-name" />
 <col class="docinfo-content" />
@@ -427,6 +427,7 @@ ul.auto-toc {
 <div class="section" id="what-about-the-standard-c-library-headers">
 <h2>3.2&nbsp;&nbsp;&nbsp;What about the standard C library headers?</h2>
 <p>C code almost always includes various header files from the standard C library, like <tt class="docutils literal">stdio.h</tt>. While, with some effort, <tt class="docutils literal">pycparser</tt> can be made to parse the standard headers from any C compiler, it's much simpler to use the provided &quot;fake&quot; standard  includes in <tt class="docutils literal">utils/fake_libc_include</tt>. These are standard C header files that contain only the bare necessities to allow valid parsing of the files that use them. As a bonus, since they're minimal, it can significantly improve the performance of parsing large C files.</p>
+<p>The key point to understand here is that <tt class="docutils literal">pycparser</tt> doesn't really care aabout the semantics of types. It only needs to know whether some token encountered in the source is a previously defined type. This is essential in order to be able to parse C correctly.</p>
 <p>See the <tt class="docutils literal">using_cpp_libc.py</tt> example for more details.</p>
 </div>
 <div class="section" id="basic-usage">

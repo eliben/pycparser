@@ -1,7 +1,6 @@
 Todo
 ----
 
-- Write a FAQ about using fake headers
 - Carry PLY around instead of requiring to install it
 - close issue 31 and open new one
 

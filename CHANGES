@@ -1,3 +1,9 @@
++ Version 2.09 (??)
+
+  - pycparser now carries its PLY dependency along. The pycparser/ply directory
+    contains the source of PLY for the currently supported version. This makes
+    distribution and testing easier.
+
 + Version 2.08 (10.08.2012)
 
   - Issue 73: initial support for #pragma directives. Consume them without
