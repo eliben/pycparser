@@ -1390,7 +1390,7 @@ class TestCParser_whole_code(TestCParser_base):
         # a ref in the visitor
         #
         self.assert_num_ID_refs(ps2, 'i', 3)
-        
+
         s3 = r'''
         void x(void)
         {
@@ -1405,6 +1405,15 @@ class TestCParser_whole_code(TestCParser_base):
         # a ref in the visitor
         #
         self.assert_num_ID_refs(ps3, 'i', 2)
+
+        s4 = r'''
+        void x(void) {
+            for (int i = 0;;)
+                i;
+        }
+        '''
+        ps4 = self.parse(s4)
+        self.assert_num_ID_refs(ps4, 'i', 1)
 
     def _open_c_file(self, name):
         """ Find a c file by name, taking into account the current dir can be

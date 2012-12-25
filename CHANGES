@@ -7,7 +7,9 @@
   - pycparser now carries its PLY dependency along. The pycparser/ply directory
     contains the source of PLY for the currently supported version. This makes
     distribution and testing easier.
+  - Issue #84: fix C generation for some statements.
   - Issues #86 and #87: improve location reporting for parse errors.
+  - Issue #89: fix C generation for K&R-style function definitions.
 
 + Version 2.08 (10.08.2012)
 

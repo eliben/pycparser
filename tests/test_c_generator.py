@@ -130,7 +130,14 @@ class TestCtoC(unittest.TestCase):
               return 0;
             }''')
 
-        
+    def test_issue84(self):
+        self._assert_ctoc_correct(r'''
+            void x(void) {
+                for (int i = 0;;)
+                    i;
+            }
+            ''')
+
 
 if __name__ == "__main__":
     unittest.main()
