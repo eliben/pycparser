@@ -1419,7 +1419,8 @@ class CParser(PLYParser):
         if p:
             self._parse_error(
                 'before: %s' % p.value, 
-                self._coord(p.lineno))
+                self._coord(lineno=p.lineno,
+                            column=self.clex.find_tok_column(p)))
         else:
             self._parse_error('At end of input', '')
 

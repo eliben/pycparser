@@ -68,6 +68,15 @@ class CLexer(object):
         g = self.lexer.token()
         return g
 
+    def find_tok_column(self, token):
+        """ Find the column of the token in its line.
+        """
+        i = token.lexpos
+        while i > 0:
+            if self.lexer.lexdata[i] == '\n': break
+            i -= 1
+        return (token.lexpos - i) + 1
+
     ######################--   PRIVATE   --######################
     
     ##
@@ -78,15 +87,8 @@ class CLexer(object):
         self.error_func(msg, location[0], location[1])
         self.lexer.skip(1)
     
-    def _find_tok_column(self, token):
-        i = token.lexpos
-        while i > 0:
-            if self.lexer.lexdata[i] == '\n': break
-            i -= 1
-        return (token.lexpos - i) + 1
-    
     def _make_tok_location(self, token):
-        return (token.lineno, self._find_tok_column(token))
+        return (token.lineno, self.find_tok_column(token))
     
     ##
     ## Reserved keywords
