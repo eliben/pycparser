@@ -17,7 +17,7 @@ setup(
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',
-    url='http://code.google.com/p/pycparser/',
+    url='https://bitbucket.org/eliben/pycparser',
     platforms='Cross Platform',
     classifiers = [
         'Programming Language :: Python :: 2',
