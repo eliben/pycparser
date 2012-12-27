@@ -36,9 +36,9 @@ Anything that needs C code to be parsed. The following are some uses for ``pycpa
 Which version of C does pycparser support?
 ------------------------------------------
 
-``pycparser`` aims to support the full C99 language (according to the standard ISO/IEC 9899). This is a new feature in the version 2.x series - earlier versions only supported C89. For more information on the change, read `this wiki page <http://code.google.com/p/pycparser/wiki/C99support>`_.
+``pycparser`` aims to support the full C99 language (according to the standard ISO/IEC 9899). This is a new feature in the version 2.x series - earlier versions only supported C89.
 
-``pycparser`` doesn't support any GCC extensions. See the `FAQ <http://code.google.com/p/pycparser/wiki/FAQ>`_ for more details.
+``pycparser`` doesn't support any GCC extensions. See the `FAQ <https://bitbucket.org/eliben/pycparser/wiki/FAQ>`_ for more details.
 
 What grammar does pycparser follow?
 -----------------------------------
@@ -53,7 +53,7 @@ How is pycparser licensed?
 Contact details
 ---------------
 
-Drop me an email to eliben@gmail.com for any questions regarding ``pycparser``. For reporting problems with ``pycparser`` or submitting feature requests, the best way is to open an issue on the `pycparser page at Google Code <http://code.google.com/p/pycparser/>`_.
+Drop me an email to eliben@gmail.com for any questions regarding ``pycparser``. For reporting problems with ``pycparser`` or submitting feature requests, the best way is to open an issue on the `pycparser project page <https://bitbucket.org/eliben/pycparser/>`_.
 
 
 Installing
@@ -67,7 +67,7 @@ Prerequisites
 Installation process
 --------------------
 
-Installing ``pycparser`` is very simple. Once you download it from its `website <http://code.google.com/p/pycparser/>`_ and unzip the package, you just have to execute the standard ``python setup.py install``. The setup script will then place the ``pycparser`` module into ``site-packages`` in your Python's installation library.
+Installing ``pycparser`` is very simple. Once you download and unzip the package, you just have to execute the standard ``python setup.py install``. The setup script will then place the ``pycparser`` module into ``site-packages`` in your Python's installation library.
 
 Alternatively, since ``pycparser`` is listed in the `Python Package Index <http://pypi.python.org/pypi/pycparser>`_ (PyPI), you can install it using your favorite Python packaging/distribution tool, for example with::
 
@@ -111,7 +111,7 @@ Advanced usage
 
 The public interface of ``pycparser`` is well documented with comments in ``pycparser/c_parser.py``. For a detailed overview of the various AST nodes created by the parser, see ``pycparser/_c_ast.cfg``.
 
-There's also a `FAQ available here <http://code.google.com/p/pycparser/wiki/FAQ>`_. In any case, you can always drop me an `email <eliben@gmail.com>`_ for help.
+There's also a `FAQ available here <https://bitbucket.org/eliben/pycparser/wiki/FAQ>`_. In any case, you can always drop me an `email <eliben@gmail.com>`_ for help.
 
 Modifying
 =========
@@ -154,5 +154,5 @@ utils/internal/:
 Contributors
 ============
 
-Some people have contributed to ``pycparser`` by opening issues on bugs they've found and/or submitting patches. The list of contributors is at `this pycparser Wiki page <http://code.google.com/p/pycparser/wiki/Contributors>`_.
+Some people have contributed to ``pycparser`` by opening issues on bugs they've found and/or submitting patches. The list of contributors is at `this pycparser Wiki page <https://bitbucket.org/eliben/pycparser/wiki/Contributors>`_.
 
