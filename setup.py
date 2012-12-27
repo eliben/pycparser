@@ -22,7 +22,7 @@ setup(
     classifiers = [
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',],    
-    packages=['pycparser'],
+    packages=['pycparser', 'pycparser.ply'],
     package_data={'pycparser': ['*.cfg']},
 )
 
