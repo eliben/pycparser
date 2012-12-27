@@ -1,8 +1,6 @@
 Todo
 ----
 
-- Carry PLY around instead of requiring to install it
-- close issue 31 and open new one
 
 Changes since last
 ------------------
