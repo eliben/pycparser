@@ -11,6 +11,8 @@ Version Update
 --------------
 
 setup.py, __init__.py, README.txt, CHANGES
+- Make sure _build_tables was run in pycparser/ and the tables are in the
+  MANIFEST
 - Tag in hg
 
 
