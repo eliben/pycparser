@@ -14,6 +14,7 @@ setup.py, __init__.py, README.txt, CHANGES
 - Make sure _build_tables was run in pycparser/ and the tables are in the
   MANIFEST
 - Tag in hg
+- If PLY version changes, note it in README and ply/LICENSE
 
 
 Build docs and distribution
