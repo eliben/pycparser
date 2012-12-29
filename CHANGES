@@ -1,3 +1,9 @@
++ Version 2.09.1 (29.12.2012)
+
+  - No actual functionality changes.
+  - The source distribution was re-packaged to contain the pre-generated Lex and
+    Yacc tables of PLY.
+
 + Version 2.09 (27.12.2012)
 
   - The pycparser project has moved to Bitbucket. For this version, issue
