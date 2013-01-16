@@ -135,6 +135,20 @@ class TestCtoC(unittest.TestCase):
         }
         ''')
 
+    def test_nest_initializer_list(self):
+        self._assert_ctoc_correct(r'''
+        int main()
+        {
+           int i[1][1] = { { 1 } };
+        }''')
+
+    def test_expr_list_in_initializer_list(self):
+        self._assert_ctoc_correct(r'''
+        int main()
+        {
+           int i[1] = { (1, 2) };
+        }''')
+
     def test_issue36(self):
         self._assert_ctoc_correct(r'''
             int main() {

@@ -127,8 +127,10 @@ class CGenerator(object):
     def visit_InitList(self, n):
         visited_subexprs = []
         for expr in n.exprs:
-            if isinstance(expr, c_ast.InitList):
+            if isinstance(expr, c_ast.ExprList):
                 visited_subexprs.append('(' + self.visit(expr) + ')')
+            elif isinstance(expr, c_ast.InitList):
+                visited_subexprs.append('{' + self.visit(expr) + '}')
             else:
                 visited_subexprs.append(self.visit(expr))
         return ', '.join(visited_subexprs)
