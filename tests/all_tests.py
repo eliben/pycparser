@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.extend(['.', '..'])
+sys.path[0:0] = ['.', '..']
 
 import unittest
 
