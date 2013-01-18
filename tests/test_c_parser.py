@@ -13,7 +13,7 @@ from pycparser.c_parser import CParser, Coord, ParseError
 
 _c_parser = c_parser.CParser(
                 lex_optimize=False,
-                yacc_debug=True, 
+                yacc_debug=True,
                 yacc_optimize=False,
                 yacctab='yacctab')
 
@@ -22,7 +22,7 @@ def expand_decl(decl):
     """ Converts the declaration into a nested list.
     """
     typ = type(decl)
-    
+
     if typ == TypeDecl:
         return ['TypeDecl', expand_decl(decl.type)]
     elif typ == IdentifierType:
@@ -32,9 +32,9 @@ def expand_decl(decl):
     elif typ in [Struct, Union]:
         decls = [expand_decl(d) for d in decl.decls or []]
         return [typ.__name__, decl.name, decls]
-    else:        
+    else:
         nested = expand_decl(decl.type)
-    
+
         if typ == Decl:
             if decl.quals:
                 return ['Decl', decl.quals, decl.name, nested]
@@ -58,13 +58,13 @@ def expand_decl(decl):
             else:
                 params = []
             return ['FuncDecl', params, nested]
-    
+
 
 def expand_init(init):
     """ Converts an initialization into a nested list
     """
     typ = type(init)
-    
+
     if typ == NamedInitializer:
         des = [expand_init(dp) for dp in init.name]
         return (des, expand_init(init.expr))
@@ -79,35 +79,35 @@ def expand_init(init):
 class TestCParser_base(unittest.TestCase):
     def parse(self, txt, filename=''):
         return self.cparser.parse(txt, filename)
-    
+
     def setUp(self):
         self.cparser = _c_parser
-    
+
 
 class TestCParser_fundamentals(TestCParser_base):
     def get_decl(self, txt, index=0):
         """ Given a source and an index returns the expanded
             declaration at that index.
-            
-            FileAST holds a list of 'external declarations'. 
+
+            FileAST holds a list of 'external declarations'.
             index is the offset of the desired declaration in that
             list.
         """
         t = self.parse(txt).ext[index]
         return expand_decl(t)
-    
+
     def get_decl_init(self, txt, index=0):
-        """ Returns the expanded initializer of the declaration 
+        """ Returns the expanded initializer of the declaration
             at index.
         """
         t = self.parse(txt).ext[index]
         return expand_init(t.init)
-    
+
     def test_FileAST(self):
         t = self.parse('int a; char c;')
         self.assertTrue(isinstance(t, FileAST))
         self.assertEqual(len(t.ext), 2)
-        
+
         # empty file
         t2 = self.parse('')
         self.assertTrue(isinstance(t2, FileAST))
@@ -119,7 +119,7 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertTrue(isinstance(t, FileAST))
         self.assertEqual(len(t.ext), 1)
         self.assertEqual(self.get_decl(code),
-            ['Decl', 'foo', 
+            ['Decl', 'foo',
                 ['TypeDecl', ['IdentifierType', ['int']]]])
 
     def assert_coord(self, node, line, file=None):
@@ -128,12 +128,12 @@ class TestCParser_fundamentals(TestCParser_base):
             self.assertEqual(node.coord.file, file)
 
     def test_coords(self):
-        """ Tests the "coordinates" of parsed elements - file 
+        """ Tests the "coordinates" of parsed elements - file
             name and line numbers, with modification insterted by
             #line directives.
         """
         self.assert_coord(self.parse('int a;').ext[0], 1)
-        
+
         t1 = """
         int a;
         int b;\n\n
@@ -153,7 +153,7 @@ class TestCParser_fundamentals(TestCParser_base):
         f1_1 = self.parse(t1_1, filename='test.c')
         self.assert_coord(f1_1.ext[0].body.block_items[0], 3, 'test.c')
         self.assert_coord(f1_1.ext[0].body.block_items[1], 4, 'test.c')
-       
+
         t1_2 = '''
         int main () {
             int p = (int) k;
@@ -161,13 +161,13 @@ class TestCParser_fundamentals(TestCParser_base):
         f1_2 = self.parse(t1_2, filename='test.c')
         # make sure that the Cast has a coord (issue 23)
         self.assert_coord(f1_2.ext[0].body.block_items[0].init, 3, 'test.c')
-        
+
         t2 = """
         #line 99
         int c;
         """
         self.assert_coord(self.parse(t2).ext[0], 99)
-        
+
         t3 = """
         int dsf;
         char p;
@@ -182,10 +182,10 @@ class TestCParser_fundamentals(TestCParser_base):
         t4 = """
         #line 20 "restore.h"
         int maydler(char);
-        
+
         #line 30 "includes/daween.ph"
         long j, k;
-        
+
         #line 50000
         char* ro;
         """
@@ -193,11 +193,11 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assert_coord(f4.ext[0], 20, 'restore.h')
         self.assert_coord(f4.ext[1], 30, 'includes/daween.ph')
         self.assert_coord(f4.ext[2], 30, 'includes/daween.ph')
-        self.assert_coord(f4.ext[3], 50000, 'includes/daween.ph')        
+        self.assert_coord(f4.ext[3], 50000, 'includes/daween.ph')
 
         t5 = """
-        int 
-        #line 99 
+        int
+        #line 99
         c;
         """
         self.assert_coord(self.parse(t5).ext[0], 99)
@@ -211,10 +211,10 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assert_coord(self.parse(t6).ext[0].decl.type.args.params[1], 3)
 
     def test_simple_decls(self):
-        self.assertEqual(self.get_decl('int a;'), 
+        self.assertEqual(self.get_decl('int a;'),
             ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['int']]]])
 
-        self.assertEqual(self.get_decl('unsigned int a;'), 
+        self.assertEqual(self.get_decl('unsigned int a;'),
             ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['unsigned', 'int']]]])
 
         self.assertEqual(self.get_decl('_Bool a;'),
@@ -223,161 +223,161 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(self.get_decl('float _Complex fcc;'),
             ['Decl', 'fcc', ['TypeDecl', ['IdentifierType', ['float', '_Complex']]]])
 
-        self.assertEqual(self.get_decl('char* string;'), 
-            ['Decl', 'string', 
+        self.assertEqual(self.get_decl('char* string;'),
+            ['Decl', 'string',
                 ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]])
 
-        self.assertEqual(self.get_decl('long ar[15];'), 
-            ['Decl', 'ar', 
-                ['ArrayDecl', '15', 
+        self.assertEqual(self.get_decl('long ar[15];'),
+            ['Decl', 'ar',
+                ['ArrayDecl', '15',
                     ['TypeDecl', ['IdentifierType', ['long']]]]])
 
-        self.assertEqual(self.get_decl('long long ar[15];'), 
-            ['Decl', 'ar', 
-                ['ArrayDecl', '15', 
+        self.assertEqual(self.get_decl('long long ar[15];'),
+            ['Decl', 'ar',
+                ['ArrayDecl', '15',
                     ['TypeDecl', ['IdentifierType', ['long', 'long']]]]])
-        
-        self.assertEqual(self.get_decl('unsigned ar[];'), 
-            ['Decl', 'ar', 
-                ['ArrayDecl', '', 
+
+        self.assertEqual(self.get_decl('unsigned ar[];'),
+            ['Decl', 'ar',
+                ['ArrayDecl', '',
                     ['TypeDecl', ['IdentifierType', ['unsigned']]]]])
-            
-        self.assertEqual(self.get_decl('int strlen(char* s);'), 
-            ['Decl', 'strlen', 
-                ['FuncDecl', 
-                    [['Decl', 's', 
-                        ['PtrDecl', 
-                            ['TypeDecl', ['IdentifierType', ['char']]]]]], 
+
+        self.assertEqual(self.get_decl('int strlen(char* s);'),
+            ['Decl', 'strlen',
+                ['FuncDecl',
+                    [['Decl', 's',
+                        ['PtrDecl',
+                            ['TypeDecl', ['IdentifierType', ['char']]]]]],
                     ['TypeDecl', ['IdentifierType', ['int']]]]])
-                    
-        self.assertEqual(self.get_decl('int strcmp(char* s1, char* s2);'), 
-            ['Decl', 'strcmp', 
-                ['FuncDecl', 
-                    [   ['Decl', 's1', 
-                            ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]], 
-                        ['Decl', 's2', 
+
+        self.assertEqual(self.get_decl('int strcmp(char* s1, char* s2);'),
+            ['Decl', 'strcmp',
+                ['FuncDecl',
+                    [   ['Decl', 's1',
+                            ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]],
+                        ['Decl', 's2',
                             ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]]
-                    ], 
+                    ],
                 ['TypeDecl', ['IdentifierType', ['int']]]]])
 
     def test_nested_decls(self): # the fun begins
         self.assertEqual(self.get_decl('char** ar2D;'),
-            ['Decl', 'ar2D', 
-                ['PtrDecl', ['PtrDecl', 
+            ['Decl', 'ar2D',
+                ['PtrDecl', ['PtrDecl',
                     ['TypeDecl', ['IdentifierType', ['char']]]]]])
-        
-        self.assertEqual(self.get_decl('int (*a)[1][2];'), 
-            ['Decl', 'a', 
-                ['PtrDecl', 
-                    ['ArrayDecl', '1', 
-                        ['ArrayDecl', '2', 
+
+        self.assertEqual(self.get_decl('int (*a)[1][2];'),
+            ['Decl', 'a',
+                ['PtrDecl',
+                    ['ArrayDecl', '1',
+                        ['ArrayDecl', '2',
                         ['TypeDecl', ['IdentifierType', ['int']]]]]]])
 
-        self.assertEqual(self.get_decl('int *a[1][2];'), 
-            ['Decl', 'a', 
-                ['ArrayDecl', '1', 
-                    ['ArrayDecl', '2', 
+        self.assertEqual(self.get_decl('int *a[1][2];'),
+            ['Decl', 'a',
+                ['ArrayDecl', '1',
+                    ['ArrayDecl', '2',
                         ['PtrDecl', ['TypeDecl', ['IdentifierType', ['int']]]]]]])
-        
+
         self.assertEqual(self.get_decl('char ***ar3D[40];'),
-            ['Decl', 'ar3D', 
-                ['ArrayDecl', '40', 
-                    ['PtrDecl', ['PtrDecl', ['PtrDecl', 
+            ['Decl', 'ar3D',
+                ['ArrayDecl', '40',
+                    ['PtrDecl', ['PtrDecl', ['PtrDecl',
                         ['TypeDecl', ['IdentifierType', ['char']]]]]]]])
-                        
+
         self.assertEqual(self.get_decl('char (***ar3D)[40];'),
-            ['Decl', 'ar3D', 
-                ['PtrDecl', ['PtrDecl', ['PtrDecl', 
+            ['Decl', 'ar3D',
+                ['PtrDecl', ['PtrDecl', ['PtrDecl',
                     ['ArrayDecl', '40', ['TypeDecl', ['IdentifierType', ['char']]]]]]]])
-            
+
         self.assertEqual(self.get_decl('int (*x[4])(char, int);'),
-            ['Decl', 'x', 
-                ['ArrayDecl', '4', 
-                    ['PtrDecl', 
-                        ['FuncDecl', 
-                            [   ['Typename',  ['TypeDecl', ['IdentifierType', ['char']]]], 
-                                ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]], 
+            ['Decl', 'x',
+                ['ArrayDecl', '4',
+                    ['PtrDecl',
+                        ['FuncDecl',
+                            [   ['Typename',  ['TypeDecl', ['IdentifierType', ['char']]]],
+                                ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]],
                             ['TypeDecl', ['IdentifierType', ['int']]]]]]])
-        
+
         self.assertEqual(self.get_decl('char *(*(**foo [][8])())[];'),
-            ['Decl', 'foo', 
-                ['ArrayDecl', '', 
-                    ['ArrayDecl', '8', 
-                        ['PtrDecl', ['PtrDecl', 
-                            ['FuncDecl', 
-                                [], 
-                                ['PtrDecl', 
-                                    ['ArrayDecl', '', 
-                                        ['PtrDecl', 
-                                            ['TypeDecl', 
+            ['Decl', 'foo',
+                ['ArrayDecl', '',
+                    ['ArrayDecl', '8',
+                        ['PtrDecl', ['PtrDecl',
+                            ['FuncDecl',
+                                [],
+                                ['PtrDecl',
+                                    ['ArrayDecl', '',
+                                        ['PtrDecl',
+                                            ['TypeDecl',
                                                 ['IdentifierType', ['char']]]]]]]]]]]])
-    
+
         # explore named and unnamed function pointer parameters,
         # with and without qualifiers
         #
-        
+
         # unnamed w/o quals
         self.assertEqual(self.get_decl('int (*k)(int);'),
-            ['Decl', 'k', 
-                ['PtrDecl', 
-                    ['FuncDecl', 
-                        [['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]], 
+            ['Decl', 'k',
+                ['PtrDecl',
+                    ['FuncDecl',
+                        [['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]],
                         ['TypeDecl', ['IdentifierType', ['int']]]]]])
-    
+
         # unnamed w/ quals
         self.assertEqual(self.get_decl('int (*k)(const int);'),
-            ['Decl', 'k', 
-                ['PtrDecl', 
-                    ['FuncDecl', 
-                        [['Typename', ['const'], ['TypeDecl', ['IdentifierType', ['int']]]]], 
+            ['Decl', 'k',
+                ['PtrDecl',
+                    ['FuncDecl',
+                        [['Typename', ['const'], ['TypeDecl', ['IdentifierType', ['int']]]]],
                         ['TypeDecl', ['IdentifierType', ['int']]]]]])
-        
+
         # named w/o quals
         self.assertEqual(self.get_decl('int (*k)(int q);'),
-            ['Decl', 'k', 
-                ['PtrDecl', 
-                    ['FuncDecl', 
-                        [['Decl', 'q', ['TypeDecl', ['IdentifierType', ['int']]]]], 
+            ['Decl', 'k',
+                ['PtrDecl',
+                    ['FuncDecl',
+                        [['Decl', 'q', ['TypeDecl', ['IdentifierType', ['int']]]]],
                         ['TypeDecl', ['IdentifierType', ['int']]]]]])
-        
+
         # named w/ quals
         self.assertEqual(self.get_decl('int (*k)(const volatile int q);'),
-            ['Decl', 'k', 
-                ['PtrDecl', 
-                    ['FuncDecl', 
-                        [['Decl', ['const', 'volatile'], 'q', 
-                            ['TypeDecl', ['IdentifierType', ['int']]]]], 
+            ['Decl', 'k',
+                ['PtrDecl',
+                    ['FuncDecl',
+                        [['Decl', ['const', 'volatile'], 'q',
+                            ['TypeDecl', ['IdentifierType', ['int']]]]],
                         ['TypeDecl', ['IdentifierType', ['int']]]]]])
-        
+
         # restrict qualifier
         self.assertEqual(self.get_decl('int (*k)(restrict int* q);'),
-            ['Decl', 'k', 
-                ['PtrDecl', 
-                    ['FuncDecl', 
-                        [['Decl', ['restrict'], 'q', 
+            ['Decl', 'k',
+                ['PtrDecl',
+                    ['FuncDecl',
+                        [['Decl', ['restrict'], 'q',
                             ['PtrDecl',
-                                ['TypeDecl', ['IdentifierType', ['int']]]]]], 
+                                ['TypeDecl', ['IdentifierType', ['int']]]]]],
                         ['TypeDecl', ['IdentifierType', ['int']]]]]])
-        
+
     def test_qualifiers_storage_specifiers(self):
         def assert_qs(txt, index, quals, storage):
             d = self.parse(txt).ext[index]
             self.assertEqual(d.quals, quals)
             self.assertEqual(d.storage, storage)
-        
+
         assert_qs("extern int p;", 0, [], ['extern'])
         assert_qs("const long p = 6;", 0, ['const'], [])
-        
+
         d1 = "static const int p, q, r;"
         for i in range(3):
             assert_qs(d1, i, ['const'], ['static'])
-        
+
         d2 = "static char * const p;"
         assert_qs(d2, 0, [], ['static'])
         pdecl = self.parse(d2).ext[0].type
         self.assertTrue(isinstance(pdecl, PtrDecl))
         self.assertEqual(pdecl.quals, ['const'])
-    
+
     def test_sizeof(self):
         e = """
             void foo()
@@ -385,31 +385,31 @@ class TestCParser_fundamentals(TestCParser_base):
                 int a = sizeof k;
                 int b = sizeof(int);
                 int c = sizeof(int**);;
-                
+
                 char* p = "just to make sure this parses w/o error...";
                 int d = sizeof(int());
             }
         """
         compound = self.parse(e).ext[0].body
-        
+
         s1 = compound.block_items[0].init
         self.assertTrue(isinstance(s1, UnaryOp))
         self.assertEqual(s1.op, 'sizeof')
         self.assertTrue(isinstance(s1.expr, ID))
         self.assertEqual(s1.expr.name, 'k')
-        
+
         s2 = compound.block_items[1].init
         self.assertEqual(expand_decl(s2.expr),
             ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]])
-        
+
         s3 = compound.block_items[2].init
         self.assertEqual(expand_decl(s3.expr),
-            ['Typename', 
-                ['PtrDecl', 
-                    ['PtrDecl', 
-                        ['TypeDecl', 
+            ['Typename',
+                ['PtrDecl',
+                    ['PtrDecl',
+                        ['TypeDecl',
                             ['IdentifierType', ['int']]]]]])
-    
+
     # The C99 compound literal feature
     #
     def test_compound_literals(self):
@@ -418,69 +418,69 @@ class TestCParser_fundamentals(TestCParser_base):
                 p = (long long){k};
                 tc = (struct jk){.a = {1, 2}, .b[0] = t};
             }''')
-        
+
         compound = ps1.ext[0].body.block_items[0].rvalue
         self.assertEqual(expand_decl(compound.type),
             ['Typename', ['TypeDecl', ['IdentifierType', ['long', 'long']]]])
         self.assertEqual(expand_init(compound.init),
             [['ID', 'k']])
-        
-        compound = ps1.ext[0].body.block_items[1].rvalue  
+
+        compound = ps1.ext[0].body.block_items[1].rvalue
         self.assertEqual(expand_decl(compound.type),
             ['Typename', ['TypeDecl', ['Struct', 'jk', []]]])
         self.assertEqual(expand_init(compound.init),
             [
-                ([['ID', 'a']], [['Constant', 'int', '1'], ['Constant', 'int', '2']]), 
+                ([['ID', 'a']], [['Constant', 'int', '1'], ['Constant', 'int', '2']]),
                 ([['ID', 'b'], ['Constant', 'int', '0']], ['ID', 't'])])
-        
+
     def test_enums(self):
         e1 = "enum mycolor op;"
         e1_type = self.parse(e1).ext[0].type.type
-        
+
         self.assertTrue(isinstance(e1_type, Enum))
         self.assertEqual(e1_type.name, 'mycolor')
         self.assertEqual(e1_type.values, None)
-        
+
         e2 = "enum mysize {large=20, small, medium} shoes;"
         e2_type = self.parse(e2).ext[0].type.type
-        
+
         self.assertTrue(isinstance(e2_type, Enum))
         self.assertEqual(e2_type.name, 'mysize')
-        
+
         e2_elist = e2_type.values
         self.assertTrue(isinstance(e2_elist, EnumeratorList))
-        
+
         for e2_eval in e2_elist.enumerators:
             self.assertTrue(isinstance(e2_eval, Enumerator))
-        
+
         self.assertEqual(e2_elist.enumerators[0].name, 'large')
         self.assertEqual(e2_elist.enumerators[0].value.value, '20')
         self.assertEqual(e2_elist.enumerators[2].name, 'medium')
         self.assertEqual(e2_elist.enumerators[2].value, None)
-    
+
         # enum with trailing comma (C99 feature)
         e3 = """
-            enum 
+            enum
             {
                 red,
                 blue,
                 green,
             } color;
             """
-        
+
         e3_type = self.parse(e3).ext[0].type.type
         self.assertTrue(isinstance(e3_type, Enum))
         e3_elist = e3_type.values
         self.assertTrue(isinstance(e3_elist, EnumeratorList))
-        
+
         for e3_eval in e3_elist.enumerators:
             self.assertTrue(isinstance(e3_eval, Enumerator))
-        
+
         self.assertEqual(e3_elist.enumerators[0].name, 'red')
         self.assertEqual(e3_elist.enumerators[0].value, None)
         self.assertEqual(e3_elist.enumerators[1].name, 'blue')
         self.assertEqual(e3_elist.enumerators[2].name, 'green')
-        
+
     def test_typedef(self):
         # without typedef, error
         s1 = """
@@ -495,40 +495,40 @@ class TestCParser_fundamentals(TestCParser_base):
         """
         ps2 = self.parse(s2)
         self.assertEqual(expand_decl(ps2.ext[0]),
-            ['Typedef', 'node', 
-                ['PtrDecl', 
+            ['Typedef', 'node',
+                ['PtrDecl',
                     ['TypeDecl', ['IdentifierType', ['void']]]]])
-        
+
         self.assertEqual(expand_decl(ps2.ext[1]),
-            ['Decl', 'k', 
+            ['Decl', 'k',
                 ['TypeDecl', ['IdentifierType', ['node']]]])
-    
+
         s3 = """
             typedef int T;
             typedef T *pT;
-            
+
             pT aa, bb;
         """
         ps3 = self.parse(s3)
         self.assertEqual(expand_decl(ps3.ext[3]),
-            ['Decl', 'bb', 
+            ['Decl', 'bb',
                 ['TypeDecl', ['IdentifierType', ['pT']]]])
-        
+
         s4 = '''
             typedef char* __builtin_va_list;
             typedef __builtin_va_list __gnuc_va_list;
         '''
         ps4 = self.parse(s4)
         self.assertEqual(expand_decl(ps4.ext[1]),
-            ['Typedef', '__gnuc_va_list', 
-                ['TypeDecl', 
+            ['Typedef', '__gnuc_va_list',
+                ['TypeDecl',
                     ['IdentifierType', ['__builtin_va_list']]]])
-        
+
         s5 = '''typedef struct tagHash Hash;'''
         ps5 = self.parse(s5)
         self.assertEqual(expand_decl(ps5.ext[0]),
             ['Typedef', 'Hash', ['TypeDecl', ['Struct', 'tagHash', []]]])
-        
+
     def test_struct_union(self):
         s1 = """
             struct {
@@ -536,47 +536,47 @@ class TestCParser_fundamentals(TestCParser_base):
                 char* name;
             } joe;
             """
-    
+
         self.assertEqual(expand_decl(self.parse(s1).ext[0]),
-            ['Decl', 'joe', 
-                ['TypeDecl', ['Struct', None, 
-                    [   ['Decl', 'id', 
-                            ['TypeDecl', 
-                                ['IdentifierType', ['int']]]], 
-                        ['Decl', 'name', 
-                            ['PtrDecl', 
-                                ['TypeDecl', 
+            ['Decl', 'joe',
+                ['TypeDecl', ['Struct', None,
+                    [   ['Decl', 'id',
+                            ['TypeDecl',
+                                ['IdentifierType', ['int']]]],
+                        ['Decl', 'name',
+                            ['PtrDecl',
+                                ['TypeDecl',
                                     ['IdentifierType', ['char']]]]]]]]])
-    
+
         s2 = """
             struct node p;
         """
         self.assertEqual(expand_decl(self.parse(s2).ext[0]),
-            ['Decl', 'p', 
+            ['Decl', 'p',
                 ['TypeDecl', ['Struct', 'node', []]]])
-    
+
         s21 = """
             union pri ra;
         """
         self.assertEqual(expand_decl(self.parse(s21).ext[0]),
-            ['Decl', 'ra', 
+            ['Decl', 'ra',
                 ['TypeDecl', ['Union', 'pri', []]]])
-    
+
         s3 = """
             struct node* p;
         """
         self.assertEqual(expand_decl(self.parse(s3).ext[0]),
-            ['Decl', 'p', 
-                ['PtrDecl', 
+            ['Decl', 'p',
+                ['PtrDecl',
                     ['TypeDecl', ['Struct', 'node', []]]]])
-                    
+
         s4 = """
             struct node;
         """
         self.assertEqual(expand_decl(self.parse(s4).ext[0]),
-            ['Decl', None, 
+            ['Decl', None,
                 ['Struct', 'node', []]])
-        
+
         s5 = """
             union
             {
@@ -584,7 +584,7 @@ class TestCParser_fundamentals(TestCParser_base):
                 {
                     int type;
                 } n;
-                
+
                 struct
                 {
                     int type;
@@ -593,22 +593,22 @@ class TestCParser_fundamentals(TestCParser_base):
             } u;
         """
         self.assertEqual(expand_decl(self.parse(s5).ext[0]),
-            ['Decl', 'u', 
-                ['TypeDecl', 
-                    ['Union', None, 
-                        [['Decl', 'n', 
-                            ['TypeDecl', 
-                                ['Struct', None, 
-                                    [['Decl', 'type', 
-                                        ['TypeDecl', ['IdentifierType', ['int']]]]]]]], 
-                        ['Decl', 'ni', 
-                            ['TypeDecl', 
-                                ['Struct', None, 
-                                    [['Decl', 'type', 
-                                        ['TypeDecl', ['IdentifierType', ['int']]]], 
-                                    ['Decl', 'intnode', 
+            ['Decl', 'u',
+                ['TypeDecl',
+                    ['Union', None,
+                        [['Decl', 'n',
+                            ['TypeDecl',
+                                ['Struct', None,
+                                    [['Decl', 'type',
+                                        ['TypeDecl', ['IdentifierType', ['int']]]]]]]],
+                        ['Decl', 'ni',
+                            ['TypeDecl',
+                                ['Struct', None,
+                                    [['Decl', 'type',
+                                        ['TypeDecl', ['IdentifierType', ['int']]]],
+                                    ['Decl', 'intnode',
                                         ['TypeDecl', ['IdentifierType', ['int']]]]]]]]]]]])
-        
+
         s6 = """
             typedef struct foo_tag
             {
@@ -616,22 +616,22 @@ class TestCParser_fundamentals(TestCParser_base):
             } foo, *pfoo;
         """
         s6_ast = self.parse(s6)
-        
+
         self.assertEqual(expand_decl(s6_ast.ext[0]),
             ['Typedef', 'foo',
-                ['TypeDecl', 
-                    ['Struct', 'foo_tag', 
-                        [['Decl', 'data', 
+                ['TypeDecl',
+                    ['Struct', 'foo_tag',
+                        [['Decl', 'data',
                             ['PtrDecl', ['TypeDecl', ['IdentifierType', ['void']]]]]]]]])
-        
+
         self.assertEqual(expand_decl(s6_ast.ext[1]),
             ['Typedef', 'pfoo',
                 ['PtrDecl',
-                    ['TypeDecl', 
-                        ['Struct', 'foo_tag', 
-                            [['Decl', 'data', 
+                    ['TypeDecl',
+                        ['Struct', 'foo_tag',
+                            [['Decl', 'data',
                                 ['PtrDecl', ['TypeDecl', ['IdentifierType', ['void']]]]]]]]]])
-        
+
         s7 = r"""
             struct _on_exit_args {
                 void *  _fnargs[32];
@@ -643,15 +643,15 @@ class TestCParser_fundamentals(TestCParser_base):
                 long _is_cxa;
             };
         """
-        
+
         s7_ast = self.parse(s7, filename='test.c')
         self.assert_coord(s7_ast.ext[0].type.decls[2], 6, 'test.c')
-        self.assert_coord(s7_ast.ext[0].type.decls[3], 78, 
+        self.assert_coord(s7_ast.ext[0].type.decls[3], 78,
             r'D:\eli\cpp_stuff\libc_include/sys/reent.h')
-            
+
         s8 = """
             typedef enum tagReturnCode {SUCCESS, FAIL} ReturnCode;
-        
+
             typedef struct tagEntry
             {
                 char* key;
@@ -665,24 +665,24 @@ class TestCParser_fundamentals(TestCParser_base):
 
                 struct tagNode* next;
             } Node;
-            
+
             typedef struct tagHash
             {
                 unsigned int table_size;
 
-                Node** heads; 
+                Node** heads;
 
             } Hash;
         """
         s8_ast = self.parse(s8)
         self.assertEqual(expand_decl(s8_ast.ext[3]),
-            ['Typedef', 'Hash', 
-                ['TypeDecl', ['Struct', 'tagHash', 
-                    [['Decl', 'table_size', 
-                        ['TypeDecl', ['IdentifierType', ['unsigned', 'int']]]], 
-                    ['Decl', 'heads', 
+            ['Typedef', 'Hash',
+                ['TypeDecl', ['Struct', 'tagHash',
+                    [['Decl', 'table_size',
+                        ['TypeDecl', ['IdentifierType', ['unsigned', 'int']]]],
+                    ['Decl', 'heads',
                         ['PtrDecl', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['Node']]]]]]]]]])
-    
+
     def test_anonymous_struct_union(self):
         s1 = """
             union
@@ -813,24 +813,24 @@ class TestCParser_fundamentals(TestCParser_base):
 
         parsed_struct = self.parse(s1).ext[0]
 
-        # We can see here the name of the decl for the unnamed bitfield is 
+        # We can see here the name of the decl for the unnamed bitfield is
         # None, but expand_decl doesn't show bitfield widths
         # ...
         self.assertEqual(expand_decl(parsed_struct),
-            ['Decl', 'joe', 
-                ['TypeDecl', ['Struct', None, 
-                    [   ['Decl', 'k', 
-                            ['TypeDecl', 
-                                ['IdentifierType', ['int']]]], 
-                        ['Decl', None, 
-                            ['TypeDecl', 
+            ['Decl', 'joe',
+                ['TypeDecl', ['Struct', None,
+                    [   ['Decl', 'k',
+                            ['TypeDecl',
+                                ['IdentifierType', ['int']]]],
+                        ['Decl', None,
+                            ['TypeDecl',
                                 ['IdentifierType', ['int']]]]]]]])
-    
+
         # ...
         # so we test them manually
         self.assertEqual(parsed_struct.type.type.decls[0].bitsize.value, '6')
-        self.assertEqual(parsed_struct.type.type.decls[1].bitsize.value, '2')       
-    
+        self.assertEqual(parsed_struct.type.type.decls[1].bitsize.value, '2')
+
     def test_tags_namespace(self):
         """ Tests that the tags of structs/unions/enums reside in a separate namespace and
             can be named after existing types.
@@ -844,16 +844,16 @@ class TestCParser_fundamentals(TestCParser_base):
                     char* value;
                 } Entry;
             """
-        
+
         s1_ast = self.parse(s1)
         self.assertEqual(expand_decl(s1_ast.ext[1]),
-            ['Decl', 'Entry', 
-                ['TypeDecl', ['Struct', 'tagEntry', 
-                    [['Decl', 'key', 
-                        ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]], 
-                    ['Decl', 'value', 
+            ['Decl', 'Entry',
+                ['TypeDecl', ['Struct', 'tagEntry',
+                    [['Decl', 'key',
+                        ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]],
+                    ['Decl', 'value',
                         ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]]]]]])
-    
+
         s2 = """
                 struct tagEntry;
 
@@ -865,55 +865,55 @@ class TestCParser_fundamentals(TestCParser_base):
                     char* value;
                 } Entry;
             """
-        
+
         s2_ast = self.parse(s2)
         self.assertEqual(expand_decl(s2_ast.ext[2]),
-            ['Decl', 'Entry', 
-                ['TypeDecl', ['Struct', 'tagEntry', 
-                    [['Decl', 'key', 
-                        ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]], 
-                    ['Decl', 'value', 
+            ['Decl', 'Entry',
+                ['TypeDecl', ['Struct', 'tagEntry',
+                    [['Decl', 'key',
+                        ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]],
+                    ['Decl', 'value',
                         ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]]]]]])
-        
-        s3 = """                
+
+        s3 = """
                 typedef int mytag;
 
                 enum mytag {ABC, CDE};
                 enum mytag joe;
             """
-            
+
         s3_type = self.parse(s3).ext[1].type
-        
+
         self.assertTrue(isinstance(s3_type, Enum))
-        self.assertEqual(s3_type.name, 'mytag')        
-    
+        self.assertEqual(s3_type.name, 'mytag')
+
     def test_multi_decls(self):
         d1 = 'int a, b;'
-        
+
         self.assertEqual(self.get_decl(d1, 0),
             ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['int']]]])
         self.assertEqual(self.get_decl(d1, 1),
             ['Decl', 'b', ['TypeDecl', ['IdentifierType', ['int']]]])
-    
+
         d2 = 'char* p, notp, ar[4];'
         self.assertEqual(self.get_decl(d2, 0),
-            ['Decl', 'p', 
+            ['Decl', 'p',
                 ['PtrDecl',
                     ['TypeDecl', ['IdentifierType', ['char']]]]])
         self.assertEqual(self.get_decl(d2, 1),
             ['Decl', 'notp', ['TypeDecl', ['IdentifierType', ['char']]]])
         self.assertEqual(self.get_decl(d2, 2),
-            ['Decl', 'ar', 
+            ['Decl', 'ar',
                 ['ArrayDecl', '4',
                     ['TypeDecl', ['IdentifierType', ['char']]]]])
-    
+
     def test_invalid_multiple_types_error(self):
         bad = [
             'int enum {ab, cd} fubr;',
             'enum kid char brbr;']
-        
+
         for b in bad:
-            self.assertRaises(ParseError, self.parse, b)        
+            self.assertRaises(ParseError, self.parse, b)
 
         # Issue 60
         badcode1 = '''
@@ -926,7 +926,7 @@ class TestCParser_fundamentals(TestCParser_base):
             self.assertTrue(':3' in str(err))
         else:
             self.fail('Expected fail with ParseError')
-    
+
     def test_decl_inits(self):
         d1 = 'int a = 16;'
         #~ self.parse(d1).show()
@@ -934,7 +934,7 @@ class TestCParser_fundamentals(TestCParser_base):
             ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['int']]]])
         self.assertEqual(self.get_decl_init(d1),
             ['Constant', 'int', '16'])
-        
+
         d1_1 = 'float f = 0xEF.56p1;'
         self.assertEqual(self.get_decl_init(d1_1),
             ['Constant', 'float', '0xEF.56p1'])
@@ -942,38 +942,38 @@ class TestCParser_fundamentals(TestCParser_base):
         d2 = 'long ar[] = {7, 8, 9};'
         #~ self.parse(d2).show()
         self.assertEqual(self.get_decl(d2),
-            ['Decl', 'ar', 
+            ['Decl', 'ar',
                 ['ArrayDecl', '',
                     ['TypeDecl', ['IdentifierType', ['long']]]]])
         self.assertEqual(self.get_decl_init(d2),
             [   ['Constant', 'int', '7'],
                 ['Constant', 'int', '8'],
                 ['Constant', 'int', '9']])
-        
+
         d3 = 'char p = j;'
         self.assertEqual(self.get_decl(d3),
             ['Decl', 'p', ['TypeDecl', ['IdentifierType', ['char']]]])
         self.assertEqual(self.get_decl_init(d3),
             ['ID', 'j'])
-        
+
         d4 = "char x = 'c', *p = {0, 1, 2, {4, 5}, 6};"
         self.assertEqual(self.get_decl(d4, 0),
             ['Decl', 'x', ['TypeDecl', ['IdentifierType', ['char']]]])
         self.assertEqual(self.get_decl_init(d4, 0),
             ['Constant', 'char', "'c'"])
         self.assertEqual(self.get_decl(d4, 1),
-            ['Decl', 'p', 
+            ['Decl', 'p',
                 ['PtrDecl',
                     ['TypeDecl', ['IdentifierType', ['char']]]]])
-        
+
         self.assertEqual(self.get_decl_init(d4, 1),
-            [   ['Constant', 'int', '0'], 
-                ['Constant', 'int', '1'], 
-                ['Constant', 'int', '2'], 
-                [['Constant', 'int', '4'], 
-                 ['Constant', 'int', '5']], 
+            [   ['Constant', 'int', '0'],
+                ['Constant', 'int', '1'],
+                ['Constant', 'int', '2'],
+                [['Constant', 'int', '4'],
+                 ['Constant', 'int', '5']],
                 ['Constant', 'int', '6']])
-        
+
     def test_decl_named_inits(self):
         d1 = 'int a = {.k = 16};'
         self.assertEqual(self.get_decl_init(d1),
@@ -983,85 +983,85 @@ class TestCParser_fundamentals(TestCParser_base):
         d2 = 'int a = { [0].a = {1}, [1].a[0] = 2 };'
         self.assertEqual(self.get_decl_init(d2),
             [
-                ([['Constant', 'int', '0'], ['ID', 'a']], 
-                    [['Constant', 'int', '1']]), 
-                ([['Constant', 'int', '1'], ['ID', 'a'], ['Constant', 'int', '0']], 
+                ([['Constant', 'int', '0'], ['ID', 'a']],
+                    [['Constant', 'int', '1']]),
+                ([['Constant', 'int', '1'], ['ID', 'a'], ['Constant', 'int', '0']],
                     ['Constant', 'int', '2'])])
 
         d3 = 'int a = { .a = 1, .c = 3, 4, .b = 5};'
         self.assertEqual(self.get_decl_init(d3),
             [
-                ([['ID', 'a']], ['Constant', 'int', '1']), 
-                ([['ID', 'c']], ['Constant', 'int', '3']), 
-                ['Constant', 'int', '4'], 
+                ([['ID', 'a']], ['Constant', 'int', '1']),
+                ([['ID', 'c']], ['Constant', 'int', '3']),
+                ['Constant', 'int', '4'],
                 ([['ID', 'b']], ['Constant', 'int', '5'])])
 
     def test_function_definitions(self):
         def parse_fdef(str):
             return self.parse(str).ext[0]
-        
+
         def fdef_decl(fdef):
             return expand_decl(fdef.decl)
-        
+
         f1 = parse_fdef('''
         int factorial(int p)
         {
             return 3;
         }
         ''')
-        
+
         self.assertEqual(fdef_decl(f1),
             ['Decl', 'factorial',
-                ['FuncDecl', 
-                    [['Decl', 'p', ['TypeDecl', ['IdentifierType', ['int']]]]], 
+                ['FuncDecl',
+                    [['Decl', 'p', ['TypeDecl', ['IdentifierType', ['int']]]]],
                     ['TypeDecl', ['IdentifierType', ['int']]]]])
-        
+
         self.assertEqual(type(f1.body.block_items[0]), Return)
-        
+
         f2 = parse_fdef('''
         char* zzz(int p, char* c)
         {
             int a;
             char b;
-            
+
             a = b + 2;
             return 3;
         }
         ''')
-        
+
         self.assertEqual(fdef_decl(f2),
-            ['Decl', 'zzz', 
-                ['FuncDecl', 
-                    [   ['Decl', 'p', ['TypeDecl', ['IdentifierType', ['int']]]], 
-                        ['Decl', 'c', ['PtrDecl', 
-                                        ['TypeDecl', ['IdentifierType', ['char']]]]]], 
+            ['Decl', 'zzz',
+                ['FuncDecl',
+                    [   ['Decl', 'p', ['TypeDecl', ['IdentifierType', ['int']]]],
+                        ['Decl', 'c', ['PtrDecl',
+                                        ['TypeDecl', ['IdentifierType', ['char']]]]]],
                     ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]]])
-            
-        self.assertEqual(list(map(type, f2.body.block_items)), 
+
+        self.assertEqual(list(map(type, f2.body.block_items)),
             [Decl, Decl, Assignment, Return])
-        
+
         f3 = parse_fdef('''
         char* zzz(p, c)
         long p, *c;
         {
             int a;
             char b;
-            
+
             a = b + 2;
             return 3;
         }
         ''')
-        
+
         self.assertEqual(fdef_decl(f3),
-            ['Decl', 'zzz', 
-                ['FuncDecl', 
+            ['Decl', 'zzz',
+                ['FuncDecl',
                     [   ['ID', 'p'],
                         ['ID', 'c']],
                     ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]]])
-        
-        self.assertEqual(list(map(type, f3.body.block_items)), 
+
+        self.assertEqual(list(map(type, f3.body.block_items)),
             [Decl, Decl, Assignment, Return])
-        
+
         self.assertEqual(expand_decl(f3.param_decls[0]),
             ['Decl', 'p', ['TypeDecl', ['IdentifierType', ['long']]]])
         self.assertEqual(expand_decl(f3.param_decls[1]),
@@ -1071,10 +1071,10 @@ class TestCParser_fundamentals(TestCParser_base):
         # simple string, for reference
         d1 = self.get_decl_init('char* s = "hello";')
         self.assertEqual(d1, ['Constant', 'string', '"hello"'])
-        
+
         d2 = self.get_decl_init('char* s = "hello" " world";')
         self.assertEqual(d2, ['Constant', 'string', '"hello world"'])
-        
+
         # the test case from issue 6
         d3 = self.parse(r'''
             int main() {
@@ -1086,28 +1086,28 @@ class TestCParser_fundamentals(TestCParser_base):
                 );
             }
         ''')
-        
+
         self.assertEqual(
             d3.ext[0].body.block_items[0].args.exprs[1].value,
             r'"Wrong Params?\nUsage:\n%s <binary_file_path>\n"')
-        
+
         d4 = self.get_decl_init('char* s = "" "foobar";')
         self.assertEqual(d4, ['Constant', 'string', '"foobar"'])
-        
+
         d5 = self.get_decl_init(r'char* s = "foo\"" "bar";')
         self.assertEqual(d5, ['Constant', 'string', r'"foo\"bar"'])
 
-    def test_inline_specifier(self):                
+    def test_inline_specifier(self):
         ps2 = self.parse('static inline void inlinefoo(void);')
         self.assertEqual(ps2.ext[0].funcspec, ['inline'])
-    
+
     # variable length array
     def test_vla(self):
         ps2 = self.parse(r'''
             int main() {
                 int size;
                 int var[size = 5];
-                
+
                 int var2[*];
             }
         ''')
@@ -1117,55 +1117,55 @@ class TestCParser_fundamentals(TestCParser_base):
 
 class TestCParser_whole_code(TestCParser_base):
     """ Testing of parsing whole chunks of code.
-    
+
         Since I don't want to rely on the structure of ASTs too
         much, most of these tests are implemented with visitors.
     """
-    # A simple helper visitor that lists the values of all the 
+    # A simple helper visitor that lists the values of all the
     # Constant nodes it sees.
     #
     class ConstantVisitor(NodeVisitor):
         def __init__(self):
             self.values = []
-        
+
         def visit_Constant(self, node):
             self.values.append(node.value)
-    
-    # This visitor counts the amount of references to the ID 
+
+    # This visitor counts the amount of references to the ID
     # with the name provided to it in the constructor.
     #
     class IDNameCounter(NodeVisitor):
         def __init__(self, name):
             self.name = name
             self.nrefs = 0
-        
+
         def visit_ID(self, node):
             if node.name == self.name:
                 self.nrefs += 1
-    
-    # Counts the amount of nodes of a given class 
-    # 
+
+    # Counts the amount of nodes of a given class
+    #
     class NodeKlassCounter(NodeVisitor):
         def __init__(self, node_klass):
             self.klass = node_klass
             self.n = 0
-        
+
         def generic_visit(self, node):
             if node.__class__ == self.klass:
                 self.n += 1
-            
+
             NodeVisitor.generic_visit(self, node)
-    
+
     def assert_all_Constants(self, code, constants):
-        """ Asserts that the list of all Constant values (by 
-            'preorder' appearance) in the chunk of code is as 
+        """ Asserts that the list of all Constant values (by
+            'preorder' appearance) in the chunk of code is as
             given.
         """
         if isinstance(code, str):
             parsed = self.parse(code)
         else:
             parsed = code
-            
+
         cv = self.ConstantVisitor()
         cv.visit(parsed)
         self.assertEqual(cv.values, constants)
@@ -1178,7 +1178,7 @@ class TestCParser_whole_code(TestCParser_base):
             parsed = self.parse(code)
         else:
             parsed = code
-    
+
         iv = self.IDNameCounter(name)
         iv.visit(parsed)
         self.assertEqual(iv.nrefs, num)
@@ -1190,7 +1190,7 @@ class TestCParser_whole_code(TestCParser_base):
             parsed = self.parse(code)
         else:
             parsed = code
-        
+
         cv = self.NodeKlassCounter(klass)
         cv.visit(parsed)
         self.assertEqual(cv.n, num)
@@ -1198,10 +1198,10 @@ class TestCParser_whole_code(TestCParser_base):
     def test_expressions(self):
         e1 = '''int k = (r + 10.0) >> 6 + 8 << (3 & 0x14);'''
         self.assert_all_Constants(e1, ['10.0', '6', '8', '3', '0x14'])
-        
+
         e2 = r'''char n = '\n', *prefix = "st_";'''
         self.assert_all_Constants(e2, [r"'\n'", '"st_"'])
-        
+
     def test_statements(self):
         s1 = r'''
             void foo(){
@@ -1215,26 +1215,26 @@ class TestCParser_whole_code(TestCParser_base):
                 }
             }
         '''
-        
-        self.assert_all_Constants(s1, 
+
+        self.assert_all_Constants(s1,
             ['1', '0', r"'-'", '1', r"'\0'", '1', r'"--"', '0', '1'])
-        
+
         ps1 = self.parse(s1)
         self.assert_num_ID_refs(ps1, 'argv', 3)
         self.assert_num_ID_refs(ps1, 'optind', 5)
-        
+
         self.assert_num_klass_nodes(ps1, If, 3)
         self.assert_num_klass_nodes(ps1, Return, 2)
         self.assert_num_klass_nodes(ps1, FuncCall, 1) # strcmp
         self.assert_num_klass_nodes(ps1, BinaryOp, 7)
 
         # In the following code, Hash and Node were defined as
-        # int to pacify the parser that sees they're used as 
+        # int to pacify the parser that sees they're used as
         # types
         #
         s2 = r'''
-        typedef int Hash, Node; 
-        
+        typedef int Hash, Node;
+
         void HashDestroy(Hash* hash)
         {
             unsigned int i;
@@ -1255,10 +1255,10 @@ class TestCParser_whole_code(TestCParser_base):
                     free(temp->entry);
 
                     temp = temp->next;
-                    
+
                     free(temp2);
                 }
-            }    
+            }
 
             free(hash->heads);
             hash->heads = NULL;
@@ -1266,18 +1266,18 @@ class TestCParser_whole_code(TestCParser_base):
             free(hash);
         }
         '''
-        
+
         ps2 = self.parse(s2)
         self.assert_num_klass_nodes(ps2, FuncCall, 6)
         self.assert_num_klass_nodes(ps2, FuncDef, 1)
         self.assert_num_klass_nodes(ps2, For, 1)
         self.assert_num_klass_nodes(ps2, While, 1)
         self.assert_num_klass_nodes(ps2, StructRef, 10)
-        
+
         # declarations don't count
         self.assert_num_ID_refs(ps2, 'hash', 6)
         self.assert_num_ID_refs(ps2, 'i', 4)
-        
+
         s3 = r'''
         void x(void) {
           int a, b;
@@ -1290,12 +1290,12 @@ class TestCParser_whole_code(TestCParser_base):
           }
         }
         '''
-        
+
         ps3 = self.parse(s3)
         self.assert_num_klass_nodes(ps3, DoWhile, 1)
         self.assert_num_ID_refs(ps3, 'a', 4)
         self.assert_all_Constants(ps3, ['0', '0', '1'])
-        
+
     def test_empty_statement(self):
         s1 = r'''
         void foo(void){
@@ -1386,7 +1386,7 @@ class TestCParser_whole_code(TestCParser_base):
         '''
         ps2 = self.parse(s2)
         self.assert_num_klass_nodes(ps2, For, 1)
-        # here there are 3 refs to 'i' since the declaration doesn't count as 
+        # here there are 3 refs to 'i' since the declaration doesn't count as
         # a ref in the visitor
         #
         self.assert_num_ID_refs(ps2, 'i', 3)
@@ -1401,7 +1401,7 @@ class TestCParser_whole_code(TestCParser_base):
         '''
         ps3 = self.parse(s3)
         self.assert_num_klass_nodes(ps3, For, 1)
-        # here there are 2 refs to 'i' since the declaration doesn't count as 
+        # here there are 2 refs to 'i' since the declaration doesn't count as
         # a ref in the visitor
         #
         self.assert_num_ID_refs(ps3, 'i', 2)
@@ -1433,18 +1433,18 @@ class TestCParser_whole_code(TestCParser_base):
         with self._open_c_file('memmgr_with_h.c') as f:
             code = f.read()
         p = self.parse(code)
-        
+
         self.assert_num_klass_nodes(p, FuncDef, 5)
-        
-        # each FuncDef also has a FuncDecl. 4 declarations 
+
+        # each FuncDef also has a FuncDecl. 4 declarations
         # + 5 definitions, overall 9
         self.assert_num_klass_nodes(p, FuncDecl, 9)
-        
+
         self.assert_num_klass_nodes(p, Typedef, 4)
-        
+
         self.assertEqual(p.ext[4].coord.line, 88)
         self.assertEqual(p.ext[4].coord.file, "./memmgr.h")
-        
+
         self.assertEqual(p.ext[6].coord.line, 10)
         self.assertEqual(p.ext[6].coord.file, "memmgr.c")
 
@@ -1454,15 +1454,15 @@ class TestCParser_whole_code(TestCParser_base):
         with self._open_c_file('cppd_with_stdio_h.c') as f:
             code = f.read()
         p = self.parse(code)
-        
+
         self.assertTrue(isinstance(p.ext[0], Typedef))
         self.assertEqual(p.ext[0].coord.line, 213)
         self.assertEqual(p.ext[0].coord.file, "D:\eli\cpp_stuff\libc_include/stddef.h")
-        
+
         self.assertTrue(isinstance(p.ext[-1], FuncDef))
         self.assertEqual(p.ext[-1].coord.line, 15)
         self.assertEqual(p.ext[-1].coord.file, "example_c_file.c")
-        
+
         self.assertTrue(isinstance(p.ext[-8], Typedef))
         self.assertTrue(isinstance(p.ext[-8].type, TypeDecl))
         self.assertEqual(p.ext[-8].name, 'cookie_io_functions_t')
@@ -1483,7 +1483,7 @@ class TestCParser_typenames(TestCParser_base):
             }
             '''
         self.assertRaises(ParseError, self.parse, s1)
-        
+
         # should succeed since TT is not a type in bar
         s2 = r'''
             void foo() {
@@ -1495,16 +1495,16 @@ class TestCParser_typenames(TestCParser_base):
             }
             '''
         self.assertTrue(isinstance(self.parse(s2), FileAST))
-        
+
 
 
 if __name__ == '__main__':
     #~ suite = unittest.TestLoader().loadTestsFromNames(
         #~ ['test_c_parser.TestCParser_fundamentals.test_typedef'])
-    
+
     #~ suite = unittest.TestLoader().loadTestsFromNames(
         #~ ['test_c_parser.TestCParser_whole_code.test_whole_file_with_stdio'])
-    
+
     #~ suite = unittest.TestLoader().loadTestsFromTestCase(
         #~ TestCParser_whole_code)
 
