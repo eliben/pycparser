@@ -90,6 +90,7 @@ typedef int pthread_rwlockattr_t;
 typedef int pthread_spinlock_t;
 typedef int pthread_barrier_t;
 typedef int pthread_barrierattr_t;
+typedef int jmp_buf;
 
 /* C99 integer types */
 typedef int int8_t;
