@@ -76,8 +76,10 @@ class NodeVisitor(object):
 
 if __name__ == "__main__":    
     source_code = r'''
+    typedef int foobar;
+    typedef int foobar;
     void main(void) {
-        i = (a, b);
+        foobar i;
     }
     '''
 
