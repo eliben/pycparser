@@ -1,3 +1,7 @@
++ Version 2.10 (??)
+
+  - BitBucket issue #9: c_generator error for ExprList in expression context.
+
 + Version 2.09.1 (29.12.2012)
 
   - No actual functionality changes.
