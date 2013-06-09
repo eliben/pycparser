@@ -16,11 +16,6 @@ setup.py, __init__.py, README.txt, CHANGES
 - Tag in hg
 - If PLY version changes, note it in README and ply/LICENSE
 
-
-Build docs and distribution
----------------------------
-
-No need to build the doc now, README is rendered by Bitbucket
 python setup.py sdist upload
 
 Misc

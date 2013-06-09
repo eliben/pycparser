@@ -17,7 +17,9 @@ Introduction
 What is pycparser?
 ------------------
 
-``pycparser`` is a parser for the C language, written in pure Python. It is a module designed to be easily integrated into applications that need to parse C source code.
+``pycparser`` is a parser for the C language, written in pure Python. It is a
+module designed to be easily integrated into applications that need to parse
+C source code.
 
 What is it good for?
 --------------------
@@ -38,7 +40,7 @@ Which version of C does pycparser support?
 
 ``pycparser`` aims to support the full C99 language (according to the standard ISO/IEC 9899). This is a new feature in the version 2.x series - earlier versions only supported C89.
 
-``pycparser`` doesn't support any GCC extensions. See the `FAQ <https://bitbucket.org/eliben/pycparser/wiki/FAQ>`_ for more details.
+``pycparser`` doesn't support any GCC extensions. See the `FAQ <https://github.com/eliben/pycparser/wiki/FAQ>`_ for more details.
 
 What grammar does pycparser follow?
 -----------------------------------
@@ -53,7 +55,7 @@ How is pycparser licensed?
 Contact details
 ---------------
 
-Drop me an email to eliben@gmail.com for any questions regarding ``pycparser``. For reporting problems with ``pycparser`` or submitting feature requests, the best way is to open an issue on the `pycparser project page <https://bitbucket.org/eliben/pycparser/>`_.
+Drop me an email to eliben@gmail.com for any questions regarding ``pycparser``. For reporting problems with ``pycparser`` or submitting feature requests, the best way is to open an issue on the `pycparser project page <https://github.com/eliben/pycparser/>`_.
 
 
 Installing
@@ -90,7 +92,7 @@ Interaction with the C preprocessor
 
 In order to be compilable, C code must be preprocessed by the C preprocessor - ``cpp``. ``cpp`` handles preprocessing directives like ``#include`` and ``#define``, removes comments, and does other minor tasks that prepare the C code for compilation.
 
-For all but the most trivial snippets of C code, ``pycparser``, like a C compiler, must receive preprocessed C code in order to function correctly. If you import the top-level ``parse_file`` function from the ``pycparser`` package, it will interact with ``cpp`` for you, as long as it's in your PATH, or you provide a path to it. 
+For all but the most trivial snippets of C code, ``pycparser``, like a C compiler, must receive preprocessed C code in order to function correctly. If you import the top-level ``parse_file`` function from the ``pycparser`` package, it will interact with ``cpp`` for you, as long as it's in your PATH, or you provide a path to it.
 
 On the vast majority of Linux systems, ``cpp`` is installed and is in the PATH. If you're on Windows and don't have ``cpp`` somewhere, you can use the one provided in the ``utils`` directory in ``pycparser``'s distribution. This ``cpp`` executable was compiled from the `LCC distribution <http://www.cs.princeton.edu/software/lcc/>`_, and is provided under LCC's license terms.
 
@@ -113,7 +115,7 @@ Advanced usage
 
 The public interface of ``pycparser`` is well documented with comments in ``pycparser/c_parser.py``. For a detailed overview of the various AST nodes created by the parser, see ``pycparser/_c_ast.cfg``.
 
-There's also a `FAQ available here <https://bitbucket.org/eliben/pycparser/wiki/FAQ>`_. In any case, you can always drop me an `email <eliben@gmail.com>`_ for help.
+There's also a `FAQ available here <https://github.com/eliben/pycparser/wiki/FAQ>`_. In any case, you can always drop me an `email <eliben@gmail.com>`_ for help.
 
 Modifying
 =========
@@ -156,5 +158,7 @@ utils/internal/:
 Contributors
 ============
 
-Some people have contributed to ``pycparser`` by opening issues on bugs they've found and/or submitting patches. The list of contributors is at `this pycparser Wiki page <https://bitbucket.org/eliben/pycparser/wiki/Contributors>`_.
+Some people have contributed to ``pycparser`` by opening issues on bugs they've
+found and/or submitting patches. The list of contributors is in the CONTRIBUTORS
+file in the source distribution.
 
