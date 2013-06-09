@@ -1,5 +1,3 @@
-syntax: glob
-
 *.pyc
 tests/parser.out
 tests/*tab.py
@@ -14,6 +12,4 @@ parser.out
 *.orig
 *.rej
 .tox
-
-
-glob:utils/z.c
+utils/z.c
