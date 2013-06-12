@@ -422,9 +422,12 @@ class CParser(PLYParser):
     def p_function_definition_1(self, p):
         """ function_definition : declarator declaration_list_opt compound_statement
         """
-        # no declaration specifiers
-        spec = dict(qual=[], storage=[],
-            type=[c_ast.IdentifierType(['int'], coord=self._coord(p.lineno(1)))],
+        # no declaration specifiers - 'int' becomes the default type
+        spec = dict(
+            qual=[],
+            storage=[],
+            type=[c_ast.IdentifierType(['int'],
+                                       coord=self._coord(p.lineno(1)))],
             function=[])
 
         p[0] = self._build_function_definition(
