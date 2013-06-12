@@ -260,6 +260,15 @@ class TestCParser_fundamentals(TestCParser_base):
                     ],
                 ['TypeDecl', ['IdentifierType', ['int']]]]])
 
+        # function return values and parameters may not have type information
+        self.assertEqual(self.get_decl('extern foobar(foo, bar);'), 
+            ['Decl', 'foobar', 
+                ['FuncDecl', 
+                    [   ['ID', 'foo'],
+                        ['ID', 'bar']
+                    ], 
+                ['TypeDecl', ['IdentifierType', ['int']]]]])
+
     def test_nested_decls(self): # the fun begins
         self.assertEqual(self.get_decl('char** ar2D;'),
             ['Decl', 'ar2D',
@@ -1066,6 +1075,20 @@ class TestCParser_fundamentals(TestCParser_base):
             ['Decl', 'p', ['TypeDecl', ['IdentifierType', ['long']]]])
         self.assertEqual(expand_decl(f3.param_decls[1]),
             ['Decl', 'c', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['long']]]]])
+
+        # function return values and parameters may not have type information
+        f4 = parse_fdef('''
+        que(p)
+        {
+            return 3;
+        }
+        ''')
+
+        self.assertEqual(fdef_decl(f4),
+            ['Decl', 'que',
+                ['FuncDecl',
+                    [['ID', 'p']],
+                    ['TypeDecl', ['IdentifierType', ['int']]]]])
 
     def test_unified_string_literals(self):
         # simple string, for reference
