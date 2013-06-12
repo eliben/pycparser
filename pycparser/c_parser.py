@@ -136,7 +136,6 @@ class CParser(PLYParser):
         """ Add a new typedef-name to the current scope
         """
         self._scope_stack[-1].add(name)
-        #~ print(self._scope_stack)
 
     def _is_type_in_scope(self, name):
         """ Is *name* a typedef-name in the current scope?

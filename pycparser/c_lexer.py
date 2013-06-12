@@ -15,21 +15,21 @@ from .ply.lex import TOKEN
 
 class CLexer(object):
     """ A lexer for the C language. After building it, set the
-        input text with input(), and call token() to get new 
+        input text with input(), and call token() to get new
         tokens.
-        
+
         The public attribute filename can be set to an initial
-        filaneme, but the lexer will update it upon #line 
+        filaneme, but the lexer will update it upon #line
         directives.
     """
     def __init__(self, error_func, type_lookup_func):
         """ Create a new Lexer.
-        
+
             error_func:
                 An error function. Will be called with an error
-                message, line and column as arguments, in case of 
+                message, line and column as arguments, in case of
                 an error during lexing.
-                
+
             type_lookup_func:
                 A type lookup function. Given a string, it must
                 return True IFF this string is a name of a type
@@ -38,7 +38,7 @@ class CLexer(object):
         self.error_func = error_func
         self.type_lookup_func = type_lookup_func
         self.filename = ''
-        
+
         # Allow either "# line" or "# <num>" to support GCC's
         # cpp output
         #
@@ -48,8 +48,8 @@ class CLexer(object):
 
     def build(self, **kwargs):
         """ Builds the lexer from the specification. Must be
-            called after the lexer object is created. 
-            
+            called after the lexer object is created.
+
             This method exists separately, because the PLY
             manual warns against calling lex.lex inside
             __init__
@@ -63,7 +63,7 @@ class CLexer(object):
 
     def input(self, text):
         self.lexer.input(text)
-    
+
     def token(self):
         g = self.lexer.token()
         return g
@@ -75,7 +75,7 @@ class CLexer(object):
         return token.lexpos - last_cr
 
     ######################--   PRIVATE   --######################
-    
+
     ##
     ## Internal auxiliary methods
     ##
@@ -83,10 +83,10 @@ class CLexer(object):
         location = self._make_tok_location(token)
         self.error_func(msg, location[0], location[1])
         self.lexer.skip(1)
-    
+
     def _make_tok_location(self, token):
         return (token.lineno, self.find_tok_column(token))
-    
+
     ##
     ## Reserved keywords
     ##
@@ -113,35 +113,35 @@ class CLexer(object):
     ##
     tokens = keywords + (
         # Identifiers
-        'ID', 
-        
-        # Type identifiers (identifiers previously defined as 
+        'ID',
+
+        # Type identifiers (identifiers previously defined as
         # types with typedef)
         'TYPEID',
-        
-        # constants 
+
+        # constants
         'INT_CONST_DEC', 'INT_CONST_OCT', 'INT_CONST_HEX',
         'FLOAT_CONST', 'HEX_FLOAT_CONST',
         'CHAR_CONST',
         'WCHAR_CONST',
-        
+
         # String literals
         'STRING_LITERAL',
         'WSTRING_LITERAL',
 
-        # Operators 
+        # Operators
         'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD',
         'OR', 'AND', 'NOT', 'XOR', 'LSHIFT', 'RSHIFT',
         'LOR', 'LAND', 'LNOT',
         'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
-        
+
         # Assignment
-        'EQUALS', 'TIMESEQUAL', 'DIVEQUAL', 'MODEQUAL', 
+        'EQUALS', 'TIMESEQUAL', 'DIVEQUAL', 'MODEQUAL',
         'PLUSEQUAL', 'MINUSEQUAL',
-        'LSHIFTEQUAL','RSHIFTEQUAL', 'ANDEQUAL', 'XOREQUAL', 
+        'LSHIFTEQUAL','RSHIFTEQUAL', 'ANDEQUAL', 'XOREQUAL',
         'OREQUAL',
 
-        # Increment/decrement 
+        # Increment/decrement
         'PLUSPLUS', 'MINUSMINUS',
 
         # Structure dereference (->)
@@ -149,18 +149,18 @@ class CLexer(object):
 
         # Conditional operator (?)
         'CONDOP',
-        
-        # Delimeters 
+
+        # Delimeters
         'LPAREN', 'RPAREN',         # ( )
         'LBRACKET', 'RBRACKET',     # [ ]
-        'LBRACE', 'RBRACE',         # { } 
+        'LBRACE', 'RBRACE',         # { }
         'COMMA', 'PERIOD',          # . ,
         'SEMI', 'COLON',            # ; :
 
         # Ellipsis (...)
         'ELLIPSIS',
-        
-        # pre-processor 
+
+        # pre-processor
         'PPHASH',      # '#'
     )
 
@@ -180,7 +180,7 @@ class CLexer(object):
     decimal_constant = '(0'+integer_suffix_opt+')|([1-9][0-9]*'+integer_suffix_opt+')'
     octal_constant = '0[0-7]*'+integer_suffix_opt
     hex_constant = hex_prefix+hex_digits+integer_suffix_opt
-    
+
     bad_octal_constant = '0[0-7]*[89]'
 
     # character constants (K&R2: A.2.5.2)
@@ -196,14 +196,14 @@ class CLexer(object):
     bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-7])"""
 
     escape_sequence = r"""(\\("""+simple_escape+'|'+decimal_escape+'|'+hex_escape+'))'
-    cconst_char = r"""([^'\\\n]|"""+escape_sequence+')'    
+    cconst_char = r"""([^'\\\n]|"""+escape_sequence+')'
     char_const = "'"+cconst_char+"'"
     wchar_const = 'L'+char_const
     unmatched_quote = "('"+cconst_char+"*\\n)|('"+cconst_char+"*$)"
     bad_char_const = r"""('"""+cconst_char+"""[^'\n]+')|('')|('"""+bad_escape+r"""[^'\n]*')"""
 
     # string literals (K&R2: A.2.6)
-    string_char = r"""([^"\\\n]|"""+escape_sequence+')'    
+    string_char = r"""([^"\\\n]|"""+escape_sequence+')'
     string_literal = '"'+string_char+'*"'
     wstring_literal = 'L'+string_literal
     bad_string_literal = '"'+string_char+'*'+bad_escape+string_char+'*"'
@@ -221,14 +221,14 @@ class CLexer(object):
     ##
     states = (
         # ppline: preprocessor line directives
-        # 
+        #
         ('ppline', 'exclusive'),
 
         # pppragma: pragma
         #
         ('pppragma', 'exclusive'),
     )
-    
+
     def t_PPHASH(self, t):
         r'[ \t]*\#'
         if self.line_pattern.match(t.lexer.lexdata, pos=t.lexer.lexpos):
@@ -239,7 +239,7 @@ class CLexer(object):
         else:
             t.type = 'PPHASH'
             return t
-    
+
     ##
     ## Rules for the ppline state
     ##
@@ -261,21 +261,21 @@ class CLexer(object):
 
     def t_ppline_NEWLINE(self, t):
         r'\n'
-        
+
         if self.pp_line is None:
             self._error('line number missing in #line', t)
         else:
             self.lexer.lineno = int(self.pp_line)
-            
+
             if self.pp_filename is not None:
                 self.filename = self.pp_filename
-                
+
         t.lexer.begin('INITIAL')
 
     def t_ppline_PPLINE(self, t):
         r'line'
         pass
-    
+
     t_ppline_ignore = ' \t'
 
     def t_ppline_error(self, t):
@@ -292,7 +292,7 @@ class CLexer(object):
     def t_pppragma_PPPRAGMA(self, t):
         r'pragma'
         pass
-        
+
     t_pppragma_ignore = ' \t<>.-{}();+-*/$%@&^~!?:,0123456789'
 
     @TOKEN(string_literal)
@@ -373,8 +373,8 @@ class CLexer(object):
     t_ELLIPSIS          = r'\.\.\.'
 
     t_STRING_LITERAL    = string_literal
-    
-    # The following floating and integer constants are defined as 
+
+    # The following floating and integer constants are defined as
     # functions to impose a strict order (otherwise, decimal
     # is placed before the others because its regex is longer,
     # and this is bad)
@@ -404,17 +404,17 @@ class CLexer(object):
     def t_INT_CONST_DEC(self, t):
         return t
 
-    # Must come before bad_char_const, to prevent it from 
+    # Must come before bad_char_const, to prevent it from
     # catching valid char constants as invalid
-    # 
+    #
     @TOKEN(char_const)
     def t_CHAR_CONST(self, t):
         return t
-        
+
     @TOKEN(wchar_const)
     def t_WCHAR_CONST(self, t):
         return t
-    
+
     @TOKEN(unmatched_quote)
     def t_UNMATCHED_QUOTE(self, t):
         msg = "Unmatched '"
@@ -428,12 +428,12 @@ class CLexer(object):
     @TOKEN(wstring_literal)
     def t_WSTRING_LITERAL(self, t):
         return t
-    
+
     # unmatched string literals are caught by the preprocessor
-    
+
     @TOKEN(bad_string_literal)
     def t_BAD_STRING_LITERAL(self, t):
-        msg = "String contains invalid escape code" 
+        msg = "String contains invalid escape code"
         self._error(msg, t)
 
     @TOKEN(identifier)
@@ -442,40 +442,8 @@ class CLexer(object):
         if t.type == 'ID' and self.type_lookup_func(t.value):
             t.type = "TYPEID"
         return t
-    
+
     def t_error(self, t):
         msg = 'Illegal character %s' % repr(t.value[0])
         self._error(msg, t)
 
-
-if __name__ == "__main__":
-    filename = '../zp.c'
-    text = open(filename).read()
-    
-    #~ text = '"'+r"""ka \p ka"""+'"'
-    text = r"""
-    546
-        #line 66 "kwas\df.h" 
-        id 4
-        # 5 
-        dsf
-    """
-    
-    def errfoo(msg, a, b):
-        sys.write(msg + "\n")
-        sys.exit()
-    
-    def typelookup(namd):
-        return False
-    
-    clex = CLexer(errfoo, typelookup)
-    clex.build()
-    clex.input(text)
-    
-    while 1:
-        tok = clex.token()
-        if not tok: break
-            
-        printme([tok.value, tok.type, tok.lineno, clex.filename, tok.lexpos])
-
-        
