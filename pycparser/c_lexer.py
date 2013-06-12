@@ -176,7 +176,7 @@ class CLexer(object):
     hex_digits = '[0-9a-fA-F]+'
 
     # integer constants (K&R2: A.2.5.1)
-    integer_suffix_opt = r'(u?ll|U?LL|([uU][lL])|([lL][uU])|[uU]|[lL])?'
+    integer_suffix_opt = r'(([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?'
     decimal_constant = '(0'+integer_suffix_opt+')|([1-9][0-9]*'+integer_suffix_opt+')'
     octal_constant = '0[0-7]*'+integer_suffix_opt
     hex_constant = hex_prefix+hex_digits+integer_suffix_opt
