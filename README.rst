@@ -170,3 +170,5 @@ CI Status
 
 .. image:: https://travis-ci.org/eliben/pycparser.png?branch=master
   :align: center
+  :target: https://travis-ci.org/eliben/pycparser
+
