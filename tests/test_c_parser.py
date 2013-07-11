@@ -811,6 +811,37 @@ class TestCParser_fundamentals(TestCParser_base):
         # just make sure this doesn't raise ParseError
         self.parse(s4)
 
+    def test_struct_members_namespace(self):
+        """ Tests that structure/union member names reside in a separate namespace and
+            can be named after existing types.
+        """
+        s1 = """
+                typedef int Name;
+                typedef Name NameArray[10];
+
+                struct {
+                    Name Name;
+                    Name NameArray[3];
+                } sye;
+
+                void main(void)
+                {
+                    sye.Name = 1;
+                }
+            """
+
+        s1_ast = self.parse(s1)
+        self.assertEqual(expand_decl(s1_ast.ext[2]),
+            ['Decl', 'sye',
+                ['TypeDecl', ['Struct', None,
+                    [   ['Decl', 'Name',
+                            ['TypeDecl',
+                                ['IdentifierType', ['Name']]]],
+                        ['Decl', 'NameArray',
+                            ['ArrayDecl', '3',
+                                ['TypeDecl', ['IdentifierType', ['Name']]]]]]]]])
+        self.assertEqual(s1_ast.ext[3].body.block_items[0].lvalue.field.name, 'Name')
+
     def test_struct_bitfields(self):
         # a struct with two bitfields, one unnamed
         s1 = """
@@ -924,17 +955,49 @@ class TestCParser_fundamentals(TestCParser_base):
         for b in bad:
             self.assertRaises(ParseError, self.parse, b)
 
-        # Issue 60
-        badcode1 = '''
+    def test_duplicate_typedef(self):
+        """ Tests that redeclarations of existing types are parsed correctly.
+            This is non-standard, but allowed by many compilers.
+        """
+        d1 = '''
             typedef int numbertype;
-            typedef char numbertype;
+            typedef int numbertype;
         '''
-        try:
-            self.parse(badcode1)
-        except ParseError as err:
-            self.assertTrue(':3' in str(err))
-        else:
-            self.fail('Expected fail with ParseError')
+
+        self.assertEqual(self.get_decl(d1, 0),
+            ['Typedef', 'numbertype',
+                ['TypeDecl', ['IdentifierType', ['int']]]])
+        self.assertEqual(self.get_decl(d1, 1),
+            ['Typedef', 'numbertype',
+                ['TypeDecl', ['IdentifierType', ['int']]]])
+
+        d2 = '''
+            typedef int (*funcptr)(int x);
+            typedef int (*funcptr)(int x);
+        '''
+        self.assertEqual(self.get_decl(d2, 0),
+            ['Typedef', 'funcptr',
+                ['PtrDecl', ['FuncDecl',
+                    [['Decl', 'x', ['TypeDecl', ['IdentifierType', ['int']]]]],
+                    ['TypeDecl', ['IdentifierType', ['int']]]]]])
+        self.assertEqual(self.get_decl(d2, 1),
+            ['Typedef', 'funcptr',
+                ['PtrDecl', ['FuncDecl',
+                    [['Decl', 'x', ['TypeDecl', ['IdentifierType', ['int']]]]],
+                    ['TypeDecl', ['IdentifierType', ['int']]]]]])
+
+        d3 = '''
+            typedef int numberarray[5];
+            typedef int numberarray[5];
+        '''
+        self.assertEqual(self.get_decl(d3, 0),
+            ['Typedef', 'numberarray',
+                ['ArrayDecl', '5',
+                    ['TypeDecl', ['IdentifierType', ['int']]]]])
+        self.assertEqual(self.get_decl(d3, 1),
+            ['Typedef', 'numberarray',
+                ['ArrayDecl', '5',
+                    ['TypeDecl', ['IdentifierType', ['int']]]]])
 
     def test_decl_inits(self):
         d1 = 'int a = 16;'
@@ -1532,9 +1595,149 @@ class TestCParser_typenames(TestCParser_base):
             '''
         self.assertTrue(isinstance(self.parse(s2), FileAST))
 
+    def test_innerscope_reuse_typedef_name(self):
+        # identifiers can be reused in inner scopes; the original should be
+        # restored at the end of the block
+        s1 = r'''
+            typedef char TT;
+            void foo(void) {
+              unsigned TT;
+              TT = 10;
+            }
+            TT x = 5;
+            '''
+        s1_ast = self.parse(s1)
+        self.assertEqual(expand_decl(s1_ast.ext[1].body.block_items[0]),
+            ['Decl', 'TT', ['TypeDecl', ['IdentifierType', ['unsigned']]]])
 
+        # this should be recognized even with an initializer
+        s2 = r'''
+            typedef char TT;
+            void foo(void) {
+              unsigned TT = 10;
+            }
+            '''
+        s2_ast = self.parse(s2)
+        self.assertEqual(expand_decl(s2_ast.ext[1].body.block_items[0]),
+            ['Decl', 'TT', ['TypeDecl', ['IdentifierType', ['unsigned']]]])
+
+        # before the second local variable, TT is a type; after, it's a
+        # variable
+        s3 = r'''
+            typedef char TT;
+            void foo(void) {
+              TT tt = sizeof(TT);
+              unsigned TT = 10;
+            }
+            '''
+        s3_ast = self.parse(s3)
+        self.assertEqual(expand_decl(s3_ast.ext[1].body.block_items[0]),
+            ['Decl', 'tt', ['TypeDecl', ['IdentifierType', ['TT']]]])
+        self.assertEqual(expand_decl(s3_ast.ext[1].body.block_items[1]),
+            ['Decl', 'TT', ['TypeDecl', ['IdentifierType', ['unsigned']]]])
+
+        # a variable and its type can even share the same name
+        s4 = r'''
+            typedef char TT;
+            void foo(void) {
+              TT TT = sizeof(TT);
+              unsigned uu = TT * 2;
+            }
+            '''
+        s4_ast = self.parse(s4)
+        self.assertEqual(expand_decl(s4_ast.ext[1].body.block_items[0]),
+            ['Decl', 'TT', ['TypeDecl', ['IdentifierType', ['TT']]]])
+        self.assertEqual(expand_decl(s4_ast.ext[1].body.block_items[1]),
+            ['Decl', 'uu', ['TypeDecl', ['IdentifierType', ['unsigned']]]])
+
+        # ensure an error is raised if a type, redeclared as a variable, is
+        # used as a type
+        s5 = r'''
+            typedef char TT;
+            void foo(void) {
+              unsigned TT = 10;
+              TT erroneous = 20;
+            }
+            '''
+        self.assertRaises(ParseError, self.parse, s5)
+
+    def test_parameter_reuse_typedef_name(self):
+        # identifiers can be reused as parameter names; parameter name scope
+        # begins and ends with the function body; it's important that TT is
+        # used immediately after the LBRACE and RBRACE, to test a corner case
+        s1 = r'''
+            typedef char TT;
+            void foo(unsigned TT, TT bar) {
+              TT = 10;
+            }
+            TT x = 5;
+            '''
+        s1_ast = self.parse(s1)
+        self.assertEqual(expand_decl(s1_ast.ext[1].decl),
+            ['Decl', 'foo',
+                ['FuncDecl',
+                    [   ['Decl', 'TT', ['TypeDecl', ['IdentifierType', ['unsigned']]]],
+                        ['Decl', 'bar', ['TypeDecl', ['IdentifierType', ['TT']]]]],
+                    ['TypeDecl', ['IdentifierType', ['void']]]]])
+
+        # the scope of a parameter name in a function declaration ends at the
+        # end of the declaration...so it is effectively never used; it's
+        # important that TT is used immediately after the declaration, to
+        # test a corner case
+        s2 = r'''
+            typedef char TT;
+            void foo(unsigned TT, TT bar);
+            TT x = 5;
+            '''
+        s2_ast = self.parse(s2)
+        self.assertEqual(expand_decl(s2_ast.ext[1]),
+            ['Decl', 'foo',
+                ['FuncDecl',
+                    [   ['Decl', 'TT', ['TypeDecl', ['IdentifierType', ['unsigned']]]],
+                        ['Decl', 'bar', ['TypeDecl', ['IdentifierType', ['TT']]]]],
+                    ['TypeDecl', ['IdentifierType', ['void']]]]])
+
+        # ensure an error is raised if a type, redeclared as a parameter, is
+        # used as a type
+        s3 = r'''
+            typedef char TT;
+            void foo(unsigned TT, TT bar) {
+              TT erroneous = 20;
+            }
+            '''
+        self.assertRaises(ParseError, self.parse, s3)
+
+    def test_nested_function_decls(self):
+        # parameter names of nested function declarations must not escape into
+        # the top-level function _definition's_ scope; the following must
+        # succeed because TT is still a typedef inside foo's body
+        s1 = r'''
+            typedef char TT;
+            void foo(unsigned bar(int TT)) {
+              TT x = 10;
+            }
+            '''
+        self.assertTrue(isinstance(self.parse(s1), FileAST))
+
+    def test_samescope_reuse_name(self):
+        # a typedef name cannot be reused as an object name in the same scope
+        s1 = r'''
+            typedef char TT;
+            char TT = 5;
+            '''
+        self.assertRaises(ParseError, self.parse, s1)
+
+        # ...and vice-versa
+        s2 = r'''
+            char TT = 5;
+            typedef char TT;
+            '''
+        self.assertRaises(ParseError, self.parse, s2)
 
 if __name__ == '__main__':
+    #~ suite = unittest.TestLoader().loadTestsFromNames(
+        #~ ['test_c_parser.TestCParser_typenames.test_parameter_reuse_typedef_name'])
+
     #~ suite = unittest.TestLoader().loadTestsFromNames(
         #~ ['test_c_parser.TestCParser_fundamentals.test_typedef'])
 

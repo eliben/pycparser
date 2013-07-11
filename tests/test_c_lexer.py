@@ -22,6 +22,12 @@ class TestCLexerNoErrors(unittest.TestCase):
     def error_func(self, msg, line, column):
         self.fail(msg)
 
+    def on_lbrace_func(self):
+        pass
+
+    def on_rbrace_func(self):
+        pass
+
     def type_lookup_func(self, typ):
         if typ.startswith('mytype'):
             return True
@@ -29,7 +35,8 @@ class TestCLexerNoErrors(unittest.TestCase):
             return False
 
     def setUp(self):
-        self.clex = CLexer(self.error_func, self.type_lookup_func)
+        self.clex = CLexer(self.error_func, self.on_lbrace_func,
+                self.on_rbrace_func, self.type_lookup_func)
         self.clex.build(optimize=False)
 
     def assertTokensTypes(self, str, types):
@@ -331,11 +338,18 @@ class TestCLexerErrors(unittest.TestCase):
     def error_func(self, msg, line, column):
         self.error = msg
 
+    def on_lbrace_func(self):
+        pass
+
+    def on_rbrace_func(self):
+        pass
+
     def type_lookup_func(self, typ):
         return False
 
     def setUp(self):
-        self.clex = CLexer(self.error_func, self.type_lookup_func)
+        self.clex = CLexer(self.error_func, self.on_lbrace_func,
+                self.on_rbrace_func, self.type_lookup_func)
         self.clex.build(optimize=False)
         self.error = ""
 
