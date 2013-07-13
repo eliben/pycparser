@@ -812,8 +812,8 @@ class TestCParser_fundamentals(TestCParser_base):
         self.parse(s4)
 
     def test_struct_members_namespace(self):
-        """ Tests that structure/union member names reside in a separate namespace and
-            can be named after existing types.
+        """ Tests that structure/union member names reside in a separate
+            namespace and can be named after existing types.
         """
         s1 = """
                 typedef int Name;
@@ -1664,7 +1664,8 @@ class TestCParser_typenames(TestCParser_base):
     def test_parameter_reuse_typedef_name(self):
         # identifiers can be reused as parameter names; parameter name scope
         # begins and ends with the function body; it's important that TT is
-        # used immediately after the LBRACE and RBRACE, to test a corner case
+        # used immediately before the LBRACE or after the RBRACE, to test
+        # a corner case
         s1 = r'''
             typedef char TT;
             void foo(unsigned TT, TT bar) {
@@ -1736,16 +1737,7 @@ class TestCParser_typenames(TestCParser_base):
 
 if __name__ == '__main__':
     #~ suite = unittest.TestLoader().loadTestsFromNames(
-        #~ ['test_c_parser.TestCParser_typenames.test_parameter_reuse_typedef_name'])
-
-    #~ suite = unittest.TestLoader().loadTestsFromNames(
         #~ ['test_c_parser.TestCParser_fundamentals.test_typedef'])
-
-    #~ suite = unittest.TestLoader().loadTestsFromNames(
-        #~ ['test_c_parser.TestCParser_whole_code.test_whole_file_with_stdio'])
-
-    #~ suite = unittest.TestLoader().loadTestsFromTestCase(
-        #~ TestCParser_whole_code)
 
     #~ unittest.TextTestRunner(verbosity=2).run(suite)
     unittest.main()
