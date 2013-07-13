@@ -35,8 +35,8 @@ class TestCLexerNoErrors(unittest.TestCase):
             return False
 
     def setUp(self):
-        self.clex = CLexer(self.error_func, self.on_lbrace_func,
-                self.on_rbrace_func, self.type_lookup_func)
+        self.clex = CLexer(self.error_func, lambda: None, lambda: None,
+                           self.type_lookup_func)
         self.clex.build(optimize=False)
 
     def assertTokensTypes(self, str, types):
@@ -116,6 +116,19 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes(r"""'\x2f'""", ['CHAR_CONST'])
         self.assertTokensTypes(r"""'\x2f12'""", ['CHAR_CONST'])
         self.assertTokensTypes(r"""L'\xaf'""", ['WCHAR_CONST'])
+
+    def test_on_rbrace_lbrace(self):
+        braces = []
+        def on_lbrace():
+            braces.append('{')
+        def on_rbrace():
+            braces.append('}')
+        clex = CLexer(self.error_func, on_lbrace, on_rbrace,
+                      self.type_lookup_func)
+        clex.build(optimize=False)
+        clex.input('hello { there } } and again }}{')
+        token_list(clex)
+        self.assertEqual(braces, ['{', '}', '}', '}', '}', '{'])
 
     def test_string_literal(self):
         self.assertTokensTypes('"a string"', ['STRING_LITERAL'])
