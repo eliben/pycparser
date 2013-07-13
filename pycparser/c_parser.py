@@ -3,7 +3,7 @@
 #
 # CParser class: Parser and AST builder for the C language
 #
-# Copyright (C) 2008-2012, Eli Bendersky
+# Copyright (C) 2008-2013, Eli Bendersky
 # License: BSD
 #------------------------------------------------------------------------------
 import re
@@ -102,10 +102,14 @@ class CParser(PLYParser):
             optimize=yacc_optimize,
             tabmodule=yacctab)
 
-        # Stack of scopes for keeping track of typedefs. _scope_stack[-1] is
-        # the current (topmost) scope. _scope_stack[i][name] is True if name
-        # is a typedef declared in scope i.
-        #
+        # Stack of scopes for keeping track of symbols. _scope_stack[-1] is
+        # the current (topmost) scope. Each scope is a dictionary that
+        # specifies whether a name is a type. If _scope_stack[n][name] is
+        # True, 'name' is currently a type in the scope. If it's False,
+        # 'name' is used in the scope but not as a type (for instance, if we
+        # saw: int name;
+        # If 'name' is not a key in _scope_stack[n] then 'name' was not defined
+        # in this scope at all.
         self._scope_stack = [dict()]
 
         # Keeps track of the last token given to yacc (the lookahead token)
@@ -166,6 +170,8 @@ class CParser(PLYParser):
         """ Is *name* a typedef-name in the current scope?
         """
         for scope in reversed(self._scope_stack):
+            # If name is an identifier in this scope it shadows typedefs in
+            # higher scopes.
             in_scope = scope.get(name)
             if in_scope is not None: return in_scope
         return False
@@ -189,13 +195,13 @@ class CParser(PLYParser):
         return is_type
 
     def _yacc_tokenfunc(self):
-        self._last_yielded_token = self.clex.token( )
+        self._last_yielded_token = self.clex.token()
         return self._last_yielded_token
 
     def _get_yacc_lookahead_token(self):
         """ We need access to yacc.py's lookahead token in certain cases. We
             keep track of the last token read by yacc, which is lookahead
-            unless some sort of error recovery was attempted.            
+            unless some sort of error recovery was attempted.
         """
         return self._last_yielded_token
 
