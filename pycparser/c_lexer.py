@@ -46,6 +46,9 @@ class CLexer(object):
         self.type_lookup_func = type_lookup_func
         self.filename = ''
 
+        # Keeps track of the last token returned from self.token()
+        self.last_token = None
+
         # Allow either "# line" or "# <num>" to support GCC's
         # cpp output
         #
@@ -71,8 +74,8 @@ class CLexer(object):
         self.lexer.input(text)
 
     def token(self):
-        g = self.lexer.token()
-        return g
+        self.last_token = self.lexer.token()
+        return self.last_token
 
     def find_tok_column(self, token):
         """ Find the column of the token in its line.

@@ -135,7 +135,6 @@ class CParser(PLYParser):
         return self.cparser.parse(
                 input=text,
                 lexer=self.clex,
-                tokenfunc=self._yacc_tokenfunc,
                 debug=debuglevel)
 
     ######################--   PRIVATE   --######################
@@ -194,16 +193,12 @@ class CParser(PLYParser):
         is_type = self._is_type_in_scope(name)
         return is_type
 
-    def _yacc_tokenfunc(self):
-        self._last_yielded_token = self.clex.token()
-        return self._last_yielded_token
-
     def _get_yacc_lookahead_token(self):
-        """ We need access to yacc.py's lookahead token in certain cases. We
-            keep track of the last token read by yacc, which is lookahead
-            unless some sort of error recovery was attempted.
+        """ We need access to yacc's lookahead token in certain cases.
+            This is the last token yacc requested from the lexer, so we
+            ask the lexer.
         """
-        return self._last_yielded_token
+        return self.clex.last_token
 
     # To understand what's going on here, read sections A.8.5 and
     # A.8.6 of K&R2 very carefully.
