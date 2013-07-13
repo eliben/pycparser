@@ -5,7 +5,7 @@ import re
 import os, sys
 import unittest
 
-sys.path.insert(0, '..')
+sys.path[0:0] = ['.', '..']
 
 from pycparser import c_parser
 from pycparser.c_ast import *
@@ -1609,6 +1609,8 @@ class TestCParser_typenames(TestCParser_base):
         s1_ast = self.parse(s1)
         self.assertEqual(expand_decl(s1_ast.ext[1].body.block_items[0]),
             ['Decl', 'TT', ['TypeDecl', ['IdentifierType', ['unsigned']]]])
+        self.assertEqual(expand_decl(s1_ast.ext[2]),
+            ['Decl', 'x', ['TypeDecl', ['IdentifierType', ['TT']]]])
 
         # this should be recognized even with an initializer
         s2 = r'''
