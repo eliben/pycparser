@@ -22,7 +22,8 @@ class CLexer(object):
         filaneme, but the lexer will update it upon #line
         directives.
     """
-    def __init__(self, error_func, type_lookup_func):
+    def __init__(self, error_func, on_lbrace_func, on_rbrace_func,
+            type_lookup_func):
         """ Create a new Lexer.
 
             error_func:
@@ -30,12 +31,18 @@ class CLexer(object):
                 message, line and column as arguments, in case of
                 an error during lexing.
 
+            on_lbrace_func, on_rbrace_func:
+                Called when an LBRACE or RBRACE is encountered
+                (likely to push/pop type_lookup_func's scope)
+
             type_lookup_func:
                 A type lookup function. Given a string, it must
                 return True IFF this string is a name of a type
                 that was defined with a typedef earlier.
         """
         self.error_func = error_func
+        self.on_lbrace_func = on_lbrace_func
+        self.on_rbrace_func = on_rbrace_func
         self.type_lookup_func = type_lookup_func
         self.filename = ''
 
@@ -129,7 +136,7 @@ class CLexer(object):
         'STRING_LITERAL',
         'WSTRING_LITERAL',
 
-        # Operators
+        # Operators 
         'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD',
         'OR', 'AND', 'NOT', 'XOR', 'LSHIFT', 'RSHIFT',
         'LOR', 'LAND', 'LNOT',
@@ -141,7 +148,7 @@ class CLexer(object):
         'LSHIFTEQUAL','RSHIFTEQUAL', 'ANDEQUAL', 'XOREQUAL',
         'OREQUAL',
 
-        # Increment/decrement
+        # Increment/decrement 
         'PLUSPLUS', 'MINUSMINUS',
 
         # Structure dereference (->)
@@ -153,7 +160,7 @@ class CLexer(object):
         # Delimeters
         'LPAREN', 'RPAREN',         # ( )
         'LBRACKET', 'RBRACKET',     # [ ]
-        'LBRACE', 'RBRACE',         # { }
+        'LBRACE', 'RBRACE',         # { } 
         'COMMA', 'PERIOD',          # . ,
         'SEMI', 'COLON',            # ; :
 
@@ -364,13 +371,32 @@ class CLexer(object):
     t_RPAREN            = r'\)'
     t_LBRACKET          = r'\['
     t_RBRACKET          = r'\]'
-    t_LBRACE            = r'\{'
-    t_RBRACE            = r'\}'
     t_COMMA             = r','
     t_PERIOD            = r'\.'
     t_SEMI              = r';'
     t_COLON             = r':'
     t_ELLIPSIS          = r'\.\.\.'
+
+    # Scope delimiters
+    # To see why on_lbrace_func is needed, consider:
+    #   typedef char TT;
+    #   void foo(int TT) { TT = 10; }
+    #   TT x = 5;
+    # Outside the function, TT is a typedef, but inside (starting and ending
+    # with the braces) it's a parameter.  The trouble begins with yacc's
+    # lookahead token.  If we open a new scope in brace_open, then TT has
+    # already been read and incorrectly interpreted as TYPEID.  So, we need
+    # to open and close scopes from within the lexer.
+    # Similar for the TT immediately outside the end of the function.
+    #
+    @TOKEN(r'\{')
+    def t_LBRACE(self, t):
+        self.on_lbrace_func()
+        return t
+    @TOKEN(r'\}')
+    def t_RBRACE(self, t):
+        self.on_rbrace_func()
+        return t
 
     t_STRING_LITERAL    = string_literal
 

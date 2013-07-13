@@ -67,6 +67,8 @@ class CParser(PLYParser):
         """
         self.clex = CLexer(
             error_func=self._lex_error_func,
+            on_lbrace_func=self._lex_on_lbrace_func,
+            on_rbrace_func=self._lex_on_rbrace_func,
             type_lookup_func=self._lex_type_lookup_func)
 
         self.clex.build(
@@ -101,9 +103,13 @@ class CParser(PLYParser):
             tabmodule=yacctab)
 
         # Stack of scopes for keeping track of typedefs. _scope_stack[-1] is
-        # the current (topmost) scope.
+        # the current (topmost) scope. _scope_stack[i][name] is True if name
+        # is a typedef declared in scope i.
         #
-        self._scope_stack = [set()]
+        self._scope_stack = [dict()]
+
+        # Keeps track of the last token given to yacc (the lookahead token)
+        self._last_yielded_token = None
 
     def parse(self, text, filename='', debuglevel=0):
         """ Parses C code and returns an AST.
@@ -120,30 +126,58 @@ class CParser(PLYParser):
         """
         self.clex.filename = filename
         self.clex.reset_lineno()
-        self._scope_stack = [set()]
-        return self.cparser.parse(text, lexer=self.clex, debug=debuglevel)
+        self._scope_stack = [dict()]
+        self._last_yielded_token = None
+        return self.cparser.parse(
+                input=text,
+                lexer=self.clex,
+                tokenfunc=self._yacc_tokenfunc,
+                debug=debuglevel)
 
     ######################--   PRIVATE   --######################
 
     def _push_scope(self):
-        self._scope_stack.append(set())
+        self._scope_stack.append(dict())
 
     def _pop_scope(self):
         assert len(self._scope_stack) > 1
         self._scope_stack.pop()
 
-    def _add_typedef_type(self, name):
-        """ Add a new typedef-name to the current scope
+    def _add_typedef_name(self, name, coord):
+        """ Add a new typedef name (ie a TYPEID) to the current scope
         """
-        self._scope_stack[-1].add(name)
+        if not self._scope_stack[-1].get(name, True):
+            self._parse_error(
+                "Typedef %r previously declared as non-typedef "
+                "in this scope" % name, coord)
+        self._scope_stack[-1][name] = True
+
+    def _add_identifier(self, name, coord):
+        """ Add a new object, function, or enum member name (ie an ID) to the
+            current scope
+        """
+        if self._scope_stack[-1].get(name, False):
+            self._parse_error(
+                "Non-typedef %r previously declared as typedef "
+                "in this scope" % name, coord)
+        self._scope_stack[-1][name] = False
 
     def _is_type_in_scope(self, name):
         """ Is *name* a typedef-name in the current scope?
         """
-        return any(name in scope for scope in self._scope_stack)
+        for scope in reversed(self._scope_stack):
+            in_scope = scope.get(name)
+            if in_scope is not None: return in_scope
+        return False
 
     def _lex_error_func(self, msg, line, column):
         self._parse_error(msg, self._coord(line, column))
+
+    def _lex_on_lbrace_func(self):
+        self._push_scope()
+
+    def _lex_on_rbrace_func(self):
+        self._pop_scope()
 
     def _lex_type_lookup_func(self, name):
         """ Looks up types that were previously defined with
@@ -151,7 +185,19 @@ class CParser(PLYParser):
             Passed to the lexer for recognizing identifiers that
             are types.
         """
-        return self._is_type_in_scope(name)
+        is_type = self._is_type_in_scope(name)
+        return is_type
+
+    def _yacc_tokenfunc(self):
+        self._last_yielded_token = self.clex.token( )
+        return self._last_yielded_token
+
+    def _get_yacc_lookahead_token(self):
+        """ We need access to yacc.py's lookahead token in certain cases. We
+            keep track of the last token read by yacc, which is lookahead
+            unless some sort of error recovery was attempted.            
+        """
+        return self._last_yielded_token
 
     # To understand what's going on here, read sections A.8.5 and
     # A.8.6 of K&R2 very carefully.
@@ -307,21 +353,105 @@ class CParser(PLYParser):
         spec[kind].insert(0, newspec)
         return spec
 
-    def _build_function_definition(self, decl, spec, param_decls, body):
+    def _build_declarations(self, spec, decls, typedef_namespace=False):
+        """ Builds a list of declarations all sharing the given specifiers.
+            If typedef_namespace is true, each declared name is added
+            to the "typedef namespace", which also includes objects,
+            functions, and enum constants.
+        """
+        is_typedef = 'typedef' in spec['storage']
+        declarations = []
+
+        # Bit-fields are allowed to be unnamed.
+        #
+        if decls[0].get('bitsize') is not None:
+            pass
+
+        # When redeclaring typedef names as identifiers in inner scopes, a
+        # problem can occur where the identifier gets grouped into
+        # spec['type'], leaving decl as None.  This can only occur for the
+        # first declarator.
+        #
+        elif decls[0]['decl'] is None:
+            if len(spec['type']) < 2 or len(spec['type'][-1].names) != 1 or \
+                    not self._is_type_in_scope(spec['type'][-1].names[0]):
+                coord = '?'
+                for t in spec['type']:
+                    if hasattr(t, 'coord'):
+                        coord = t.coord
+                        break
+                self._parse_error('Invalid declaration', coord)
+
+            # Make this look as if it came from "direct_declarator:ID"
+            decls[0]['decl'] = c_ast.TypeDecl(
+                declname=spec['type'][-1].names[0],
+                type=None,
+                quals=None,
+                coord=spec['type'][-1].coord)
+            # Remove the "new" type's name from the end of spec['type']
+            del spec['type'][-1]
+
+        # A similar problem can occur where the declaration ends up looking
+        # like an abstract declarator.  Give it a name if this is the case.
+        #
+        elif not isinstance(decls[0]['decl'],
+                (c_ast.Struct, c_ast.Union, c_ast.IdentifierType)):
+            decls_0_tail = decls[0]['decl']
+            while not isinstance(decls_0_tail, c_ast.TypeDecl):
+                decls_0_tail = decls_0_tail.type
+            if decls_0_tail.declname is None:
+                decls_0_tail.declname = spec['type'][-1].names[0]
+                del spec['type'][-1]
+
+        for decl in decls:
+            assert decl['decl'] is not None
+            if is_typedef:
+                declaration = c_ast.Typedef(
+                    name=None,
+                    quals=spec['qual'],
+                    storage=spec['storage'],
+                    type=decl['decl'],
+                    coord=decl['decl'].coord)
+            else:
+                declaration = c_ast.Decl(
+                    name=None,
+                    quals=spec['qual'],
+                    storage=spec['storage'],
+                    funcspec=spec['function'],
+                    type=decl['decl'],
+                    init=decl.get('init'),
+                    bitsize=decl.get('bitsize'),
+                    coord=decl['decl'].coord)
+
+            if isinstance(declaration.type,
+                    (c_ast.Struct, c_ast.Union, c_ast.IdentifierType)):
+                fixed_decl = declaration
+            else:
+                fixed_decl = self._fix_decl_name_type(declaration, spec['type'])
+
+            # Add the type name defined by typedef to a
+            # symbol table (for usage in the lexer)
+            #
+            if typedef_namespace:
+                if is_typedef:
+                    self._add_typedef_name(fixed_decl.name, fixed_decl.coord)
+                else:
+                    self._add_identifier(fixed_decl.name, fixed_decl.coord)
+
+            declarations.append(fixed_decl)
+
+        return declarations
+
+    def _build_function_definition(self, spec, decl, param_decls, body):
         """ Builds a function definition.
         """
-        declaration = c_ast.Decl(
-            name=None,
-            quals=spec['qual'],
-            storage=spec['storage'],
-            funcspec=spec['function'],
-            type=decl,
-            init=None,
-            bitsize=None,
-            coord=decl.coord)
+        assert 'typedef' not in spec['storage']
 
-        typename = spec['type']
-        declaration = self._fix_decl_name_type(declaration, typename)
+        declaration = self._build_declarations(
+            spec=spec,
+            decls=[dict(decl=decl, init=None)],
+            typedef_namespace=True)[0]
+
         return c_ast.FuncDef(
             decl=declaration,
             param_decls=param_decls,
@@ -430,8 +560,8 @@ class CParser(PLYParser):
             function=[])
 
         p[0] = self._build_function_definition(
-            decl=p[1],
             spec=spec,
+            decl=p[1],
             param_decls=p[2],
             body=p[3])
 
@@ -441,8 +571,8 @@ class CParser(PLYParser):
         spec = p[1]
 
         p[0] = self._build_function_definition(
-            decl=p[2],
             spec=spec,
+            decl=p[2],
             param_decls=p[3],
             body=p[4])
 
@@ -469,66 +599,43 @@ class CParser(PLYParser):
         """ decl_body : declaration_specifiers init_declarator_list_opt
         """
         spec = p[1]
-        is_typedef = 'typedef' in spec['storage']
-        decls = []
 
         # p[2] (init_declarator_list_opt) is either a list or None
         #
         if p[2] is None:
-            # Then it's a declaration of a struct / enum tag,
-            # without an actual declarator.
+            # By the standard, you must have at least one declarator unless
+            # declaring a structure tag, a union tag, or the members of an
+            # enumeration.
             #
             ty = spec['type']
-            if len(ty) > 1:
-                coord = '?'
-                for t in ty:
-                    if hasattr(t, 'coord'):
-                        coord = t.coord
-                        break
+            s_u_or_e = (c_ast.Struct, c_ast.Union, c_ast.Enum)
+            if len(ty) == 1 and isinstance(ty[0], s_u_or_e):
+                decls = [c_ast.Decl(
+                    name=None,
+                    quals=spec['qual'],
+                    storage=spec['storage'],
+                    funcspec=spec['function'],
+                    type=ty[0],
+                    init=None,
+                    bitsize=None,
+                    coord=ty[0].coord)]
 
-                self._parse_error('Multiple type specifiers with a type tag',
-                        coord)
+            # However, this case can also occur on redeclared identifiers in
+            # an inner scope.  The trouble is that the redeclared type's name
+            # gets grouped into declaration_specifiers; _build_declarations
+            # compensates for this.
+            #
+            else:
+                decls = self._build_declarations(
+                    spec=spec,
+                    decls=[dict(decl=None, init=None)],
+                    typedef_namespace=True)
 
-            decl = c_ast.Decl(
-                name=None,
-                quals=spec['qual'],
-                storage=spec['storage'],
-                funcspec=spec['function'],
-                type=ty[0],
-                init=None,
-                bitsize=None,
-                coord=ty[0].coord)
-            decls = [decl]
         else:
-            for decl, init in p[2] or []:
-                if is_typedef:
-                    decl = c_ast.Typedef(
-                        name=None,
-                        quals=spec['qual'],
-                        storage=spec['storage'],
-                        type=decl,
-                        coord=decl.coord)
-                else:
-                    decl = c_ast.Decl(
-                        name=None,
-                        quals=spec['qual'],
-                        storage=spec['storage'],
-                        funcspec=spec['function'],
-                        type=decl,
-                        init=init,
-                        bitsize=None,
-                        coord=decl.coord)
-
-                typename = spec['type']
-                fixed_decl = self._fix_decl_name_type(decl, typename)
-
-                # Add the type name defined by typedef to a
-                # symbol table (for usage in the lexer)
-                #
-                if is_typedef:
-                    self._add_typedef_type(fixed_decl.name)
-
-                decls.append(fixed_decl)
+            decls = self._build_declarations(
+                spec=spec,
+                decls=p[2],
+                typedef_namespace=True)
 
         p[0] = decls
 
@@ -626,20 +733,38 @@ class CParser(PLYParser):
         """
         p[0] = p[1]
 
-    def p_init_declarator_list(self, p):
+    def p_init_declarator_list_1(self, p):
         """ init_declarator_list    : init_declarator
                                     | init_declarator_list COMMA init_declarator
         """
         p[0] = p[1] + [p[3]] if len(p) == 4 else [p[1]]
 
-    # Returns a (declarator, initializer) pair
-    # If there's no initializer, returns (declarator, None)
+    # If the code is declaring a variable that was declared a typedef in an
+    # outer scope, yacc will think the name is part of declaration_specifiers,
+    # not init_declarator, and will then get confused by EQUALS.  Pass None
+    # up in place of declarator, and handle this at a higher level.
+    #
+    def p_init_declarator_list_2(self, p):
+        """ init_declarator_list    : EQUALS initializer
+        """
+        p[0] = [dict(decl=None, init=p[2])]
+
+    # Similarly, if the code contains duplicate typedefs of, for example,
+    # array types, the array portion will appear as an abstract declarator.
+    #
+    def p_init_declarator_list_3(self, p):
+        """ init_declarator_list    : abstract_declarator
+        """
+        p[0] = [dict(decl=p[1], init=None)]
+
+    # Returns a {decl=<declarator> : init=<initializer>} dictionary
+    # If there's no initializer, uses None
     #
     def p_init_declarator(self, p):
         """ init_declarator : declarator
                             | declarator EQUALS initializer
         """
-        p[0] = (p[1], p[3] if len(p) > 2 else None)
+        p[0] = dict(decl=p[1], init=(p[3] if len(p) > 2 else None))
 
     def p_specifier_qualifier_list_1(self, p):
         """ specifier_qualifier_list    : type_qualifier specifier_qualifier_list_opt
@@ -701,52 +826,53 @@ class CParser(PLYParser):
         """ struct_declaration : specifier_qualifier_list struct_declarator_list_opt SEMI
         """
         spec = p[1]
-        decls = []
+        assert 'typedef' not in spec['storage']
 
         if p[2] is not None:
-            for struct_decl in p[2]:
-                if struct_decl['decl'] is not None:
-                    decl_coord = struct_decl['decl'].coord
-                else:
-                    decl_coord = struct_decl['bitsize'].coord
+            decls = self._build_declarations(
+                spec=spec,
+                decls=p[2])
 
-                decl = c_ast.Decl(
-                    name=None,
-                    quals=spec['qual'],
-                    funcspec=spec['function'],
-                    storage=spec['storage'],
-                    type=struct_decl['decl'],
-                    init=None,
-                    bitsize=struct_decl['bitsize'],
-                    coord=decl_coord)
-
-                typename = spec['type']
-                decls.append(self._fix_decl_name_type(decl, typename))
-        else:
+        elif len(spec['type']) == 1:
             # Anonymous struct/union, gcc extension, C1x feature.
             # Although the standard only allows structs/unions here, I see no
             # reason to disallow other types since some compilers have typedefs
             # here, and pycparser isn't about rejecting all invalid code.
             #
             node = spec['type'][0]
-
             if isinstance(node, c_ast.Node):
                 decl_type = node
             else:
                 decl_type = c_ast.IdentifierType(node)
 
-            decl = c_ast.Decl(
-                name=None,
-                quals=spec['qual'],
-                funcspec=spec['function'],
-                storage=spec['storage'],
-                type=decl_type,
-                init=None,
-                bitsize=None,
-                coord=self._coord(p.lineno(3)))
-            decls.append(decl)
+            decls = self._build_declarations(
+                spec=spec,
+                decls=[dict(decl=decl_type)])
+
+        else:
+            # Structure/union members can have the same names as typedefs.
+            # The trouble is that the member's name gets grouped into
+            # specifier_qualifier_list; _build_declarations compensates.
+            #
+            decls = self._build_declarations(
+                spec=spec,
+                decls=[dict(decl=None, init=None)])
 
         p[0] = decls
+
+    def p_struct_declaration_2(self, p):
+        """ struct_declaration : specifier_qualifier_list abstract_declarator SEMI
+        """
+        # "Abstract declarator?!", you ask?  Structure members can have the
+        # same names as typedefs.  The trouble is that the member's name gets
+        # grouped into specifier_qualifier_list, leaving any remainder to
+        # appear as an abstract declarator, as in:
+        #   typedef int Foo;
+        #   struct { Foo Foo[3]; };
+        #
+        p[0] = self._build_declarations(
+                spec=p[1],
+                decls=[dict(decl=p[2], init=None)])
 
     def p_struct_declarator_list(self, p):
         """ struct_declarator_list  : struct_declarator
@@ -806,13 +932,16 @@ class CParser(PLYParser):
                         | ID EQUALS constant_expression
         """
         if len(p) == 2:
-            p[0] = c_ast.Enumerator(
+            enumerator = c_ast.Enumerator(
                         p[1], None,
                         self._coord(p.lineno(1)))
         else:
-            p[0] = c_ast.Enumerator(
+            enumerator = c_ast.Enumerator(
                         p[1], p[3],
                         self._coord(p.lineno(1)))
+        self._add_identifier(enumerator.name, enumerator.coord)
+
+        p[0] = enumerator
 
     def p_declarator_1(self, p):
         """ declarator  : direct_declarator
@@ -823,6 +952,21 @@ class CParser(PLYParser):
         """ declarator  : pointer direct_declarator
         """
         p[0] = self._type_modify_decl(p[2], p[1])
+
+    # Since it's impossible for a type to be specified after a pointer, assume
+    # it's intended to be the name for this declaration.  _add_identifier will
+    # raise an error if this TYPEID can't be redeclared.
+    #
+    def p_declarator_3(self, p):
+        """ declarator  : pointer TYPEID
+        """
+        decl = c_ast.TypeDecl(
+            declname=p[2],
+            type=None,
+            quals=None,
+            coord=self._coord(p.lineno(2)))
+
+        p[0] = self._type_modify_decl(decl, p[1])
 
     def p_direct_declarator_1(self, p):
         """ direct_declarator   : ID
@@ -869,6 +1013,23 @@ class CParser(PLYParser):
             type=None,
             coord=p[1].coord)
 
+        # To see why _get_yacc_lookahead_token is needed, consider:
+        #   typedef char TT;
+        #   void foo(int TT) { TT = 10; }
+        # Outside the function, TT is a typedef, but inside (starting and
+        # ending with the braces) it's a parameter.  The trouble begins with
+        # yacc's lookahead token.  We don't know if we're declaring or
+        # defining a function until we see LBRACE, but if we wait for yacc to
+        # trigger a rule on that token, then TT will have already been read
+        # and incorrectly interpreted as TYPEID.  We need to add the
+        # parameters to the scope the moment the lexer sees LBRACE.
+        #
+        if self._get_yacc_lookahead_token().type == "LBRACE":
+            if func.args is not None:
+                for param in func.args.params:
+                    if isinstance(param, c_ast.EllipsisParam): break
+                    self._add_identifier(param.name, param.coord)
+
         p[0] = self._type_modify_decl(decl=p[1], modifier=func)
 
     def p_pointer(self, p):
@@ -911,32 +1072,42 @@ class CParser(PLYParser):
         """ parameter_declaration   : declaration_specifiers declarator
         """
         spec = p[1]
-        decl = p[2]
-
-        decl = c_ast.Decl(
-            name=None,
-            quals=spec['qual'],
-            storage=spec['storage'],
-            funcspec=spec['function'],
-            type=decl,
-            init=None,
-            bitsize=None,
-            coord=decl.coord)
-
-        typename = spec['type'] or ['int']
-        p[0] = self._fix_decl_name_type(decl, typename)
+        if not spec['type']:
+            spec['type'] = [c_ast.IdentifierType(['int'],
+                coord=self._coord(p.lineno(1)))]
+        p[0] = self._build_declarations(
+            spec=spec,
+            decls=[dict(decl=p[2])])[0]
 
     def p_parameter_declaration_2(self, p):
         """ parameter_declaration   : declaration_specifiers abstract_declarator_opt
         """
         spec = p[1]
-        decl = c_ast.Typename(
-            quals=spec['qual'],
-            type=p[2] or c_ast.TypeDecl(None, None, None),
-            coord=self._coord(p.lineno(2)))
+        if not spec['type']:
+            spec['type'] = [c_ast.IdentifierType(['int'],
+                coord=self._coord(p.lineno(1)))]
 
-        typename = spec['type'] or ['int']
-        p[0] = self._fix_decl_name_type(decl, typename)
+        # Parameters can have the same names as typedefs.  The trouble is that
+        # the parameter's name gets grouped into declaration_specifiers, making
+        # it look like an old-style declaration; compensate.
+        #
+        if len(spec['type']) > 1 and len(spec['type'][-1].names) == 1 and \
+                self._is_type_in_scope(spec['type'][-1].names[0]):
+            decl = self._build_declarations(
+                    spec=spec,
+                    decls=[dict(decl=p[2], init=None)])[0]
+
+        # This truly is an old-style parameter declaration
+        #
+        else:
+            decl = c_ast.Typename(
+                quals=spec['qual'],
+                type=p[2] or c_ast.TypeDecl(None, None, None),
+                coord=self._coord(p.lineno(2)))
+            typename = spec['type']
+            decl = self._fix_decl_name_type(decl, typename)
+
+        p[0] = decl
 
     def p_identifier_list(self, p):
         """ identifier_list : identifier
@@ -1316,10 +1487,13 @@ class CParser(PLYParser):
         p[0] = c_ast.FuncCall(p[1], p[3] if len(p) == 5 else None, p[1].coord)
 
     def p_postfix_expression_4(self, p):
-        """ postfix_expression  : postfix_expression PERIOD identifier
-                                | postfix_expression ARROW identifier
+        """ postfix_expression  : postfix_expression PERIOD ID
+                                | postfix_expression PERIOD TYPEID
+                                | postfix_expression ARROW ID
+                                | postfix_expression ARROW TYPEID
         """
-        p[0] = c_ast.StructRef(p[1], p[2], p[3], p[1].coord)
+        field = c_ast.ID(p[3], self._coord(p.lineno(3)))
+        p[0] = c_ast.StructRef(p[1], p[2], field, p[1].coord)
 
     def p_postfix_expression_5(self, p):
         """ postfix_expression  : postfix_expression PLUSPLUS
@@ -1417,13 +1591,11 @@ class CParser(PLYParser):
     def p_brace_open(self, p):
         """ brace_open  :   LBRACE
         """
-        self._push_scope()
         p[0] = p[1]
 
     def p_brace_close(self, p):
         """ brace_close :   RBRACE
         """
-        self._pop_scope()
         p[0] = p[1]
 
     def p_empty(self, p):
@@ -1431,6 +1603,9 @@ class CParser(PLYParser):
         p[0] = None
 
     def p_error(self, p):
+        # If error recovery is added here in the future, make sure
+        # _get_yacc_lookahead_token still works!
+        #
         if p:
             self._parse_error(
                 'before: %s' % p.value,
