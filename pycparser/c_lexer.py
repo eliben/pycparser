@@ -23,7 +23,7 @@ class CLexer(object):
         directives.
     """
     def __init__(self, error_func, on_lbrace_func, on_rbrace_func,
-            type_lookup_func):
+                 type_lookup_func):
         """ Create a new Lexer.
 
             error_func:
@@ -50,7 +50,6 @@ class CLexer(object):
         # cpp output
         #
         self.line_pattern = re.compile('([ \t]*line\W)|([ \t]*\d+)')
-
         self.pragma_pattern = re.compile('[ \t]*pragma\W')
 
     def build(self, **kwargs):
@@ -136,7 +135,7 @@ class CLexer(object):
         'STRING_LITERAL',
         'WSTRING_LITERAL',
 
-        # Operators 
+        # Operators
         'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD',
         'OR', 'AND', 'NOT', 'XOR', 'LSHIFT', 'RSHIFT',
         'LOR', 'LAND', 'LNOT',
@@ -148,7 +147,7 @@ class CLexer(object):
         'LSHIFTEQUAL','RSHIFTEQUAL', 'ANDEQUAL', 'XOREQUAL',
         'OREQUAL',
 
-        # Increment/decrement 
+        # Increment/decrement
         'PLUSPLUS', 'MINUSMINUS',
 
         # Structure dereference (->)
@@ -160,7 +159,7 @@ class CLexer(object):
         # Delimeters
         'LPAREN', 'RPAREN',         # ( )
         'LBRACKET', 'RBRACKET',     # [ ]
-        'LBRACE', 'RBRACE',         # { } 
+        'LBRACE', 'RBRACE',         # { }
         'COMMA', 'PERIOD',          # . ,
         'SEMI', 'COLON',            # ; :
 
@@ -398,7 +397,7 @@ class CLexer(object):
         self.on_rbrace_func()
         return t
 
-    t_STRING_LITERAL    = string_literal
+    t_STRING_LITERAL = string_literal
 
     # The following floating and integer constants are defined as
     # functions to impose a strict order (otherwise, decimal
