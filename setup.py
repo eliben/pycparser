@@ -24,6 +24,7 @@ if sys.version_info[0] < 2 or (sys.version_info[0] == 2 and sys.version_info[1] 
               if not wrote_with_import and not stripped_line.startswith('#'):
                   new_file.write('\nfrom __future__ import with_statement\n\n')
                   wrote_with_import = True
+                  new_file.write(line)
               elif stripped_line.startswith('except') and ' as ' in line:
                   new_file.write(line.replace(' as ', ', '))
               else:
