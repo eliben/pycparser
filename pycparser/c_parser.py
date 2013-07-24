@@ -290,7 +290,7 @@ class CParser(PLYParser):
     #   should be separated from more complex types like enums
     #   and structs.
     #
-    # This method fixes these problem.
+    # This method fixes these problems.
     #
     def _fix_decl_name_type(self, decl, typename):
         """ Fixes a declaration. Modifies decl.
@@ -306,7 +306,7 @@ class CParser(PLYParser):
 
         # The typename is a list of types. If any type in this
         # list isn't an IdentifierType, it must be the only
-        # type in the list (it's illegal to declare "int enum .."
+        # type in the list (it's illegal to declare "int enum ..")
         # If all the types are basic, they're collected in the
         # IdentifierType holder.
         #
@@ -655,7 +655,6 @@ class CParser(PLYParser):
     # the parser reduces decl_body, which actually adds the new
     # type into the table to be seen by the lexer before the next
     # line is reached.
-    #
     def p_declaration(self, p):
         """ declaration : decl_body SEMI
         """

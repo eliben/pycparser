@@ -17,7 +17,7 @@ ast_gen = ASTCodeGenerator('_c_ast.cfg')
 ast_gen.generate(open('c_ast.py', 'w'))
 
 import sys
-sys.path.extend(['.', '..'])
+sys.path[0:0] = ['.', '..']
 from pycparser import c_parser
 
 # Generates the tables
