@@ -3,7 +3,7 @@
   - A number of improvements in the handling of typedef-name ambiguities,
     contributed by Sye van der Veen in GitHub issue #1:
 
-    * Allow shawoding of types by identifiers in inner scopes.
+    * Allow shadowing of types by identifiers in inner scopes.
     * Allow struct field names to reside in a separate namespace and have
       the same names as types.
     * Allow duplicate typedefs in some cases to mimic real compiler behavior.
