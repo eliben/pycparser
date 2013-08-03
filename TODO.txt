@@ -22,7 +22,8 @@ Misc
 ----
 
 yacc optimization: 
-- If parsetab.py/pyc doesn't exist in the path, the table will be reconstructed anyway, regardless of the optimize parameter
+- If parsetab.py/pyc doesn't exist in the path, the table will be reconstructed
+  anyway, regardless of the optimize parameter
 - If it does exist:
   - If optimize=True, the table will be loaded unconditionally
   - If optimize=False, the table will be loaded only if it's older than the grammar
