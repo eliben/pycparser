@@ -13,7 +13,7 @@ Version Update
 setup.py, __init__.py, README.txt, CHANGES
 - Make sure _build_tables was run in pycparser/ and the tables are in the
   MANIFEST
-- Tag in git
+- Tag in git. When pushing to GitHub, git push --tags
 - If PLY version changes, note it in README and ply/LICENSE
 
 python setup.py sdist upload
