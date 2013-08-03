@@ -1,4 +1,4 @@
-+ Version 2.10 (??)
++ Version 2.10 (03.08.2013)
 
   - A number of improvements in the handling of typedef-name ambiguities,
     contributed by Sye van der Veen in GitHub issue #1:
