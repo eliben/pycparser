@@ -78,8 +78,9 @@ Prerequisites
   Windows. It should work on any later version (in both the 2.x and 3.x lines)
   as well.
 
-**pycparser** has no external dependencies. The only non-stdlib library it uses
-is PLY, which is bundled in ``pycparser/ply``. The current PLY version is 3.4
+* **pycparser** has no external dependencies. The only non-stdlib library it
+  uses is PLY, which is bundled in ``pycparser/ply``. The current PLY version is
+  3.4
 
 Installation process
 --------------------
