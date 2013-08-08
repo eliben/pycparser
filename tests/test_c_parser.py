@@ -1518,13 +1518,10 @@ class TestCParser_whole_code(TestCParser_base):
         """ Find a c file by name, taking into account the current dir can be
             in a couple of typical places
         """
-        fullnames = [
-            os.path.join('c_files', name),
-            os.path.join('tests', 'c_files', name)]
-        for fullname in fullnames:
-            if os.path.exists(fullname):
-                return open(fullname, 'rU')
-        assert False, "Unreachable"
+        testdir = os.path.dirname(__file__)
+        name = os.path.join(testdir, 'c_files', name)
+        assert os.path.exists(name)
+        return open(name, 'rU')
 
     def test_whole_file(self):
         # See how pycparser handles a whole, real C file.
