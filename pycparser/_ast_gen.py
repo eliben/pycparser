@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------
 # _ast_gen.py
 #
-# Generates the AST Node classes from a specification given in 
+# Generates the AST Node classes from a specification given in
 # a .yaml file
 #
 # The design of this module was inspired by astgen.py from the
@@ -20,7 +20,7 @@ class ASTCodeGenerator(object):
             file.
         """
         self.cfg_filename = cfg_filename
-        self.node_cfg = [NodeCfg(name, contents) 
+        self.node_cfg = [NodeCfg(name, contents)
             for (name, contents) in self.parse_cfgfile(cfg_filename)]
 
     def generate(self, file=None):
@@ -28,11 +28,11 @@ class ASTCodeGenerator(object):
         """
         src = Template(_PROLOGUE_COMMENT).substitute(
             cfg_filename=self.cfg_filename)
-        
+
         src += _PROLOGUE_CODE
         for node_cfg in self.node_cfg:
             src += node_cfg.generate_source() + '\n\n'
-        
+
         file.write(src)
 
     def parse_cfgfile(self, filename):
@@ -57,10 +57,10 @@ class ASTCodeGenerator(object):
 
 
 class NodeCfg(object):
-    """ Node configuration. 
+    """ Node configuration.
 
         name: node name
-        contents: a list of contents - attributes and child nodes 
+        contents: a list of contents - attributes and child nodes
         See comment at the top of the configuration file for details.
     """
     def __init__(self, name, contents):
@@ -73,7 +73,7 @@ class NodeCfg(object):
         for entry in contents:
             clean_entry = entry.rstrip('*')
             self.all_entries.append(clean_entry)
-            
+
             if entry.endswith('**'):
                 self.seq_child.append(clean_entry)
             elif entry.endswith('*'):
@@ -86,7 +86,7 @@ class NodeCfg(object):
         src += '\n' + self._gen_children()
         src += '\n' + self._gen_attr_names()
         return src
-    
+
     def _gen_init(self):
         src = "class %s(Node):\n" % self.name
 
@@ -95,17 +95,17 @@ class NodeCfg(object):
             arglist = '(self, %s, coord=None)' % args
         else:
             arglist = '(self, coord=None)'
-        
+
         src += "    def __init__%s:\n" % arglist
-        
+
         for name in self.all_entries + ['coord']:
             src += "        self.%s = %s\n" % (name, name)
-        
+
         return src
 
     def _gen_children(self):
         src = '    def children(self):\n'
-        
+
         if self.all_entries:
             src += '        nodelist = []\n'
 
@@ -114,21 +114,21 @@ class NodeCfg(object):
                     '        if self.%(child)s is not None:' +
                     ' nodelist.append(("%(child)s", self.%(child)s))\n') % (
                         dict(child=child))
-                
+
             for seq_child in self.seq_child:
                 src += (
                     '        for i, child in enumerate(self.%(child)s or []):\n'
                     '            nodelist.append(("%(child)s[%%d]" %% i, child))\n') % (
                         dict(child=seq_child))
-                    
+
             src += '        return tuple(nodelist)\n'
         else:
             src += '        return ()\n'
-            
-        return src        
+
+        return src
 
     def _gen_attr_names(self):
-        src = "    attr_names = (" + ''.join("%r," % nm for nm in self.attr) + ')' 
+        src = "    attr_names = (" + ''.join("%r," % nm for nm in self.attr) + ')'
         return src
 
 
@@ -136,7 +136,7 @@ _PROLOGUE_COMMENT = \
 r'''#-----------------------------------------------------------------
 # ** ATTENTION **
 # This code was automatically generated from the file:
-# $cfg_filename 
+# $cfg_filename
 #
 # Do not modify it directly. Modify the configuration file and
 # run the generator again.
@@ -167,21 +167,21 @@ class Node(object):
     def show(self, buf=sys.stdout, offset=0, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None):
         """ Pretty print the Node and all its attributes and
             children (recursively) to a buffer.
-            
-            buf:   
+
+            buf:
                 Open IO buffer into which the Node is printed.
-            
-            offset: 
-                Initial offset (amount of leading spaces) 
-            
+
+            offset:
+                Initial offset (amount of leading spaces)
+
             attrnames:
                 True if you want to see the attribute names in
                 name=value pairs. False to only see the values.
-                
+
             nodenames:
-                True if you want to see the actual node names 
+                True if you want to see the actual node names
                 within their parents.
-            
+
             showcoord:
                 Do you want the coordinates of each Node to be
                 displayed.
@@ -216,47 +216,47 @@ class Node(object):
 
 
 class NodeVisitor(object):
-    """ A base NodeVisitor class for visiting c_ast nodes. 
+    """ A base NodeVisitor class for visiting c_ast nodes.
         Subclass it and define your own visit_XXX methods, where
-        XXX is the class name you want to visit with these 
+        XXX is the class name you want to visit with these
         methods.
-        
+
         For example:
-        
+
         class ConstantVisitor(NodeVisitor):
             def __init__(self):
                 self.values = []
-            
+
             def visit_Constant(self, node):
                 self.values.append(node.value)
 
-        Creates a list of values of all the constant nodes 
+        Creates a list of values of all the constant nodes
         encountered below the given node. To use it:
-        
+
         cv = ConstantVisitor()
         cv.visit(node)
-        
+
         Notes:
-        
-        *   generic_visit() will be called for AST nodes for which 
-            no visit_XXX method was defined. 
-        *   The children of nodes for which a visit_XXX was 
+
+        *   generic_visit() will be called for AST nodes for which
+            no visit_XXX method was defined.
+        *   The children of nodes for which a visit_XXX was
             defined will not be visited - if you need this, call
-            generic_visit() on the node. 
+            generic_visit() on the node.
             You can use:
                 NodeVisitor.generic_visit(self, node)
         *   Modeled after Python's own AST visiting facilities
             (the ast module of Python 3.0)
     """
     def visit(self, node):
-        """ Visit a node. 
+        """ Visit a node.
         """
         method = 'visit_' + node.__class__.__name__
         visitor = getattr(self, method, self.generic_visit)
         return visitor(node)
-        
+
     def generic_visit(self, node):
-        """ Called if no explicit visitor function exists for a 
+        """ Called if no explicit visitor function exists for a
             node. Implements preorder visiting of the node.
         """
         for c_name, c in node.children():
