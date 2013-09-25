@@ -9,7 +9,7 @@
 # information from the AST.
 # It helps to have the pycparser/_c_ast.cfg file in front of you.
 #
-# Copyright (C) 2008-2011, Eli Bendersky
+# Copyright (C) 2008-2013, Eli Bendersky
 # License: BSD
 #-----------------------------------------------------------------
 from __future__ import print_function
@@ -103,8 +103,7 @@ function_decl = ast.ext[2].decl
 
 # The body is of FuncDef is a Compound, which is a placeholder for a block
 # surrounded by {} (You should be reading _c_ast.cfg parallel to this
-# explanation and seeing these things by your own eyes).
-#
+# explanation and seeing these things with your own eyes).
 # Let's see the block's declarations:
 #
 function_body = ast.ext[2].body
@@ -117,7 +116,6 @@ function_body = ast.ext[2].body
 
 # We can see a single variable declaration, i, declared to be a simple type
 # declaration of type 'unsigned int', followed by statements.
-#
 
 # block_items is a list, so the third element is the For statement:
 #
@@ -150,17 +148,14 @@ while_cond = while_stmt.cond
 #~ while_cond.right.show()
 
 #
-# That's it for the example. I hope you now see how easy it is to
-# explore the AST created by pycparser. Although on the surface it
-# is quite complex and has a lot of node types, this is the
-# inherent complexity of the C language every parser/compiler
-# designer has to cope with.
-# Using the tools provided by the c_ast package it's easy to
-# explore the structure of AST nodes and write code that processes
-# them.
-# Specifically, see the cdecl.py example for a non-trivial
-# demonstration of what you can do by recursively going through
-# the AST.
+# That's it for the example. I hope you now see how easy it is to explore the
+# AST created by pycparser. Although on the surface it is quite complex and has
+# a lot of node types, this is the inherent complexity of the C language every
+# parser/compiler designer has to cope with.
+# Using the tools provided by the c_ast package it's easy to explore the
+# structure of AST nodes and write code that processes them.
+# Specifically, see the cdecl.py example for a non-trivial demonstration of what
+# you can do by recursively going through the AST.
 #
 
 
