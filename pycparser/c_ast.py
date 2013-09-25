@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------
 # ** ATTENTION **
 # This code was automatically generated from the file:
-# _c_ast.cfg 
+# _c_ast.cfg
 #
 # Do not modify it directly. Modify the configuration file and
 # run the generator again.
@@ -30,21 +30,21 @@ class Node(object):
     def show(self, buf=sys.stdout, offset=0, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None):
         """ Pretty print the Node and all its attributes and
             children (recursively) to a buffer.
-            
-            buf:   
+
+            buf:
                 Open IO buffer into which the Node is printed.
-            
-            offset: 
-                Initial offset (amount of leading spaces) 
-            
+
+            offset:
+                Initial offset (amount of leading spaces)
+
             attrnames:
                 True if you want to see the attribute names in
                 name=value pairs. False to only see the values.
-                
+
             nodenames:
-                True if you want to see the actual node names 
+                True if you want to see the actual node names
                 within their parents.
-            
+
             showcoord:
                 Do you want the coordinates of each Node to be
                 displayed.
@@ -79,47 +79,47 @@ class Node(object):
 
 
 class NodeVisitor(object):
-    """ A base NodeVisitor class for visiting c_ast nodes. 
+    """ A base NodeVisitor class for visiting c_ast nodes.
         Subclass it and define your own visit_XXX methods, where
-        XXX is the class name you want to visit with these 
+        XXX is the class name you want to visit with these
         methods.
-        
+
         For example:
-        
+
         class ConstantVisitor(NodeVisitor):
             def __init__(self):
                 self.values = []
-            
+
             def visit_Constant(self, node):
                 self.values.append(node.value)
 
-        Creates a list of values of all the constant nodes 
+        Creates a list of values of all the constant nodes
         encountered below the given node. To use it:
-        
+
         cv = ConstantVisitor()
         cv.visit(node)
-        
+
         Notes:
-        
-        *   generic_visit() will be called for AST nodes for which 
-            no visit_XXX method was defined. 
-        *   The children of nodes for which a visit_XXX was 
+
+        *   generic_visit() will be called for AST nodes for which
+            no visit_XXX method was defined.
+        *   The children of nodes for which a visit_XXX was
             defined will not be visited - if you need this, call
-            generic_visit() on the node. 
+            generic_visit() on the node.
             You can use:
                 NodeVisitor.generic_visit(self, node)
         *   Modeled after Python's own AST visiting facilities
             (the ast module of Python 3.0)
     """
     def visit(self, node):
-        """ Visit a node. 
+        """ Visit a node.
         """
         method = 'visit_' + node.__class__.__name__
         visitor = getattr(self, method, self.generic_visit)
         return visitor(node)
-        
+
     def generic_visit(self, node):
-        """ Called if no explicit visitor function exists for a 
+        """ Called if no explicit visitor function exists for a
             node. Implements preorder visiting of the node.
         """
         for c_name, c in node.children():

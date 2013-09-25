@@ -84,7 +84,7 @@ def fix_switch_cases(switch_node):
             _extract_nested_case(child, new_compound.block_items)
             last_case = new_compound.block_items[-1]
         else:
-            # Other statements are added as childrent to the last case, if it
+            # Other statements are added as children to the last case, if it
             # exists.
             if last_case is None:
                 new_compound.block_items.append(child)

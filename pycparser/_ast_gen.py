@@ -2,12 +2,12 @@
 # _ast_gen.py
 #
 # Generates the AST Node classes from a specification given in
-# a .yaml file
+# a configuration file
 #
 # The design of this module was inspired by astgen.py from the
 # Python 2.5 code-base.
 #
-# Copyright (C) 2008-2012, Eli Bendersky
+# Copyright (C) 2008-2013, Eli Bendersky
 # License: BSD
 #-----------------------------------------------------------------
 import pprint
@@ -146,7 +146,7 @@ r'''#-----------------------------------------------------------------
 #
 # AST Node classes.
 #
-# Copyright (C) 2008-2012, Eli Bendersky
+# Copyright (C) 2008-2013, Eli Bendersky
 # License: BSD
 #-----------------------------------------------------------------
 
