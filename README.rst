@@ -96,6 +96,10 @@ favorite Python packaging/distribution tool, for example with::
 
     > pip install pycparser
 
+It's recommended to run ``_build_tables.py`` in the **pycparser** code directory
+after installation to make sure the parsing tables are pre-generated. This can
+make your code run faster.
+
 Known problems
 --------------
 
