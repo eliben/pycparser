@@ -1153,6 +1153,21 @@ class TestCParser_fundamentals(TestCParser_base):
                     [['ID', 'p']],
                     ['TypeDecl', ['IdentifierType', ['int']]]]])
 
+        f5 = parse_fdef('''
+        char* zzz(int p[static 10])
+        {
+            return 3;
+        }
+        ''')
+
+        self.assertEqual(fdef_decl(f5),
+            ['Decl', 'zzz',
+                ['FuncDecl',
+                    [   ['Decl', 'p', [ 'ArrayDecl', '10',
+                                        [ 'TypeDecl', ['IdentifierType', ['int']]]]]],
+                    ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]]])
+
+
     def test_unified_string_literals(self):
         # simple string, for reference
         d1 = self.get_decl_init('char* s = "hello";')

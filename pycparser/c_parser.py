@@ -984,10 +984,11 @@ class CParser(PLYParser):
 
     def p_direct_declarator_3(self, p):
         """ direct_declarator   : direct_declarator LBRACKET assignment_expression_opt RBRACKET
+                                | direct_declarator LBRACKET STATIC assignment_expression_opt RBRACKET
         """
         arr = c_ast.ArrayDecl(
             type=None,
-            dim=p[3],
+            dim=p[3] if len(p) == 5 else p[4],
             coord=p[1].coord)
 
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
