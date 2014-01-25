@@ -47,7 +47,7 @@ def expand_decl(decl):
                 return ['Typename', nested]
         elif typ == ArrayDecl:
             dimval = decl.dim.value if decl.dim else ''
-            return ['ArrayDecl', dimval, nested]
+            return ['ArrayDecl', dimval, decl.dim_quals, nested]
         elif typ == PtrDecl:
             return ['PtrDecl', nested]
         elif typ == Typedef:
@@ -229,17 +229,17 @@ class TestCParser_fundamentals(TestCParser_base):
 
         self.assertEqual(self.get_decl('long ar[15];'),
             ['Decl', 'ar',
-                ['ArrayDecl', '15',
+                ['ArrayDecl', '15', [],
                     ['TypeDecl', ['IdentifierType', ['long']]]]])
 
         self.assertEqual(self.get_decl('long long ar[15];'),
             ['Decl', 'ar',
-                ['ArrayDecl', '15',
+                ['ArrayDecl', '15', [],
                     ['TypeDecl', ['IdentifierType', ['long', 'long']]]]])
 
         self.assertEqual(self.get_decl('unsigned ar[];'),
             ['Decl', 'ar',
-                ['ArrayDecl', '',
+                ['ArrayDecl', '', [],
                     ['TypeDecl', ['IdentifierType', ['unsigned']]]]])
 
         self.assertEqual(self.get_decl('int strlen(char* s);'),
@@ -278,30 +278,30 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(self.get_decl('int (*a)[1][2];'),
             ['Decl', 'a',
                 ['PtrDecl',
-                    ['ArrayDecl', '1',
-                        ['ArrayDecl', '2',
+                    ['ArrayDecl', '1', [],
+                        ['ArrayDecl', '2', [],
                         ['TypeDecl', ['IdentifierType', ['int']]]]]]])
 
         self.assertEqual(self.get_decl('int *a[1][2];'),
             ['Decl', 'a',
-                ['ArrayDecl', '1',
-                    ['ArrayDecl', '2',
+                ['ArrayDecl', '1', [],
+                    ['ArrayDecl', '2', [],
                         ['PtrDecl', ['TypeDecl', ['IdentifierType', ['int']]]]]]])
 
         self.assertEqual(self.get_decl('char ***ar3D[40];'),
             ['Decl', 'ar3D',
-                ['ArrayDecl', '40',
+                ['ArrayDecl', '40', [],
                     ['PtrDecl', ['PtrDecl', ['PtrDecl',
                         ['TypeDecl', ['IdentifierType', ['char']]]]]]]])
 
         self.assertEqual(self.get_decl('char (***ar3D)[40];'),
             ['Decl', 'ar3D',
                 ['PtrDecl', ['PtrDecl', ['PtrDecl',
-                    ['ArrayDecl', '40', ['TypeDecl', ['IdentifierType', ['char']]]]]]]])
+                    ['ArrayDecl', '40', [], ['TypeDecl', ['IdentifierType', ['char']]]]]]]])
 
         self.assertEqual(self.get_decl('int (*x[4])(char, int);'),
             ['Decl', 'x',
-                ['ArrayDecl', '4',
+                ['ArrayDecl', '4', [],
                     ['PtrDecl',
                         ['FuncDecl',
                             [   ['Typename',  ['TypeDecl', ['IdentifierType', ['char']]]],
@@ -310,13 +310,13 @@ class TestCParser_fundamentals(TestCParser_base):
 
         self.assertEqual(self.get_decl('char *(*(**foo [][8])())[];'),
             ['Decl', 'foo',
-                ['ArrayDecl', '',
-                    ['ArrayDecl', '8',
+                ['ArrayDecl', '', [],
+                    ['ArrayDecl', '8', [],
                         ['PtrDecl', ['PtrDecl',
                             ['FuncDecl',
                                 [],
                                 ['PtrDecl',
-                                    ['ArrayDecl', '',
+                                    ['ArrayDecl', '', [],
                                         ['PtrDecl',
                                             ['TypeDecl',
                                                 ['IdentifierType', ['char']]]]]]]]]]]])
@@ -372,14 +372,14 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(self.get_decl('int zz(int p[static 10]);'),
             ['Decl', 'zz',
                 ['FuncDecl',
-                    [['Decl', 'p', ['ArrayDecl', '10',
+                    [['Decl', 'p', ['ArrayDecl', '10', ['static'],
                                        ['TypeDecl', ['IdentifierType', ['int']]]]]],
                     ['TypeDecl', ['IdentifierType', ['int']]]]])
 
         self.assertEqual(self.get_decl('int zz(int p[const 10]);'),
             ['Decl', 'zz',
                 ['FuncDecl',
-                    [['Decl', 'p', ['ArrayDecl', '10',
+                    [['Decl', 'p', ['ArrayDecl', '10', ['const'],
                                        ['TypeDecl', ['IdentifierType', ['int']]]]]],
                     ['TypeDecl', ['IdentifierType', ['int']]]]])
 
@@ -853,7 +853,7 @@ class TestCParser_fundamentals(TestCParser_base):
                             ['TypeDecl',
                                 ['IdentifierType', ['Name']]]],
                         ['Decl', 'NameArray',
-                            ['ArrayDecl', '3',
+                            ['ArrayDecl', '3', [],
                                 ['TypeDecl', ['IdentifierType', ['Name']]]]]]]]])
         self.assertEqual(s1_ast.ext[3].body.block_items[0].lvalue.field.name, 'Name')
 
@@ -959,7 +959,7 @@ class TestCParser_fundamentals(TestCParser_base):
             ['Decl', 'notp', ['TypeDecl', ['IdentifierType', ['char']]]])
         self.assertEqual(self.get_decl(d2, 2),
             ['Decl', 'ar',
-                ['ArrayDecl', '4',
+                ['ArrayDecl', '4', [],
                     ['TypeDecl', ['IdentifierType', ['char']]]]])
 
     def test_invalid_multiple_types_error(self):
@@ -1007,11 +1007,11 @@ class TestCParser_fundamentals(TestCParser_base):
         '''
         self.assertEqual(self.get_decl(d3, 0),
             ['Typedef', 'numberarray',
-                ['ArrayDecl', '5',
+                ['ArrayDecl', '5', [],
                     ['TypeDecl', ['IdentifierType', ['int']]]]])
         self.assertEqual(self.get_decl(d3, 1),
             ['Typedef', 'numberarray',
-                ['ArrayDecl', '5',
+                ['ArrayDecl', '5', [],
                     ['TypeDecl', ['IdentifierType', ['int']]]]])
 
     def test_decl_inits(self):
@@ -1030,7 +1030,7 @@ class TestCParser_fundamentals(TestCParser_base):
         #~ self.parse(d2).show()
         self.assertEqual(self.get_decl(d2),
             ['Decl', 'ar',
-                ['ArrayDecl', '',
+                ['ArrayDecl', '', [],
                     ['TypeDecl', ['IdentifierType', ['long']]]]])
         self.assertEqual(self.get_decl_init(d2),
             [   ['Constant', 'int', '7'],

@@ -127,9 +127,10 @@ class NodeVisitor(object):
 
 
 class ArrayDecl(Node):
-    def __init__(self, type, dim, coord=None):
+    def __init__(self, type, dim, dim_quals, coord=None):
         self.type = type
         self.dim = dim
+        self.dim_quals = dim_quals
         self.coord = coord
 
     def children(self):
@@ -138,7 +139,7 @@ class ArrayDecl(Node):
         if self.dim is not None: nodelist.append(("dim", self.dim))
         return tuple(nodelist)
 
-    attr_names = ()
+    attr_names = ('dim_quals',)
 
 class ArrayRef(Node):
     def __init__(self, name, subscript, coord=None):

@@ -1,6 +1,8 @@
 + Version 2.11 (??)
 
-  - 
+  - Add support for C99 6.5.3.7 p7 - qualifiers within array dimensions in
+    function declarations. Started with issue #21 (reported with initial patch
+    by Robin Martinjak).
 
 + Version 2.10 (03.08.2013)
 
