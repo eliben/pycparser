@@ -368,6 +368,21 @@ class TestCParser_fundamentals(TestCParser_base):
                                 ['TypeDecl', ['IdentifierType', ['int']]]]]],
                         ['TypeDecl', ['IdentifierType', ['int']]]]]])
 
+    def test_func_decls_with_array_dim_qualifiers(self):
+        self.assertEqual(self.get_decl('int zz(int p[static 10]);'),
+            ['Decl', 'zz',
+                ['FuncDecl',
+                    [['Decl', 'p', ['ArrayDecl', '10',
+                                       ['TypeDecl', ['IdentifierType', ['int']]]]]],
+                    ['TypeDecl', ['IdentifierType', ['int']]]]])
+
+        self.assertEqual(self.get_decl('int zz(int p[const 10]);'),
+            ['Decl', 'zz',
+                ['FuncDecl',
+                    [['Decl', 'p', ['ArrayDecl', '10',
+                                       ['TypeDecl', ['IdentifierType', ['int']]]]]],
+                    ['TypeDecl', ['IdentifierType', ['int']]]]])
+
     def test_qualifiers_storage_specifiers(self):
         def assert_qs(txt, index, quals, storage):
             d = self.parse(txt).ext[index]
@@ -1152,21 +1167,6 @@ class TestCParser_fundamentals(TestCParser_base):
                 ['FuncDecl',
                     [['ID', 'p']],
                     ['TypeDecl', ['IdentifierType', ['int']]]]])
-
-        f5 = parse_fdef('''
-        char* zzz(int p[static 10])
-        {
-            return 3;
-        }
-        ''')
-
-        self.assertEqual(fdef_decl(f5),
-            ['Decl', 'zzz',
-                ['FuncDecl',
-                    [   ['Decl', 'p', [ 'ArrayDecl', '10',
-                                        [ 'TypeDecl', ['IdentifierType', ['int']]]]]],
-                    ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]]])
-
 
     def test_unified_string_literals(self):
         # simple string, for reference

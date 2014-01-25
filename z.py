@@ -76,15 +76,8 @@ class NodeVisitor(object):
 
 if __name__ == "__main__":
     source_code = r'''
-    typedef struct
-    {
-    int number;
-    }Number;
 
-    struct XYZ
-    {
-    Number Number[10];
-    }xyz;
+void f(int x[10]);
     '''
 
     parser = CParser()

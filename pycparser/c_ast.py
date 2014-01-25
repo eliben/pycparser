@@ -11,7 +11,7 @@
 #
 # AST Node classes.
 #
-# Copyright (C) 2008-2012, Eli Bendersky
+# Copyright (C) 2008-2013, Eli Bendersky
 # License: BSD
 #-----------------------------------------------------------------
 
