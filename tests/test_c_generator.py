@@ -188,6 +188,12 @@ class TestCtoC(unittest.TestCase):
             }
         ''')
 
+    def test_exprlist_with_subexprlist(self):
+        self._assert_ctoc_correct(r'''
+            void x() {
+                (a = b, (b = c, c = a));
+            }
+        ''')
 
 if __name__ == "__main__":
     unittest.main()

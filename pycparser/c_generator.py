@@ -119,7 +119,7 @@ class CGenerator(object):
         visited_subexprs = []
         for expr in n.exprs:
             if isinstance(expr, c_ast.ExprList):
-                visited_subexprs.append('{' + self.visit(expr) + '}')
+                visited_subexprs.append('(' + self.visit(expr) + ')')
             else:
                 visited_subexprs.append(self.visit(expr))
         return ', '.join(visited_subexprs)
