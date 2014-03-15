@@ -3,6 +3,7 @@
   - Add support for C99 6.5.3.7 p7 - qualifiers within array dimensions in
     function declarations. Started with issue #21 (reported with initial patch
     by Robin Martinjak).
+  - Issue #28: fix coord reporting for 'for' loops.
 
 + Version 2.10 (03.08.2013)
 

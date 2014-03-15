@@ -1339,7 +1339,8 @@ class CParser(PLYParser):
 
     def p_iteration_statement_4(self, p):
         """ iteration_statement : FOR LPAREN declaration expression_opt SEMI expression_opt RPAREN statement """
-        p[0] = c_ast.For(c_ast.DeclList(p[3]), p[4], p[6], p[8], self._coord(p.lineno(1)))
+        p[0] = c_ast.For(c_ast.DeclList(p[3], self._coord(p.lineno(1))),
+                         p[4], p[6], p[8], self._coord(p.lineno(1)))
 
     def p_jump_statement_1(self, p):
         """ jump_statement  : GOTO ID SEMI """

@@ -210,6 +210,19 @@ class TestCParser_fundamentals(TestCParser_base):
         f6 = self.parse(t6, filename='z.c')
         self.assert_coord(self.parse(t6).ext[0].decl.type.args.params[1], 3)
 
+    def test_forloop_coord(self):
+        t = '''\
+        void foo() {
+            for(int z=0; z<4;
+                z++){}
+        }
+        '''
+        s = self.parse(t, filename='f.c')
+        forloop = s.ext[0].body.block_items[0]
+        self.assert_coord(forloop.init, 2, 'f.c')
+        self.assert_coord(forloop.cond, 2, 'f.c')
+        self.assert_coord(forloop.next, 3, 'f.c')
+
     def test_simple_decls(self):
         self.assertEqual(self.get_decl('int a;'),
             ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['int']]]])

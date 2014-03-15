@@ -75,13 +75,12 @@ class NodeVisitor(object):
 
 
 if __name__ == "__main__":
-    source_code = r'''
-
-void f(int x[10]);
+    source_code = r'''void foo() {
+for(int z=0; z<4; z++){
+}
+}
     '''
 
     parser = CParser()
     ast = parser.parse(source_code, filename='zz')
-    ast.show(showcoord=False, attrnames=True, nodenames=True)
-
-
+    ast.show(showcoord=True, attrnames=True, nodenames=True)
