@@ -1603,7 +1603,7 @@ class CParser(PLYParser):
             p[0] = c_ast.Constant(
                 'string', p[1], self._coord(p.lineno(1)))
         else:
-            p[1].value = p[1].value.rstrip[:-1] + p[2][1:]
+            p[1].value = p[1].value.rstrip()[:-1] + p[2][2:]
             p[0] = p[1]
 
     def p_brace_open(self, p):

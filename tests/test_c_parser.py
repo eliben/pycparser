@@ -1211,6 +1211,13 @@ class TestCParser_fundamentals(TestCParser_base):
         d5 = self.get_decl_init(r'char* s = "foo\"" "bar";')
         self.assertEqual(d5, ['Constant', 'string', r'"foo\"bar"'])
 
+    def test_unified_wstring_literals(self):
+        d1 = self.get_decl_init('char* s = L"hello" L"world";')
+        self.assertEqual(d1, ['Constant', 'string', 'L"helloworld"'])
+
+        d2 = self.get_decl_init('char* s = L"hello " L"world" L" and I";')
+        self.assertEqual(d2, ['Constant', 'string', 'L"hello world and I"'])
+
     def test_inline_specifier(self):
         ps2 = self.parse('static inline void inlinefoo(void);')
         self.assertEqual(ps2.ext[0].funcspec, ['inline'])

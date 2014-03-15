@@ -76,8 +76,7 @@ class NodeVisitor(object):
 
 if __name__ == "__main__":
     source_code = r'''void foo() {
-for(int z=0; z<4; z++){
-}
+    L"hi" L"there";
 }
     '''
 
