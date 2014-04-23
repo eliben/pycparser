@@ -130,6 +130,9 @@ provided in the ``utils`` directory in **pycparser**'s distribution. This
 <http://www.cs.princeton.edu/software/lcc/>`_, and is provided under LCC's
 license terms.
 
+Note also that you can use ``gcc -E`` or ``clang -E`` instead of ``cpp``. See
+the ``using_gcc_E_libc.py`` example for more details.
+
 What about the standard C library headers?
 ------------------------------------------
 
