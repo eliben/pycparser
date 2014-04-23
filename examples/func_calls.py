@@ -46,6 +46,3 @@ if __name__ == "__main__":
         func = 'malloc'
 
     show_func_calls(filename, func)
-
-
-
