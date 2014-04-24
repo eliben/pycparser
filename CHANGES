@@ -5,6 +5,8 @@
     by Robin Martinjak).
   - Issue #27: bug in handling of unified wstring literals.
   - Issue #28: fix coord reporting for 'for' loops.
+  - Added ``examples/using_gcc_E_libc.py`` to demonstrate how ``gcc -E`` can
+    be used instead of ``cpp`` for preprocessing.
 
 + Version 2.10 (03.08.2013)
 
