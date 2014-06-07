@@ -8,7 +8,6 @@ pycparser v2.10
 .. contents::
     :backlinks: none
 
-.. sectnum::
 
 
 Introduction
