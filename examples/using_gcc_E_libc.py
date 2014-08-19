@@ -2,7 +2,8 @@
 # pycparser: using_gcc_E_libc.py
 #
 # Similar to the using_cpp_libc.py example, but uses 'gcc -E' instead
-# of 'cpp'.
+# of 'cpp'. The same can be achieved with Clang instead of gcc. If you have
+# Clang installed, simply replace 'gcc' with 'clang' here.
 #
 # Copyright (C) 2008-2014, Eli Bendersky
 # License: BSD

@@ -131,7 +131,9 @@ provided in the ``utils`` directory in **pycparser**'s distribution. This
 license terms.
 
 Note also that you can use ``gcc -E`` or ``clang -E`` instead of ``cpp``. See
-the ``using_gcc_E_libc.py`` example for more details.
+the ``using_gcc_E_libc.py`` example for more details. Windows folks can download
+and install a binary build of Clang for Windows `from this website
+<http://llvm.org/releases/download.html>`_.
 
 What about the standard C library headers?
 ------------------------------------------
