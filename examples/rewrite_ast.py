@@ -14,7 +14,7 @@ from pycparser import c_parser
 text = r"""
 void func(void)
 {
-	x = 1;
+  x = 1;
 }
 """
 

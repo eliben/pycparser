@@ -46,6 +46,3 @@ if __name__ == "__main__":
         filename = 'c_files/memmgr.c'
 
     show_func_defs(filename)
-
-
-
