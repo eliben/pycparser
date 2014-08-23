@@ -164,9 +164,14 @@ class CGenerator(object):
         for ext in n.ext:
             if isinstance(ext, c_ast.FuncDef):
                 s += self.visit(ext)
+            elif isinstance(ext, c_ast.Any):
+                s += self.visit(ext) + '\n'
             else:
                 s += self.visit(ext) + ';\n'
         return s
+
+    def visit_Any(self, n):
+        return n.text
 
     def visit_Compound(self, n):
         s = self._make_indent() + '{\n'

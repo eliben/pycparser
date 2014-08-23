@@ -414,6 +414,17 @@ class FileAST(Node):
 
     attr_names = ()
 
+class Any(Node):
+    def __init__(self, text, coord=None):
+        self.text = text
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        return tuple(nodelist)
+
+    attr_names = ('text',)
+
 class For(Node):
     def __init__(self, init, cond, next, stmt, coord=None):
         self.init = init
