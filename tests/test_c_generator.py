@@ -195,5 +195,11 @@ class TestCtoC(unittest.TestCase):
             }
         ''')
 
+    def test_comma_operator_funcarg(self):
+        self._assert_ctoc_correct(r'''
+            void f(int x) { return x; }
+            int main(void) { f((1, 2)); return 0; }
+        ''')
+
 if __name__ == "__main__":
     unittest.main()
