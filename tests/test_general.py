@@ -33,7 +33,7 @@ class TestParsing(unittest.TestCase):
         self.assertTrue(isinstance(ast, c_ast.FileAST))
 
         fake_libc = os.path.join(c_files_path, '..', '..',
-                                 'utils', 'fake_libc_include')
+                                 'pycparser', 'utils', 'fake_libc_include')
         ast2 = parse_file(self._find_file('year.c'), use_cpp=True,
             cpp_path=CPPPATH,
             cpp_args=[r'-I%s' % fake_libc])

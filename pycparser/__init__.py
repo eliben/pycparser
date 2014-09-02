@@ -10,11 +10,13 @@
 __all__ = ['c_lexer', 'c_parser', 'c_ast']
 __version__ = '2.10'
 
+import os
+
 from subprocess import Popen, PIPE
 from .c_parser import CParser
 
 
-def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
+def preprocess_file(filename, cpp_path='cpp', cpp_args='', fake_stdlib=False):
     """ Preprocess a file using cpp.
 
         filename:
@@ -33,6 +35,10 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
         path_list += cpp_args
     elif cpp_args != '':
         path_list += [cpp_args]
+    if fake_stdlib:
+        fake_libs = os.path.join(
+            os.path.dirname(__file__), 'utils', 'fake_libc_include')
+        path_list += ['-I{}'.format(fake_libs), ]
     path_list += [filename]
 
     try:
@@ -52,7 +58,7 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
 
 
 def parse_file(filename, use_cpp=False, cpp_path='cpp', cpp_args='',
-               parser=None):
+               parser=None, fake_stdlib=False):
     """ Parse a C file using pycparser.
 
         filename:
@@ -83,7 +89,7 @@ def parse_file(filename, use_cpp=False, cpp_path='cpp', cpp_args='',
         Errors from cpp will be printed out.
     """
     if use_cpp:
-        text = preprocess_file(filename, cpp_path, cpp_args)
+        text = preprocess_file(filename, cpp_path, cpp_args, fake_stdlib)
     else:
         with open(filename, 'rU') as f:
             text = f.read()

@@ -50,7 +50,8 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',],
     packages=['pycparser', 'pycparser.ply'],
-    package_data={'pycparser': ['*.cfg']},
+    package_data={'pycparser': [
+        '*.cfg', 'utils/*.exe', 'utils/fake_libc_include/*.h']},
     cmdclass={'install': install, 'sdist': sdist},
 )
 
