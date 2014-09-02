@@ -12,6 +12,8 @@ typedef int __int_least16_t;
 typedef int __uint_least16_t;
 typedef int __int32_t;
 typedef int __uint32_t;
+typedef int __int64_t;
+typedef int __uint64_t;
 typedef int __int_least32_t;
 typedef int __uint_least32_t;
 typedef int _LOCK_T;
@@ -71,6 +73,7 @@ typedef int div_t;
 typedef int ldiv_t;
 typedef int lldiv_t;
 typedef int sigset_t;
+typedef int __sigset_t;
 typedef int _sig_func_ptr;
 typedef int sig_atomic_t;
 typedef int __tzrule_type;
@@ -91,6 +94,8 @@ typedef int pthread_spinlock_t;
 typedef int pthread_barrier_t;
 typedef int pthread_barrierattr_t;
 typedef int jmp_buf;
+typedef int sigjmp_buf;
+typedef int stack_t;
 
 /* C99 exact-width integer types */
 typedef int int8_t;
