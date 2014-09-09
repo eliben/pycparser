@@ -302,7 +302,7 @@ class CLexer(object):
         r'pragma'
         pass
 
-    t_pppragma_ignore = ' \t<>.-{}();+-*/$%@&^~!?:,0123456789'
+    t_pppragma_ignore = ' \t<>.-{}();=+-*/$%@&^~!?:,0123456789'
 
     @TOKEN(string_literal)
     def t_pppragma_STR(self, t): pass

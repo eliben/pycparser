@@ -313,6 +313,7 @@ class TestCLexerNoErrors(unittest.TestCase):
         #pragma {pack: 2, smack: 3}
         #pragma <includeme.h> "nowit.h"
         #pragma "string"
+        #pragma somestring="some_other_string"
         #pragma id 124124 and numbers 0235495
         59
         '''
@@ -325,7 +326,7 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(t1.type, 'INT_CONST_DEC')
         t2 = self.clex.token()
         self.assertEqual(t2.type, 'INT_CONST_DEC')
-        self.assertEqual(t2.lineno, 10)
+        self.assertEqual(t2.lineno, 11)
 
 
 
