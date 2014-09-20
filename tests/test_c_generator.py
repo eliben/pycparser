@@ -201,5 +201,12 @@ class TestCtoC(unittest.TestCase):
             int main(void) { f((1, 2)); return 0; }
         ''')
 
+    def test_comma_op_in_ternary(self):
+        self._assert_ctoc_correct(r'''
+            void f() {
+                (0, 0) ? (0, 0) : (0, 0);
+            }
+        ''')
+
 if __name__ == "__main__":
     unittest.main()
