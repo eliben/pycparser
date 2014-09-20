@@ -21,6 +21,7 @@ def compare_asts(ast1, ast2):
             return False
         ast1 = ast1[1]
         ast2 = ast2[1]
+        return compare_asts(ast1, ast2)
     for attr in ast1.attr_names:
         if getattr(ast1, attr) != getattr(ast2, attr):
             return False
@@ -205,6 +206,13 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct(r'''
             void f() {
                 (0, 0) ? (0, 0) : (0, 0);
+            }
+        ''')
+
+    def test_comma_op_assignment(self):
+        self._assert_ctoc_correct(r'''
+            void f() {
+                i = (a, b, c);
             }
         ''')
 
