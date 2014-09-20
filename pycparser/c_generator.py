@@ -93,7 +93,7 @@ class CGenerator(object):
 
     def visit_Decl(self, n, no_type=False):
         # no_type is used when a Decl is part of a DeclList, where the type is
-        # explicitly only for the first delaration in a list.
+        # explicitly only for the first declaration in a list.
         #
         s = n.name if no_type else self._generate_decl(n)
         if n.bitsize: s += ' : ' + self.visit(n.bitsize)
