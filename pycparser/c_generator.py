@@ -190,9 +190,9 @@ class CGenerator(object):
         return 'continue;'
 
     def visit_TernaryOp(self, n):
-        s = self.visit(n.cond) + ' ? '
-        s += self.visit(n.iftrue) + ' : '
-        s += self.visit(n.iffalse)
+        s = self._visit_expr(n.cond) + ' ? '
+        s += self._visit_expr(n.iftrue) + ' : '
+        s += self._visit_expr(n.iffalse)
         return s
 
     def visit_If(self, n):
