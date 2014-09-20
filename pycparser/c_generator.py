@@ -83,6 +83,14 @@ class CGenerator(object):
     def visit_IdentifierType(self, n):
         return ' '.join(n.names)
 
+    def _visit_expr(self, n):
+        if isinstance(n, c_ast.InitList):
+            return '{' + self.visit(n) + '}'
+        elif isinstance(n, c_ast.ExprList):
+            return '(' + self.visit(n) + ')'
+        else:
+            return self.visit(n)
+
     def visit_Decl(self, n, no_type=False):
         # no_type is used when a Decl is part of a DeclList, where the type is
         # explicitly only for the first delaration in a list.
@@ -90,12 +98,7 @@ class CGenerator(object):
         s = n.name if no_type else self._generate_decl(n)
         if n.bitsize: s += ' : ' + self.visit(n.bitsize)
         if n.init:
-            if isinstance(n.init, c_ast.InitList):
-                s += ' = {' + self.visit(n.init) + '}'
-            elif isinstance(n.init, c_ast.ExprList):
-                s += ' = (' + self.visit(n.init) + ')'
-            else:
-                s += ' = ' + self.visit(n.init)
+            s += ' = ' + self._visit_expr(n.init)
         return s
 
     def visit_DeclList(self, n):
@@ -118,21 +121,13 @@ class CGenerator(object):
     def visit_ExprList(self, n):
         visited_subexprs = []
         for expr in n.exprs:
-            if isinstance(expr, c_ast.ExprList):
-                visited_subexprs.append('(' + self.visit(expr) + ')')
-            else:
-                visited_subexprs.append(self.visit(expr))
+            visited_subexprs.append(self._visit_expr(expr))
         return ', '.join(visited_subexprs)
 
     def visit_InitList(self, n):
         visited_subexprs = []
         for expr in n.exprs:
-            if isinstance(expr, c_ast.ExprList):
-                visited_subexprs.append('(' + self.visit(expr) + ')')
-            elif isinstance(expr, c_ast.InitList):
-                visited_subexprs.append('{' + self.visit(expr) + '}')
-            else:
-                visited_subexprs.append(self.visit(expr))
+            visited_subexprs.append(self._visit_expr(expr))
         return ', '.join(visited_subexprs)
 
     def visit_Enum(self, n):
