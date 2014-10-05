@@ -379,7 +379,7 @@ class CGenerator(object):
         """ Visits 'n' and returns its string representation, parenthesized
             if the condition function applied to the node returns True.
         """
-        s = self.visit(n)
+        s = self._visit_expr(n)
         if condition(n):
             return '(' + s + ')'
         else:
