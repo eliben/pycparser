@@ -143,7 +143,7 @@ while_cond = while_stmt.cond
 # left and right nodes as children. It also has the op attribute,
 # which is just the string representation of the operator.
 #
-#~ print while_cond.op
+#~ print(while_cond.op)
 #~ while_cond.left.show()
 #~ while_cond.right.show()
 
