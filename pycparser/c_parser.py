@@ -983,41 +983,51 @@ class CParser(PLYParser):
         p[0] = p[2]
 
     def p_direct_declarator_3(self, p):
-        """ direct_declarator   : direct_declarator LBRACKET assignment_expression_opt RBRACKET
-                                | direct_declarator LBRACKET STATIC assignment_expression_opt RBRACKET
-                                | direct_declarator LBRACKET CONST assignment_expression_opt RBRACKET
+        """ direct_declarator   : direct_declarator LBRACKET type_qualifier_list_opt assignment_expression_opt RBRACKET
+       """
+        # Accept dimension qualifiers
+        # Per C99 6.7.5.3 p7
+        arr = c_ast.ArrayDecl(
+            type=None,
+            dim=p[4],
+            dim_quals=p[3] if p[3] != None else [],
+            coord=p[1].coord)
+
+        p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
+
+    def p_direct_declarator_4(self, p):
+        """ direct_declarator   : direct_declarator LBRACKET STATIC type_qualifier_list_opt assignment_expression RBRACKET
+                                | direct_declarator LBRACKET type_qualifier_list STATIC assignment_expression RBRACKET
         """
-        if len(p) > 5:
-            # Have dimension qualifiers
-            # Per C99 6.7.5.3 p7
-            arr = c_ast.ArrayDecl(
-                type=None,
-                dim=p[4],
-                dim_quals=[p[3]],
-                coord=p[1].coord)
-        else:
-            arr = c_ast.ArrayDecl(
-                type=None,
-                dim=p[3],
-                dim_quals=[],
-                coord=p[1].coord)
+        # Using slice notation for PLY objects doesn't work in Python 3 for the
+        # version of PLY embedded with pycparser; see PLY Google Code issue 30.
+        # Work around that here by listing the two elements separately.
+        listed_quals = [item if isinstance(item, list) else [item]
+            for item in [p[3],p[4]]]
+        dim_quals = [qual for sublist in listed_quals for qual in sublist
+            if qual is not None]
+        arr = c_ast.ArrayDecl(
+            type=None,
+            dim=p[5],
+            dim_quals=dim_quals,
+            coord=p[1].coord)
 
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
 
     # Special for VLAs
     #
-    def p_direct_declarator_4(self, p):
-        """ direct_declarator   : direct_declarator LBRACKET TIMES RBRACKET
+    def p_direct_declarator_5(self, p):
+        """ direct_declarator   : direct_declarator LBRACKET type_qualifier_list_opt TIMES RBRACKET
         """
         arr = c_ast.ArrayDecl(
             type=None,
-            dim=c_ast.ID(p[3], self._coord(p.lineno(3))),
-            dim_quals=[],
+            dim=c_ast.ID(p[4], self._coord(p.lineno(4))),
+            dim_quals=p[3] if p[3] != None else [],
             coord=p[1].coord)
 
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
 
-    def p_direct_declarator_5(self, p):
+    def p_direct_declarator_6(self, p):
         """ direct_declarator   : direct_declarator LPAREN parameter_type_list RPAREN
                                 | direct_declarator LPAREN identifier_list_opt RPAREN
         """

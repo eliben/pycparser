@@ -396,6 +396,22 @@ class TestCParser_fundamentals(TestCParser_base):
                                        ['TypeDecl', ['IdentifierType', ['int']]]]]],
                     ['TypeDecl', ['IdentifierType', ['int']]]]])
 
+        self.assertEqual(self.get_decl('int zz(int p[restrict][5]);'),
+            ['Decl', 'zz',
+                ['FuncDecl',
+                    [['Decl', 'p', ['ArrayDecl', '', ['restrict'],
+                        ['ArrayDecl', '5', [],
+                            ['TypeDecl', ['IdentifierType', ['int']]]]]]],
+                    ['TypeDecl', ['IdentifierType', ['int']]]]])
+
+        self.assertEqual(self.get_decl('int zz(int p[const restrict static 10][5]);'),
+            ['Decl', 'zz',
+                ['FuncDecl',
+                    [['Decl', 'p', ['ArrayDecl', '10', ['const', 'restrict', 'static'],
+                        ['ArrayDecl', '5', [],
+                            ['TypeDecl', ['IdentifierType', ['int']]]]]]],
+                    ['TypeDecl', ['IdentifierType', ['int']]]]])
+
     def test_qualifiers_storage_specifiers(self):
         def assert_qs(txt, index, quals, storage):
             d = self.parse(txt).ext[index]
