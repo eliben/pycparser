@@ -7,6 +7,8 @@
   - Issue #28: fix coord reporting for 'for' loops.
   - Added ``examples/using_gcc_E_libc.py`` to demonstrate how ``gcc -E`` can
     be used instead of ``cpp`` for preprocessing.
+  - Pull request #64: support keywords like const, volatile, restrict and static
+    in dimensions in array declarations.
 
 + Version 2.10 (03.08.2013)
 
