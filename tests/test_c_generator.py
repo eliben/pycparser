@@ -4,7 +4,7 @@ import unittest
 # Run from the root dir
 sys.path.insert(0, '.')
 
-from pycparser import c_parser, c_generator
+from pycparser import c_parser, c_generator, c_ast
 
 _c_parser = c_parser.CParser(
                 lex_optimize=False,
@@ -33,6 +33,30 @@ def compare_asts(ast1, ast2):
 
 def parse_to_ast(src):
     return _c_parser.parse(src)
+
+
+class FuncDeclVisitor(c_ast.NodeVisitor):
+    def __init__(self):
+        self.stubs = []
+
+    def visit_FuncDecl(self, node):
+        gen = c_generator.CGenerator()
+        self.stubs.append(gen.visit(node))
+
+
+class TestFunctionDeclGeneration(unittest.TestCase):
+    def test_partial_funcdecl_generation(self):
+        src = r'''
+            void noop(void);
+            void *something(void *thing);
+            int add(int x, int y);'''
+        ast = parse_to_ast(src)
+        v = FuncDeclVisitor()
+        v.visit(ast)
+        self.assertEqual(len(v.stubs), 3)
+        self.assertTrue(r'void noop(void)' in v.stubs)
+        self.assertTrue(r'void *something(void *thing)' in v.stubs)
+        self.assertTrue(r'int add(int x, int y)' in v.stubs)
 
 
 class TestCtoC(unittest.TestCase):
