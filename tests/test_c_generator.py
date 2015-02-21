@@ -35,23 +35,22 @@ def parse_to_ast(src):
     return _c_parser.parse(src)
 
 
-class FuncDeclVisitor(c_ast.NodeVisitor):
-    def __init__(self):
-        self.stubs = []
-
-    def visit_FuncDecl(self, node):
-        gen = c_generator.CGenerator()
-        self.stubs.append(gen.visit(node))
-
-
 class TestFunctionDeclGeneration(unittest.TestCase):
+    class _FuncDeclVisitor(c_ast.NodeVisitor):
+        def __init__(self):
+            self.stubs = []
+
+        def visit_FuncDecl(self, node):
+            gen = c_generator.CGenerator()
+            self.stubs.append(gen.visit(node))
+
     def test_partial_funcdecl_generation(self):
         src = r'''
             void noop(void);
             void *something(void *thing);
             int add(int x, int y);'''
         ast = parse_to_ast(src)
-        v = FuncDeclVisitor()
+        v = TestFunctionDeclGeneration._FuncDeclVisitor()
         v.visit(ast)
         self.assertEqual(len(v.stubs), 3)
         self.assertTrue(r'void noop(void)' in v.stubs)
