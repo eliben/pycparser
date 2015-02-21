@@ -15,8 +15,6 @@ class CGenerator(object):
         generic_visit.
     """
     def __init__(self):
-        self.output = ''
-
         # Statements start with indentation of self.indent_level spaces, using
         # the _make_indent method
         #
@@ -275,6 +273,9 @@ class CGenerator(object):
                 s += '[' + name.value + ']'
         s += ' = ' + self.visit(n.expr)
         return s
+
+    def visit_FuncDecl(self, n):
+        return self._generate_type(n)
 
     def _generate_struct_union(self, n, name):
         """ Generates code for structs and unions. name should be either
