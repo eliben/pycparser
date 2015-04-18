@@ -76,6 +76,8 @@ class NodeVisitor(object):
 
 
 def heapyprofile():
+    # pip install guppy
+    # [works on python 2.7, AFAIK]
     from guppy import hpy
     import gc
 
@@ -83,7 +85,7 @@ def heapyprofile():
     ast = parse_file('/tmp/197.c')
     gc.collect()
     h = hp.heap()
-    print h
+    print(h)
 
 
 def memprofile():
@@ -109,8 +111,8 @@ if __name__ == "__main__":
 }
     '''
 
-    #memprofile()
-    heapyprofile()
+    memprofile()
+    #heapyprofile()
 
     #parser = CParser()
     #ast = parser.parse(source_code, filename='zz')

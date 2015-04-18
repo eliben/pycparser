@@ -15,6 +15,7 @@ class Coord(object):
             - Line number
             - (optional) column number, for the Lexer
     """
+    __slots__ = ('file', 'line', 'column')
     def __init__(self, file, line, column=None):
         self.file = file
         self.line = line
