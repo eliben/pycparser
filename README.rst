@@ -42,8 +42,8 @@ Which version of C does pycparser support?
 ------------------------------------------
 
 **pycparser** aims to support the full C99 language (according to the standard
-ISO/IEC 9899). This is a new feature in the version 2.x series - earlier
-versions only supported C89.
+ISO/IEC 9899). Some features from C11 are also supported, and patches to support
+more are welcome.
 
 **pycparser** doesn't support any GCC extensions. See the `FAQ
 <https://github.com/eliben/pycparser/wiki/FAQ>`_ for more details.
@@ -57,15 +57,14 @@ standard document
 How is pycparser licensed?
 --------------------------
 
-`New BSD License <http://www.opensource.org/licenses/bsd-license.php>`_
+BSD license. See the `LICENSE` file in the distribution.
 
 Contact details
 ---------------
 
 Drop me an email to eliben@gmail.com for any questions regarding **pycparser**.
 For reporting problems with **pycparser** or submitting feature requests, the
-best way is to open an issue on the `pycparser project page
-<https://github.com/eliben/pycparser/>`_.
+best way is to open an `issue <https://github.com/eliben/pycparser/issues>`_.
 
 
 Installing
@@ -74,7 +73,7 @@ Installing
 Prerequisites
 -------------
 
-* **pycparser** was tested on Python 2.6, 2.7 and 3.2, on both Linux and
+* **pycparser** was tested on Python 2.7, 3.3 and 3.4, on both Linux and
   Windows. It should work on any later version (in both the 2.x and 3.x lines)
   as well.
 
@@ -191,6 +190,9 @@ directories:
 
 README.rst:
   This README file.
+
+LICENSE:
+  The pycparser license
 
 setup.py:
   Installation script
