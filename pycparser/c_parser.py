@@ -1124,6 +1124,7 @@ class CParser(PLYParser):
         #
         else:
             decl = c_ast.Typename(
+                name='',
                 quals=spec['qual'],
                 type=p[2] or c_ast.TypeDecl(None, None, None),
                 coord=self._coord(p.lineno(2)))
@@ -1195,6 +1196,7 @@ class CParser(PLYParser):
         #~ print '=========='
 
         typename = c_ast.Typename(
+            name='',
             quals=p[1]['qual'],
             type=p[2] or c_ast.TypeDecl(None, None, None),
             coord=self._coord(p.lineno(2)))
