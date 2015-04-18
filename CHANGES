@@ -9,6 +9,7 @@
     be used instead of ``cpp`` for preprocessing.
   - Pull request #64: support keywords like const, volatile, restrict and static
     in dimensions in array declarations.
+  - Reduce memory usage of AST nodes (issue #72).
 
 + Version 2.10 (03.08.2013)
 

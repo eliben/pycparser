@@ -75,6 +75,17 @@ class NodeVisitor(object):
         self.current_parent = oldparent
 
 
+def heapyprofile():
+    from guppy import hpy
+    import gc
+
+    hp = hpy()
+    ast = parse_file('/tmp/197.c')
+    gc.collect()
+    h = hp.heap()
+    print h
+
+
 def memprofile():
     import resource
     import tracemalloc
@@ -98,7 +109,8 @@ if __name__ == "__main__":
 }
     '''
 
-    memprofile()
+    #memprofile()
+    heapyprofile()
 
     #parser = CParser()
     #ast = parser.parse(source_code, filename='zz')
