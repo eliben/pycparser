@@ -1055,6 +1055,10 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(self.get_decl_init(d1_1),
             ['Constant', 'float', '0xEF.56p1'])
 
+        d1_2 = 'int bitmask = 0b1001010;'
+        self.assertEqual(self.get_decl_init(d1_2),
+            ['Constant', 'int', '0b1001010'])
+
         d2 = 'long ar[] = {7, 8, 9};'
         #~ self.parse(d2).show()
         self.assertEqual(self.get_decl(d2),
