@@ -1573,6 +1573,7 @@ class CParser(PLYParser):
         """ constant    : INT_CONST_DEC
                         | INT_CONST_OCT
                         | INT_CONST_HEX
+                        | INT_CONST_BIN
         """
         p[0] = c_ast.Constant(
             'int', p[1], self._coord(p.lineno(1)))

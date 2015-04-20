@@ -129,7 +129,7 @@ class CLexer(object):
         'TYPEID',
 
         # constants
-        'INT_CONST_DEC', 'INT_CONST_OCT', 'INT_CONST_HEX',
+        'INT_CONST_DEC', 'INT_CONST_OCT', 'INT_CONST_HEX', 'INT_CONST_BIN',
         'FLOAT_CONST', 'HEX_FLOAT_CONST',
         'CHAR_CONST',
         'WCHAR_CONST',
@@ -183,12 +183,15 @@ class CLexer(object):
 
     hex_prefix = '0[xX]'
     hex_digits = '[0-9a-fA-F]+'
+    bin_prefix = '0[bB]'
+    bin_digits = '[01]+'
 
     # integer constants (K&R2: A.2.5.1)
     integer_suffix_opt = r'(([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?'
     decimal_constant = '(0'+integer_suffix_opt+')|([1-9][0-9]*'+integer_suffix_opt+')'
     octal_constant = '0[0-7]*'+integer_suffix_opt
     hex_constant = hex_prefix+hex_digits+integer_suffix_opt
+    bin_constant = bin_prefix+bin_digits+integer_suffix_opt
 
     bad_octal_constant = '0[0-7]*[89]'
 
@@ -417,6 +420,10 @@ class CLexer(object):
 
     @TOKEN(hex_constant)
     def t_INT_CONST_HEX(self, t):
+        return t
+
+    @TOKEN(bin_constant)
+    def t_INT_CONST_BIN(self, t):
         return t
 
     @TOKEN(bad_octal_constant)
