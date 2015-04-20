@@ -70,7 +70,8 @@ class TestCtoC(unittest.TestCase):
             AST.
         """
         src2 = self._run_c_to_c(src)
-        self.assertTrue(compare_asts(parse_to_ast(src), parse_to_ast(src2)), src2)
+        self.assertTrue(compare_asts(parse_to_ast(src), parse_to_ast(src2)),
+                        src2)
 
     def test_trivial_decls(self):
         self._assert_ctoc_correct('int a;')
@@ -81,6 +82,11 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct('int** (*a)(void);')
         self._assert_ctoc_correct('int** (*a)(void*, int);')
         self._assert_ctoc_correct('int (*b)(char * restrict k, float);')
+        self._assert_ctoc_correct('int test(const char* const* arg);')
+        self._assert_ctoc_correct('int test(const char** const arg);')
+
+        #s = 'int test(const char* const* arg);'
+        #parse_to_ast(s).show()
 
     def test_casts(self):
         self._assert_ctoc_correct(r'''

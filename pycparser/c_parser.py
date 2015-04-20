@@ -211,13 +211,11 @@ class CParser(PLYParser):
     # The basic declaration here is 'int c', and the pointer and
     # the array are the modifiers.
     #
-    # Basic declarations are represented by TypeDecl (from module
-    # c_ast) and the modifiers are FuncDecl, PtrDecl and
-    # ArrayDecl.
+    # Basic declarations are represented by TypeDecl (from module c_ast) and the
+    # modifiers are FuncDecl, PtrDecl and ArrayDecl.
     #
-    # The standard states that whenever a new modifier is parsed,
-    # it should be added to the end of the list of modifiers. For
-    # example:
+    # The standard states that whenever a new modifier is parsed, it should be
+    # added to the end of the list of modifiers. For example:
     #
     # K&R2 A.8.6.2: Array Declarators
     #
@@ -236,7 +234,6 @@ class CParser(PLYParser):
     # useful for pointers, that can come as a chain from the rule
     # p_pointer. In this case, the whole modifier list is spliced
     # into the new location.
-    #
     def _type_modify_decl(self, decl, modifier):
         """ Tacks a type modifier on a declarator, and returns
             the modified declarator.
@@ -1061,11 +1058,30 @@ class CParser(PLYParser):
                     | TIMES type_qualifier_list_opt pointer
         """
         coord = self._coord(p.lineno(1))
-
-        p[0] = c_ast.PtrDecl(
-            quals=p[2] or [],
-            type=p[3] if len(p) > 3 else None,
-            coord=coord)
+        # Pointer decls nest from inside out. This is important when different
+        # levels have different qualifiers. For example:
+        #
+        #  char * const * p;
+        #
+        # Means "pointer to const pointer to char"
+        #
+        # While: 
+        #
+        #  char ** const p;
+        #
+        # Means "const pointer to pointer to char"
+        #
+        # So when we construct PtrDecl nestings, the leftmost pointer goes in
+        # as the most nested type.
+        nested_type = c_ast.PtrDecl(quals=p[2] or [], type=None, coord=coord)
+        if len(p) > 3:
+            tail_type = p[3]
+            while tail_type.type is not None:
+                tail_type = tail_type.type
+            tail_type.type = nested_type
+            p[0] = p[3]
+        else:
+            p[0] = nested_type
 
     def p_type_qualifier_list(self, p):
         """ type_qualifier_list : type_qualifier
