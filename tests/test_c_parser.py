@@ -1060,7 +1060,6 @@ class TestCParser_fundamentals(TestCParser_base):
             ['Constant', 'int', '0b1001010'])
 
         d2 = 'long ar[] = {7, 8, 9};'
-        #~ self.parse(d2).show()
         self.assertEqual(self.get_decl(d2),
             ['Decl', 'ar',
                 ['ArrayDecl', '', [],

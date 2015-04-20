@@ -53,4 +53,3 @@ class PLYParser(object):
 
     def _parse_error(self, msg, coord):
         raise ParseError("%s: %s" % (coord, msg))
-
