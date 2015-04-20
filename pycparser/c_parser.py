@@ -984,13 +984,14 @@ class CParser(PLYParser):
 
     def p_direct_declarator_3(self, p):
         """ direct_declarator   : direct_declarator LBRACKET type_qualifier_list_opt assignment_expression_opt RBRACKET
-       """
+        """
+        quals = (p[3] if len(p) > 5 else []) or []
         # Accept dimension qualifiers
         # Per C99 6.7.5.3 p7
         arr = c_ast.ArrayDecl(
             type=None,
-            dim=p[4],
-            dim_quals=p[3] if p[3] != None else [],
+            dim=p[4] if len(p) > 5 else p[3],
+            dim_quals=quals,
             coord=p[1].coord)
 
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
