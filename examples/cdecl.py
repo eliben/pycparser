@@ -16,7 +16,7 @@
 # =>
 # ar is a pointer to array[10] of pointer to const Node
 #
-# Copyright (C) 2008-2013, Eli Bendersky
+# Copyright (C) 2008-2015, Eli Bendersky
 # License: BSD
 #-----------------------------------------------------------------
 import sys
@@ -56,7 +56,6 @@ def _explain_decl_node(decl_node):
     """ Receives a c_ast.Decl note and returns its explanation in
         English.
     """
-    #~ print decl_node.show()
     storage = ' '.join(decl_node.storage) + ' ' if decl_node.storage else ''
 
     return (decl_node.name +
@@ -105,4 +104,3 @@ if __name__ == "__main__":
 
     print("Explaining the declaration: " + c_decl + "\n")
     print(explain_c_declaration(c_decl) + "\n")
-

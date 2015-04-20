@@ -397,5 +397,3 @@ class CGenerator(object):
         """
         return isinstance(n,(   c_ast.Constant, c_ast.ID, c_ast.ArrayRef,
                                 c_ast.StructRef, c_ast.FuncCall))
-
-
