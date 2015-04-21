@@ -49,7 +49,10 @@ def expand_decl(decl):
             dimval = decl.dim.value if decl.dim else ''
             return ['ArrayDecl', dimval, decl.dim_quals, nested]
         elif typ == PtrDecl:
-            return ['PtrDecl', nested]
+            if decl.quals:
+                return ['PtrDecl', decl.quals, nested]
+            else:
+                return ['PtrDecl', nested]
         elif typ == Typedef:
             return ['Typedef', decl.name, nested]
         elif typ == FuncDecl:
@@ -301,6 +304,16 @@ class TestCParser_fundamentals(TestCParser_base):
                     ['ArrayDecl', '2', [],
                         ['PtrDecl', ['TypeDecl', ['IdentifierType', ['int']]]]]]])
 
+        self.assertEqual(self.get_decl('char* const* p;'),
+            ['Decl', 'p',
+                ['PtrDecl', ['PtrDecl', ['const'],
+                    ['TypeDecl', ['IdentifierType', ['char']]]]]])
+
+        self.assertEqual(self.get_decl('char* * const p;'),
+            ['Decl', 'p',
+                ['PtrDecl', ['const'], ['PtrDecl',
+                    ['TypeDecl', ['IdentifierType', ['char']]]]]])
+
         self.assertEqual(self.get_decl('char ***ar3D[40];'),
             ['Decl', 'ar3D',
                 ['ArrayDecl', '40', [],
@@ -336,7 +349,6 @@ class TestCParser_fundamentals(TestCParser_base):
 
         # explore named and unnamed function pointer parameters,
         # with and without qualifiers
-        #
 
         # unnamed w/o quals
         self.assertEqual(self.get_decl('int (*k)(int);'),
