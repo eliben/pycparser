@@ -5,7 +5,7 @@
 # of 'cpp'. The same can be achieved with Clang instead of gcc. If you have
 # Clang installed, simply replace 'gcc' with 'clang' here.
 #
-# Copyright (C) 2008-2014, Eli Bendersky
+# Copyright (C) 2008-2015, Eli Bendersky
 # License: BSD
 #-------------------------------------------------------------------------------
 import sys
@@ -22,10 +22,10 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         filename  = sys.argv[1]
     else:
-        filename = 'c_files/year.c'
+        filename = 'examples/c_files/year.c'
 
     ast = parse_file(filename, use_cpp=True,
             cpp_path='gcc',
-            cpp_args=['-E', r'-I../utils/fake_libc_include'])
+            cpp_args=['-E', r'-Iutils/fake_libc_include'])
 
     ast.show()
