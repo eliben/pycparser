@@ -2,12 +2,16 @@ import pprint
 import re
 import sys
 import unittest
+import weakref
 
 sys.path.insert(0, '..')
 import pycparser.c_ast as c_ast
 
 
 class Test_c_ast(unittest.TestCase):
+    def test_Node_weakref(self):
+        weakref.ref(c_ast.Constant(type='int', value='6'))
+
     def test_BinaryOp(self):
         b1 = c_ast.BinaryOp(
             op='+',

@@ -20,7 +20,7 @@ import sys
 
 
 class Node(object):
-    __slots__ = ()
+    __slots__ = ('__weakref__',)
     """ Abstract base class for AST nodes.
     """
     def children(self):
@@ -794,4 +794,3 @@ class While(Node):
         return tuple(nodelist)
 
     attr_names = ()
-
