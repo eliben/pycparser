@@ -11,7 +11,6 @@
 #-----------------------------------------------------------------
 
 # Generate c_ast.py
-#
 from _ast_gen import ASTCodeGenerator
 ast_gen = ASTCodeGenerator('_c_ast.cfg')
 ast_gen.generate(open('c_ast.py', 'w'))
