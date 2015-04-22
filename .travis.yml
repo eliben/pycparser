@@ -5,5 +5,7 @@ python:
   - "3.2"
   - "3.3"
   - "3.4"
-script: python tests/all_tests.py
 
+script:
+  - python tests/all_tests.py
+  - ./tests/functional.sh
