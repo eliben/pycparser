@@ -1,5 +1,5 @@
 ===============
-pycparser v2.11
+pycparser v2.12
 ===============
 
 :Author: `Eli Bendersky <http://eli.thegreenplace.net>`_
