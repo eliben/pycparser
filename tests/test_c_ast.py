@@ -2,6 +2,7 @@ import pprint
 import re
 import sys
 import unittest
+import weakref
 
 sys.path.insert(0, '..')
 import pycparser.c_ast as c_ast
@@ -20,6 +21,13 @@ class Test_c_ast(unittest.TestCase):
 
         self.failUnless(isinstance(b1.right, c_ast.ID))
         self.assertEqual(b1.right.name, 'joe')
+
+    def test_weakref_works(self):
+        c1 = c_ast.Constant(type='float', value='3.14')
+        wr = weakref.ref(c1)
+        cref = wr()
+        self.assertEqual(cref.type, 'float')
+        self.assertEqual(weakref.getweakrefcount(c1), 1)
 
 
 class TestNodeVisitor(unittest.TestCase):

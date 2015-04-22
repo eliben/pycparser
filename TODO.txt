@@ -11,8 +11,7 @@ Version Update
 --------------
 
 setup.py, __init__.py, README, CHANGES
-- Make sure _build_tables was run in pycparser/ and the tables are in the
-  MANIFEST
+- Make sure _build_tables was run in pycparser/
 - Tag in git. When pushing to GitHub, git push --tags
 - If PLY version changes, note it in README and ply/LICENSE
 - Run tox tests
