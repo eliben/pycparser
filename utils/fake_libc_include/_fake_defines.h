@@ -16,6 +16,12 @@
 #define	SEEK_END	2	/* set file offset to EOF plus offset */
 #endif
 
+#define __LITTLE_ENDIAN 1234
+#define LITTLE_ENDIAN __LITTLE_ENDIAN
+#define __BIG_ENDIAN 4321
+#define BIG_ENDIAN __BIG_ENDIAN
+#define __BYTE_ORDER __LITTLE_ENDIAN
+#define BYTE_ORDER __BYTE_ORDER
 
 #define EXIT_FAILURE 1
 #define EXIT_SUCCESS 0
