@@ -84,6 +84,9 @@ class TestCLexerNoErrors(unittest.TestCase):
         # - is MINUS, the rest a constnant
         self.assertTokensTypes('-1', ['MINUS', 'INT_CONST_DEC'])
 
+    def test_special_names(self):
+        self.assertTokensTypes('sizeof offsetof', ['SIZEOF', 'OFFSETOF'])
+
     def test_floating_constants(self):
         self.assertTokensTypes('1.5f', ['FLOAT_CONST'])
         self.assertTokensTypes('01.5', ['FLOAT_CONST'])

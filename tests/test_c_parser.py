@@ -475,6 +475,21 @@ class TestCParser_fundamentals(TestCParser_base):
                         ['TypeDecl',
                             ['IdentifierType', ['int']]]]]])
 
+    def test_offsetof(self):
+        e = """
+            void foo() {
+                int a = offsetof(struct S, p);
+                a.b = offsetof(struct sockaddr, sp) + strlen(bar);
+            }
+            """
+        compound = self.parse(e).ext[0].body
+        s1 = compound.block_items[0].init
+        self.assertIsInstance(s1, FuncCall)
+        self.assertIsInstance(s1.name, ID)
+        self.assertEqual(s1.name.name, 'offsetof')
+        self.assertIsInstance(s1.args.exprs[0], Typename)
+        self.assertIsInstance(s1.args.exprs[1], ID)
+
     # The C99 compound literal feature
     #
     def test_compound_literals(self):
