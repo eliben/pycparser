@@ -1,3 +1,8 @@
++ Version 2.13 (??)
+
+  - Adding support for offsetof()
+  - Adding faked va_* macros (these are expected to come from stdarg.h)
+
 + Version 2.12 (21.04.2015)
 
   - This is a fix release for 2.11; the memory optimization with __slots__ on
