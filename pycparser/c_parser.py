@@ -1168,8 +1168,12 @@ class CParser(PLYParser):
     def p_initializer_2(self, p):
         """ initializer : brace_open initializer_list brace_close
                         | brace_open initializer_list COMMA brace_close
+                        | brace_open brace_close
         """
-        p[0] = p[2]
+        if len(p) == 2:
+            p[0] = c_ast.TypeDecl(None, None, None)
+        else:
+            p[0] = p[2]
 
     def p_initializer_list(self, p):
         """ initializer_list    : designation_opt initializer

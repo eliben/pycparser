@@ -1096,6 +1096,14 @@ class TestCParser_fundamentals(TestCParser_base):
                 ['Constant', 'int', '8'],
                 ['Constant', 'int', '9']])
 
+        d2_1 = 'float ar_empty[3] = {};'
+        self.assertEqual(self.get_decl(d2_1),
+            ['Decl', 'ar_empty',
+                ['ArrayDecl', '3', [],
+                    ['TypeDecl', ['IdentifierType', ['float']]]]])
+        self.assertEqual(self.get_decl_init(d2_1),
+            None )
+
         d3 = 'char p = j;'
         self.assertEqual(self.get_decl(d3),
             ['Decl', 'p', ['TypeDecl', ['IdentifierType', ['char']]]])
