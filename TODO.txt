@@ -1,12 +1,6 @@
 Todo
 ----
 
-
-Changes since last
-------------------
-
-* <write directly in CHANGES!>
-
 Version Update
 --------------
 
@@ -33,5 +27,3 @@ lex optimization:
 - If optimize=True:
   - If lextab.py/pyc exists in the path, it will be loaded unconditionally
   - If lextab.py/pyc doesn't exist, it will be created and loaded
-
-
