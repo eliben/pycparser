@@ -484,11 +484,11 @@ class TestCParser_fundamentals(TestCParser_base):
             """
         compound = self.parse(e).ext[0].body
         s1 = compound.block_items[0].init
-        self.assertIsInstance(s1, FuncCall)
-        self.assertIsInstance(s1.name, ID)
+        self.assertTrue(isinstance(s1, FuncCall))
+        self.assertTrue(isinstance(s1.name, ID))
         self.assertEqual(s1.name.name, 'offsetof')
-        self.assertIsInstance(s1.args.exprs[0], Typename)
-        self.assertIsInstance(s1.args.exprs[1], ID)
+        self.assertTrue(isinstance(s1.args.exprs[0], Typename))
+        self.assertTrue(isinstance(s1.args.exprs[1], ID))
 
     # The C99 compound literal feature
     #
