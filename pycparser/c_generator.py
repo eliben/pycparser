@@ -3,7 +3,7 @@
 #
 # C code generator from pycparser AST nodes.
 #
-# Copyright (C) 2008-2012, Eli Bendersky
+# Copyright (C) 2008-2015, Eli Bendersky
 # License: BSD
 #------------------------------------------------------------------------------
 from . import c_ast

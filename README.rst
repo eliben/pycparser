@@ -36,10 +36,12 @@ Anything that needs C code to be parsed. The following are some uses for
 One of the most popular uses of **pycparser** is in the `cffi
 <https://cffi.readthedocs.org/en/latest/>`_ library, which uses it to parse the
 declarations of C functions and types in order to auto-generate FFIs.
+
 **pycparser** is unique in the sense that it's written in pure Python - a very
 high level language that's easy to experiment with and tweak. To people familiar
-with Lex and Yacc, **pycparser**'s code will be simple to understand.
-
+with Lex and Yacc, **pycparser**'s code will be simple to understand. It also
+has no external dependencies (except for a Python interpreter), making it very
+simple to install and deploy.
 
 Which version of C does pycparser support?
 ------------------------------------------
@@ -48,8 +50,9 @@ Which version of C does pycparser support?
 ISO/IEC 9899). Some features from C11 are also supported, and patches to support
 more are welcome.
 
-**pycparser** doesn't support any GCC extensions. See the `FAQ
-<https://github.com/eliben/pycparser/wiki/FAQ>`_ for more details.
+**pycparser** supports very few GCC extensions, but it's fairly easy to set
+things up so that it parses code with a lot of GCC-isms successfully. See the
+`FAQ <https://github.com/eliben/pycparser/wiki/FAQ>`_ for more details.
 
 What grammar does pycparser follow?
 -----------------------------------
@@ -126,14 +129,14 @@ it will interact with ``cpp`` for you, as long as it's in your PATH, or you
 provide a path to it.
 
 On the vast majority of Linux systems, ``cpp`` is installed and is in the PATH.
-If you're on Windows and don't have ``cpp`` somewhere, you can use the one
+If you're on Windows and don't have ``cpp`` anywhere, you can use the one
 provided in the ``utils`` directory in **pycparser**'s distribution. This
 ``cpp`` executable was compiled from the `LCC distribution
 <http://www.cs.princeton.edu/software/lcc/>`_, and is provided under LCC's
 license terms.
 
 Note also that you can use ``gcc -E`` or ``clang -E`` instead of ``cpp``. See
-the ``using_gcc_E_libc.py`` example for more details. Windows folks can download
+the ``using_gcc_E_libc.py`` example for more details. Windows users can download
 and install a binary build of Clang for Windows `from this website
 <http://llvm.org/releases/download.html>`_.
 
@@ -223,7 +226,9 @@ Contributors
 
 Some people have contributed to **pycparser** by opening issues on bugs they've
 found and/or submitting patches. The list of contributors is in the CONTRIBUTORS
-file in the source distribution.
+file in the source distribution. Once **pycparser** moved to Github, I stopped
+updating this list because Github does a much better job at tracking
+contributions.
 
 CI Status
 =========

@@ -3,7 +3,7 @@
 #
 # CParser class: Parser and AST builder for the C language
 #
-# Copyright (C) 2008-2013, Eli Bendersky
+# Copyright (C) 2008-2015, Eli Bendersky
 # License: BSD
 #------------------------------------------------------------------------------
 import re

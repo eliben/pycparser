@@ -4,7 +4,7 @@
 # Example of using pycparser.c_generator, serving as a simplistic translator
 # from C to AST and back to C.
 #
-# Copyright (C) 2008-2013, Eli Bendersky
+# Copyright (C) 2008-2015, Eli Bendersky
 # License: BSD
 #------------------------------------------------------------------------------
 from __future__ import print_function

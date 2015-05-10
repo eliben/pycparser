@@ -4,7 +4,7 @@
 # PLYParser class and other utilites for simplifying programming
 # parsers with PLY
 #
-# Copyright (C) 2008-2012, Eli Bendersky
+# Copyright (C) 2008-2015, Eli Bendersky
 # License: BSD
 #-----------------------------------------------------------------
 
