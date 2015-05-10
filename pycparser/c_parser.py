@@ -85,6 +85,7 @@ class CParser(PLYParser):
             'expression',
             'identifier_list',
             'init_declarator_list',
+            'initializer_list',
             'parameter_type_list',
             'specifier_qualifier_list',
             'block_item_list',
@@ -1166,10 +1167,13 @@ class CParser(PLYParser):
         p[0] = p[1]
 
     def p_initializer_2(self, p):
-        """ initializer : brace_open initializer_list brace_close
+        """ initializer : brace_open initializer_list_opt brace_close
                         | brace_open initializer_list COMMA brace_close
         """
-        p[0] = p[2]
+        if p[2] is None:
+            p[0] = c_ast.InitList([], self._coord(p.lineno(1)))
+        else:
+            p[0] = p[2]
 
     def p_initializer_list(self, p):
         """ initializer_list    : designation_opt initializer

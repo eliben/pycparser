@@ -1096,6 +1096,9 @@ class TestCParser_fundamentals(TestCParser_base):
                 ['Constant', 'int', '8'],
                 ['Constant', 'int', '9']])
 
+        d21 = 'long ar[4] = {};'
+        self.assertEqual(self.get_decl_init(d21), [])
+
         d3 = 'char p = j;'
         self.assertEqual(self.get_decl(d3),
             ['Decl', 'p', ['TypeDecl', ['IdentifierType', ['char']]]])

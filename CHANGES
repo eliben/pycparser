@@ -1,7 +1,11 @@
 + Version 2.13 (??)
 
-  - Adding support for offsetof()
-  - Adding faked va_* macros (these are expected to come from stdarg.h)
+  - Added support for offsetof() the way gcc implements it (special builtin
+    that takes a type as an argument).
+  - Added faked va_* macros (these are expected to come from stdarg.h)
+  - Added a bunch more fake headers and typedefs to support parsing C projects
+    like Git and SQLite without modifications to pycparser.
+  - Added support for empty initializer lists (#79).
 
 + Version 2.12 (21.04.2015)
 
