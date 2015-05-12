@@ -40,7 +40,7 @@ setup(
         C compilers or analysis tools.
     """,
     license='BSD',
-    version='2.12',
+    version='2.13',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',
@@ -53,5 +53,3 @@ setup(
     package_data={'pycparser': ['*.cfg']},
     cmdclass={'install': install, 'sdist': sdist},
 )
-
-
