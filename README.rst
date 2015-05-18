@@ -128,13 +128,6 @@ you import the top-level ``parse_file`` function from the **pycparser** package,
 it will interact with ``cpp`` for you, as long as it's in your PATH, or you
 provide a path to it.
 
-On the vast majority of Linux systems, ``cpp`` is installed and is in the PATH.
-If you're on Windows and don't have ``cpp`` anywhere, you can use the one
-provided in the ``utils`` directory in **pycparser**'s distribution. This
-``cpp`` executable was compiled from the `LCC distribution
-<http://www.cs.princeton.edu/software/lcc/>`_, and is provided under LCC's
-license terms.
-
 Note also that you can use ``gcc -E`` or ``clang -E`` instead of ``cpp``. See
 the ``using_gcc_E_libc.py`` example for more details. Windows users can download
 and install a binary build of Clang for Windows `from this website
@@ -156,7 +149,9 @@ the semantics of types. It only needs to know whether some token encountered in
 the source is a previously defined type. This is essential in order to be able
 to parse C correctly.
 
-See the ``using_cpp_libc.py`` example for more details.
+See `this blog post
+<http://eli.thegreenplace.net/2015/on-parsing-c-type-declarations-and-fake-headers>`_
+for more details.
 
 Basic usage
 -----------
