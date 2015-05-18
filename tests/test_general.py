@@ -4,8 +4,7 @@ import unittest
 sys.path.insert(0, '..')
 from pycparser import parse_file, c_ast
 
-# Portable cpp path for Windows and Linux/Unix
-CPPPATH = 'utils/cpp.exe' if sys.platform == 'win32' else 'cpp'
+CPPPATH = 'cpp'
 
 
 # Test successful parsing

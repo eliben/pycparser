@@ -1,7 +1,6 @@
 recursive-include examples *.c *.h *.py
 recursive-include tests *.c *.h *.py
 recursive-include pycparser *.py *.cfg
-include utils/*.exe
 include utils/fake_libc_include/*.h
 include README.*
 include LICENSE

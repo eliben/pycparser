@@ -15,9 +15,6 @@ import sys
 #
 sys.path.extend(['.', '..'])
 
-# Portable cpp path for Windows and Linux/Unix
-CPPPATH = 'utils/cpp.exe' if sys.platform == 'win32' else 'cpp'
-
 from pycparser import parse_file
 
 
@@ -28,7 +25,7 @@ if __name__ == "__main__":
         filename = 'examples/c_files/year.c'
 
     ast = parse_file(filename, use_cpp=True,
-            cpp_path=CPPPATH, 
+            cpp_path='cpp', 
             cpp_args=r'-Iutils/fake_libc_include')
     
     ast.show()

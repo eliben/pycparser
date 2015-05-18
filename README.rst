@@ -207,9 +207,6 @@ pycparser/:
 tests/:
   Unit tests.
 
-utils/cpp.exe:
-  A Windows executable of the C pre-processor suitable for working with pycparser
-
 utils/fake_libc_include:
   Minimal standard C library include files that should allow to parse any C code.
 
