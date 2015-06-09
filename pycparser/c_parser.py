@@ -23,7 +23,8 @@ class CParser(PLYParser):
             lextab='pycparser.lextab',
             yacc_optimize=True,
             yacctab='pycparser.yacctab',
-            yacc_debug=False):
+            yacc_debug=False,
+            taboutputdir=''):
         """ Create a new CParser.
 
             Some arguments for controlling the debug/optimization
@@ -64,6 +65,10 @@ class CParser(PLYParser):
             yacc_debug:
                 Generate a parser.out file that explains how yacc
                 built the parsing table from the grammar.
+
+            taboutputdir:
+                Set this parameter to control the location of generated
+                lextab and yacctab files.
         """
         self.clex = CLexer(
             error_func=self._lex_error_func,
@@ -73,7 +78,8 @@ class CParser(PLYParser):
 
         self.clex.build(
             optimize=lex_optimize,
-            lextab=lextab)
+            lextab=lextab,
+            outputdir=taboutputdir)
         self.tokens = self.clex.tokens
 
         rules_with_opt = [
@@ -101,7 +107,8 @@ class CParser(PLYParser):
             start='translation_unit_or_empty',
             debug=yacc_debug,
             optimize=yacc_optimize,
-            tabmodule=yacctab)
+            tabmodule=yacctab,
+            outputdir=taboutputdir)
 
         # Stack of scopes for keeping track of symbols. _scope_stack[-1] is
         # the current (topmost) scope. Each scope is a dictionary that
