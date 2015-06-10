@@ -1,7 +1,6 @@
-+ Version 2.14 (??)
++ Version 2.14 (06.09.2015)
 
-  TODO for this version: before releasing, remove cpp.exe and its license (and
-mentions) from pycparser.
+  - Removed cpp.exe and its license.
 
 + Version 2.13 (12.05.2015)
 

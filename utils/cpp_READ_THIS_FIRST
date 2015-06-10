@@ -1,3 +1,3 @@
-This cpp.exe is deprecated, and will be removed in the next release of
-pycparser. Instead, grab a binary download of Clang for Windows from
-http://llvm.org/releases/ and use 'clang -E' to do the preprocessing.
+The executable cpp.exe has been removed. Instead, grab a binary download
+of Clang for Windows from http://llvm.org/releases/ and use 'clang -E'
+to do the preprocessing.
