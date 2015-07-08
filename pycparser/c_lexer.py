@@ -80,8 +80,11 @@ class CLexer(object):
     def find_tok_column(self, token):
         """ Find the column of the token in its line.
         """
-        last_cr = self.lexer.lexdata.rfind('\n', 0, token.lexpos)
-        return token.lexpos - last_cr
+        if (hasattr(token, "lexpos")):
+            last_cr = self.lexer.lexdata.rfind('\n', 0, token.lexpos)
+            return token.lexpos - last_cr
+        else:
+            return 0
 
     ######################--   PRIVATE   --######################
 
