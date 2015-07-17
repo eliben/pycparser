@@ -31,10 +31,14 @@ class Test_c_ast(unittest.TestCase):
         self.assertEqual(weakref.getweakrefcount(c1), 1)
 
     def test_weakref_works_on_coord(self):
-        coord = plyparser.Coord(file='a', line=2)
+        coord = plyparser.Coord(file='a', line=2, column=10,
+            end_line=3, end_column=11)
         wr = weakref.ref(coord)
         cref = wr()
         self.assertEqual(cref.line, 2)
+        self.assertEqual(cref.column, 10)
+        self.assertEqual(cref.end_line, 3)
+        self.assertEqual(cref.end_column, 11)
         self.assertEqual(weakref.getweakrefcount(coord), 1)
 
 
