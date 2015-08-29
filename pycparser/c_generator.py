@@ -276,6 +276,9 @@ class CGenerator(object):
 
     def visit_FuncDecl(self, n):
         return self._generate_type(n)
+        
+    def visit_Atomic(self, n):
+        return '_Atomic(%s)' % self._generate_type(n.type)
 
     def _generate_struct_union(self, n, name):
         """ Generates code for structs and unions. name should be either

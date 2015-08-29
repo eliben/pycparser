@@ -84,6 +84,8 @@ def _explain_type(decl):
         if decl.dim: arr += '[%s]' % decl.dim.value
 
         return arr + " of " + _explain_type(decl.type)
+    elif typ == c_ast.Atomic:
+        return '_Atomic ' + _explain_type(decl.type)
 
     elif typ == c_ast.FuncDecl:
         if decl.args:
@@ -100,7 +102,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         c_decl  = sys.argv[1]
     else:
-        c_decl = "char *(*(**foo[][8])())[];"
+        c_decl = "char *(*(**foo[][8])(_Atomic(int*)))[];"
 
     print("Explaining the declaration: " + c_decl + "\n")
     print(explain_c_declaration(c_decl) + "\n")

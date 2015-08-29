@@ -158,6 +158,18 @@ class ArrayRef(Node):
 
     attr_names = ()
 
+class Atomic(Node):
+    __slots__ = ('type', 'coord', '__weakref__')
+    def __init__(self, type, coord=None):
+        self.type = type
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        return tuple(nodelist)
+
+    attr_names = ('type', )
+
 class Assignment(Node):
     __slots__ = ('op', 'lvalue', 'rvalue', 'coord', '__weakref__')
     def __init__(self, op, lvalue, rvalue, coord=None):

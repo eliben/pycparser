@@ -32,6 +32,8 @@ def expand_decl(decl):
     elif typ in [Struct, Union]:
         decls = [expand_decl(d) for d in decl.decls or []]
         return [typ.__name__, decl.name, decls]
+    elif typ == Atomic:
+        return ['Atomic', expand_decl(decl.type)]
     else:
         nested = expand_decl(decl.type)
 
@@ -392,6 +394,138 @@ class TestCParser_fundamentals(TestCParser_base):
                             ['PtrDecl',
                                 ['TypeDecl', ['IdentifierType', ['int']]]]]],
                         ['TypeDecl', ['IdentifierType', ['int']]]]]])
+                        
+    def test_atomic(self):
+        # atomic qualifier
+        self.assertEqual(self.get_decl('_Atomic int a;'),
+            ['Decl', ['_Atomic'], 'a',
+                ['TypeDecl', ['IdentifierType', ['int']]]]
+        )
+        self.assertEqual(self.get_decl('_Atomic const int a;'),
+            ['Decl', ['_Atomic', 'const'], 'a',
+                ['TypeDecl', ['IdentifierType', ['int']]]]
+        )
+        self.assertEqual(self.get_decl('_Atomic int *a;'),
+            ['Decl', ['_Atomic'], 'a',
+                ['PtrDecl', ['TypeDecl', ['IdentifierType', ['int']]]]]
+        )
+        # valid atomic specifiers
+        self.assertEqual(self.get_decl('_Atomic(int) a;'),
+            ['Decl', 'a',
+                ['TypeDecl', ['Atomic',
+                    ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]]]])
+                    
+        self.assertEqual(self.get_decl('const _Atomic(int) a;'),
+            ['Decl', ['const'], 'a',
+                ['TypeDecl', ['Atomic',
+                    ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]]]])
+        self.assertEqual(self.get_decl('_Atomic(int*) a;'),
+            ['Decl', 'a',
+                ['TypeDecl', ['Atomic',
+                    ['Typename', ['PtrDecl',
+                        ['TypeDecl', ['IdentifierType', ['int']]]]]]]]
+        )
+        self.assertEqual(self.get_decl('_Atomic(const int*) a;'),
+            ['Decl', 'a',
+                ['TypeDecl', ['Atomic',
+                    ['Typename', ['const'], ['PtrDecl',
+                        ['TypeDecl', ['IdentifierType', ['int']]]]]]]]
+        )
+        self.assertEqual(expand_decl(self.parse("""
+            typedef int T;
+            _Atomic(T) a;
+            """).ext[1]),
+            ['Decl', 'a',
+                ['TypeDecl', ['Atomic',
+                    ['Typename',
+                        ['TypeDecl', ['IdentifierType', ['T']]]]]]]
+        )
+        self.assertEqual(expand_decl(self.parse("""
+            typedef int *T;
+            _Atomic(T) a;
+            """).ext[1]),
+            ['Decl', 'a',
+                ['TypeDecl', ['Atomic',
+                    ['Typename',
+                        ['TypeDecl', ['IdentifierType', ['T']]]]]]]
+        )
+        self.assertEqual(expand_decl(self.parse("""
+            typedef int *T;
+            typedef T TT;
+            _Atomic(TT) a;
+        """).ext[2]),
+            ['Decl', 'a',
+                ['TypeDecl', ['Atomic',
+                    ['Typename',
+                        ['TypeDecl', ['IdentifierType', ['TT']]]]]]])
+        self.assertEqual(expand_decl(self.parse("""
+            typedef struct
+            {
+                _Atomic(int) x;
+                _Atomic int y;
+            } T;
+            _Atomic(T) a;
+        """).ext[1]),
+            ['Decl', 'a',
+                ['TypeDecl', ['Atomic',
+                    ['Typename',
+                        ['TypeDecl', ['IdentifierType', ['T']]]]]]])
+        self.assertEqual(expand_decl(self.parse("""
+            _Atomic(struct{
+                _Atomic(int) x;
+                _Atomic int y;
+            }) a;
+        """).ext[0]),
+            ['Decl', 'a',
+                ['TypeDecl', ['Atomic',
+                    ['Typename',
+                        ['TypeDecl', ['Struct', None, [
+                            ['Decl', 'x',
+                                ['TypeDecl', ['Atomic',
+                                    ['Typename',
+                                        ['TypeDecl', ['IdentifierType', ['int']]]]]]],
+                            ['Decl', ['_Atomic'], 'y',
+                                ['TypeDecl', ['IdentifierType', ['int']]]]
+                            ]]]]]]])
+        # invalid atomic specifiers
+        self.assertRaises(ParseError, self.parse, """
+            _Atomic(const int) a;
+        """)
+        self.assertRaises(ParseError, self.parse, """
+            typedef const int T;
+            _Atomic(T) a;
+        """)
+        self.assertRaises(ParseError, self.parse, """
+            typedef const int T;
+            typedef T TT;
+            _Atomic(TT) a;
+        """)
+        self.assertRaises(ParseError, self.parse, """
+            typedef int *T;
+            _Atomic(const T) a;
+        """)
+        self.assertRaises(ParseError, self.parse, """
+            typedef int *T;
+            typedef const T TT;
+            _Atomic(TT) a;
+        """)
+        self.assertRaises(ParseError, self.parse, """
+            _Atomic(_Atomic(int)) a;
+        """)
+        self.assertRaises(ParseError, self.parse, """
+            typedef _Atomic(int) T;
+            _Atomic(T) a;
+        """)
+        self.assertRaises(ParseError, self.parse, """
+            _Atomic(void(void*)) a;
+        """)
+        self.assertRaises(ParseError, self.parse, """
+            _Atomic(int[12]) a;
+        """)
+        self.assertRaises(ParseError, self.parse, """
+            typedef int T[12];
+            _Atomic(T) a;
+        """)
 
     def test_func_decls_with_array_dim_qualifiers(self):
         self.assertEqual(self.get_decl('int zz(int p[static 10]);'),
