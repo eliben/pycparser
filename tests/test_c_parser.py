@@ -125,17 +125,19 @@ class TestCParser_fundamentals(TestCParser_base):
             ['Decl', 'foo',
                 ['TypeDecl', ['IdentifierType', ['int']]]])
 
-    def assert_coord(self, node, line, file=None):
+    def assert_coord(self, node, line, column, file=None):
         self.assertEqual(node.coord.line, line)
+        if column:
+            self.assertEqual(node.coord.column, column)
         if file:
             self.assertEqual(node.coord.file, file)
 
     def test_coords(self):
         """ Tests the "coordinates" of parsed elements - file
-            name and line numbers, with modification insterted by
-            #line directives.
+            name, line and column numbers, with modification 
+            insterted by #line directives.
         """
-        self.assert_coord(self.parse('int a;').ext[0], 1)
+        self.assert_coord(self.parse('int a;').ext[0], 1, 5)
 
         t1 = """
         int a;
@@ -143,9 +145,9 @@ class TestCParser_fundamentals(TestCParser_base):
         int c;
         """
         f1 = self.parse(t1, filename='test.c')
-        self.assert_coord(f1.ext[0], 2, 'test.c')
-        self.assert_coord(f1.ext[1], 3, 'test.c')
-        self.assert_coord(f1.ext[2], 6, 'test.c')
+        self.assert_coord(f1.ext[0], 2, 13, 'test.c')
+        self.assert_coord(f1.ext[1], 3, 13, 'test.c')
+        self.assert_coord(f1.ext[2], 6, 13, 'test.c')
 
         t1_1 = '''
         int main() {
@@ -154,8 +156,8 @@ class TestCParser_fundamentals(TestCParser_base):
             return 0;
         }'''
         f1_1 = self.parse(t1_1, filename='test.c')
-        self.assert_coord(f1_1.ext[0].body.block_items[0], 3, 'test.c')
-        self.assert_coord(f1_1.ext[0].body.block_items[1], 4, 'test.c')
+        self.assert_coord(f1_1.ext[0].body.block_items[0], 3, 13, 'test.c')
+        self.assert_coord(f1_1.ext[0].body.block_items[1], 4, 13, 'test.c')
 
         t1_2 = '''
         int main () {
@@ -163,13 +165,13 @@ class TestCParser_fundamentals(TestCParser_base):
         }'''
         f1_2 = self.parse(t1_2, filename='test.c')
         # make sure that the Cast has a coord (issue 23)
-        self.assert_coord(f1_2.ext[0].body.block_items[0].init, 3, 'test.c')
+        self.assert_coord(f1_2.ext[0].body.block_items[0].init, 3, 21, file='test.c')
 
         t2 = """
         #line 99
         int c;
         """
-        self.assert_coord(self.parse(t2).ext[0], 99)
+        self.assert_coord(self.parse(t2).ext[0], 99, 13)
 
         t3 = """
         int dsf;
@@ -178,9 +180,9 @@ class TestCParser_fundamentals(TestCParser_base):
         char d;
         """
         f3 = self.parse(t3, filename='test.c')
-        self.assert_coord(f3.ext[0], 2, 'test.c')
-        self.assert_coord(f3.ext[1], 3, 'test.c')
-        self.assert_coord(f3.ext[2], 3000, 'in.h')
+        self.assert_coord(f3.ext[0], 2, 13, 'test.c')
+        self.assert_coord(f3.ext[1], 3, 14, 'test.c')
+        self.assert_coord(f3.ext[2], 3000, 14, 'in.h')
 
         t4 = """
         #line 20 "restore.h"
@@ -190,20 +192,20 @@ class TestCParser_fundamentals(TestCParser_base):
         long j, k;
 
         #line 50000
-        char* ro;
+        char *ro;
         """
         f4 = self.parse(t4, filename='myb.c')
-        self.assert_coord(f4.ext[0], 20, 'restore.h')
-        self.assert_coord(f4.ext[1], 30, 'includes/daween.ph')
-        self.assert_coord(f4.ext[2], 30, 'includes/daween.ph')
-        self.assert_coord(f4.ext[3], 50000, 'includes/daween.ph')
+        self.assert_coord(f4.ext[0], 20, 13, 'restore.h')
+        self.assert_coord(f4.ext[1], 30, 14, 'includes/daween.ph')
+        self.assert_coord(f4.ext[2], 30, 17, 'includes/daween.ph')
+        self.assert_coord(f4.ext[3], 50000, 14, 'includes/daween.ph')
 
         t5 = """
         int
         #line 99
         c;
         """
-        self.assert_coord(self.parse(t5).ext[0], 99)
+        self.assert_coord(self.parse(t5).ext[0], 99, 9)
 
         # coord for ellipsis
         t6 = """
@@ -211,7 +213,7 @@ class TestCParser_fundamentals(TestCParser_base):
                 ...) {
         }"""
         f6 = self.parse(t6, filename='z.c')
-        self.assert_coord(self.parse(t6).ext[0].decl.type.args.params[1], 3)
+        self.assert_coord(self.parse(t6).ext[0].decl.type.args.params[1], 3, 17)
 
     def test_forloop_coord(self):
         t = '''\
@@ -222,9 +224,9 @@ class TestCParser_fundamentals(TestCParser_base):
         '''
         s = self.parse(t, filename='f.c')
         forloop = s.ext[0].body.block_items[0]
-        self.assert_coord(forloop.init, 2, 'f.c')
-        self.assert_coord(forloop.cond, 2, 'f.c')
-        self.assert_coord(forloop.next, 3, 'f.c')
+        self.assert_coord(forloop.init, 2, 13, 'f.c')
+        self.assert_coord(forloop.cond, 2, 26, 'f.c')
+        self.assert_coord(forloop.next, 3, 17, 'f.c')
 
     def test_simple_decls(self):
         self.assertEqual(self.get_decl('int a;'),
@@ -725,8 +727,8 @@ class TestCParser_fundamentals(TestCParser_base):
         """
 
         s7_ast = self.parse(s7, filename='test.c')
-        self.assert_coord(s7_ast.ext[0].type.decls[2], 6, 'test.c')
-        self.assert_coord(s7_ast.ext[0].type.decls[3], 78,
+        self.assert_coord(s7_ast.ext[0].type.decls[2], 6, 22, 'test.c')
+        self.assert_coord(s7_ast.ext[0].type.decls[3], 78, 22,
             r'D:\eli\cpp_stuff\libc_include/sys/reent.h')
 
         s8 = """

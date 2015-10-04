@@ -254,7 +254,7 @@ class LRParser:
         self.symstack.append(sym)
         self.statestack.append(0)
 
-    def parse(self,input=None,lexer=None,debug=0,tracking=0,tokenfunc=None):
+    def parse(self,input=None,lexer=None,debug=0,tracking=1,tokenfunc=None):
         if debug or yaccdevel:
             if isinstance(debug,int):
                 debug = PlyLogger(sys.stderr)
@@ -728,8 +728,10 @@ class LRParser:
 
                         # --! TRACKING
                         if tracking:
-                           sym.lineno = lexer.lineno
-                           sym.lexpos = lexer.lexpos
+                           sym.lineno = getattr(lexer, "lineno", None)
+                           sym.lexpos = getattr(lexer, "lexpos", None)
+                           sym.endlineno = getattr(lexer,"endlineno",None)
+                           sym.endlexpos = getattr(lexer,"endlexpos",None)
                         # --! TRACKING
 
                         targ = [ sym ]

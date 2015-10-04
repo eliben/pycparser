@@ -77,11 +77,58 @@ class CLexer(object):
         self.last_token = self.lexer.token()
         return self.last_token
 
-    def find_tok_column(self, token):
+    def find_tok_str(self, token):
+        lexpos = getattr(token, "lexpos", None)
+        endlexpos = getattr(token, "endlexpos", None)
+        lineno = getattr(token, "lineno", None)
+        endlineno = getattr(token, "endlineno", None)
+        s = ""
+        if lineno:
+            s += "line: %i" % token.lineno
+        else:
+            s += "no line"
+        s += ", "
+        if endlineno:
+            s += "endline: %s" % str(token.endlineno)
+        else:
+            s += "no endline"
+        last_cr = self.lexer.lexdata.rfind('\n', 0, token.lexpos)
+        if lexpos:
+            s += "lexpos: %i" % token.lexpos
+            col = lexpos - last_cr
+        else:
+            s += "no lexpos"
+            col = None
+        s += ", "
+        last_cr = self.lexer.lexdata.rfind('\n', 0, token.endlexpos)
+        if endlexpos:
+            s += "endlexpos: %i" % token.endlexpos
+            endcol = endlexpos - last_cr
+        else:
+            s += "no endlexpos"
+            endcol = None
+        s += ", col: %s" % str(col)
+        s += ", endcol: %s" % str(endcol)
+
+        return s
+
+    def find_tok_column_span(self, token):
         """ Find the column of the token in its line.
         """
+        lexpos = getattr(token, "lexpos", None)
+        endlexpos = getattr(token, "endlexpos", None)
+        lineno = getattr(token, "lineno", None)
+        endlineno = getattr(token, "endlineno", None)
         last_cr = self.lexer.lexdata.rfind('\n', 0, token.lexpos)
-        return token.lexpos - last_cr
+        col = None
+        if lexpos:
+            col = lexpos - last_cr
+        last_cr = self.lexer.lexdata.rfind('\n', 0, token.endlexpos)
+        endcol = None
+        if endlexpos:
+            endcol = endlexpos - last_cr
+
+        return(col, endcol,)
 
     ######################--   PRIVATE   --######################
 
@@ -94,7 +141,7 @@ class CLexer(object):
         self.lexer.skip(1)
 
     def _make_tok_location(self, token):
-        return (token.lineno, self.find_tok_column(token))
+        return (token.lineno, self.find_tok_column_span(token)[0])
 
     ##
     ## Reserved keywords
