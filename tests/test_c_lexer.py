@@ -331,7 +331,15 @@ class TestCLexerNoErrors(unittest.TestCase):
         t2 = self.clex.token()
         self.assertEqual(t2.type, 'INT_CONST_DEC')
         self.assertEqual(t2.lineno, 11)
-
+        
+    def test_atomic(self):
+        self.assertTokensTypes(
+            r'_Atomic int a',
+            ['ATOMIC_QUALIFIER', 'INT', 'ID'])
+        
+        self.assertTokensTypes(
+            r'_Atomic(int) a',
+            ['ATOMIC_SPECIFIER', 'LPAREN', 'INT', 'RPAREN', 'ID'])
 
 
 # Keeps all the errors the lexer spits in one place, to allow

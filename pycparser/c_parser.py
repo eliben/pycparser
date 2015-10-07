@@ -113,7 +113,7 @@ class CParser(PLYParser):
         # Stack of scopes for keeping track of symbols. _scope_stack[-1] is
         # the current (topmost) scope. Each scope is a dictionary that
         # specifies whether a name is a type. If _scope_stack[n][name] is
-        # True, 'name' is currently a type in the scope. If it's False,
+        # a Typedef, 'name' is currently a type in the scope. If it's None,
         # 'name' is used in the scope but not as a type (for instance, if we
         # saw: int name;
         # If 'name' is not a key in _scope_stack[n] then 'name' was not defined
@@ -154,34 +154,44 @@ class CParser(PLYParser):
         assert len(self._scope_stack) > 1
         self._scope_stack.pop()
 
-    def _add_typedef_name(self, name, coord):
-        """ Add a new typedef name (ie a TYPEID) to the current scope
+    def _add_typedef(self, name, coord, typedef):
+        """ Add a new typedef (ie a TYPEID) to the current scope
         """
         if not self._scope_stack[-1].get(name, True):
             self._parse_error(
                 "Typedef %r previously declared as non-typedef "
                 "in this scope" % name, coord)
-        self._scope_stack[-1][name] = True
+        self._scope_stack[-1][name] = typedef
 
     def _add_identifier(self, name, coord):
         """ Add a new object, function, or enum member name (ie an ID) to the
             current scope
         """
-        if self._scope_stack[-1].get(name, False):
+        if self._scope_stack[-1].get(name, None):
             self._parse_error(
                 "Non-typedef %r previously declared as typedef "
                 "in this scope" % name, coord)
-        self._scope_stack[-1][name] = False
+        self._scope_stack[-1][name] = None
 
     def _is_type_in_scope(self, name):
         """ Is *name* a typedef-name in the current scope?
         """
+        try:
+            return self._get_type_in_scope(name) is not None
+        except KeyError:
+            return False
+        
+    def _get_type_in_scope(self, name):
+        """ Get the Typedef with the name in the current scope.
+        """
         for scope in reversed(self._scope_stack):
             # If name is an identifier in this scope it shadows typedefs in
             # higher scopes.
-            in_scope = scope.get(name)
-            if in_scope is not None: return in_scope
-        return False
+            try:
+                return scope[name]
+            except KeyError:
+                pass
+        raise KeyError(name)
 
     def _lex_error_func(self, msg, line, column):
         self._parse_error(msg, self._coord(line, column))
@@ -440,7 +450,10 @@ class CParser(PLYParser):
             #
             if typedef_namespace:
                 if is_typedef:
-                    self._add_typedef_name(fixed_decl.name, fixed_decl.coord)
+                    self._add_typedef(
+                        fixed_decl.name,
+                        fixed_decl.coord,
+                        fixed_decl)
                 else:
                     self._add_identifier(fixed_decl.name, fixed_decl.coord)
 
@@ -728,6 +741,7 @@ class CParser(PLYParser):
         """ type_specifier  : typedef_name
                             | enum_specifier
                             | struct_or_union_specifier
+                            | atomic_specifier
         """
         p[0] = p[1]
 
@@ -735,6 +749,7 @@ class CParser(PLYParser):
         """ type_qualifier  : CONST
                             | RESTRICT
                             | VOLATILE
+                            | ATOMIC_QUALIFIER
         """
         p[0] = p[1]
 
@@ -780,6 +795,53 @@ class CParser(PLYParser):
         """ specifier_qualifier_list    : type_specifier specifier_qualifier_list_opt
         """
         p[0] = self._add_declaration_specifier(p[2], p[1], 'type')
+        
+    _invalid_atomic_types = [c_ast.Atomic, c_ast.ArrayDecl, c_ast.FuncDecl]
+    def p_atomic_specifier(self, p):
+        """ atomic_specifier    : ATOMIC_SPECIFIER LPAREN type_name RPAREN
+        """
+        type_name = p[3]
+        # Resolve the type if it's a typedecl, it could be typedef identifier
+        # and we need to know what the underlying type is.
+        outer_quals = []
+        inner_quals = type_name.quals
+        typ = type_name.type
+        while typ.__class__ is c_ast.TypeDecl:
+            if typ.type.__class__ is not c_ast.IdentifierType:
+                typ = typ.type
+                break
+            identifier_type = typ.type
+            # Try to resolve the name to a type, if a type with that name
+            # is not in scope then we know it's a builtin type like int or char,
+            # so we can just use that as the type.
+            try:
+                typedef = self._get_type_in_scope(identifier_type.names[0])
+            except KeyError:
+                typedef = None
+            if typedef:
+                assert(typedef.__class__ is c_ast.Typedef)
+                outer_quals += typ.quals + inner_quals
+                inner_quals = typedef.quals
+                typ = typedef.type
+            else:
+                typ = identifier_type   
+        # The different types gather qualifiers in different ways, so gather the
+        # appropriate qualifiers depending on the type we're looking at.
+        quals = []
+        if typ.__class__ is c_ast.PtrDecl:
+            quals = outer_quals + typ.quals
+        elif typ.__class__ in self._invalid_atomic_types:
+            self._parse_error(
+                "'_Atomic' applied to an array, function or atomic type",
+                self._coord(p.lineno(3)))
+        else:
+            quals = outer_quals + inner_quals
+        if quals:
+            self._parse_error(
+                "'_Atomic' applied to a qualified type",
+                self._coord(p.lineno(3)))
+        # The inner type is valid.
+        p[0] = c_ast.Atomic(type=p[3])
 
     # TYPEID is allowed here (and in other struct/enum related tag names), because
     # struct/enum tags reside in their own namespace and can be named the same as types
