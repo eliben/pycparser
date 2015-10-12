@@ -1284,6 +1284,21 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertTrue(isinstance(ps2.ext[0].body.block_items[1].type.dim, Assignment))
         self.assertTrue(isinstance(ps2.ext[0].body.block_items[2].type.dim, ID))
 
+    def test_pragma(self):
+        s1 = r'''
+            #pragma bar
+            void main() {
+                #pragma foo
+                for(;;) {}
+            }
+            '''
+        s1_ast = self.parse(s1)
+        self.assertTrue(isinstance(s1_ast.ext[0], Pragma))
+        self.assertEqual(s1_ast.ext[0].string, 'bar')
+
+        self.assertTrue(isinstance(s1_ast.ext[1].body.block_items[0], Pragma))
+        self.assertEqual(s1_ast.ext[1].body.block_items[0].string, 'foo')
+
 
 class TestCParser_whole_code(TestCParser_base):
     """ Testing of parsing whole chunks of code.
@@ -1817,6 +1832,7 @@ class TestCParser_typenames(TestCParser_base):
             typedef char TT;
             '''
         self.assertRaises(ParseError, self.parse, s2)
+
 
 if __name__ == '__main__':
     #~ suite = unittest.TestLoader().loadTestsFromNames(

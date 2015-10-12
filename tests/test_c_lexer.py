@@ -309,28 +309,52 @@ class TestCLexerNoErrors(unittest.TestCase):
 
 
     def test_preprocessor_pragma(self):
-        str = r'''
+        str = '''
         42
+        #pragma
         #pragma helo me
         #pragma once
         # pragma omp parallel private(th_id)
-        #pragma {pack: 2, smack: 3}
+        #\tpragma {pack: 2, smack: 3}
         #pragma <includeme.h> "nowit.h"
         #pragma "string"
         #pragma somestring="some_other_string"
         #pragma id 124124 and numbers 0235495
         59
         '''
-
-        # Check that pragmas are ignored but the line number advances
+        # Check that pragmas are tokenized, including trailing string
         self.clex.input(str)
         self.clex.reset_lineno()
 
         t1 = self.clex.token()
         self.assertEqual(t1.type, 'INT_CONST_DEC')
+        
         t2 = self.clex.token()
-        self.assertEqual(t2.type, 'INT_CONST_DEC')
-        self.assertEqual(t2.lineno, 11)
+        self.assertEqual(t2.type, 'PPPRAGMA')
+        
+        t3 = self.clex.token()
+        self.assertEqual(t3.type, 'PPPRAGMA')
+        
+        t4 = self.clex.token()
+        self.assertEqual(t4.type, 'PPPRAGMASTR')
+        self.assertEqual(t4.value, 'helo me')
+        
+        for i in range(3):
+            t = self.clex.token()
+            
+        t5 = self.clex.token()
+        self.assertEqual(t5.type, 'PPPRAGMASTR')
+        self.assertEqual(t5.value, 'omp parallel private(th_id)')
+        
+        for i in range(5):
+            ta = self.clex.token()
+            self.assertEqual(ta.type, 'PPPRAGMA')
+            tb = self.clex.token()
+            self.assertEqual(tb.type, 'PPPRAGMASTR')
+        
+        t6 = self.clex.token()
+        self.assertEqual(t6.type, 'INT_CONST_DEC')
+        self.assertEqual(t6.lineno, 12)
 
 
 

@@ -39,6 +39,12 @@ class CGenerator(object):
 
     def visit_ID(self, n):
         return n.name
+    
+    def visit_Pragma(self, n):
+        ret = '#pragma'
+        if n.string:
+            ret += ' ' + n.string
+        return ret
 
     def visit_ArrayRef(self, n):
         arrref = self._parenthesize_unless_simple(n.name)
@@ -157,6 +163,8 @@ class CGenerator(object):
         for ext in n.ext:
             if isinstance(ext, c_ast.FuncDef):
                 s += self.visit(ext)
+            elif isinstance(ext, c_ast.Pragma):
+                s += self.visit(ext) + '\n'
             else:
                 s += self.visit(ext) + ';\n'
         return s
