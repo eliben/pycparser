@@ -171,7 +171,9 @@ class CLexer(object):
         'ELLIPSIS',
 
         # pre-processor
-        'PPHASH',      # '#'
+        'PPHASH',       # '#'
+        'PPPRAGMA',     # 'pragma'
+        'PPPRAGMASTR',
     )
 
     ##
@@ -274,7 +276,6 @@ class CLexer(object):
 
     def t_ppline_NEWLINE(self, t):
         r'\n'
-
         if self.pp_line is None:
             self._error('line number missing in #line', t)
         else:
@@ -304,15 +305,14 @@ class CLexer(object):
 
     def t_pppragma_PPPRAGMA(self, t):
         r'pragma'
-        pass
+        return t
 
-    t_pppragma_ignore = ' \t<>.-{}();=+-*/$%@&^~!?:,0123456789'
+    t_pppragma_ignore = ' \t'
 
-    @TOKEN(string_literal)
-    def t_pppragma_STR(self, t): pass
-
-    @TOKEN(identifier)
-    def t_pppragma_ID(self, t): pass
+    def t_pppragma_STR(self, t):
+        '.+'
+        t.type = 'PPPRAGMASTR'
+        return t
 
     def t_pppragma_error(self, t):
         self._error('invalid #pragma directive', t)

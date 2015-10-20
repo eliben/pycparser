@@ -245,5 +245,14 @@ class TestCtoC(unittest.TestCase):
             }
         ''')
 
+    def test_pragma(self):
+        self._assert_ctoc_correct(r'''
+            #pragma foo
+            void f() {
+                #pragma bar
+                i = (a, b, c);
+            }
+        ''')
+
 if __name__ == "__main__":
     unittest.main()
