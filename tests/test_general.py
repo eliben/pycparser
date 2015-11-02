@@ -2,7 +2,7 @@ import sys, os
 import unittest
 
 sys.path.insert(0, '..')
-from pycparser import parse_file, c_ast
+from pycparser import parse_file, c_ast, clean_code
 
 CPPPATH = 'cpp'
 
@@ -53,6 +53,40 @@ class TestParsing(unittest.TestCase):
         ast = parse_file(self._find_file('empty.h'), use_cpp=True,
             cpp_path=CPPPATH)
         self.assertTrue(isinstance(ast, c_ast.FileAST))
+
+    def test_clean_comments(self):
+        unclean_code = '''
+        /* foo bar baz */ om nom nom // foo bar baz
+        om nom nom // foo bar baz
+        /*
+        foo bar baz
+        //*/om nom nom
+        ///*foo bar baz
+        om nom nom/*
+        foo bar baz */ om nom nom /* foo bar baz */ om nom nom // foo bar baz
+        '''
+
+        cleaned_code = clean_code(unclean_code)
+
+        self.assertTrue('foo bar baz' not in cleaned_code)
+        self.assertEqual(cleaned_code.count('om nom nom'), unclean_code.count('om nom nom'))
+        self.assertEqual(len(unclean_code.split('\n')), len(cleaned_code.split('\n')))
+
+    def test_clean_macros(self):
+        unclean_code = '''
+        #foo bar baz
+        om nom nom
+        # foo bar baz \
+        foo bar baz \
+        foo bar baz
+        om nom nom
+        '''
+
+        cleaned_code = clean_code(unclean_code, macros=True)
+
+        self.assertTrue('foo bar baz' not in cleaned_code)
+        self.assertEqual(cleaned_code.count('om nom nom'), unclean_code.count('om nom nom'))
+        self.assertEqual(len(unclean_code.split('\n')), len(cleaned_code.split('\n')))
 
 
 if __name__ == '__main__':
