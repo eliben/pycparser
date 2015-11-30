@@ -26,6 +26,9 @@
 #define EXIT_FAILURE 1
 #define EXIT_SUCCESS 0
 
+#define UCHAR_MAX 255
+#define USHRT_MAX 65535
+#define UINT_MAX 4294967295U
 #define RAND_MAX 32767
 #define INT_MAX 32767
 
