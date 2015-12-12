@@ -14,7 +14,10 @@ def do_cleanup(root):
                 for pattern in file_patterns:
                     if fnmatch.fnmatch(file, pattern):
                         fullpath = os.path.join(path, file)
-                        shutil.rmtree(fullpath, ignore_errors=True)
+                        if os.path.isdir(fullpath):
+                            shutil.rmtree(fullpath, ignore_errors=False)
+                        else:
+                            os.unlink(fullpath)
                         print('Deleted', fullpath)
             except OSError:
                 pass
