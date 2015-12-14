@@ -557,9 +557,9 @@ class CParser(PLYParser):
                                     | PPPRAGMA PPPRAGMASTR
         """
         if len(p) == 3:
-            p[0] = c_ast.Pragma(p[2])
+            p[0] = c_ast.Pragma(p[2], self._coord(p.lineno(2)))
         else:
-            p[0] = c_ast.Pragma("")
+            p[0] = c_ast.Pragma("", self._coord(p.lineno(1)))
 
     # In function definitions, the declarator can be followed by
     # a declaration list, for old "K&R style" function definitios.
