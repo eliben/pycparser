@@ -172,6 +172,19 @@ class TestCtoC(unittest.TestCase):
            int i[1][1] = { { 1 } };
         }''')
 
+    def test_nest_named_initializer(self):
+        self._assert_ctoc_correct(r'''struct test
+            {
+                int i;
+                struct test_i_t
+                {
+                    int k;
+                } test_i;
+                int j;
+            };
+            struct test test_var = {.i = 0, .test_i = {.k = 1}, .j = 2};
+        ''')
+
     def test_expr_list_in_initializer_list(self):
         self._assert_ctoc_correct(r'''
         int main()
