@@ -1290,14 +1290,21 @@ class TestCParser_fundamentals(TestCParser_base):
             void main() {
                 #pragma foo
                 for(;;) {}
+                #pragma
             }
             '''
         s1_ast = self.parse(s1)
         self.assertTrue(isinstance(s1_ast.ext[0], Pragma))
         self.assertEqual(s1_ast.ext[0].string, 'bar')
+        self.assertEqual(s1_ast.ext[0].coord.line, 2)
 
         self.assertTrue(isinstance(s1_ast.ext[1].body.block_items[0], Pragma))
         self.assertEqual(s1_ast.ext[1].body.block_items[0].string, 'foo')
+        self.assertEqual(s1_ast.ext[1].body.block_items[0].coord.line, 4)
+        
+        self.assertTrue(isinstance(s1_ast.ext[1].body.block_items[2], Pragma))
+        self.assertEqual(s1_ast.ext[1].body.block_items[2].string, '')
+        self.assertEqual(s1_ast.ext[1].body.block_items[2].coord.line, 6)
 
 
 class TestCParser_whole_code(TestCParser_base):
