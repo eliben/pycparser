@@ -411,10 +411,11 @@ class Preprocessor(object):
                 elif (i > 0 and macro.value[i-1].value == '##'):
                     macro.patch.append(('c',argnum,i-1))
                     del macro.value[i-1]
+                    i -= 1
                     continue
                 elif ((i+1) < len(macro.value) and macro.value[i+1].value == '##'):
                     macro.patch.append(('c',argnum,i))
-                    i += 1
+                    del macro.value[i + 1]
                     continue
                 # Standard expansion
                 else:
