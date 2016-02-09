@@ -510,7 +510,7 @@ class Preprocessor(object):
                         j = i + 1
                         while j < len(tokens) and tokens[j].type in self.t_WS:
                             j += 1
-                        if tokens[j].value == '(':
+                        if j < len(tokens) and tokens[j].value == '(':
                             tokcount,args,positions = self.collect_args(tokens[j:])
                             if not m.variadic and len(args) !=  len(m.arglist):
                                 self.error(self.source,t.lineno,"Macro %s requires %d arguments" % (t.value,len(m.arglist)))
