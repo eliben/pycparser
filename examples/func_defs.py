@@ -41,6 +41,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         filename  = sys.argv[1]
     else:
-        filename = 'examples/c_files/memmgr.c'
+        filename = 'c_files/memmgr.c'
 
     show_func_defs(filename)

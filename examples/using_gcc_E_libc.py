@@ -22,7 +22,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         filename  = sys.argv[1]
     else:
-        filename = 'examples/c_files/year.c'
+        filename = 'c_files/year.c'
 
     ast = parse_file(filename, use_cpp=True,
             cpp_path='gcc',
