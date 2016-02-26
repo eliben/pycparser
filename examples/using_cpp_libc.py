@@ -25,7 +25,6 @@ if __name__ == "__main__":
         filename = 'examples/c_files/year.c'
 
     ast = parse_file(filename, use_cpp=True,
-            cpp_path='cpp', 
+            cpp_path='cpp',
             cpp_args=r'-Iutils/fake_libc_include')
-    
     ast.show()
