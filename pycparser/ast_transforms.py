@@ -43,7 +43,7 @@ def fix_switch_cases(switch_node):
                     Default:
                         break
 
-        The goal of this transform it to fix this mess, turning it into the
+        The goal of this transform is to fix this mess, turning it into the
         following:
 
             Switch
