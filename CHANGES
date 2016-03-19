@@ -1,3 +1,10 @@
++ Version 2.15 (??.2016)
+
+  - Issue #117: Fix parsing of extra semi-colons inside structure declarations.
+  - PR #109: Update c_generator to add {} around nested named initializers.
+  - PR #101: Added support for parsing pragmas into the AST.
+  - Additional fake headers and typedefs, manifest fixes (#97, #106, #111).
+
 + Version 2.14 (09.06.2015)
 
   - Added CParser parameter to specify output directory for generated parsing
