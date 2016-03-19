@@ -836,7 +836,10 @@ class CParser(PLYParser):
         """ struct_declaration_list     : struct_declaration
                                         | struct_declaration_list struct_declaration
         """
-        p[0] = p[1] if len(p) == 2 else p[1] + p[2]
+        if len(p) == 2:
+            p[0] = p[1] or []
+        else:
+            p[0] = p[1] + (p[2] or [])
 
     def p_struct_declaration_1(self, p):
         """ struct_declaration : specifier_qualifier_list struct_declarator_list_opt SEMI
@@ -889,6 +892,11 @@ class CParser(PLYParser):
         p[0] = self._build_declarations(
                 spec=p[1],
                 decls=[dict(decl=p[2], init=None)])
+
+    def p_struct_declaration_3(self, p):
+        """ struct_declaration : SEMI
+        """
+        p[0] = None
 
     def p_struct_declarator_list(self, p):
         """ struct_declarator_list  : struct_declarator

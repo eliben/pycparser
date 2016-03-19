@@ -763,6 +763,37 @@ class TestCParser_fundamentals(TestCParser_base):
                     ['Decl', 'heads',
                         ['PtrDecl', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['Node']]]]]]]]]])
 
+    def test_struct_with_extra_semis_inside(self):
+        s1 = """
+            struct {
+                int a;;
+            } foo;
+        """
+        s1_ast = self.parse(s1)
+        self.assertEqual(expand_decl(s1_ast.ext[0]),
+            ['Decl', 'foo',
+                ['TypeDecl', ['Struct', None,
+                    [['Decl', 'a',
+                        ['TypeDecl', ['IdentifierType', ['int']]]]]]]])
+
+        s2 = """
+            struct {
+                int a;;;;
+                float b, c;
+                ;;
+                char d;
+            } foo;
+        """
+        s2_ast = self.parse(s2)
+        self.assertEqual(expand_decl(s2_ast.ext[0]),
+            ['Decl', 'foo',
+                ['TypeDecl', ['Struct', None,
+                   [['Decl', 'a', ['TypeDecl', ['IdentifierType', ['int']]]],
+                    ['Decl', 'b', ['TypeDecl', ['IdentifierType', ['float']]]],
+                    ['Decl', 'c', ['TypeDecl', ['IdentifierType', ['float']]]],
+                    ['Decl', 'd',
+                        ['TypeDecl', ['IdentifierType', ['char']]]]]]]])
+
     def test_anonymous_struct_union(self):
         s1 = """
             union
