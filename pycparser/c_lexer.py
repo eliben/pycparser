@@ -174,6 +174,9 @@ class CLexer(object):
         'PPHASH',       # '#'
         'PPPRAGMA',     # 'pragma'
         'PPPRAGMASTR',
+
+        # internals
+        'EVALPARAM',
     )
 
     ##

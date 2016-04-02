@@ -9,6 +9,7 @@
 import re
 
 from .ply import yacc
+from .ply.lex import LexToken
 
 from . import c_ast
 from .c_lexer import CLexer
@@ -144,6 +145,51 @@ class CParser(PLYParser):
                 input=text,
                 lexer=self.clex,
                 debug=debuglevel)
+
+    class InsertToken(LexToken):
+        """ Helper used to put a special token at the beginning of the
+            input token stream.  Used as lex_func below.
+
+            Used to switch the parser to internal states by using tokens
+            which the Lexer will never output.
+        """
+        def __init__(self, lexer, type):
+            self.lexer = lexer
+            self.type = type
+            self.value = ''
+            self.lineno = self.lexpos = 0
+            self.inserted = False
+        def __call__(self):
+            if not self.inserted:
+                self.inserted = True
+                return self
+            return self.lexer.token()
+
+    def evalparam(self, expr, filename='', debuglevel=0):
+        """ Parse a single string in function-parameter context (under global scope)
+
+            This accepts a single specification, either named or unnamed, e.g.
+                "int",  "char *foo", "int (*funcptr)(int arg)"
+            The parser's list of known global definitions is used to discern typedefs.
+
+            Using this function is a good way if your tool needs to systematically
+            find a type or variable from a given string spec.
+        """
+        return self.cparser.parse(
+                input=expr,
+                lexer=self.clex,
+                debug=debuglevel,
+                tokenfunc=self.InsertToken(self.clex, 'EVALPARAM'))
+
+    # special grammar production to load a single parameter_declaration
+    # (unfortunately, there seems to be no easy way to use an alternate
+    # start token with ply)
+    #
+    # Either way EVALPARAM is never returned from the lexer, so this can't
+    # ever occur during or break regular file parsing
+    def p_internal_root_evalparam(self, p):
+        """ translation_unit_or_empty : EVALPARAM parameter_declaration """
+        p[0] = p[2]
 
     ######################--   PRIVATE   --######################
 
@@ -1072,7 +1118,10 @@ class CParser(PLYParser):
         # and incorrectly interpreted as TYPEID.  We need to add the
         # parameters to the scope the moment the lexer sees LBRACE.
         #
-        if self._get_yacc_lookahead_token().type == "LBRACE":
+        # token == None occurs during evalparam() processing at end of input
+
+        lookahead = self._get_yacc_lookahead_token()
+        if lookahead is not None and lookahead.type == "LBRACE":
             if func.args is not None:
                 for param in func.args.params:
                     if isinstance(param, c_ast.EllipsisParam): break
