@@ -24,7 +24,10 @@ class CParser(PLYParser):
             yacc_optimize=True,
             yacctab='pycparser.yacctab',
             yacc_debug=False,
-            taboutputdir=''):
+            yacc_errorlog=None,
+            taboutputdir='',
+            start='translation_unit_or_empty',
+            identifiers=dict()):
         """ Create a new CParser.
 
             Some arguments for controlling the debug/optimization
@@ -66,9 +69,20 @@ class CParser(PLYParser):
                 Generate a parser.out file that explains how yacc
                 built the parsing table from the grammar.
 
+            yacc_errorlog:
+                Logger used for debug/warning/error output from PLY.
+
             taboutputdir:
                 Set this parameter to control the location of generated
                 lextab and yacctab files.
+
+            start:
+                YACC start symbol in the C grammar; can be used to parse
+                particular snippets.
+
+            identifiers:
+                Dictionary of known names;  values indicate whether a name
+                refers to a typedef (True) or a variable/symbol (False).
         """
         self.clex = CLexer(
             error_func=self._lex_error_func,
@@ -104,11 +118,12 @@ class CParser(PLYParser):
 
         self.cparser = yacc.yacc(
             module=self,
-            start='translation_unit_or_empty',
+            start=start,
             debug=yacc_debug,
             optimize=yacc_optimize,
             tabmodule=yacctab,
-            outputdir=taboutputdir)
+            outputdir=taboutputdir,
+            errorlog=yacc_errorlog)
 
         # Stack of scopes for keeping track of symbols. _scope_stack[-1] is
         # the current (topmost) scope. Each scope is a dictionary that
@@ -118,12 +133,16 @@ class CParser(PLYParser):
         # saw: int name;
         # If 'name' is not a key in _scope_stack[n] then 'name' was not defined
         # in this scope at all.
-        self._scope_stack = [dict()]
+
+        # typecheck input and deepcopy twice so we can reset to original
+        # identifiers in parse()
+        self._identifiers = dict([(str(key), bool(val)) for key, val in identifiers.items()])
+        self._scope_stack = [dict(self._identifiers.items())]
 
         # Keeps track of the last token given to yacc (the lookahead token)
         self._last_yielded_token = None
 
-    def parse(self, text, filename='', debuglevel=0):
+    def parse(self, text, filename='', debuglevel=0, reset_identifiers = True):
         """ Parses C code and returns an AST.
 
             text:
@@ -138,12 +157,36 @@ class CParser(PLYParser):
         """
         self.clex.filename = filename
         self.clex.reset_lineno()
-        self._scope_stack = [dict()]
+        if reset_identifiers:
+            self._scope_stack = [dict(self._identifiers.items())]
         self._last_yielded_token = None
         return self.cparser.parse(
                 input=text,
                 lexer=self.clex,
                 debug=debuglevel)
+
+    def get_parameter_parser(self, *args, **kwargs):
+        """ Get a Parser for a single string as a function-parameter
+
+            This accepts a single specification, either named or unnamed, e.g.
+                "int",  "char *foo", "int (*funcptr)(int arg)"
+            The parser's list of known global definitions is used to discern typedefs.
+
+            Using this function is a good way if your tool needs to systematically
+            find a type or variable from a given string spec.
+
+            Accepts same parameters as CParser.__init__, except "start" and
+            "identifiers" are pre-filled, and "yacctab" has a different
+            default.
+        """
+
+        kwargs.setdefault('yacctab', 'pycparser-parameter_declaration.yacctab')
+        # due to the different start symbol, PLY will emit bogus warnings
+        kwargs.setdefault('yacc_errorlog', yacc.NullLogger())
+        return CParser(
+                start = 'parameter_declaration',
+                identifiers = self._scope_stack[0],
+                *args, **kwargs)
 
     ######################--   PRIVATE   --######################
 
@@ -1072,7 +1115,11 @@ class CParser(PLYParser):
         # and incorrectly interpreted as TYPEID.  We need to add the
         # parameters to the scope the moment the lexer sees LBRACE.
         #
-        if self._get_yacc_lookahead_token().type == "LBRACE":
+        # token == None occurs after get_parameter_parser() at processing at
+        # end of input
+
+        lookahead = self._get_yacc_lookahead_token()
+        if lookahead is not None and lookahead.type == "LBRACE":
             if func.args is not None:
                 for param in func.args.params:
                     if isinstance(param, c_ast.EllipsisParam): break
