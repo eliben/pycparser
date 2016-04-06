@@ -22,7 +22,7 @@ class CParser(PLYParser):
             lex_optimize=True,
             lextab='pycparser.lextab',
             yacc_optimize=True,
-            yacctab='pycparser.yacctab',
+            yacctab=None,
             yacc_debug=False,
             yacc_errorlog=None,
             taboutputdir='',
@@ -116,6 +116,12 @@ class CParser(PLYParser):
         for rule in rules_with_opt:
             self._create_opt_rule(rule)
 
+        yacctab = yacctab or 'pycparser-%s.yacctab' % start
+        if start != 'translation_unit_or_empty':
+            # due to the different start symbol, PLY will emit bogus warnings.
+            # if logging is desired, the user can still pass a non-None log
+            yacc_errorlog = yacc_errorlog or yacc.NullLogger()
+
         self.cparser = yacc.yacc(
             module=self,
             start=start,
@@ -165,26 +171,19 @@ class CParser(PLYParser):
                 lexer=self.clex,
                 debug=debuglevel)
 
-    def get_parameter_parser(self, *args, **kwargs):
-        """ Get a Parser for a single string as a function-parameter
+    def get_context_parser(self, *args, **kwargs):
+        """ Get a Parser inheriting this parser's list of known types & symbols.
 
-            This accepts a single specification, either named or unnamed, e.g.
-                "int",  "char *foo", "int (*funcptr)(int arg)"
-            The parser's list of known global definitions is used to discern typedefs.
+            The parser's list of known definitions is primarily neccessary to
+            be able to identify typedef'd types.  This function can be used
+            to get another parser instance that can be used to "continue"
+            parsing (e.g. snippets) with context of the loaded file.
 
-            Using this function is a good way if your tool needs to systematically
-            find a type or variable from a given string spec.
-
-            Accepts same parameters as CParser.__init__, except "start" and
-            "identifiers" are pre-filled, and "yacctab" has a different
-            default.
+            The "start" keyword argument is particularly useful in this
+            context, specifically the "parameter_declaration", "expression"
+            or "constant_expression" states.
         """
-
-        kwargs.setdefault('yacctab', 'pycparser-parameter_declaration.yacctab')
-        # due to the different start symbol, PLY will emit bogus warnings
-        kwargs.setdefault('yacc_errorlog', yacc.NullLogger())
         return CParser(
-                start = 'parameter_declaration',
                 identifiers = self._scope_stack[0],
                 *args, **kwargs)
 
