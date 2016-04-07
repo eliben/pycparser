@@ -116,11 +116,14 @@ class CParser(PLYParser):
         for rule in rules_with_opt:
             self._create_opt_rule(rule)
 
-        yacctab = yacctab or 'pycparser-%s.yacctab' % start
         if start != 'translation_unit_or_empty':
             # due to the different start symbol, PLY will emit bogus warnings.
             # if logging is desired, the user can still pass a non-None log
             yacc_errorlog = yacc_errorlog or yacc.NullLogger()
+            # yacctab contents depend on the starting state
+            yacctab = yacctab or 'pycparser-%s.yacctab' % start
+        else:
+            yacctab = yacctab or 'pycparser.yacctab'
 
         self.cparser = yacc.yacc(
             module=self,
@@ -148,7 +151,7 @@ class CParser(PLYParser):
         # Keeps track of the last token given to yacc (the lookahead token)
         self._last_yielded_token = None
 
-    def parse(self, text, filename='', debuglevel=0, reset_identifiers = True):
+    def parse(self, text, filename='', debuglevel=0, reset_identifiers=True):
         """ Parses C code and returns an AST.
 
             text:
@@ -184,7 +187,7 @@ class CParser(PLYParser):
             or "constant_expression" states.
         """
         return CParser(
-                identifiers = self._scope_stack[0],
+                identifiers=self._scope_stack[0],
                 *args, **kwargs)
 
     ######################--   PRIVATE   --######################
