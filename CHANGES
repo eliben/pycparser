@@ -1,5 +1,6 @@
 + Version 2.15 (??.2016)
 
+  - PR #121: Update bundled PLY version to 3.8
   - Issue #117: Fix parsing of extra semi-colons inside structure declarations.
   - PR #109: Update c_generator to add {} around nested named initializers.
   - PR #101: Added support for parsing pragmas into the AST.
