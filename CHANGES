@@ -5,6 +5,8 @@
   - PR #109: Update c_generator to add {} around nested named initializers.
   - PR #101: Added support for parsing pragmas into the AST.
   - Additional fake headers and typedefs, manifest fixes (#97, #106, #111).
+  - Testing with Python 3.5 instead of 3.3 now (3.4 and 3.5 are the 3.x versions
+    tested).
 
 + Version 2.14 (09.06.2015)
 
