@@ -34,7 +34,7 @@ Anything that needs C code to be parsed. The following are some uses for
 * Adding specialized extensions to the C language
 
 One of the most popular uses of **pycparser** is in the `cffi
-<https://cffi.readthedocs.org/en/latest/>`_ library, which uses it to parse the
+<https://cffi.readthedocs.io/en/latest/>`_ library, which uses it to parse the
 declarations of C functions and types in order to auto-generate FFIs.
 
 **pycparser** is unique in the sense that it's written in pure Python - a very
