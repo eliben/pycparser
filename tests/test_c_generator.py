@@ -88,6 +88,14 @@ class TestCtoC(unittest.TestCase):
         #s = 'int test(const char* const* arg);'
         #parse_to_ast(s).show()
 
+    def test_ternary(self):
+        self._assert_ctoc_correct('''
+            int main(void)
+            {
+                int a, b;
+                (a == 0) ? (b = 1) : (b = 2);
+            }''')
+
     def test_casts(self):
         self._assert_ctoc_correct(r'''
             int main() {
