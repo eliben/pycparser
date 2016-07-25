@@ -20,6 +20,7 @@ class CParser(PLYParser):
     def __init__(
             self,
             lex_optimize=True,
+            lexer=CLexer,
             lextab='pycparser.lextab',
             yacc_optimize=True,
             yacctab='pycparser.yacctab',
@@ -41,7 +42,11 @@ class CParser(PLYParser):
                 When releasing with a stable lexer, set to True
                 to save the re-generation of the lexer table on
                 each run.
-
+                
+            lexer:
+                Set this parameter to define the lexer to use if
+                you're not using the default CLexer.
+                
             lextab:
                 Points to the lex table that's used for optimized
                 mode. Only if you're modifying the lexer and want
@@ -70,7 +75,7 @@ class CParser(PLYParser):
                 Set this parameter to control the location of generated
                 lextab and yacctab files.
         """
-        self.clex = CLexer(
+        self.clex = lexer(
             error_func=self._lex_error_func,
             on_lbrace_func=self._lex_on_lbrace_func,
             on_rbrace_func=self._lex_on_rbrace_func,
