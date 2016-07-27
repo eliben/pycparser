@@ -11,7 +11,7 @@ except ImportError:
 
 def _run_build_tables(dir):
     from subprocess import call
-    call([sys.executable, '_build_tables.py'],
+    call([sys.executable, '-B', '_build_tables.py'],
          cwd=os.path.join(dir, 'pycparser'))
 
 
