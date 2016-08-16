@@ -1703,7 +1703,7 @@ class CParser(PLYParser):
                 self._coord(lineno=p.lineno,
                             column=self.clex.find_tok_column(p)))
         else:
-            self._parse_error('At end of input', '')
+            self._parse_error('At end of input', self.clex.filename)
 
 
 #------------------------------------------------------------------------------
