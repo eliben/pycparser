@@ -1608,12 +1608,27 @@ class CParser(PLYParser):
         p[0] = p[2]
 
     def p_primary_expression_5(self, p):
-        """ primary_expression  : OFFSETOF LPAREN type_name COMMA identifier RPAREN
+        """ primary_expression  : OFFSETOF LPAREN type_name COMMA offsetof_member_designator RPAREN
         """
         coord = self._coord(p.lineno(1))
         p[0] = c_ast.FuncCall(c_ast.ID(p[1], coord),
                               c_ast.ExprList([p[3], p[5]], coord),
                               coord)
+
+    def p_offsetof_member_designator(self, p):
+        """ offsetof_member_designator : identifier
+                                         | offsetof_member_designator PERIOD identifier
+                                         | offsetof_member_designator LBRACKET expression RBRACKET
+        """
+        if len(p) == 2:
+            p[0] = p[1]
+        elif len(p) == 4:
+            field = c_ast.ID(p[3], self._coord(p.lineno(3)))
+            p[0] = c_ast.StructRef(p[1], p[2], field, p[1].coord)
+        elif len(p) == 5:
+            p[0] = c_ast.ArrayRef(p[1], p[3], p[1].coord)
+        else:
+            raise NotImplementedError("Unexpected parsing state. len(p): %u" % len(p))
 
     def p_argument_expression_list(self, p):
         """ argument_expression_list    : assignment_expression
