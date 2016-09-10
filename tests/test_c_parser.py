@@ -480,6 +480,8 @@ class TestCParser_fundamentals(TestCParser_base):
             void foo() {
                 int a = offsetof(struct S, p);
                 a.b = offsetof(struct sockaddr, sp) + strlen(bar);
+                int a = offsetof(struct S, p.q.r);
+                int a = offsetof(struct S, p[5].q[4][5]);
             }
             """
         compound = self.parse(e).ext[0].body
@@ -489,6 +491,10 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(s1.name.name, 'offsetof')
         self.assertTrue(isinstance(s1.args.exprs[0], Typename))
         self.assertTrue(isinstance(s1.args.exprs[1], ID))
+        s3 = compound.block_items[2].init
+        self.assertTrue(isinstance(s3.args.exprs[1], StructRef))
+        s4 = compound.block_items[3].init
+        self.assertTrue(isinstance(s4.args.exprs[1], ArrayRef))
 
     # The C99 compound literal feature
     #
