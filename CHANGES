@@ -7,6 +7,7 @@
   - Additional fake headers and typedefs, manifest fixes (#97, #106, #111).
   - Testing with Python 3.5 instead of 3.3 now (3.4 and 3.5 are the 3.x versions
     tested).
+  - PR #145: More complete support for offsetof()
 
 + Version 2.14 (09.06.2015)
 
