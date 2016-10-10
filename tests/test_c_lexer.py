@@ -146,6 +146,9 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes(
             r'''"hello 'joe' wanna give it a \"go\"?"''',
             ['STRING_LITERAL'])
+        self.assertTokensTypes(
+            '"\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123"',
+            ['STRING_LITERAL'])
 
     def test_mess(self):
         self.assertTokensTypes(
@@ -328,30 +331,30 @@ class TestCLexerNoErrors(unittest.TestCase):
 
         t1 = self.clex.token()
         self.assertEqual(t1.type, 'INT_CONST_DEC')
-        
+
         t2 = self.clex.token()
         self.assertEqual(t2.type, 'PPPRAGMA')
-        
+
         t3 = self.clex.token()
         self.assertEqual(t3.type, 'PPPRAGMA')
-        
+
         t4 = self.clex.token()
         self.assertEqual(t4.type, 'PPPRAGMASTR')
         self.assertEqual(t4.value, 'helo me')
-        
+
         for i in range(3):
             t = self.clex.token()
-            
+
         t5 = self.clex.token()
         self.assertEqual(t5.type, 'PPPRAGMASTR')
         self.assertEqual(t5.value, 'omp parallel private(th_id)')
-        
+
         for i in range(5):
             ta = self.clex.token()
             self.assertEqual(ta.type, 'PPPRAGMA')
             tb = self.clex.token()
             self.assertEqual(tb.type, 'PPPRAGMASTR')
-        
+
         t6 = self.clex.token()
         self.assertEqual(t6.type, 'INT_CONST_DEC')
         self.assertEqual(t6.lineno, 12)
