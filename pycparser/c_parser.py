@@ -1698,11 +1698,13 @@ class CParser(PLYParser):
         """ brace_open  :   LBRACE
         """
         p[0] = p[1]
+        p.set_lineno(0, p.lineno(1))
 
     def p_brace_close(self, p):
         """ brace_close :   RBRACE
         """
         p[0] = p[1]
+        p.set_lineno(0, p.lineno(1))
 
     def p_empty(self, p):
         'empty : '

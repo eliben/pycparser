@@ -496,6 +496,15 @@ class TestCParser_fundamentals(TestCParser_base):
         s4 = compound.block_items[3].init
         self.assertTrue(isinstance(s4.args.exprs[1], ArrayRef))
 
+    def test_compound_statement(self):
+        e = """
+            void foo() {
+            }
+            """
+        compound = self.parse(e).ext[0].body
+        self.assertTrue(isinstance(compound, Compound))
+        self.assert_coord(compound, 2, '')
+
     # The C99 compound literal feature
     #
     def test_compound_literals(self):
