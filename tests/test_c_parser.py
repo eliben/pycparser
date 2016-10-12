@@ -86,6 +86,11 @@ class TestCParser_base(unittest.TestCase):
     def setUp(self):
         self.cparser = _c_parser
 
+    def assert_coord(self, node, line, file=None):
+        self.assertEqual(node.coord.line, line)
+        if file:
+            self.assertEqual(node.coord.file, file)
+
 
 class TestCParser_fundamentals(TestCParser_base):
     def get_decl(self, txt, index=0):
@@ -124,11 +129,6 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(self.get_decl(code),
             ['Decl', 'foo',
                 ['TypeDecl', ['IdentifierType', ['int']]]])
-
-    def assert_coord(self, node, line, file=None):
-        self.assertEqual(node.coord.line, line)
-        if file:
-            self.assertEqual(node.coord.file, file)
 
     def test_coords(self):
         """ Tests the "coordinates" of parsed elements - file
@@ -1338,7 +1338,7 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertTrue(isinstance(s1_ast.ext[1].body.block_items[0], Pragma))
         self.assertEqual(s1_ast.ext[1].body.block_items[0].string, 'foo')
         self.assertEqual(s1_ast.ext[1].body.block_items[0].coord.line, 4)
-        
+
         self.assertTrue(isinstance(s1_ast.ext[1].body.block_items[2], Pragma))
         self.assertEqual(s1_ast.ext[1].body.block_items[2].string, '')
         self.assertEqual(s1_ast.ext[1].body.block_items[2].coord.line, 6)
@@ -1538,16 +1538,22 @@ class TestCParser_whole_code(TestCParser_base):
         self.assert_num_ID_refs(ps3, 'a', 4)
         self.assert_all_Constants(ps3, ['0', '0', '1'])
 
-    def test_empty_statement(self):
+    def test_empty_statements(self):
         s1 = r'''
         void foo(void){
             ;
-            return;
+            return;;
+
+            ;
         }
         '''
         ps1 = self.parse(s1)
-        self.assert_num_klass_nodes(ps1, EmptyStatement, 1)
+        self.assert_num_klass_nodes(ps1, EmptyStatement, 3)
         self.assert_num_klass_nodes(ps1, Return, 1)
+        self.assert_coord(ps1.ext[0].body.block_items[0], 3, '')
+        self.assert_coord(ps1.ext[0].body.block_items[1], 4, '')
+        self.assert_coord(ps1.ext[0].body.block_items[2], 4, '')
+        self.assert_coord(ps1.ext[0].body.block_items[3], 6, '')
 
     def test_switch_statement(self):
         def assert_case_node(node, const_value):
