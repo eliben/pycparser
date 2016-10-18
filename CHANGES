@@ -1,4 +1,4 @@
-+ Version 2.15 (??.2016)
++ Version 2.15 (18.10.2016)
 
   - PR #121: Update bundled PLY version to 3.8
   - Issue #117: Fix parsing of extra semi-colons inside structure declarations.
@@ -9,6 +9,7 @@
     tested).
   - PR #145: More complete support for offsetof()
   - Issue #116: Fix line numbers recorded for empty and compound statements.
+  - Minor performance improvement to the invalid string literal regex.
 
 + Version 2.14 (09.06.2015)
 
