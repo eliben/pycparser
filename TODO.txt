@@ -11,6 +11,7 @@ setup.py, __init__.py, README, CHANGES
 - Run tox tests
 
 python setup.py sdist upload
+python setup.py stisd bdist_wheel upload [for creating a wheel]
 
 Misc
 ----
