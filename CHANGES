@@ -1,3 +1,8 @@
++ Version 2.16 (18.10.2016)
+
+  - Functionally identical to 2.15, but fixes a packaging problem that caused
+    failed installation (_build_tables wasn't rerun in the pycparser/ dir).
+
 + Version 2.15 (18.10.2016)
 
   - PR #121: Update bundled PLY version to 3.8
