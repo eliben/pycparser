@@ -10,8 +10,7 @@ setup.py, __init__.py, README, CHANGES
 - If PLY version changes, note it in README and ply/LICENSE
 - Run tox tests
 
-python setup.py sdist upload
-python setup.py stisd bdist_wheel upload [for creating a wheel]
+python setup.py sdist
 
 Misc
 ----
