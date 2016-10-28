@@ -6,11 +6,22 @@ Version Update
 
 setup.py, __init__.py, README, CHANGES
 - Make sure _build_tables was run in pycparser/
-- Tag in git. When pushing to GitHub, git push --tags
 - If PLY version changes, note it in README and ply/LICENSE
 - Run tox tests
 
 python setup.py sdist
+
+Copy the newly created tarball and untar it; check that the permissions of
+Python files in the pycparser/ directory are OK. Check to see that lextab.py and
+yacctab.py are there.
+
+Now create a new virtualenv and in it install the tarball with
+`pip install <tarballname>`. See that pycparser is importable in the Python
+interpreter of this virtualenv; run pycparser tests from this virtualenv.
+
+After this it's OK to rerun `python setup.py sdist upload` to push to PyPI.
+
+- Tag in git. When pushing to GitHub, git push --tags
 
 Misc
 ----
