@@ -42,7 +42,7 @@
 
   - This is a fix release for 2.11; the memory optimization with __slots__ on
     Coord and AST nodes didn't take weakrefs into account, which broke cffi and
-    its many dependents (iseue #76). Fixed by adding __weakref__ to __slots__.
+    its many dependents (issue #76). Fixed by adding __weakref__ to __slots__.
 
 + Version 2.11 (21.04.2015)
 
