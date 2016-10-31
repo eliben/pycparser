@@ -63,7 +63,7 @@ standard document
 How is pycparser licensed?
 --------------------------
 
-BSD license. See the `LICENSE` file in the distribution.
+`BSD license <https://github.com/eliben/pycparser/blob/master/LICENSE>`_.
 
 Contact details
 ---------------
