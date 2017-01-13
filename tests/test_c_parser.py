@@ -285,6 +285,11 @@ class TestCParser_fundamentals(TestCParser_base):
                     ],
                 ['TypeDecl', ['IdentifierType', ['int']]]]])
 
+    def test_int128(self):
+        self.assertEqual(self.get_decl('__int128 a;'),
+            ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['__int128']]]])
+
+
     def test_nested_decls(self): # the fun begins
         self.assertEqual(self.get_decl('char** ar2D;'),
             ['Decl', 'ar2D',
