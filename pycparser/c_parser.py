@@ -75,6 +75,10 @@ class CParser(PLYParser):
             taboutputdir:
                 Set this parameter to control the location of generated
                 lextab and yacctab files.
+
+            start:
+                Sets the parser start symbol.  By default, it is
+                'translation_unit_or_empty'.
         """
         self.clex = lexer(
             error_func=self._lex_error_func,
