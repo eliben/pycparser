@@ -67,8 +67,8 @@ import inspect
 import base64
 import warnings
 
-__version__    = '3.10'
-__tabversion__ = '3.10'
+__version__    = '3.9'
+__tabversion__ = '3.8'
 
 #-----------------------------------------------------------------------------
 #                     === User configurable parameters ===
@@ -2585,13 +2585,8 @@ class LRGeneratedTable(LRTable):
                                         # Need to decide on shift or reduce here
                                         # By default we favor shifting. Need to add
                                         # some precedence rules here.
-
-                                        # Shift precedence comes from the token
-                                        sprec, slevel = Precedence.get(a, ('right', 0))
-
-                                        # Reduce precedence comes from rule being reduced (p)
-                                        rprec, rlevel = Productions[p.number].prec
-
+                                        sprec, slevel = Productions[st_actionp[a].number].prec
+                                        rprec, rlevel = Precedence.get(a, ('right', 0))
                                         if (slevel < rlevel) or ((slevel == rlevel) and (rprec == 'left')):
                                             # We really need to reduce here.
                                             st_action[a] = -p.number
@@ -2649,13 +2644,8 @@ class LRGeneratedTable(LRTable):
                                         #   -  if precedence of reduce rule is higher, we reduce.
                                         #   -  if precedence of reduce is same and left assoc, we reduce.
                                         #   -  otherwise we shift
-
-                                        # Shift precedence comes from the token
-                                        sprec, slevel = Precedence.get(a, ('right', 0))
-
-                                        # Reduce precedence comes from the rule that could have been reduced
                                         rprec, rlevel = Productions[st_actionp[a].number].prec
-
+                                        sprec, slevel = Precedence.get(a, ('right', 0))
                                         if (slevel > rlevel) or ((slevel == rlevel) and (rprec == 'right')):
                                             # We decide to shift here... highest precedence to shift
                                             Productions[st_actionp[a].number].reduced -= 1
