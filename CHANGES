@@ -1,3 +1,10 @@
++ Version 2.18 (??)
+
+  - PR #161: Update bundled PLY version to 3.9
+  - PR #159: Add argument to CParser.__init__ for overriding the yacc start
+    symbol.
+  - PR #158: Add support for the __int128 type.
+
 + Version 2.17 (29.10.2016)
 
   - Again functionality identical to 2.15 and 2.16; the difference is that the

@@ -26,7 +26,7 @@ After this it's OK to rerun `python setup.py sdist upload` to push to PyPI.
 Misc
 ----
 
-yacc optimization: 
+yacc optimization:
 - If parsetab.py/pyc doesn't exist in the path, the table will be reconstructed
   anyway, regardless of the optimize parameter
 - If it does exist:
