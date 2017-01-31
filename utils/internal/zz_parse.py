@@ -19,3 +19,5 @@ if __name__ == "__main__":
     print(code)
     ast = parser.parse(code)
     ast.show(attrnames=True, nodenames=True)
+    print(ast.ext[0].__slots__)
+    print(dir(ast.ext[0]))

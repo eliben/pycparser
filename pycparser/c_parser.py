@@ -43,11 +43,11 @@ class CParser(PLYParser):
                 When releasing with a stable lexer, set to True
                 to save the re-generation of the lexer table on
                 each run.
-                
+
             lexer:
                 Set this parameter to define the lexer to use if
                 you're not using the default CLexer.
-                
+
             lextab:
                 Points to the lex table that's used for optimized
                 mode. Only if you're modifying the lexer and want
@@ -1103,7 +1103,7 @@ class CParser(PLYParser):
         #
         # Means "pointer to const pointer to char"
         #
-        # While: 
+        # While:
         #
         #  char ** const p;
         #
@@ -1247,12 +1247,6 @@ class CParser(PLYParser):
     def p_type_name(self, p):
         """ type_name   : specifier_qualifier_list abstract_declarator_opt
         """
-        #~ print '=========='
-        #~ print p[1]
-        #~ print p[2]
-        #~ print p[2].children()
-        #~ print '=========='
-
         typename = c_ast.Typename(
             name='',
             quals=p[1]['qual'],
