@@ -10,27 +10,60 @@ import re
 sys.path.extend(['.', '..'])
 
 from pycparser import parse_file, c_ast
+from pycparser.plyparser import Coord
 
 
 RE_CHILD_ARRAY = re.compile('(.*)\[(.*)\]')
+RE_INTERNAL_ATTR = re.compile('__.*__')
 
 
 class CJsonError(Exception):
     pass
 
 
+def memodict(fn):
+    """ Fast memoization decorator for a function taking a single argument """
+    class memodict(dict):
+        def __missing__(self, key):
+            ret = self[key] = fn(key)
+            return ret
+    return memodict().__getitem__
+
+
+@memodict
+def child_attrs_of(klass):
+    """
+    Given a Node class, get a list of child attrs.
+    Memoized to avoid highly repetitive string manipulation
+
+    """
+    non_child_attrs = set(klass.attr_names)
+    all_attrs = set([i for i in klass.__slots__ if not RE_INTERNAL_ATTR.match(i)])
+    return all_attrs - non_child_attrs
+
+
 def to_dict(node):
     """ Recursively convert an ast into a dict representation """
     klass = node.__class__
-    attr_names = klass.attr_names
 
     result = {}
+
+    # Metadata
     result['_nodetype'] = klass.__name__
+
+    # Local node attributes
     for attr in klass.attr_names:
         result[attr] = getattr(node, attr)
 
+    # Coord object
+    if node.coord:
+        result['coord'] = str(node.coord)
+    else:
+        result['coord'] = None
+
+    # Child attributes
     for child_name, child in node.children():
-        # child strings are either simple (e.g. 'value') or arrays (e.g. 'block_items[1]')
+        # Child strings are either simple (e.g. 'value') or arrays (e.g. 'block_items[1]')
         match = RE_CHILD_ARRAY.match(child_name)
         if match:
             array_name, array_index = match.groups()
@@ -44,6 +77,11 @@ def to_dict(node):
             result[array_name].append(to_dict(child))
         else:
             result[child_name] = to_dict(child)
+
+    # Any child attributes that were missing need "None" values in the json.
+    for child_attr in child_attrs_of(klass):
+        if child_attr not in result:
+            result[child_attr] = None
 
     return result
 
@@ -63,6 +101,17 @@ def file_to_json(filename, **kwargs):
     """ Load C file into json string representation of ast """
     ast = parse_file(filename, use_cpp=True)
     return to_json(ast, **kwargs)
+
+
+def _parse_coord(coord_str):
+    """ Parse coord string (file:line[:column]) into Coord object. """
+    if coord_str is None:
+        return None
+
+    vals = coord_str.split(':')
+    vals.extend([None] * 3)
+    filename, line, column = vals[:3]
+    return Coord(filename, line, column)
 
 
 def _convert_to_obj(value):
@@ -91,16 +140,10 @@ def from_dict(node_dict):
     # to node constructors.
     objs = {}
     for key, value in node_dict.items():
-        objs[key] = _convert_to_obj(value)
-
-    # Need to set values for empty child nodes. This might be better accomplished with "=None"
-    # default values in the constructors, but I'm trying implement this without touching the
-    # main codebase.
-    slots = set(klass.__slots__)
-    slots.discard('__weakref__')
-    for slot in slots:
-        if slot not in objs:
-            objs[slot] = None
+        if key == 'coord':
+            objs[key] = _parse_coord(value)
+        else:
+            objs[key] = _convert_to_obj(value)
 
     # Use keyword parameters, which works thanks to beautifully consistent
     # ast Node initializers.
