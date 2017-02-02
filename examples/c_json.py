@@ -6,7 +6,7 @@
 # This example includes functions to serialize and deserialize an ast
 # to and from json format. Serializing involves walking the ast and converting
 # each node from a python Node object into a python dict. Deserializing
-# involves walking the opposite conversion, walking the tree formed by the
+# involves the opposite conversion, walking the tree formed by the
 # dict and converting each dict into the specific Node object it represents.
 # The dict itself is serialized and deserialized using the python json module.
 #
