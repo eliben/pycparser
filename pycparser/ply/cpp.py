@@ -2,7 +2,7 @@
 # cpp.py
 #
 # Author:  David Beazley (http://www.dabeaz.com)
-# Copyright (C) 2007
+# Eli Bendersky [http://eli.thegreenplace.net]
 # All rights reserved
 #
 # This module implements an ANSI-C style lexical preprocessor for PLY. 

@@ -7,7 +7,7 @@
 # The design of this module was inspired by astgen.py from the
 # Python 2.5 code-base.
 #
-# Copyright (C) 2008-2015, Eli Bendersky
+# Eli Bendersky [http://eli.thegreenplace.net]
 # License: BSD
 #-----------------------------------------------------------------
 import pprint
@@ -150,7 +150,7 @@ r'''#-----------------------------------------------------------------
 #
 # AST Node classes.
 #
-# Copyright (C) 2008-2015, Eli Bendersky
+# Eli Bendersky [http://eli.thegreenplace.net]
 # License: BSD
 #-----------------------------------------------------------------
 

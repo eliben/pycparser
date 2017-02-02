@@ -3,7 +3,7 @@
 #
 # Tiny example of rewriting a AST node
 #
-# Copyright (C) 2014, Akira Hayakawa
+# Eli Bendersky [http://eli.thegreenplace.net]
 # License: BSD
 #-----------------------------------------------------------------
 from __future__ import print_function

@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # ply: yacc.py
 #
-# Copyright (C) 2001-2016
+# Eli Bendersky [http://eli.thegreenplace.net]
 # David M. Beazley (Dabeaz LLC)
 # All rights reserved.
 #

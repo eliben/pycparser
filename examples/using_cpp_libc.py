@@ -5,7 +5,7 @@
 # the 'real' cpp if you're on Linux/Unix) and "fake" libc includes
 # to parse a file that includes standard C headers.
 #
-# Copyright (C) 2008-2015, Eli Bendersky
+# Eli Bendersky [http://eli.thegreenplace.net]
 # License: BSD
 #-----------------------------------------------------------------
 import sys

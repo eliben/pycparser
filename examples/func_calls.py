@@ -4,7 +4,7 @@
 # Using pycparser for printing out all the calls of some function
 # in a C file.
 #
-# Copyright (C) 2008-2015, Eli Bendersky
+# Eli Bendersky [http://eli.thegreenplace.net]
 # License: BSD
 #-----------------------------------------------------------------
 from __future__ import print_function

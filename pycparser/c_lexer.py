@@ -3,7 +3,7 @@
 #
 # CLexer class: lexer for the C language
 #
-# Copyright (C) 2008-2015, Eli Bendersky
+# Eli Bendersky [http://eli.thegreenplace.net]
 # License: BSD
 #------------------------------------------------------------------------------
 import re
