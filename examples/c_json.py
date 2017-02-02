@@ -1,3 +1,39 @@
+#------------------------------------------------------------------------------
+# pycparser: c_json.py
+#
+# by Michael White (@mypalmike)
+#
+# This example includes functions to serialize and deserialize an ast
+# to and from json format. Serializing involves walking the ast and converting
+# each node from a python Node object into a python dict. Deserializing
+# involves walking the opposite conversion, walking the tree formed by the
+# dict and converting each dict into the specific Node object it represents.
+# The dict itself is serialized and deserialized using the python json module.
+#
+# The dict representation is a fairly direct transformation of the object
+# attributes. Each node in the dict gets one metadata field referring to the
+# specific node class name, _nodetype. Each local attribute (i.e. not linking
+# to child nodes) has a string value or array of string values. Each child
+# attribute is either another dict or an array of dicts, exactly as in the
+# Node object representation. The "coord" attribute, representing the
+# node's location within the source code, is serialized/deserialized from
+# a Coord object into a string of the format "filename:line[:column]".
+#
+# Example TypeDecl node, with IdentifierType child node, represented as a dict:
+#     "type": {
+#         "_nodetype": "TypeDecl",
+#         "coord": "c_files/funky.c:8",
+#         "declname": "o",
+#         "quals": [],
+#         "type": {
+#             "_nodetype": "IdentifierType",
+#             "coord": "c_files/funky.c:8",
+#             "names": [
+#                 "char"
+#             ]
+#         }
+#     }
+#------------------------------------------------------------------------------
 from __future__ import print_function
 
 import json
@@ -33,7 +69,7 @@ def memodict(fn):
 @memodict
 def child_attrs_of(klass):
     """
-    Given a Node class, get a list of child attrs.
+    Given a Node class, get a set of child attrs.
     Memoized to avoid highly repetitive string manipulation
 
     """
@@ -43,7 +79,7 @@ def child_attrs_of(klass):
 
 
 def to_dict(node):
-    """ Recursively convert an ast into a dict representation """
+    """ Recursively convert an ast into dict representation. """
     klass = node.__class__
 
     result = {}
