@@ -25,8 +25,7 @@ class CParser(PLYParser):
             yacc_optimize=True,
             yacctab='pycparser.yacctab',
             yacc_debug=False,
-            taboutputdir='',
-            start='translation_unit_or_empty'):
+            taboutputdir=''):
         """ Create a new CParser.
 
             Some arguments for controlling the debug/optimization
@@ -75,10 +74,6 @@ class CParser(PLYParser):
             taboutputdir:
                 Set this parameter to control the location of generated
                 lextab and yacctab files.
-
-            start:
-                Sets the parser start symbol.  By default, it is
-                'translation_unit_or_empty'.
         """
         self.clex = lexer(
             error_func=self._lex_error_func,
@@ -114,7 +109,7 @@ class CParser(PLYParser):
 
         self.cparser = yacc.yacc(
             module=self,
-            start=start,
+            start='translation_unit_or_empty',
             debug=yacc_debug,
             optimize=yacc_optimize,
             tabmodule=yacctab,

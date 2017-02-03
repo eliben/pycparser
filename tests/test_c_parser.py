@@ -1898,15 +1898,6 @@ class TestCParser_typenames(TestCParser_base):
         self.assertRaises(ParseError, self.parse, s2)
 
 
-class TestCParser_extra(unittest.TestCase):
-    def test_start_symbol(self):
-        parser = c_parser.CParser(lex_optimize=False, yacc_debug=True,
-                                  yacc_optimize=False, yacctab='yacctab',
-                                  start='expression')
-        ast = parser.parse("1 + 2")
-        assert isinstance(ast, BinaryOp)
-
-
 if __name__ == '__main__':
     #~ suite = unittest.TestLoader().loadTestsFromNames(
         #~ ['test_c_parser.TestCParser_fundamentals.test_typedef'])
