@@ -1,23 +1,21 @@
-import sys
-sys.path.insert(0, '../..')
+from __future__ import print_function
 
-from pycparser import c_parser, c_ast, parse_file
+import sys
+from pycparser import c_parser, c_generator, c_ast, parse_file
 
 
 if __name__ == "__main__":
-    #ast = parse_file('zc_pp.c', use_cpp=True, cpp_path="../cpp.exe")
     parser = c_parser.CParser()
-
-    #code = r'''int ar[30];'''
     code = r'''
-    char ***arr3d[40];
+    void* ptr = (int[ ]){0};
     '''
 
-    #code = r'''
-    #int foo(int a, int arr[*]);
-            #'''
     print(code)
     ast = parser.parse(code)
     ast.show(attrnames=True, nodenames=True)
     print(ast.ext[0].__slots__)
     print(dir(ast.ext[0]))
+
+    print("==== From C generator:")
+    generator = c_generator.CGenerator()
+    print(generator.visit(ast))
