@@ -755,29 +755,11 @@ class CParser(PLYParser):
         """
         p[0] = p[1]
 
-    def p_init_declarator_list_1(self, p):
+    def p_init_declarator_list(self, p):
         """ init_declarator_list    : init_declarator
                                     | init_declarator_list COMMA init_declarator
         """
         p[0] = p[1] + [p[3]] if len(p) == 4 else [p[1]]
-
-    # If the code is declaring a variable that was declared a typedef in an
-    # outer scope, yacc will think the name is part of declaration_specifiers,
-    # not init_declarator, and will then get confused by EQUALS.  Pass None
-    # up in place of declarator, and handle this at a higher level.
-    #
-    def p_init_declarator_list_2(self, p):
-        """ init_declarator_list    : EQUALS initializer
-        """
-        p[0] = [dict(decl=None, init=p[2])]
-
-    # Similarly, if the code contains duplicate typedefs of, for example,
-    # array types, the array portion will appear as an abstract declarator.
-    #
-    def p_init_declarator_list_3(self, p):
-        """ init_declarator_list    : abstract_declarator
-        """
-        p[0] = [dict(decl=p[1], init=None)]
 
     # Returns a {decl=<declarator> : init=<initializer>} dictionary
     # If there's no initializer, uses None
