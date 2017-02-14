@@ -98,7 +98,6 @@ class CParser(PLYParser):
             'init_declarator_list',
             'initializer_list',
             'parameter_type_list',
-            'specifier_qualifier_list',
             'block_item_list',
             'type_qualifier_list',
             'struct_declarator_list'
@@ -782,15 +781,28 @@ class CParser(PLYParser):
         """
         p[0] = dict(decl=p[1], init=(p[3] if len(p) > 2 else None))
 
+    # Require at least one type specifier in a specifier-qualifier-list
+    #
     def p_specifier_qualifier_list_1(self, p):
-        """ specifier_qualifier_list    : type_qualifier specifier_qualifier_list_opt
+        """ specifier_qualifier_list    : specifier_qualifier_list type_specifier_no_typeid
         """
-        p[0] = self._add_declaration_specifier(p[2], p[1], 'qual')
+        p[0] = self._add_declaration_specifier(p[1], p[2], 'type', append=True)
 
     def p_specifier_qualifier_list_2(self, p):
-        """ specifier_qualifier_list    : type_specifier specifier_qualifier_list_opt
+        """ specifier_qualifier_list    : specifier_qualifier_list type_qualifier
         """
-        p[0] = self._add_declaration_specifier(p[2], p[1], 'type')
+        p[0] = self._add_declaration_specifier(p[1], p[2], 'qual', append=True)
+
+    def p_specifier_qualifier_list_3(self, p):
+        """ specifier_qualifier_list  : type_specifier
+        """
+        p[0] = self._add_declaration_specifier(None, p[1], 'type')
+
+    def p_specifier_qualifier_list_4(self, p):
+        """ specifier_qualifier_list  : type_qualifier_list type_specifier
+        """
+        spec = dict(qual=p[1], storage=[], type=[], function=[])
+        p[0] = self._add_declaration_specifier(spec, p[2], 'type', append=True)
 
     # TYPEID is allowed here (and in other struct/enum related tag names), because
     # struct/enum tags reside in their own namespace and can be named the same as types
