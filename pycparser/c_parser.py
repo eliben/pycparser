@@ -91,7 +91,7 @@ class CParser(PLYParser):
             'abstract_declarator',
             'assignment_expression',
             'declaration_list',
-            'declaration_specifiers',
+            'declaration_specifiers_no_type',
             'designation',
             'expression',
             'identifier_list',
@@ -701,25 +701,57 @@ class CParser(PLYParser):
         """
         p[0] = p[1] if len(p) == 2 else p[1] + p[2]
 
-    def p_declaration_specifiers_1(self, p):
-        """ declaration_specifiers  : type_qualifier declaration_specifiers_opt
+    # To know when declaration-specifiers end and declarators begin,
+    # we require declaration-specifiers to have at least one
+    # type-specifier, and disallow typedef-names after we've seen any
+    # type-specifier. These are both required by the spec.
+    #
+    def p_declaration_specifiers_no_type_1(self, p):
+        """ declaration_specifiers_no_type  : type_qualifier declaration_specifiers_no_type_opt
         """
         p[0] = self._add_declaration_specifier(p[2], p[1], 'qual')
 
-    def p_declaration_specifiers_2(self, p):
-        """ declaration_specifiers  : type_specifier declaration_specifiers_opt
-        """
-        p[0] = self._add_declaration_specifier(p[2], p[1], 'type')
-
-    def p_declaration_specifiers_3(self, p):
-        """ declaration_specifiers  : storage_class_specifier declaration_specifiers_opt
+    def p_declaration_specifiers_no_type_2(self, p):
+        """ declaration_specifiers_no_type  : storage_class_specifier declaration_specifiers_no_type_opt
         """
         p[0] = self._add_declaration_specifier(p[2], p[1], 'storage')
 
-    def p_declaration_specifiers_4(self, p):
-        """ declaration_specifiers  : function_specifier declaration_specifiers_opt
+    def p_declaration_specifiers_no_type_3(self, p):
+        """ declaration_specifiers_no_type  : function_specifier declaration_specifiers_no_type_opt
         """
         p[0] = self._add_declaration_specifier(p[2], p[1], 'function')
+
+
+    def p_declaration_specifiers_1(self, p):
+        """ declaration_specifiers  : declaration_specifiers type_qualifier
+        """
+        p[0] = self._add_declaration_specifier(p[1], p[2], 'qual', append=True)
+
+    def p_declaration_specifiers_2(self, p):
+        """ declaration_specifiers  : declaration_specifiers storage_class_specifier
+        """
+        p[0] = self._add_declaration_specifier(p[1], p[2], 'storage', append=True)
+
+    def p_declaration_specifiers_3(self, p):
+        """ declaration_specifiers  : declaration_specifiers function_specifier
+        """
+        p[0] = self._add_declaration_specifier(p[1], p[2], 'function', append=True)
+
+    def p_declaration_specifiers_4(self, p):
+        """ declaration_specifiers  : declaration_specifiers type_specifier_no_typeid
+        """
+        p[0] = self._add_declaration_specifier(p[1], p[2], 'type', append=True)
+
+    def p_declaration_specifiers_5(self, p):
+        """ declaration_specifiers  : type_specifier
+        """
+        p[0] = self._add_declaration_specifier(None, p[1], 'type')
+
+    def p_declaration_specifiers_6(self, p):
+        """ declaration_specifiers  : declaration_specifiers_no_type type_specifier
+        """
+        p[0] = self._add_declaration_specifier(p[1], p[2], 'type', append=True)
+
 
     def p_storage_class_specifier(self, p):
         """ storage_class_specifier : AUTO
