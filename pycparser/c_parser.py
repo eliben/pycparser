@@ -353,7 +353,7 @@ class CParser(PLYParser):
                 coord=typename[0].coord)
         return decl
 
-    def _add_declaration_specifier(self, declspec, newspec, kind):
+    def _add_declaration_specifier(self, declspec, newspec, kind, append=False):
         """ Declaration specifiers are represented by a dictionary
             with the entries:
             * qual: a list of type qualifiers
@@ -367,7 +367,12 @@ class CParser(PLYParser):
             specifier incorporated.
         """
         spec = declspec or dict(qual=[], storage=[], type=[], function=[])
-        spec[kind].insert(0, newspec)
+
+        if append:
+            spec[kind].append(newspec)
+        else:
+            spec[kind].insert(0, newspec)
+
         return spec
 
     def _build_declarations(self, spec, decls, typedef_namespace=False):
