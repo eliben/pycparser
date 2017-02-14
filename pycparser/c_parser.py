@@ -576,7 +576,7 @@ class CParser(PLYParser):
     # a declaration list, for old "K&R style" function definitios.
     #
     def p_function_definition_1(self, p):
-        """ function_definition : declarator declaration_list_opt compound_statement
+        """ function_definition : id_declarator declaration_list_opt compound_statement
         """
         # no declaration specifiers - 'int' becomes the default type
         spec = dict(
@@ -593,7 +593,7 @@ class CParser(PLYParser):
             body=p[3])
 
     def p_function_definition_2(self, p):
-        """ function_definition : declaration_specifiers declarator declaration_list_opt compound_statement
+        """ function_definition : declaration_specifiers id_declarator declaration_list_opt compound_statement
         """
         spec = p[1]
 
