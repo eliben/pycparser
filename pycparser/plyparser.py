@@ -45,6 +45,17 @@ class PLYParser(object):
         optrule.__name__ = 'p_%s' % optname
         setattr(self.__class__, optrule.__name__, optrule)
 
+    def _create_param_rules(self, bound_rule_method):
+        """ Creates ply.yacc rules based on a parameterized bound method. """
+        f = bound_rule_method.__func__
+        for xxx, yyy in f._params:
+            def param_rule(self, p):
+                f(self, p)
+
+            param_rule.__doc__ = f.__doc__.replace('XXX', xxx).replace('YYY', yyy)
+            param_rule.__name__ = f.__name__.replace('XXX', xxx)[1:]
+            setattr(self.__class__, param_rule.__name__, param_rule)
+
     def _coord(self, lineno, column=None):
         return Coord(
                 file=self.clex.filename,
@@ -53,3 +64,19 @@ class PLYParser(object):
 
     def _parse_error(self, msg, coord):
         raise ParseError("%s: %s" % (coord, msg))
+
+
+def parameterized(*params):
+    """ Decorator to create parameterized rules.
+
+    Parameterized rule methods must be named starting with '_p_' and contain
+    'XXX', and their docstrings may contain 'XXX' and 'YYY'. These will be
+    replaced by the given parameter tuples. For example, ``_p_XXX_rule()`` with
+    docstring 'XXX_rule  : YYY' when decorated with
+    ``@parameterized(('id', 'ID'))`` produces ``p_id_rule()`` with the docstring
+    'id_rule  : ID'. Using multiple tuples produces multiple rules.
+    """
+    def decorate(rule_func):
+        rule_func._params = params
+        return rule_func
+    return decorate

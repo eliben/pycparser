@@ -107,6 +107,12 @@ class CParser(PLYParser):
         for rule in rules_with_opt:
             self._create_opt_rule(rule)
 
+        for name in dir(self):
+            if name.startswith('_p_'):
+                method = getattr(self, name)
+                if hasattr(method, '_params'):
+                    self._create_param_rules(method)
+
         self.cparser = yacc.yacc(
             module=self,
             start='translation_unit_or_empty',
