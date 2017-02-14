@@ -12,7 +12,7 @@ from .ply import yacc
 
 from . import c_ast
 from .c_lexer import CLexer
-from .plyparser import PLYParser, Coord, ParseError
+from .plyparser import PLYParser, Coord, ParseError, parameterized
 from .ast_transforms import fix_switch_cases
 
 
@@ -947,18 +947,26 @@ class CParser(PLYParser):
 
         p[0] = enumerator
 
-    def p_declarator_1(self, p):
-        """ declarator  : direct_declarator
+    def p_declarator(self, p):
+        """ declarator  : id_declarator
         """
         p[0] = p[1]
 
-    def p_declarator_2(self, p):
-        """ declarator  : pointer direct_declarator
+    @parameterized(('id', 'ID'))
+    def _p_XXX_declarator_1(self, p):
+        """ XXX_declarator  : direct_XXX_declarator
+        """
+        p[0] = p[1]
+
+    @parameterized(('id', 'ID'))
+    def _p_XXX_declarator_2(self, p):
+        """ XXX_declarator  : pointer direct_XXX_declarator
         """
         p[0] = self._type_modify_decl(p[2], p[1])
 
-    def p_direct_declarator_1(self, p):
-        """ direct_declarator   : ID
+    @parameterized(('id', 'ID'))
+    def _p_direct_XXX_declarator_1(self, p):
+        """ direct_XXX_declarator   : YYY
         """
         p[0] = c_ast.TypeDecl(
             declname=p[1],
@@ -966,13 +974,15 @@ class CParser(PLYParser):
             quals=None,
             coord=self._coord(p.lineno(1)))
 
-    def p_direct_declarator_2(self, p):
-        """ direct_declarator   : LPAREN declarator RPAREN
+    @parameterized(('id', 'ID'))
+    def _p_direct_XXX_declarator_2(self, p):
+        """ direct_XXX_declarator   : LPAREN XXX_declarator RPAREN
         """
         p[0] = p[2]
 
-    def p_direct_declarator_3(self, p):
-        """ direct_declarator   : direct_declarator LBRACKET type_qualifier_list_opt assignment_expression_opt RBRACKET
+    @parameterized(('id', 'ID'))
+    def _p_direct_XXX_declarator_3(self, p):
+        """ direct_XXX_declarator   : direct_XXX_declarator LBRACKET type_qualifier_list_opt assignment_expression_opt RBRACKET
         """
         quals = (p[3] if len(p) > 5 else []) or []
         # Accept dimension qualifiers
@@ -985,9 +995,10 @@ class CParser(PLYParser):
 
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
 
-    def p_direct_declarator_4(self, p):
-        """ direct_declarator   : direct_declarator LBRACKET STATIC type_qualifier_list_opt assignment_expression RBRACKET
-                                | direct_declarator LBRACKET type_qualifier_list STATIC assignment_expression RBRACKET
+    @parameterized(('id', 'ID'))
+    def _p_direct_XXX_declarator_4(self, p):
+        """ direct_XXX_declarator   : direct_XXX_declarator LBRACKET STATIC type_qualifier_list_opt assignment_expression RBRACKET
+                                    | direct_XXX_declarator LBRACKET type_qualifier_list STATIC assignment_expression RBRACKET
         """
         # Using slice notation for PLY objects doesn't work in Python 3 for the
         # version of PLY embedded with pycparser; see PLY Google Code issue 30.
@@ -1006,8 +1017,9 @@ class CParser(PLYParser):
 
     # Special for VLAs
     #
-    def p_direct_declarator_5(self, p):
-        """ direct_declarator   : direct_declarator LBRACKET type_qualifier_list_opt TIMES RBRACKET
+    @parameterized(('id', 'ID'))
+    def _p_direct_XXX_declarator_5(self, p):
+        """ direct_XXX_declarator   : direct_XXX_declarator LBRACKET type_qualifier_list_opt TIMES RBRACKET
         """
         arr = c_ast.ArrayDecl(
             type=None,
@@ -1017,9 +1029,10 @@ class CParser(PLYParser):
 
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
 
-    def p_direct_declarator_6(self, p):
-        """ direct_declarator   : direct_declarator LPAREN parameter_type_list RPAREN
-                                | direct_declarator LPAREN identifier_list_opt RPAREN
+    @parameterized(('id', 'ID'))
+    def _p_direct_XXX_declarator_6(self, p):
+        """ direct_XXX_declarator   : direct_XXX_declarator LPAREN parameter_type_list RPAREN
+                                    | direct_XXX_declarator LPAREN identifier_list_opt RPAREN
         """
         func = c_ast.FuncDecl(
             args=p[3],
@@ -1045,6 +1058,7 @@ class CParser(PLYParser):
 
         p[0] = self._type_modify_decl(decl=p[1], modifier=func)
 
+    @parameterized(('id', 'ID'))
     def p_pointer(self, p):
         """ pointer : TIMES type_qualifier_list_opt
                     | TIMES type_qualifier_list_opt pointer
