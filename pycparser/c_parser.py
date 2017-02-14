@@ -951,21 +951,6 @@ class CParser(PLYParser):
         """
         p[0] = self._type_modify_decl(p[2], p[1])
 
-    # Since it's impossible for a type to be specified after a pointer, assume
-    # it's intended to be the name for this declaration.  _add_identifier will
-    # raise an error if this TYPEID can't be redeclared.
-    #
-    def p_declarator_3(self, p):
-        """ declarator  : pointer TYPEID
-        """
-        decl = c_ast.TypeDecl(
-            declname=p[2],
-            type=None,
-            quals=None,
-            coord=self._coord(p.lineno(2)))
-
-        p[0] = self._type_modify_decl(decl, p[1])
-
     def p_direct_declarator_1(self, p):
         """ direct_declarator   : ID
         """
