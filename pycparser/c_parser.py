@@ -731,26 +731,27 @@ class CParser(PLYParser):
         """
         p[0] = p[1]
 
-    def p_type_specifier_1(self, p):
-        """ type_specifier  : VOID
-                            | _BOOL
-                            | CHAR
-                            | SHORT
-                            | INT
-                            | LONG
-                            | FLOAT
-                            | DOUBLE
-                            | _COMPLEX
-                            | SIGNED
-                            | UNSIGNED
-                            | __INT128
+    def p_type_specifier_no_typeid(self, p):
+        """ type_specifier_no_typeid  : VOID
+                                      | _BOOL
+                                      | CHAR
+                                      | SHORT
+                                      | INT
+                                      | LONG
+                                      | FLOAT
+                                      | DOUBLE
+                                      | _COMPLEX
+                                      | SIGNED
+                                      | UNSIGNED
+                                      | __INT128
         """
         p[0] = c_ast.IdentifierType([p[1]], coord=self._coord(p.lineno(1)))
 
-    def p_type_specifier_2(self, p):
+    def p_type_specifier(self, p):
         """ type_specifier  : typedef_name
                             | enum_specifier
                             | struct_or_union_specifier
+                            | type_specifier_no_typeid
         """
         p[0] = p[1]
 
