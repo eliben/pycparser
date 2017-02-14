@@ -868,20 +868,6 @@ class CParser(PLYParser):
         p[0] = decls
 
     def p_struct_declaration_2(self, p):
-        """ struct_declaration : specifier_qualifier_list abstract_declarator SEMI
-        """
-        # "Abstract declarator?!", you ask?  Structure members can have the
-        # same names as typedefs.  The trouble is that the member's name gets
-        # grouped into specifier_qualifier_list, leaving any remainder to
-        # appear as an abstract declarator, as in:
-        #   typedef int Foo;
-        #   struct { Foo Foo[3]; };
-        #
-        p[0] = self._build_declarations(
-                spec=p[1],
-                decls=[dict(decl=p[2], init=None)])
-
-    def p_struct_declaration_3(self, p):
         """ struct_declaration : SEMI
         """
         p[0] = None
