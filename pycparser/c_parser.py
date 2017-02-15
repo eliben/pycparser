@@ -96,6 +96,7 @@ class CParser(PLYParser):
             'expression',
             'identifier_list',
             'init_declarator_list',
+            'id_init_declarator_list',
             'initializer_list',
             'parameter_type_list',
             'block_item_list',
@@ -629,6 +630,7 @@ class CParser(PLYParser):
     #
     def p_decl_body(self, p):
         """ decl_body : declaration_specifiers init_declarator_list_opt
+                      | declaration_specifiers_no_type id_init_declarator_list_opt
         """
         spec = p[1]
 
@@ -810,6 +812,18 @@ class CParser(PLYParser):
     def p_init_declarator(self, p):
         """ init_declarator : declarator
                             | declarator EQUALS initializer
+        """
+        p[0] = dict(decl=p[1], init=(p[3] if len(p) > 2 else None))
+
+    def p_id_init_declarator_list(self, p):
+        """ id_init_declarator_list    : id_init_declarator
+                                       | id_init_declarator_list COMMA init_declarator
+        """
+        p[0] = p[1] + [p[3]] if len(p) == 4 else [p[1]]
+
+    def p_id_init_declarator(self, p):
+        """ id_init_declarator : id_declarator
+                               | id_declarator EQUALS initializer
         """
         p[0] = dict(decl=p[1], init=(p[3] if len(p) > 2 else None))
 
