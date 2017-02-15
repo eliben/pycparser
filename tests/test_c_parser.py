@@ -993,6 +993,27 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(parsed_struct.type.type.decls[0].bitsize.value, '6')
         self.assertEqual(parsed_struct.type.type.decls[1].bitsize.value, '2')
 
+    def test_multi_type_redefinitions(self):
+        s1 = """
+                typedef int a;
+
+                void main ()
+                {
+                    int a, b;
+                }
+             """
+        s1_ast = self.parse(s1)
+        self.assertEqual(expand_decl(s1_ast.ext[1].body.block_items[0]),
+            ['Decl', 'a',
+                ['TypeDecl',
+                    ['IdentifierType', ['int']]]])
+
+        self.assertEqual(expand_decl(s1_ast.ext[1].body.block_items[1]),
+            ['Decl', 'b',
+                ['TypeDecl',
+                    ['IdentifierType', ['int']]]])
+
+
     def test_tags_namespace(self):
         """ Tests that the tags of structs/unions/enums reside in a separate namespace and
             can be named after existing types.
