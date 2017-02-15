@@ -993,27 +993,6 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(parsed_struct.type.type.decls[0].bitsize.value, '6')
         self.assertEqual(parsed_struct.type.type.decls[1].bitsize.value, '2')
 
-    def test_multi_type_redefinitions(self):
-        s1 = """
-                typedef int a;
-
-                void main ()
-                {
-                    int a, b;
-                }
-             """
-        s1_ast = self.parse(s1)
-        self.assertEqual(expand_decl(s1_ast.ext[1].body.block_items[0]),
-            ['Decl', 'a',
-                ['TypeDecl',
-                    ['IdentifierType', ['int']]]])
-
-        self.assertEqual(expand_decl(s1_ast.ext[1].body.block_items[1]),
-            ['Decl', 'b',
-                ['TypeDecl',
-                    ['IdentifierType', ['int']]]])
-
-
     def test_tags_namespace(self):
         """ Tests that the tags of structs/unions/enums reside in a separate namespace and
             can be named after existing types.
@@ -1843,6 +1822,32 @@ class TestCParser_typenames(TestCParser_base):
             }
             '''
         self.assertRaises(ParseError, self.parse, s5)
+
+        # reusing a type name should work with multiple declarators
+        s6 = r'''
+            typedef char TT;
+            void foo(void) {
+              unsigned TT, uu;
+            }
+            '''
+        s6_ast = self.parse(s6)
+        items = s6_ast.ext[1].body.block_items
+        self.assertEqual(expand_decl(items[0]),
+            ['Decl', 'TT', ['TypeDecl', ['IdentifierType', ['unsigned']]]])
+        self.assertEqual(expand_decl(items[1]),
+            ['Decl', 'uu', ['TypeDecl', ['IdentifierType', ['unsigned']]]])
+
+        # reusing a type name should work after a pointer
+        s7 = r'''
+            typedef char TT;
+            void foo(void) {
+              unsigned * TT;
+            }
+            '''
+        s7_ast = self.parse(s7)
+        items = s7_ast.ext[1].body.block_items
+        self.assertEqual(expand_decl(items[0]),
+            ['Decl', 'TT', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['unsigned']]]]])
 
     def test_parameter_reuse_typedef_name(self):
         # identifiers can be reused as parameter names; parameter name scope
