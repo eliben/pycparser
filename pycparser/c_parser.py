@@ -1017,19 +1017,19 @@ class CParser(PLYParser):
         """
         p[0] = p[1]
 
-    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'))
+    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
     def _p_XXX_declarator_1(self, p):
         """ XXX_declarator  : direct_XXX_declarator
         """
         p[0] = p[1]
 
-    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'))
+    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
     def _p_XXX_declarator_2(self, p):
         """ XXX_declarator  : pointer direct_XXX_declarator
         """
         p[0] = self._type_modify_decl(p[2], p[1])
 
-    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'))
+    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
     def _p_direct_XXX_declarator_1(self, p):
         """ direct_XXX_declarator   : YYY
         """
@@ -1045,7 +1045,7 @@ class CParser(PLYParser):
         """
         p[0] = p[2]
 
-    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'))
+    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
     def _p_direct_XXX_declarator_3(self, p):
         """ direct_XXX_declarator   : direct_XXX_declarator LBRACKET type_qualifier_list_opt assignment_expression_opt RBRACKET
         """
@@ -1060,7 +1060,7 @@ class CParser(PLYParser):
 
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
 
-    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'))
+    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
     def _p_direct_XXX_declarator_4(self, p):
         """ direct_XXX_declarator   : direct_XXX_declarator LBRACKET STATIC type_qualifier_list_opt assignment_expression RBRACKET
                                     | direct_XXX_declarator LBRACKET type_qualifier_list STATIC assignment_expression RBRACKET
@@ -1082,7 +1082,7 @@ class CParser(PLYParser):
 
     # Special for VLAs
     #
-    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'))
+    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
     def _p_direct_XXX_declarator_5(self, p):
         """ direct_XXX_declarator   : direct_XXX_declarator LBRACKET type_qualifier_list_opt TIMES RBRACKET
         """
@@ -1094,7 +1094,7 @@ class CParser(PLYParser):
 
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
 
-    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'))
+    @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
     def _p_direct_XXX_declarator_6(self, p):
         """ direct_XXX_declarator   : direct_XXX_declarator LPAREN parameter_type_list RPAREN
                                     | direct_XXX_declarator LPAREN identifier_list_opt RPAREN
@@ -1178,8 +1178,19 @@ class CParser(PLYParser):
             p[1].params.append(p[3])
             p[0] = p[1]
 
+    # From ISO/IEC 9899:TC2, 6.7.5.3.11:
+    # "If, in a parameter declaration, an identifier can be treated either
+    #  as a typedef name or as a parameter name, it shall be taken as a
+    #  typedef name."
+    #
+    # Inside a parameter declaration, once we've reduced declaration specifiers,
+    # if we shift in an LPAREN and see a TYPEID, it could be either an abstract
+    # declarator or a declarator nested inside parens. This rule tells us to
+    # always treat it as an abstract declarator. Therefore, we only accept
+    # `id_declarator`s and `typeid_noparen_declarator`s.
     def p_parameter_declaration_1(self, p):
-        """ parameter_declaration   : declaration_specifiers declarator
+        """ parameter_declaration   : declaration_specifiers id_declarator
+                                    | declaration_specifiers typeid_noparen_declarator
         """
         spec = p[1]
         if not spec['type']:
