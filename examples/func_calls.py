@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------
-# pycparser: func_defs.py
+# pycparser: func_calls.py
 #
 # Using pycparser for printing out all the calls of some function
 # in a C file.
