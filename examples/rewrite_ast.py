@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------
-# pycparser: func_write.py
+# pycparser: rewrite_ast.py
 #
 # Tiny example of rewriting a AST node
 #
