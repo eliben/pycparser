@@ -1851,6 +1851,27 @@ class TestCParser_typenames(TestCParser_base):
         self.assertEqual(expand_decl(items[0]),
             ['Decl', 'TT', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['unsigned']]]]])
 
+        # redefine a name in the middle of a multi-declarator declaration
+        s8 = r'''
+            typedef char TT;
+            void foo(void) {
+                int tt = sizeof(TT), TT, uu = sizeof(TT);
+                int uu = sizeof(tt);
+            }
+            '''
+        s8_ast = self.parse(s8)
+        items = s8_ast.ext[1].body.block_items
+        self.assertEqual(expand_decl(items[0]),
+            ['Decl', 'tt', ['TypeDecl', ['IdentifierType', ['int']]]])
+        self.assertEqual(expand_decl(items[1]),
+            ['Decl', 'TT', ['TypeDecl', ['IdentifierType', ['int']]]])
+        self.assertEqual(expand_decl(items[2]),
+            ['Decl', 'uu', ['TypeDecl', ['IdentifierType', ['int']]]])
+        self.assertEqual(expand_init(items[0].init),
+            ['UnaryOp', 'sizeof', ['Typename', ['TypeDecl', ['IdentifierType', ['TT']]]]])
+        self.assertEqual(expand_init(items[2].init),
+            ['UnaryOp', 'sizeof', ['ID', 'TT']])
+
     def test_parameter_reuse_typedef_name(self):
         # identifiers can be reused as parameter names; parameter name scope
         # begins and ends with the function body; it's important that TT is
