@@ -1000,6 +1000,7 @@ class CParser(PLYParser):
 
     def p_direct_declarator_1(self, p):
         """ direct_declarator   : ID
+                                | TYPEID
         """
         p[0] = c_ast.TypeDecl(
             declname=p[1],

@@ -1823,6 +1823,19 @@ class TestCParser_typenames(TestCParser_base):
             '''
         self.assertRaises(ParseError, self.parse, s5)
 
+        # naming a variable after an outer-scope type should work even if
+        # it is not declared on its own line
+        s6 = r'''
+            typedef int TT;
+            void f(){
+                int other, TT;
+            }
+            TT a;
+            '''
+        s6_ast = self.parse(s6)
+        self.assertEqual(expand_decl(s6_ast.ext[1].body.block_items[1]),
+                         ['Decl', 'TT', ['TypeDecl', ['IdentifierType', ['int']]]])
+
     def test_parameter_reuse_typedef_name(self):
         # identifiers can be reused as parameter names; parameter name scope
         # begins and ends with the function body; it's important that TT is
