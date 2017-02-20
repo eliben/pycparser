@@ -58,9 +58,9 @@ class PLYParser(object):
 def parameterized(*params):
     """ Decorator to create parameterized rules.
 
-    Parameterized rule methods must be named starting with '_p_' and contain
+    Parameterized rule methods must be named starting with 'p_' and contain
     'XXX', and their docstrings may contain 'XXX' and 'YYY'. These will be
-    replaced by the given parameter tuples. For example, ``_p_XXX_rule()`` with
+    replaced by the given parameter tuples. For example, ``p_XXX_rule()`` with
     docstring 'XXX_rule  : YYY' when decorated with
     ``@parameterized(('id', 'ID'))`` produces ``p_id_rule()`` with the docstring
     'id_rule  : ID'. Using multiple tuples produces multiple rules.
@@ -73,9 +73,10 @@ def parameterized(*params):
 
 def template(cls):
     for attr_name in dir(cls):
-        if attr_name.startswith('_p_'):
+        if attr_name.startswith('p_'):
             method = getattr(cls, attr_name)
             if hasattr(method, '_params'):
+                delattr(cls, attr_name)  # Remove template method
                 _create_param_rules(cls, method)
     return cls
 
@@ -87,5 +88,5 @@ def _create_param_rules(cls, func):
             func(self, p)
 
         param_rule.__doc__ = func.__doc__.replace('XXX', xxx).replace('YYY', yyy)
-        param_rule.__name__ = func.__name__.replace('XXX', xxx)[1:]
+        param_rule.__name__ = func.__name__.replace('XXX', xxx)
         setattr(cls, param_rule.__name__, param_rule)
