@@ -363,6 +363,8 @@ class CParser(PLYParser):
 
             This method is given a declaration specifier, and a
             new specifier of a given kind.
+            If `append` is True, the new specifier is added to the end of
+            the specifiers list, otherwise it's added at the beginning.
             Returns the declaration specifier, with the new
             specifier incorporated.
         """
