@@ -59,9 +59,9 @@ def parameterized(*params):
     """ Decorator to create parameterized rules.
 
     Parameterized rule methods must be named starting with 'p_' and contain
-    'XXX', and their docstrings may contain 'XXX' and 'YYY'. These will be
-    replaced by the given parameter tuples. For example, ``p_XXX_rule()`` with
-    docstring 'XXX_rule  : YYY' when decorated with
+    'xxx', and their docstrings may contain 'xxx' and 'yyy'. These will be
+    replaced by the given parameter tuples. For example, ``p_xxx_rule()`` with
+    docstring 'xxx_rule  : yyy' when decorated with
     ``@parameterized(('id', 'ID'))`` produces ``p_id_rule()`` with the docstring
     'id_rule  : ID'. Using multiple tuples produces multiple rules.
     """
@@ -87,6 +87,6 @@ def _create_param_rules(cls, func):
         def param_rule(self, p):
             func(self, p)
 
-        param_rule.__doc__ = func.__doc__.replace('XXX', xxx).replace('YYY', yyy)
-        param_rule.__name__ = func.__name__.replace('XXX', xxx)
+        param_rule.__doc__ = func.__doc__.replace('xxx', xxx).replace('yyy', yyy)
+        param_rule.__name__ = func.__name__.replace('xxx', xxx)
         setattr(cls, param_rule.__name__, param_rule)

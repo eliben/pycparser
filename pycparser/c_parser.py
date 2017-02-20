@@ -1015,20 +1015,20 @@ class CParser(PLYParser):
         p[0] = p[1]
 
     @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
-    def p_XXX_declarator_1(self, p):
-        """ XXX_declarator  : direct_XXX_declarator
+    def p_xxx_declarator_1(self, p):
+        """ xxx_declarator  : direct_xxx_declarator
         """
         p[0] = p[1]
 
     @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
-    def p_XXX_declarator_2(self, p):
-        """ XXX_declarator  : pointer direct_XXX_declarator
+    def p_xxx_declarator_2(self, p):
+        """ xxx_declarator  : pointer direct_xxx_declarator
         """
         p[0] = self._type_modify_decl(p[2], p[1])
 
     @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
-    def p_direct_XXX_declarator_1(self, p):
-        """ direct_XXX_declarator   : YYY
+    def p_direct_xxx_declarator_1(self, p):
+        """ direct_xxx_declarator   : yyy
         """
         p[0] = c_ast.TypeDecl(
             declname=p[1],
@@ -1037,14 +1037,14 @@ class CParser(PLYParser):
             coord=self._coord(p.lineno(1)))
 
     @parameterized(('id', 'ID'), ('typeid', 'TYPEID'))
-    def p_direct_XXX_declarator_2(self, p):
-        """ direct_XXX_declarator   : LPAREN XXX_declarator RPAREN
+    def p_direct_xxx_declarator_2(self, p):
+        """ direct_xxx_declarator   : LPAREN xxx_declarator RPAREN
         """
         p[0] = p[2]
 
     @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
-    def p_direct_XXX_declarator_3(self, p):
-        """ direct_XXX_declarator   : direct_XXX_declarator LBRACKET type_qualifier_list_opt assignment_expression_opt RBRACKET
+    def p_direct_xxx_declarator_3(self, p):
+        """ direct_xxx_declarator   : direct_xxx_declarator LBRACKET type_qualifier_list_opt assignment_expression_opt RBRACKET
         """
         quals = (p[3] if len(p) > 5 else []) or []
         # Accept dimension qualifiers
@@ -1058,9 +1058,9 @@ class CParser(PLYParser):
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
 
     @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
-    def p_direct_XXX_declarator_4(self, p):
-        """ direct_XXX_declarator   : direct_XXX_declarator LBRACKET STATIC type_qualifier_list_opt assignment_expression RBRACKET
-                                    | direct_XXX_declarator LBRACKET type_qualifier_list STATIC assignment_expression RBRACKET
+    def p_direct_xxx_declarator_4(self, p):
+        """ direct_xxx_declarator   : direct_xxx_declarator LBRACKET STATIC type_qualifier_list_opt assignment_expression RBRACKET
+                                    | direct_xxx_declarator LBRACKET type_qualifier_list STATIC assignment_expression RBRACKET
         """
         # Using slice notation for PLY objects doesn't work in Python 3 for the
         # version of PLY embedded with pycparser; see PLY Google Code issue 30.
@@ -1080,8 +1080,8 @@ class CParser(PLYParser):
     # Special for VLAs
     #
     @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
-    def p_direct_XXX_declarator_5(self, p):
-        """ direct_XXX_declarator   : direct_XXX_declarator LBRACKET type_qualifier_list_opt TIMES RBRACKET
+    def p_direct_xxx_declarator_5(self, p):
+        """ direct_xxx_declarator   : direct_xxx_declarator LBRACKET type_qualifier_list_opt TIMES RBRACKET
         """
         arr = c_ast.ArrayDecl(
             type=None,
@@ -1092,9 +1092,9 @@ class CParser(PLYParser):
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
 
     @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
-    def p_direct_XXX_declarator_6(self, p):
-        """ direct_XXX_declarator   : direct_XXX_declarator LPAREN parameter_type_list RPAREN
-                                    | direct_XXX_declarator LPAREN identifier_list_opt RPAREN
+    def p_direct_xxx_declarator_6(self, p):
+        """ direct_xxx_declarator   : direct_xxx_declarator LPAREN parameter_type_list RPAREN
+                                    | direct_xxx_declarator LPAREN identifier_list_opt RPAREN
         """
         func = c_ast.FuncDecl(
             args=p[3],
