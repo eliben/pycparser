@@ -45,17 +45,6 @@ class PLYParser(object):
         optrule.__name__ = 'p_%s' % optname
         setattr(self.__class__, optrule.__name__, optrule)
 
-    def _create_param_rules(self, bound_rule_method):
-        """ Creates ply.yacc rules based on a parameterized bound method. """
-        f = bound_rule_method.__func__
-        for xxx, yyy in f._params:
-            def param_rule(self, p):
-                f(self, p)
-
-            param_rule.__doc__ = f.__doc__.replace('XXX', xxx).replace('YYY', yyy)
-            param_rule.__name__ = f.__name__.replace('XXX', xxx)[1:]
-            setattr(self.__class__, param_rule.__name__, param_rule)
-
     def _coord(self, lineno, column=None):
         return Coord(
                 file=self.clex.filename,
@@ -80,3 +69,23 @@ def parameterized(*params):
         rule_func._params = params
         return rule_func
     return decorate
+
+
+def template(cls):
+    for attr_name in dir(cls):
+        if attr_name.startswith('_p_'):
+            method = getattr(cls, attr_name)
+            if hasattr(method, '_params'):
+                _create_param_rules(cls, method)
+    return cls
+
+
+def _create_param_rules(cls, func):
+    """ Creates ply.yacc rules based on a parameterized rule function """
+    for xxx, yyy in func._params:
+        def param_rule(self, p):
+            func(self, p)
+
+        param_rule.__doc__ = func.__doc__.replace('XXX', xxx).replace('YYY', yyy)
+        param_rule.__name__ = func.__name__.replace('XXX', xxx)[1:]
+        setattr(cls, param_rule.__name__, param_rule)
