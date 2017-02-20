@@ -77,6 +77,8 @@ def expand_init(init):
         return ['Constant', init.type, init.value]
     elif typ == ID:
         return ['ID', init.name]
+    elif typ == UnaryOp:
+        return ['UnaryOp', init.op, expand_decl(init.expr)]
 
 
 class TestCParser_base(unittest.TestCase):
