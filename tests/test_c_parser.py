@@ -1757,6 +1757,62 @@ class TestCParser_typenames(TestCParser_base):
             '''
         self.assertTrue(isinstance(self.parse(s2), FileAST))
 
+    def test_ambiguous_parameters(self):
+        # From ISO/IEC 9899:TC2, 6.7.5.3.11:
+        # "If, in a parameter declaration, an identifier can be treated either
+        #  as a typedef name or as a parameter name, it shall be taken as a
+        #  typedef name."
+
+        # foo takes an int named aa
+        # bar takes a function taking a TT
+        s1 = r'''
+        typedef char TT;
+        int foo(int (aa));
+        int bar(int (TT));
+        '''
+        s1_ast = self.parse(s1)
+        self.assertEqual(expand_decl(s1_ast.ext[1].type.args.params[0]),
+            ['Decl', 'aa', ['TypeDecl', ['IdentifierType', ['int']]]])
+        self.assertEqual(expand_decl(s1_ast.ext[2].type.args.params[0]),
+            ['Typename', ['FuncDecl',
+                [['Typename', ['TypeDecl', ['IdentifierType', ['TT']]]]],
+                ['TypeDecl', ['IdentifierType', ['int']]]]])
+
+        # foo takes a function taking a char
+        # bar takes a function taking a function taking a char
+        s2 = r'''
+        typedef char TT;
+        int foo(int (aa (char)));
+        int bar(int (TT (char)));
+        '''
+        s2_ast = self.parse(s2)
+        self.assertEqual(expand_decl(s2_ast.ext[1].type.args.params[0]),
+            ['Decl', 'aa', ['FuncDecl',
+                [['Typename', ['TypeDecl', ['IdentifierType', ['char']]]]],
+                ['TypeDecl', ['IdentifierType', ['int']]]]])
+        self.assertEqual(expand_decl(s2_ast.ext[2].type.args.params[0]),
+            ['Typename', ['FuncDecl',
+                [['Typename', ['FuncDecl',
+                    [['Typename', ['TypeDecl', ['IdentifierType', ['char']]]]],
+                    ['TypeDecl', ['IdentifierType', ['TT']]]]]],
+                ['TypeDecl', ['IdentifierType', ['int']]]]])
+
+
+        # foo takes an int array named aa
+        # bar takes a function taking a TT array
+        s3 = r'''
+        typedef char TT;
+        int foo(int (aa[]));
+        int bar(int (TT[]));
+        '''
+        s3_ast = self.parse(s3)
+        self.assertEqual(expand_decl(s3_ast.ext[1].type.args.params[0]),
+            ['Decl', 'aa', ['ArrayDecl', '', [], ['TypeDecl', ['IdentifierType', ['int']]]]])
+        self.assertEqual(expand_decl(s3_ast.ext[2].type.args.params[0]),
+            ['Typename', ['FuncDecl',
+                [['Typename', ['ArrayDecl', '', [], ['TypeDecl', ['IdentifierType', ['TT']]]]]],
+                ['TypeDecl', ['IdentifierType', ['int']]]]])
+
     def test_innerscope_reuse_typedef_name(self):
         # identifiers can be reused in inner scopes; the original should be
         # restored at the end of the block
