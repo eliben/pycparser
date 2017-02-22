@@ -26,13 +26,11 @@ ast = parser.parse(text)
 # space saving, it needs Pickle's protocol version >= 2.
 # The default version is 3 for python 3.x and 1 for python 2.7.
 # You can always select the highest available protocol with the -1 argument.
-#
-f = open('ast', 'wb')
-pickle.dump(ast, f, protocol=-1)
-f.close()
 
-f = open('ast', 'rb')
-ast = pickle.load(f)
-f.close()
+with open('ast', 'wb') as f:
+    pickle.dump(ast, f, protocol=-1)
 
-ast.show()
+# Deserialize.
+with open('ast', 'rb') as f:
+    ast = pickle.load(f)
+    ast.show()
