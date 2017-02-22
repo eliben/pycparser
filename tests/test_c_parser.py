@@ -77,6 +77,8 @@ def expand_init(init):
         return ['Constant', init.type, init.value]
     elif typ == ID:
         return ['ID', init.name]
+    elif typ == UnaryOp:
+        return ['UnaryOp', init.op, expand_decl(init.expr)]
 
 
 class TestCParser_base(unittest.TestCase):
@@ -1755,6 +1757,62 @@ class TestCParser_typenames(TestCParser_base):
             '''
         self.assertTrue(isinstance(self.parse(s2), FileAST))
 
+    def test_ambiguous_parameters(self):
+        # From ISO/IEC 9899:TC2, 6.7.5.3.11:
+        # "If, in a parameter declaration, an identifier can be treated either
+        #  as a typedef name or as a parameter name, it shall be taken as a
+        #  typedef name."
+
+        # foo takes an int named aa
+        # bar takes a function taking a TT
+        s1 = r'''
+        typedef char TT;
+        int foo(int (aa));
+        int bar(int (TT));
+        '''
+        s1_ast = self.parse(s1)
+        self.assertEqual(expand_decl(s1_ast.ext[1].type.args.params[0]),
+            ['Decl', 'aa', ['TypeDecl', ['IdentifierType', ['int']]]])
+        self.assertEqual(expand_decl(s1_ast.ext[2].type.args.params[0]),
+            ['Typename', ['FuncDecl',
+                [['Typename', ['TypeDecl', ['IdentifierType', ['TT']]]]],
+                ['TypeDecl', ['IdentifierType', ['int']]]]])
+
+        # foo takes a function taking a char
+        # bar takes a function taking a function taking a char
+        s2 = r'''
+        typedef char TT;
+        int foo(int (aa (char)));
+        int bar(int (TT (char)));
+        '''
+        s2_ast = self.parse(s2)
+        self.assertEqual(expand_decl(s2_ast.ext[1].type.args.params[0]),
+            ['Decl', 'aa', ['FuncDecl',
+                [['Typename', ['TypeDecl', ['IdentifierType', ['char']]]]],
+                ['TypeDecl', ['IdentifierType', ['int']]]]])
+        self.assertEqual(expand_decl(s2_ast.ext[2].type.args.params[0]),
+            ['Typename', ['FuncDecl',
+                [['Typename', ['FuncDecl',
+                    [['Typename', ['TypeDecl', ['IdentifierType', ['char']]]]],
+                    ['TypeDecl', ['IdentifierType', ['TT']]]]]],
+                ['TypeDecl', ['IdentifierType', ['int']]]]])
+
+
+        # foo takes an int array named aa
+        # bar takes a function taking a TT array
+        s3 = r'''
+        typedef char TT;
+        int foo(int (aa[]));
+        int bar(int (TT[]));
+        '''
+        s3_ast = self.parse(s3)
+        self.assertEqual(expand_decl(s3_ast.ext[1].type.args.params[0]),
+            ['Decl', 'aa', ['ArrayDecl', '', [], ['TypeDecl', ['IdentifierType', ['int']]]]])
+        self.assertEqual(expand_decl(s3_ast.ext[2].type.args.params[0]),
+            ['Typename', ['FuncDecl',
+                [['Typename', ['ArrayDecl', '', [], ['TypeDecl', ['IdentifierType', ['TT']]]]]],
+                ['TypeDecl', ['IdentifierType', ['int']]]]])
+
     def test_innerscope_reuse_typedef_name(self):
         # identifiers can be reused in inner scopes; the original should be
         # restored at the end of the block
@@ -1822,6 +1880,55 @@ class TestCParser_typenames(TestCParser_base):
             }
             '''
         self.assertRaises(ParseError, self.parse, s5)
+
+        # reusing a type name should work with multiple declarators
+        s6 = r'''
+            typedef char TT;
+            void foo(void) {
+              unsigned TT, uu;
+            }
+            '''
+        s6_ast = self.parse(s6)
+        items = s6_ast.ext[1].body.block_items
+        self.assertEqual(expand_decl(items[0]),
+            ['Decl', 'TT', ['TypeDecl', ['IdentifierType', ['unsigned']]]])
+        self.assertEqual(expand_decl(items[1]),
+            ['Decl', 'uu', ['TypeDecl', ['IdentifierType', ['unsigned']]]])
+
+        # reusing a type name should work after a pointer
+        s7 = r'''
+            typedef char TT;
+            void foo(void) {
+              unsigned * TT;
+            }
+            '''
+        s7_ast = self.parse(s7)
+        items = s7_ast.ext[1].body.block_items
+        self.assertEqual(expand_decl(items[0]),
+            ['Decl', 'TT', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['unsigned']]]]])
+
+        # redefine a name in the middle of a multi-declarator declaration
+        s8 = r'''
+            typedef char TT;
+            void foo(void) {
+                int tt = sizeof(TT), TT, uu = sizeof(TT);
+                int uu = sizeof(tt);
+            }
+            '''
+        s8_ast = self.parse(s8)
+        items = s8_ast.ext[1].body.block_items
+        self.assertEqual(expand_decl(items[0]),
+            ['Decl', 'tt', ['TypeDecl', ['IdentifierType', ['int']]]])
+        self.assertEqual(expand_decl(items[1]),
+            ['Decl', 'TT', ['TypeDecl', ['IdentifierType', ['int']]]])
+        self.assertEqual(expand_decl(items[2]),
+            ['Decl', 'uu', ['TypeDecl', ['IdentifierType', ['int']]]])
+
+        # Don't test this until we have support for it
+        # self.assertEqual(expand_init(items[0].init),
+        #     ['UnaryOp', 'sizeof', ['Typename', ['TypeDecl', ['IdentifierType', ['TT']]]]])
+        # self.assertEqual(expand_init(items[2].init),
+        #     ['UnaryOp', 'sizeof', ['ID', 'TT']])
 
     def test_parameter_reuse_typedef_name(self):
         # identifiers can be reused as parameter names; parameter name scope
