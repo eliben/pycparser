@@ -2,6 +2,7 @@
 
   - PR #161: Update bundled PLY version to 3.9
   - PR #158: Add support for the __int128 type.
+  - PR $169: Handle more tricky TYPEID in declarators.
 
 + Version 2.17 (29.10.2016)
 

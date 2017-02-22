@@ -88,9 +88,9 @@ def template(cls):
 def _create_param_rules(cls, func):
     """ Create ply.yacc rules based on a parameterized rule function
 
-    Generates new methods (one per each pair of parameters) based on the template
-    rule function `func`, and attaches them to `cls`. The rule function's
-    parameters must be accessible via its `_params` attribute.
+    Generates new methods (one per each pair of parameters) based on the
+    template rule function `func`, and attaches them to `cls`. The rule
+    function's parameters must be accessible via its `_params` attribute.
     """
     for xxx, yyy in func._params:
         # Use the template method's body for each new method
