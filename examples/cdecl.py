@@ -33,6 +33,7 @@
 # Eli Bendersky [http://eli.thegreenplace.net]
 # License: BSD
 #-----------------------------------------------------------------
+import copy
 import sys
 
 # This is not required if you've installed pycparser into
@@ -64,13 +65,13 @@ def explain_c_declaration(c_decl, expand_struct=False, expand_typedef=False):
         return "Not a valid declaration"
 
     try:
-        _expand_struct_typedef(node.ext[-1], node,
-                               expand_struct=expand_struct,
-                               expand_typedef=expand_typedef)
+        expanded = expand_struct_typedef(node.ext[-1], node,
+                                         expand_struct=expand_struct,
+                                         expand_typedef=expand_typedef)
     except Exception as e:
         return "Not a valid declaration: " + str(e)
 
-    return _explain_decl_node(node.ext[-1])
+    return _explain_decl_node(expanded)
 
 
 def _explain_decl_node(decl_node):
@@ -124,14 +125,21 @@ def _explain_type(decl):
                 ('containing {%s}' % members if members else ''))
 
 
-def _expand_struct_typedef(decl, file_ast, expand_struct=False, expand_typedef=False):
-    """Recursively expand struct & typedef if according argument is true,
-       also check using undeclared struct & type and throw Exception
+def expand_struct_typedef(cdecl, file_ast, expand_struct=False, expand_typedef=False):
+    """Expand struct & typedef in context of file_ast and return a new expanded node"""
+    decl_copy = copy.deepcopy(cdecl)
+    _expand_in_place(decl_copy, file_ast, expand_struct, expand_typedef)
+    return decl_copy
+
+
+def _expand_in_place(decl, file_ast, expand_struct=False, expand_typedef=False):
+    """Recursively expand struct & typedef in place, throw Exception if
+       undeclared struct or typedef are used
     """
     typ = type(decl)
 
     if typ in (c_ast.Decl, c_ast.TypeDecl, c_ast.PtrDecl, c_ast.ArrayDecl):
-        decl.type = _expand_struct_typedef(decl.type, file_ast, expand_struct, expand_typedef)
+        decl.type = _expand_in_place(decl.type, file_ast, expand_struct, expand_typedef)
 
     elif typ == c_ast.Struct:
         if not decl.decls:
@@ -141,7 +149,7 @@ def _expand_struct_typedef(decl, file_ast, expand_struct=False, expand_typedef=F
             decl.decls = struct.decls
 
         for i, mem_decl in enumerate(decl.decls):
-            decl.decls[i] = _expand_struct_typedef(mem_decl, file_ast, expand_struct, expand_typedef)
+            decl.decls[i] = _expand_in_place(mem_decl, file_ast, expand_struct, expand_typedef)
 
         if not expand_struct:
             decl.decls = []
