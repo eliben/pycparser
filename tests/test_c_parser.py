@@ -1718,7 +1718,7 @@ class TestCParser_whole_code(TestCParser_base):
 
         self.assertTrue(isinstance(p.ext[0], Typedef))
         self.assertEqual(p.ext[0].coord.line, 213)
-        self.assertEqual(p.ext[0].coord.file, "D:\eli\cpp_stuff\libc_include/stddef.h")
+        self.assertEqual(p.ext[0].coord.file, r"D:\eli\cpp_stuff\libc_include/stddef.h")
 
         self.assertTrue(isinstance(p.ext[-1], FuncDef))
         self.assertEqual(p.ext[-1].coord.line, 15)

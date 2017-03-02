@@ -430,12 +430,12 @@ class TestCLexerErrors(unittest.TestCase):
         self.assertLexerError("'b\n", ERR_UNMATCHED_QUOTE)
 
         self.assertLexerError("'jx'", ERR_INVALID_CCONST)
-        self.assertLexerError("'\*'", ERR_INVALID_CCONST)
+        self.assertLexerError(r"'\*'", ERR_INVALID_CCONST)
 
     def test_string_literals(self):
-        self.assertLexerError('"jx\9"', ERR_STRING_ESCAPE)
-        self.assertLexerError('"hekllo\* on ix"', ERR_STRING_ESCAPE)
-        self.assertLexerError('L"hekllo\* on ix"', ERR_STRING_ESCAPE)
+        self.assertLexerError(r'"jx\9"', ERR_STRING_ESCAPE)
+        self.assertLexerError(r'"hekllo\* on ix"', ERR_STRING_ESCAPE)
+        self.assertLexerError(r'L"hekllo\* on ix"', ERR_STRING_ESCAPE)
 
     def test_preprocessor(self):
         self.assertLexerError('#line "ka"', ERR_FILENAME_BEFORE_LINE)
