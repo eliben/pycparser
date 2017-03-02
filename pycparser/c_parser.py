@@ -1244,10 +1244,11 @@ class CParser(PLYParser):
         p[0] = p[1]
 
     def p_initializer_2(self, p):
-        """ initializer : brace_open initializer_list_opt brace_close
+        """ initializer : brace_open brace_close
+                        | brace_open initializer_list brace_close
                         | brace_open initializer_list COMMA brace_close
         """
-        if p[2] is None:
+        if len(p) == 3:
             p[0] = c_ast.InitList([], self._coord(p.lineno(1)))
         else:
             p[0] = p[2]
