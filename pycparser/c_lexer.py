@@ -52,8 +52,8 @@ class CLexer(object):
         # Allow either "# line" or "# <num>" to support GCC's
         # cpp output
         #
-        self.line_pattern = re.compile('([ \t]*line\W)|([ \t]*\d+)')
-        self.pragma_pattern = re.compile('[ \t]*pragma\W')
+        self.line_pattern = re.compile(r'([ \t]*line\W)|([ \t]*\d+)')
+        self.pragma_pattern = re.compile(r'[ \t]*pragma\W')
 
     def build(self, **kwargs):
         """ Builds the lexer from the specification. Must be

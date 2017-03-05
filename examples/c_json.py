@@ -49,7 +49,7 @@ from pycparser import parse_file, c_ast
 from pycparser.plyparser import Coord
 
 
-RE_CHILD_ARRAY = re.compile('(.*)\[(.*)\]')
+RE_CHILD_ARRAY = re.compile(r'(.*)\[(.*)\]')
 RE_INTERNAL_ATTR = re.compile('__.*__')
 
 
