@@ -171,4 +171,9 @@ typedef struct MirPersistentId MirPersistentId;
 typedef struct MirBlob MirBlob;
 typedef struct MirDisplayConfig MirDisplayConfig;
 
+/* xcb typedefs */
+typedef struct xcb_connection_t xcb_connection_t;
+typedef uint32_t xcb_window_t;
+typedef uint32_t xcb_visualid_t;
+
 #endif
