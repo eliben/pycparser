@@ -1,6 +1,6 @@
 + Version 2.18 (??)
 
-  - PR #161: Update bundled PLY version to 3.9
+  - PR #161 & #184: Update bundled PLY version to 3.10
   - PR #158: Add support for the __int128 type.
   - PR #169: Handle more tricky TYPEID in declarators.
   - PR #178: Add columns to the coord of each node

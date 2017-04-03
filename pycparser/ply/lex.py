@@ -2,7 +2,6 @@
 # ply: lex.py
 #
 # Copyright (C) 2001-2017
-# Eli Bendersky [http://eli.thegreenplace.net]
 # David M. Beazley (Dabeaz LLC)
 # All rights reserved.
 #

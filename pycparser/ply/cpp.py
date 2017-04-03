@@ -2,7 +2,6 @@
 # cpp.py
 #
 # Author:  David Beazley (http://www.dabeaz.com)
-# Eli Bendersky [http://eli.thegreenplace.net]
 # Copyright (C) 2017
 # All rights reserved
 #
