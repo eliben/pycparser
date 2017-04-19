@@ -275,5 +275,11 @@ class TestCtoC(unittest.TestCase):
             }
         ''')
 
+    def test_compound_literal(self):
+        self._assert_ctoc_correct('char **foo = (char *[]){ "x", "y", "z" };')
+        self._assert_ctoc_correct('int i = ++(int){ 1 };')
+        self._assert_ctoc_correct('struct foo_s foo = (struct foo_s){ 1, 2 };')
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -178,6 +178,10 @@ class CGenerator(object):
         s += self._make_indent() + '}\n'
         return s
 
+    def visit_CompoundLiteral(self, n):
+        return '(' + self.visit(n.type) + '){' + self.visit(n.init) + '}'
+
+
     def visit_EmptyStatement(self, n):
         return ';'
 
