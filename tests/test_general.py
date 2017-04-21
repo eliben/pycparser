@@ -1,4 +1,6 @@
-import sys, os
+import os
+import platform
+import sys
 import unittest
 
 sys.path.insert(0, '..')
@@ -23,6 +25,8 @@ class TestParsing(unittest.TestCase):
         ast = parse_file(self._find_file('example_c_file.c'))
         self.assertTrue(isinstance(ast, c_ast.FileAST))
 
+    @unittest.skipUnless(platform.system() == 'Linux',
+                         'cpp only works on Linux')
     def test_with_cpp(self):
         memmgr_path = self._find_file('memmgr.c')
         c_files_path = os.path.dirname(memmgr_path)
@@ -39,6 +43,8 @@ class TestParsing(unittest.TestCase):
 
         self.assertTrue(isinstance(ast2, c_ast.FileAST))
 
+    @unittest.skipUnless(platform.system() == 'Linux',
+                         'cpp only works on Linux')
     def test_cpp_funkydir(self):
         # This test contains Windows specific path escapes
         if sys.platform != 'win32':
@@ -49,6 +55,8 @@ class TestParsing(unittest.TestCase):
             cpp_path=CPPPATH, cpp_args='-I%s' % c_files_path)
         self.assertTrue(isinstance(ast, c_ast.FileAST))
 
+    @unittest.skipUnless(platform.system() == 'Linux',
+                         'cpp only works on Linux')
     def test_no_real_content_after_cpp(self):
         ast = parse_file(self._find_file('empty.h'), use_cpp=True,
             cpp_path=CPPPATH)
