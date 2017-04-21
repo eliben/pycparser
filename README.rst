@@ -232,3 +232,8 @@ CI Status
   :align: center
   :target: https://travis-ci.org/eliben/pycparser
 
+AppVeyor also helps run tests on Windows:
+
+.. image:: https://ci.appveyor.com/api/projects/status/wrup68o5y8nuk1i9?svg=true
+  :align: center
+  :target: https://ci.appveyor.com/project/eliben/pycparser/
