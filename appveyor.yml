@@ -1,0 +1,9 @@
+environment:
+
+  matrix:
+
+    - PYTHON: "C:\\Python27"
+
+  test_script:
+    - %PYTHON%\\python.exe tests/all_tests.py
+
