@@ -39,10 +39,10 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
         # Note the use of universal_newlines to treat all newlines
         # as \n for Python's purpose
         #
-        pipe = Popen(   path_list,
-                        stdout=PIPE,
-                        universal_newlines=True)
-        text = pipe.communicate()[0]
+        with Popen( path_list,
+                    stdout=PIPE,
+                    universal_newlines=True) as pipe:
+            text = pipe.communicate()[0]
     except OSError as e:
         raise RuntimeError("Unable to invoke 'cpp'.  " +
             'Make sure its path was passed correctly\n' +
