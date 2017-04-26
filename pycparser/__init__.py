@@ -8,10 +8,89 @@
 # License: BSD
 #-----------------------------------------------------------------
 __all__ = ['c_lexer', 'c_parser', 'c_ast']
-__version__ = '2.17'
+__version__ = '2.18'
 
 from subprocess import Popen, PIPE
 from .c_parser import CParser
+
+
+def preprocess_text(text, cpp_path='cpp', cpp_args=''):
+    """ Preprocess text using cpp.
+
+        text:
+            Text you want to preprocess.
+
+        cpp_path:
+        cpp_args:
+            Refer to the documentation of parse_file for the meaning of these
+            arguments.
+
+        When successful, returns the preprocessed text.
+        Errors from cpp will be printed out.
+    """
+    path_list = [cpp_path]
+    if isinstance(cpp_args, list):
+        path_list += cpp_args
+    elif cpp_args != '':
+        path_list += [cpp_args]
+
+    try:
+        # Note the use of universal_newlines to treat all newlines
+        # as \n for Python's purpose
+        #
+        pipe = Popen(   path_list,
+                        stdin=PIPE,
+                        stdout=PIPE,
+                        universal_newlines=True)
+        pipe.stdin.write(text)
+        text = pipe.communicate()[0]
+    except OSError as e:
+        raise RuntimeError("Unable to invoke 'cpp'.  " +
+            'Make sure its path was passed correctly\n' +
+            ('Original error: %s' % e))
+
+    return text
+
+
+def parse_text(text, use_cpp=False, cpp_path='cpp', cpp_args='',
+               parser=None, filename=''):
+    """ Parse C source code using pycparser.
+
+        text:
+            The C source to parse.
+
+        use_cpp:
+            Refer to the documentation of parse_file for the meaning of these
+            arguments.
+
+        cpp_path:
+            Refer to the documentation of parse_file for the meaning of these
+            arguments.
+
+        cpp_args:
+            Refer to the documentation of parse_file for the meaning of these
+            arguments.
+
+        parser:
+            Refer to the documentation of parse_file for the meaning of these
+            arguments.
+
+        filename:
+            Name of the original source file you want to parse.
+
+        When successful, an AST is returned. ParseError can be
+        thrown if the text doesn't parse successfully.
+
+        Errors from cpp will be printed out.
+    """
+    if use_cpp:
+        preprocessed_text = preprocess_text(text, cpp_path, cpp_args)
+    else:
+        preprocessed_text = text
+
+    if parser is None:
+        parser = CParser()
+    return parser.parse(preprocessed_text, filename)
 
 
 def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
