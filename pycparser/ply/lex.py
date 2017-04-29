@@ -112,7 +112,7 @@ class NullLogger(object):
 #    lexpos           -  Current position in the input string
 # -----------------------------------------------------------------------------
 
-class Lexer:
+class Lexer(object):
     def __init__(self):
         self.lexre = None             # Master regular expression. This is a list of
                                       # tuples (re, findex) where re is a compiled

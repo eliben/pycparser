@@ -214,7 +214,7 @@ def call_errorfunc(errorfunc, token, parser):
 #        .lexpos     = Starting lex position
 #        .endlexpos  = Ending lex position (optional, set automatically)
 
-class YaccSymbol:
+class YaccSymbol(object):
     def __str__(self):
         return self.type
 
@@ -230,7 +230,7 @@ class YaccSymbol:
 # for a symbol.  The lexspan() method returns a tuple (lexpos,endlexpos)
 # representing the range of positional information for a symbol.
 
-class YaccProduction:
+class YaccProduction(object):
     def __init__(self, s, stack=None):
         self.slice = s
         self.stack = stack
@@ -282,7 +282,7 @@ class YaccProduction:
 # The LR Parsing engine.
 # -----------------------------------------------------------------------------
 
-class LRParser:
+class LRParser(object):
     def __init__(self, lrtab, errorf):
         self.productions = lrtab.lr_productions
         self.action = lrtab.lr_action
