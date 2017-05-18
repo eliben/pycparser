@@ -2008,6 +2008,54 @@ class TestCParser_typenames(TestCParser_base):
         self.assertRaises(ParseError, self.parse, s2)
 
 
+class TestCParser_context(unittest.TestCase):
+    # these tests involve relationships between multiple parsers
+
+    def test_extend(self):
+        parser1 = c_parser.CParser(lex_optimize=False, yacc_debug=True,
+                                  yacc_optimize=False, yacctab='yacctab')
+        s1 = 'typedef int myint;'
+        s1_ast = parser1.parse(s1)
+
+        s2 = 'typedef myint myint2;'
+        s2_ast = parser1.parse(s2, reset_identifiers=False)
+
+        s3 = 'myint2 test;'
+        s3_ast = parser1.parse(s3, reset_identifiers=False)
+
+        self.assertEqual(expand_decl(s3_ast.ext[0]),
+            ['Decl', 'test',
+                ['TypeDecl',
+                    ['IdentifierType', ['myint2']]]])
+
+    def test_context(self):
+        parser1 = c_parser.CParser(lex_optimize=False, yacc_debug=True,
+                                  yacc_optimize=False, yacctab='yacctab')
+        s1 = 'typedef int myint;'
+        s1_ast = parser1.parse(s1)
+
+        parser2 = parser1.get_context_parser()
+        s2 = 'myint test;'
+        s2_ast = parser2.parse(s2)
+
+        self.assertEqual(expand_decl(s2_ast.ext[0]),
+            ['Decl', 'test',
+                ['TypeDecl',
+                    ['IdentifierType', ['myint']]]])
+
+    def test_independence(self):
+        parser1 = c_parser.CParser(lex_optimize=False, yacc_debug=True,
+                                  yacc_optimize=False, yacctab='yacctab')
+        s1 = 'typedef int myint;'
+        parser1.parse(s1)
+
+        parser2 = parser1.get_context_parser()
+        s2 = 'typedef int myotherint;'
+        parser2.parse(s2)
+
+        s3 = 'myotherint test;'
+        self.assertRaises(ParseError, parser1.parse, s3)
+
 if __name__ == '__main__':
     #~ suite = unittest.TestLoader().loadTestsFromNames(
         #~ ['test_c_parser.TestCParser_fundamentals.test_typedef'])

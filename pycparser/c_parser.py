@@ -26,7 +26,8 @@ class CParser(PLYParser):
             yacc_optimize=True,
             yacctab='pycparser.yacctab',
             yacc_debug=False,
-            taboutputdir=''):
+            taboutputdir='',
+            identifiers=dict()):
         """ Create a new CParser.
 
             Some arguments for controlling the debug/optimization
@@ -75,6 +76,10 @@ class CParser(PLYParser):
             taboutputdir:
                 Set this parameter to control the location of generated
                 lextab and yacctab files.
+
+            identifiers:
+                Dictionary of known names;  values indicate whether a name
+                refers to a typedef (True) or a variable/symbol (False).
         """
         self.clex = lexer(
             error_func=self._lex_error_func,
@@ -124,12 +129,16 @@ class CParser(PLYParser):
         # saw: int name;
         # If 'name' is not a key in _scope_stack[n] then 'name' was not defined
         # in this scope at all.
-        self._scope_stack = [dict()]
+
+        # typecheck input and deepcopy twice so we can reset to original
+        # identifiers in parse()
+        self._identifiers = dict([(str(key), bool(val)) for key, val in identifiers.items()])
+        self._scope_stack = [dict(self._identifiers.items())]
 
         # Keeps track of the last token given to yacc (the lookahead token)
         self._last_yielded_token = None
 
-    def parse(self, text, filename='', debuglevel=0):
+    def parse(self, text, filename='', debuglevel=0, reset_identifiers=True):
         """ Parses C code and returns an AST.
 
             text:
@@ -144,12 +153,25 @@ class CParser(PLYParser):
         """
         self.clex.filename = filename
         self.clex.reset_lineno()
-        self._scope_stack = [dict()]
+        if reset_identifiers:
+            self._scope_stack = [dict(self._identifiers.items())]
         self._last_yielded_token = None
         return self.cparser.parse(
                 input=text,
                 lexer=self.clex,
                 debug=debuglevel)
+
+    def get_context_parser(self, *args, **kwargs):
+        """ Get a Parser inheriting this parser's list of known types & symbols.
+
+            The parser's list of known definitions is primarily neccessary to
+            be able to identify typedef'd types.  This function can be used
+            to get another parser instance that can be used to "continue"
+            parsing (e.g. snippets) with context of the loaded file.
+        """
+        return CParser(
+                identifiers=self._scope_stack[0],
+                *args, **kwargs)
 
     ######################--   PRIVATE   --######################
 
