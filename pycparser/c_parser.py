@@ -758,11 +758,13 @@ class CParser(PLYParser):
                                     | STATIC
                                     | EXTERN
                                     | TYPEDEF
+                                    | _THREAD_LOCAL
         """
         p[0] = p[1]
 
     def p_function_specifier(self, p):
         """ function_specifier  : INLINE
+                                | _NORETURN
         """
         p[0] = p[1]
 
@@ -776,15 +778,23 @@ class CParser(PLYParser):
                                       | FLOAT
                                       | DOUBLE
                                       | _COMPLEX
+                                      | _IMAGINARY
                                       | SIGNED
                                       | UNSIGNED
                                       | __INT128
         """
         p[0] = c_ast.IdentifierType([p[1]], coord=self._token_coord(p, 1))
 
+    def p_atomic_specifier(self, p):
+        """ atomic_specifier : _ATOMIC LPAREN typedef_name RPAREN
+                             | _ATOMIC LPAREN type_specifier_no_typeid RPAREN
+        """
+        p[0] = c_ast.AtomicType(p[3], coord=self._token_coord(p, 1))
+
     def p_type_specifier(self, p):
         """ type_specifier  : typedef_name
                             | enum_specifier
+                            | atomic_specifier
                             | struct_or_union_specifier
                             | type_specifier_no_typeid
         """
@@ -794,6 +804,7 @@ class CParser(PLYParser):
         """ type_qualifier  : CONST
                             | RESTRICT
                             | VOLATILE
+                            | _ATOMIC
         """
         p[0] = p[1]
 
@@ -1578,6 +1589,7 @@ class CParser(PLYParser):
     def p_unary_expression_3(self, p):
         """ unary_expression    : SIZEOF unary_expression
                                 | SIZEOF LPAREN type_name RPAREN
+                                | _ALIGNOF LPAREN type_name RPAREN
         """
         p[0] = c_ast.UnaryOp(
             p[1],

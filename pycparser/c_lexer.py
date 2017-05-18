@@ -100,21 +100,24 @@ class CLexer(object):
     ## Reserved keywords
     ##
     keywords = (
-        '_BOOL', '_COMPLEX', 'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
+        '_BOOL', '_COMPLEX', '_IMAGINARY',
+        'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
         'CONTINUE', 'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
         'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG',
         'REGISTER', 'OFFSETOF',
         'RESTRICT', 'RETURN', 'SHORT', 'SIGNED', 'SIZEOF', 'STATIC', 'STRUCT',
         'SWITCH', 'TYPEDEF', 'UNION', 'UNSIGNED', 'VOID',
         'VOLATILE', 'WHILE', '__INT128',
+        # C11
+        '_ALIGNOF', '_ATOMIC', '_THREAD_LOCAL', '_NORETURN',
+        # not supported yet: '_ALIGNAS', '_STATIC_ASSERT', '_GENERIC',
     )
 
     keyword_map = {}
     for keyword in keywords:
-        if keyword == '_BOOL':
-            keyword_map['_Bool'] = keyword
-        elif keyword == '_COMPLEX':
-            keyword_map['_Complex'] = keyword
+        if keyword[0] == '_' and keyword[1] != '_':
+            kwcamel = keyword[:2] + keyword[2:].lower()
+            keyword_map[kwcamel] = keyword
         else:
             keyword_map[keyword.lower()] = keyword
 
