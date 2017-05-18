@@ -766,7 +766,7 @@ class CParser(PLYParser):
         """ function_specifier  : INLINE
                                 | _NORETURN
         """
-        p[0] = p[1]
+        p[0] = p[1].replace('__', '')
 
     def p_type_specifier_no_typeid(self, p):
         """ type_specifier_no_typeid  : VOID
@@ -783,7 +783,8 @@ class CParser(PLYParser):
                                       | UNSIGNED
                                       | __INT128
         """
-        p[0] = c_ast.IdentifierType([p[1]], coord=self._token_coord(p, 1))
+        text = p[1].replace('__', '') if p[1] != '__int128' else p[1]
+        p[0] = c_ast.IdentifierType([text], coord=self._token_coord(p, 1))
 
     def p_atomic_specifier(self, p):
         """ atomic_specifier : _ATOMIC LPAREN typedef_name RPAREN
@@ -806,7 +807,7 @@ class CParser(PLYParser):
                             | VOLATILE
                             | _ATOMIC
         """
-        p[0] = p[1]
+        p[0] = p[1].replace('__', '')
 
     def p_init_declarator_list(self, p):
         """ init_declarator_list    : init_declarator
