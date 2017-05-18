@@ -121,6 +121,11 @@ class CLexer(object):
         else:
             keyword_map[keyword.lower()] = keyword
 
+    # gcc alternate keywords for system headers
+    for keyword in ('const', 'inline', 'restrict', 'signed'):
+        keyword_map['__%s' % keyword] = keyword.upper()
+        keyword_map['__%s__' % keyword] = keyword.upper()
+
     ##
     ## All the tokens recognized by the lexer
     ##
