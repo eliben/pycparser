@@ -2056,6 +2056,19 @@ class TestCParser_context(unittest.TestCase):
         s3 = 'myotherint test;'
         self.assertRaises(ParseError, parser1.parse, s3)
 
+    def test_starttoken(self):
+        parser1 = c_parser.CParser(lex_optimize=False, yacc_debug=True,
+                                  yacc_optimize=False, yacctab=None)
+        s1 = 'typedef int myint;'
+        parser1.parse(s1)
+
+        parser2 = parser1.get_context_parser(start='parameter_declaration')
+        s2 = 'myint'
+        s2_ast = parser2.parse(s2)
+
+        self.assertEqual(expand_decl(s2_ast),
+            ['Typename', ['TypeDecl', ['IdentifierType', ['myint']]]])
+
 if __name__ == '__main__':
     #~ suite = unittest.TestLoader().loadTestsFromNames(
         #~ ['test_c_parser.TestCParser_fundamentals.test_typedef'])

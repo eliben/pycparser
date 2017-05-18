@@ -24,9 +24,11 @@ class CParser(PLYParser):
             lexer=CLexer,
             lextab='pycparser.lextab',
             yacc_optimize=True,
-            yacctab='pycparser.yacctab',
+            yacctab=None,
             yacc_debug=False,
+            yacc_errorlog=None,
             taboutputdir='',
+            start='translation_unit_or_empty',
             identifiers=dict()):
         """ Create a new CParser.
 
@@ -73,9 +75,16 @@ class CParser(PLYParser):
                 Generate a parser.out file that explains how yacc
                 built the parsing table from the grammar.
 
+            yacc_errorlog:
+                Logger used for debug/warning/error output from PLY.
+
             taboutputdir:
                 Set this parameter to control the location of generated
                 lextab and yacctab files.
+
+            start:
+                YACC start symbol in the C grammar; can be used to parse
+                particular snippets.
 
             identifiers:
                 Dictionary of known names;  values indicate whether a name
@@ -113,13 +122,23 @@ class CParser(PLYParser):
         for rule in rules_with_opt:
             self._create_opt_rule(rule)
 
+        if start != 'translation_unit_or_empty':
+            # due to the different start symbol, PLY will emit bogus warnings.
+            # if logging is desired, the user can still pass a non-None log
+            yacc_errorlog = yacc_errorlog or yacc.NullLogger()
+            # yacctab contents depend on the starting state
+            yacctab = yacctab or 'pycparser.%s_yacctab' % start
+        else:
+            yacctab = yacctab or 'pycparser.yacctab'
+
         self.cparser = yacc.yacc(
             module=self,
-            start='translation_unit_or_empty',
+            start=start,
             debug=yacc_debug,
             optimize=yacc_optimize,
             tabmodule=yacctab,
-            outputdir=taboutputdir)
+            outputdir=taboutputdir,
+            errorlog=yacc_errorlog)
 
         # Stack of scopes for keeping track of symbols. _scope_stack[-1] is
         # the current (topmost) scope. Each scope is a dictionary that
@@ -168,6 +187,10 @@ class CParser(PLYParser):
             be able to identify typedef'd types.  This function can be used
             to get another parser instance that can be used to "continue"
             parsing (e.g. snippets) with context of the loaded file.
+
+            The "start" keyword argument is particularly useful in this
+            context, specifically the "parameter_declaration", "expression"
+            or "constant_expression" states.
         """
         return CParser(
                 identifiers=self._scope_stack[0],
@@ -1134,7 +1157,11 @@ class CParser(PLYParser):
         # and incorrectly interpreted as TYPEID.  We need to add the
         # parameters to the scope the moment the lexer sees LBRACE.
         #
-        if self._get_yacc_lookahead_token().type == "LBRACE":
+        # token == None occurs after get_parameter_parser() at processing at
+        # end of input
+
+        lookahead = self._get_yacc_lookahead_token()
+        if lookahead is not None and lookahead.type == "LBRACE":
             if func.args is not None:
                 for param in func.args.params:
                     if isinstance(param, c_ast.EllipsisParam): break
