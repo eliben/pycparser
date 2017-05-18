@@ -40,7 +40,7 @@ if __name__ == "__main__":
         filename = sys.argv[1]
         func = sys.argv[2]
     else:
-        filename = 'examples/c_files/hash.c'
+        filename = 'c_files/hash.c'
         func = 'malloc'
 
     show_func_calls(filename, func)
