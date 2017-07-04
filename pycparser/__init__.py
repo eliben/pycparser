@@ -8,7 +8,7 @@
 # License: BSD
 #-----------------------------------------------------------------
 __all__ = ['c_lexer', 'c_parser', 'c_ast']
-__version__ = '2.17'
+__version__ = '2.18'
 
 from subprocess import Popen, PIPE
 from .c_parser import CParser

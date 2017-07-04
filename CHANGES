@@ -1,4 +1,4 @@
-+ Version 2.18 (??)
++ Version 2.18 (04.07.2017)
 
   - PR #161 & #184: Update bundled PLY version to 3.10
   - PR #158: Add support for the __int128 type.
