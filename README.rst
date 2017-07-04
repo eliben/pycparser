@@ -57,8 +57,8 @@ things up so that it parses code with a lot of GCC-isms successfully. See the
 What grammar does pycparser follow?
 -----------------------------------
 
-**pycparser** very closely follows the C grammar provided in the end of the C99
-standard document
+**pycparser** very closely follows the C grammar provided in Annex A of the C99
+standard (ISO/IEC 9899).
 
 How is pycparser licensed?
 --------------------------
@@ -68,9 +68,9 @@ How is pycparser licensed?
 Contact details
 ---------------
 
-Drop me an email to eliben@gmail.com for any questions regarding **pycparser**.
-For reporting problems with **pycparser** or submitting feature requests, the
-best way is to open an `issue <https://github.com/eliben/pycparser/issues>`_.
+For reporting problems with **pycparser** or submitting feature requests, please
+open an `issue <https://github.com/eliben/pycparser/issues>`_, or submit a
+pull request.
 
 
 Installing
@@ -85,7 +85,7 @@ Prerequisites
 
 * **pycparser** has no external dependencies. The only non-stdlib library it
   uses is PLY, which is bundled in ``pycparser/ply``. The current PLY version is
-  3.8, retrieved from `<http://www.dabeaz.com/ply/ply-3.8.tar.gz>`_
+  3.10, retrieved from `<http://www.dabeaz.com/ply/>`_
 
 Installation process
 --------------------
@@ -111,6 +111,7 @@ Known problems
   deleting the ``pycparser`` directory in your Python's ``site-packages``, or
   wherever you installed it) and install again.
 
+
 Using
 =====
 
@@ -119,10 +120,10 @@ Interaction with the C preprocessor
 
 In order to be compilable, C code must be preprocessed by the C preprocessor -
 ``cpp``. ``cpp`` handles preprocessing directives like ``#include`` and
-``#define``, removes comments, and does other minor tasks that prepare the C
+``#define``, removes comments, and performs other minor tasks that prepare the C
 code for compilation.
 
-For all but the most trivial snippets of C code, **pycparser**, like a C
+For all but the most trivial snippets of C code **pycparser**, like a C
 compiler, must receive preprocessed C code in order to function correctly. If
 you import the top-level ``parse_file`` function from the **pycparser** package,
 it will interact with ``cpp`` for you, as long as it's in your PATH, or you
@@ -136,13 +137,13 @@ and install a binary build of Clang for Windows `from this website
 What about the standard C library headers?
 ------------------------------------------
 
-C code almost always includes various header files from the standard C library,
-like ``stdio.h``. While, with some effort, **pycparser** can be made to parse
-the standard headers from any C compiler, it's much simpler to use the provided
-"fake" standard  includes in ``utils/fake_libc_include``. These are standard C
-header files that contain only the bare necessities to allow valid parsing of
-the files that use them. As a bonus, since they're minimal, it can significantly
-improve the performance of parsing large C files.
+C code almost always ``#include``\s various header files from the standard C
+library, like ``stdio.h``. While (with some effort) **pycparser** can be made to
+parse the standard headers from any C compiler, it's much simpler to use the
+provided "fake" standard  includes in ``utils/fake_libc_include``. These are
+standard C header files that contain only the bare necessities to allow valid
+parsing of the files that use them. As a bonus, since they're minimal, it can
+significantly improve the performance of parsing large C files.
 
 The key point to understand here is that **pycparser** doesn't really care about
 the semantics of types. It only needs to know whether some token encountered in
@@ -168,6 +169,7 @@ created by the parser, see ``pycparser/_c_ast.cfg``.
 
 There's also a `FAQ available here <https://github.com/eliben/pycparser/wiki/FAQ>`_.
 In any case, you can always drop me an `email <eliben@gmail.com>`_ for help.
+
 
 Modifying
 =========
@@ -213,14 +215,16 @@ utils/fake_libc_include:
 utils/internal/:
   Internal utilities for my own use. You probably don't need them.
 
+
 Contributors
 ============
 
 Some people have contributed to **pycparser** by opening issues on bugs they've
 found and/or submitting patches. The list of contributors is in the CONTRIBUTORS
-file in the source distribution. Once **pycparser** moved to Github, I stopped
+file in the source distribution. After **pycparser** moved to Github I stopped
 updating this list because Github does a much better job at tracking
 contributions.
+
 
 CI Status
 =========
