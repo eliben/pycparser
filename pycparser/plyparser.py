@@ -8,6 +8,7 @@
 # License: BSD
 #-----------------------------------------------------------------
 
+import warnings
 
 class Coord(object):
     """ Coordinates of a syntactic element. Consists of:
@@ -87,12 +88,28 @@ def template(cls):
 
     See `parameterized` for more information on parameterized rules.
     """
+    issued_nodoc_warning = False
     for attr_name in dir(cls):
         if attr_name.startswith('p_'):
             method = getattr(cls, attr_name)
             if hasattr(method, '_params'):
-                delattr(cls, attr_name)  # Remove template method
-                _create_param_rules(cls, method)
+                # Remove the template method
+                delattr(cls, attr_name)
+                # Create parameterized rules from this method; only run this if
+                # the method has a docstring. This is to address an issue when
+                # pycparser's users are installed in -OO mode which strips
+                # docstrings away.
+                # See: https://github.com/eliben/pycparser/pull/198/ and
+                #      https://github.com/eliben/pycparser/issues/197
+                # for discussion.
+                if method.__doc__ is not None:
+                    _create_param_rules(cls, method)
+                elif not issued_nodoc_warning:
+                    warnings.warn(
+                        'parsing methods must have __doc__ for pycparser to work properly',
+                        RuntimeWarning,
+                        stacklevel=2)
+                    issued_nodoc_warning = True
     return cls
 
 
