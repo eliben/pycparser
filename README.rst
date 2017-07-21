@@ -87,6 +87,13 @@ Prerequisites
   uses is PLY, which is bundled in ``pycparser/ply``. The current PLY version is
   3.10, retrieved from `<http://www.dabeaz.com/ply/>`_
 
+Note that **pycparser** (and PLY) uses docstrings for grammar specifications.
+Python installations that strip docstrings (such as when using the Python
+``-OO`` option) will fail to instantiate and use **pycparser**. You can try to
+work around this problem by making sure the PLY parsing tables are pre-generated
+in normal mode; this isn't an officially supported/tested mode of operation,
+though.
+
 Installation process
 --------------------
 
