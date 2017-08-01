@@ -126,7 +126,8 @@ def _create_param_rules(cls, func):
             func(self, p)
 
         # Substitute in the params for the grammar rule and function name
-        param_rule.__doc__ = func.__doc__.replace('xxx', xxx).replace('yyy', yyy)
+        if func.__doc__ is not None:
+            param_rule.__doc__ = func.__doc__.replace('xxx', xxx).replace('yyy', yyy)
         param_rule.__name__ = func.__name__.replace('xxx', xxx)
 
         # Attach the new method to the class
