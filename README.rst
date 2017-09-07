@@ -164,8 +164,11 @@ for more details.
 Basic usage
 -----------
 
-Take a look at the ``examples`` directory of the distribution for a few examples
+Take a look at the |examples|_ directory of the distribution for a few examples
 of using **pycparser**. These should be enough to get you started.
+
+.. |examples| replace:: ``examples``
+.. _examples: examples
 
 Advanced usage
 --------------
