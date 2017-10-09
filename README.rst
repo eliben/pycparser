@@ -79,7 +79,7 @@ Installing
 Prerequisites
 -------------
 
-* **pycparser** was tested on Python 2.7, 3.2-3.6, on both Linux and
+* **pycparser** was tested on Python 2.7, 3.3-3.6, on both Linux and
   Windows. It should work on any later version (in both the 2.x and 3.x lines)
   as well.
 
