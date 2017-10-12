@@ -1,4 +1,5 @@
 import sys
+import textwrap
 import unittest
 
 # Run from the root dir
@@ -279,6 +280,22 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct('char **foo = (char *[]){ "x", "y", "z" };')
         self._assert_ctoc_correct('int i = ++(int){ 1 };')
         self._assert_ctoc_correct('struct foo_s foo = (struct foo_s){ 1, 2 };')
+
+    def test_enum(self):
+        s = textwrap.dedent(r'''
+            enum e
+            {
+              a = 1,
+              b = 2,
+              c = 3
+            };
+        '''[1:])
+
+        self._assert_ctoc_correct(s)
+
+        ast = parse_to_ast(s)
+        generator = c_generator.CGenerator()
+        assert generator.visit(ast) == s
 
 
 if __name__ == "__main__":
