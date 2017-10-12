@@ -297,6 +297,9 @@ class TestCtoC(unittest.TestCase):
         generator = c_generator.CGenerator()
         assert generator.visit(ast) == s
 
+    def test_enum_typedef(self):
+        self._assert_ctoc_correct('typedef enum EnumName EnumTypedefName;')
+
 
 if __name__ == "__main__":
     unittest.main()

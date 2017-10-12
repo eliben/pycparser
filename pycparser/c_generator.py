@@ -286,7 +286,10 @@ class CGenerator(object):
             members = n.decls
             body_function = self._generate_struct_union_body
         elif name in ('enum',):
-            members = n.values.enumerators
+            if n.values is None:
+                members = ()
+            else:
+                members = n.values.enumerators
             body_function = self._generate_enum_body
 
         s = name + ' ' + (n.name or '')
