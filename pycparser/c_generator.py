@@ -137,6 +137,13 @@ class CGenerator(object):
     def visit_Enum(self, n):
         return self._generate_struct_union_enum(n, name='enum')
 
+    def visit_Enumerator(self, n):
+        return '{indent}{name} = {value},\n'.format(
+            indent=self._make_indent(),
+            name=n.name,
+            value=self.visit(n.value),
+        )
+
     def visit_FuncDef(self, n):
         decl = self.visit(n.decl)
         self.indent_level = 0
@@ -309,24 +316,14 @@ class CGenerator(object):
     def _generate_enum_body(self, members):
         s = []
 
-        punctuation = ','
+        for value in members:
+            line = self.visit(value)
 
-        for i, value in enumerate(members):
-            if i == len(members) - 1:
-                punctuation = ''
+            s.append(line)
 
-            s.append(self._generate_stmt(
-                n=c_ast.Assignment(
-                    op='=',
-                    lvalue=c_ast.ID(value.name),
-                    rvalue=value.value,
-                ),
-                punctuation=punctuation,
-            ))
+        return ''.join(s)[:-2] + '\n'
 
-        return ''.join(s)
-
-    def _generate_stmt(self, n, add_indent=False, punctuation=None):
+    def _generate_stmt(self, n, add_indent=False):
         """ Generation from a statement node. This method exists as a wrapper
             for individual visit_* methods to handle different treatment of
             some statements in this context.
@@ -344,9 +341,7 @@ class CGenerator(object):
             # These can also appear in an expression context so no semicolon
             # is added to them automatically
             #
-            if punctuation is None:
-                punctuation = ';'
-            return indent + self.visit(n) + punctuation + '\n'
+            return indent + self.visit(n) + ';\n'
         elif typ in (c_ast.Compound,):
             # No extra indentation required before the opening brace of a
             # compound - because it consists of multiple lines it has to
