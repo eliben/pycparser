@@ -300,6 +300,17 @@ class TestCtoC(unittest.TestCase):
     def test_enum_typedef(self):
         self._assert_ctoc_correct('typedef enum EnumName EnumTypedefName;')
 
+    def test_generate_struct_union_enum_exception(self):
+        generator = c_generator.CGenerator()
+        self.assertRaises(
+            UnboundLocalError,
+            generator._generate_struct_union_enum,
+            n=c_ast.Struct(
+                name='TestStruct',
+                decls=[],
+            ),
+            name='',
+        )
 
 if __name__ == "__main__":
     unittest.main()
