@@ -311,11 +311,8 @@ class CGenerator(object):
         return ''.join(self._generate_stmt(decl) for decl in members)
 
     def _generate_enum_body(self, members):
-        s = []
-        for value in members:
-            line = self.visit(value)
-            s.append(line)
-        return ''.join(s)[:-2] + '\n'
+        # `[:-2] + '\n'` removes the final `,` from the enumerator list
+        return ''.join(self.visit(value) for value in members)[:-2] + '\n'
 
     def _generate_stmt(self, n, add_indent=False):
         """ Generation from a statement node. This method exists as a wrapper
