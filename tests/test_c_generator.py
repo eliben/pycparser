@@ -303,7 +303,7 @@ class TestCtoC(unittest.TestCase):
     def test_generate_struct_union_enum_exception(self):
         generator = c_generator.CGenerator()
         self.assertRaises(
-            UnboundLocalError,
+            AssertionError,
             generator._generate_struct_union_enum,
             n=c_ast.Struct(
                 name='TestStruct',

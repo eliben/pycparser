@@ -292,7 +292,8 @@ class CGenerator(object):
         if name in ('struct', 'union'):
             members = n.decls
             body_function = self._generate_struct_union_body
-        elif name in ('enum',):
+        else:
+            assert name == 'enum'
             if n.values is None:
                 members = ()
             else:
