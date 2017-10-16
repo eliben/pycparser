@@ -294,10 +294,8 @@ class CGenerator(object):
             body_function = self._generate_struct_union_body
         else:
             assert name == 'enum'
-            if n.values is None:
-                members = ()
-            else:
-                members = n.values.enumerators
+
+            members = () if n.values is None else n.values.enumerators
             body_function = self._generate_enum_body
 
         s = name + ' ' + (n.name or '')
