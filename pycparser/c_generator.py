@@ -294,10 +294,8 @@ class CGenerator(object):
             body_function = self._generate_struct_union_body
         else:
             assert name == 'enum'
-
             members = () if n.values is None else n.values.enumerators
             body_function = self._generate_enum_body
-
         s = name + ' ' + (n.name or '')
         if members:
             s += '\n'
@@ -314,12 +312,9 @@ class CGenerator(object):
 
     def _generate_enum_body(self, members):
         s = []
-
         for value in members:
             line = self.visit(value)
-
             s.append(line)
-
         return ''.join(s)[:-2] + '\n'
 
     def _generate_stmt(self, n, add_indent=False):
