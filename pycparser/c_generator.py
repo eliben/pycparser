@@ -135,18 +135,14 @@ class CGenerator(object):
         return ', '.join(visited_subexprs)
 
     def visit_Enum(self, n):
-        s = 'enum'
-        if n.name: s += ' ' + n.name
-        if n.values:
-            s += ' {'
-            for i, enumerator in enumerate(n.values.enumerators):
-                s += enumerator.name
-                if enumerator.value:
-                    s += ' = ' + self.visit(enumerator.value)
-                if i != len(n.values.enumerators) - 1:
-                    s += ', '
-            s += '}'
-        return s
+        return self._generate_struct_union_enum(n, name='enum')
+
+    def visit_Enumerator(self, n):
+        return '{indent}{name} = {value},\n'.format(
+            indent=self._make_indent(),
+            name=n.name,
+            value=self.visit(n.value),
+        )
 
     def visit_FuncDef(self, n):
         decl = self.visit(n.decl)
@@ -268,13 +264,13 @@ class CGenerator(object):
         return '...'
 
     def visit_Struct(self, n):
-        return self._generate_struct_union(n, 'struct')
+        return self._generate_struct_union_enum(n, 'struct')
 
     def visit_Typename(self, n):
         return self._generate_type(n.type)
 
     def visit_Union(self, n):
-        return self._generate_struct_union(n, 'union')
+        return self._generate_struct_union_enum(n, 'union')
 
     def visit_NamedInitializer(self, n):
         s = ''
@@ -289,21 +285,34 @@ class CGenerator(object):
     def visit_FuncDecl(self, n):
         return self._generate_type(n)
 
-    def _generate_struct_union(self, n, name):
-        """ Generates code for structs and unions. name should be either
-            'struct' or union.
+    def _generate_struct_union_enum(self, n, name):
+        """ Generates code for structs, unions, and enums. name should be
+            'struct', 'union', or 'enum'.
         """
+        if name in ('struct', 'union'):
+            members = n.decls
+            body_function = self._generate_struct_union_body
+        else:
+            assert name == 'enum'
+            members = () if n.values is None else n.values.enumerators
+            body_function = self._generate_enum_body
         s = name + ' ' + (n.name or '')
-        if n.decls:
+        if members:
             s += '\n'
             s += self._make_indent()
             self.indent_level += 2
             s += '{\n'
-            for decl in n.decls:
-                s += self._generate_stmt(decl)
+            s += body_function(members)
             self.indent_level -= 2
             s += self._make_indent() + '}'
         return s
+
+    def _generate_struct_union_body(self, members):
+        return ''.join(self._generate_stmt(decl) for decl in members)
+
+    def _generate_enum_body(self, members):
+        # `[:-2] + '\n'` removes the final `,` from the enumerator list
+        return ''.join(self.visit(value) for value in members)[:-2] + '\n'
 
     def _generate_stmt(self, n, add_indent=False):
         """ Generation from a statement node. This method exists as a wrapper
