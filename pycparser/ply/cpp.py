@@ -411,10 +411,11 @@ class Preprocessor(object):
                 elif (i > 0 and macro.value[i-1].value == '##'):
                     macro.patch.append(('c',argnum,i-1))
                     del macro.value[i-1]
+                    i -= 1
                     continue
                 elif ((i+1) < len(macro.value) and macro.value[i+1].value == '##'):
                     macro.patch.append(('c',argnum,i))
-                    i += 1
+                    del macro.value[i + 1]
                     continue
                 # Standard expansion
                 else:
@@ -509,7 +510,7 @@ class Preprocessor(object):
                         j = i + 1
                         while j < len(tokens) and tokens[j].type in self.t_WS:
                             j += 1
-                        if tokens[j].value == '(':
+                        if j < len(tokens) and tokens[j].value == '(':
                             tokcount,args,positions = self.collect_args(tokens[j:])
                             if not m.variadic and len(args) !=  len(m.arglist):
                                 self.error(self.source,t.lineno,"Macro %s requires %d arguments" % (t.value,len(m.arglist)))
@@ -535,6 +536,12 @@ class Preprocessor(object):
                                     r.lineno = t.lineno
                                 tokens[i:j+tokcount] = rep
                                 i += len(rep)
+                        else:
+                            # This is not a macro. It is just a word equal to
+                            # the macro name. Add 1 to i to prevent a dead loop
+                            # trying to expand this word infinitely.
+                            i += 1
+
                     del expanded[t.value]
                     continue
                 elif t.value == '__LINE__':
