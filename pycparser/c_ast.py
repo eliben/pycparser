@@ -112,25 +112,24 @@ class NodeVisitor(object):
         *   Modeled after Python's own AST visiting facilities
             (the ast module of Python 3.0)
     """
-    
+
     _method_cache = None
-    
+
     def visit(self, node):
         """ Visit a node.
         """
-        
+
         method_cache = self._method_cache
         if method_cache is None:
             method_cache = {}
             self._method_cache = method_cache
-            
+
         visitor = method_cache.get(node.__class__.__name__, None)
         if visitor is None:
             method = 'visit_' + node.__class__.__name__
             visitor = getattr(self, method, self.generic_visit)
-            
             method_cache[node.__class__.__name__] = visitor
-            
+
         return visitor(node)
 
     def generic_visit(self, node):
@@ -139,8 +138,7 @@ class NodeVisitor(object):
         """
         for c in node:
             self.visit(c)
-            
-            
+
 class ArrayDecl(Node):
     __slots__ = ('type', 'dim', 'dim_quals', 'coord', '__weakref__')
     def __init__(self, type, dim, dim_quals, coord=None):

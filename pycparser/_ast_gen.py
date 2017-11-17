@@ -145,7 +145,7 @@ class NodeCfg(object):
                 src += (
                     '        for child in (self.%(child)s or []):\n'
                     '            yield child\n') % (dict(child=seq_child))
-                    
+
             if not (self.child or self.seq_child):
                 # Empty generator
                 src += (
@@ -283,25 +283,24 @@ class NodeVisitor(object):
         *   Modeled after Python's own AST visiting facilities
             (the ast module of Python 3.0)
     """
-    
+
     _method_cache = None
-    
+
     def visit(self, node):
         """ Visit a node.
         """
-        
+
         method_cache = self._method_cache
         if method_cache is None:
             method_cache = {}
             self._method_cache = method_cache
-            
+
         visitor = method_cache.get(node.__class__.__name__, None)
         if visitor is None:
             method = 'visit_' + node.__class__.__name__
             visitor = getattr(self, method, self.generic_visit)
-            
             method_cache[node.__class__.__name__] = visitor
-            
+
         return visitor(node)
 
     def generic_visit(self, node):
@@ -310,8 +309,7 @@ class NodeVisitor(object):
         """
         for c in node:
             self.visit(c)
-            
-            
+
 '''
 
 
