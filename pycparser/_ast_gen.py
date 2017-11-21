@@ -84,6 +84,7 @@ class NodeCfg(object):
     def generate_source(self):
         src = self._gen_init()
         src += '\n' + self._gen_children()
+        src += '\n' + self._gen_iter()
         src += '\n' + self._gen_attr_names()
         return src
 
@@ -128,6 +129,35 @@ class NodeCfg(object):
             src += '        return tuple(nodelist)\n'
         else:
             src += '        return ()\n'
+
+        return src
+
+    def _gen_iter(self):
+        src = '    def __iter__(self):\n'
+
+        if self.all_entries:
+            for child in self.child:
+                src += (
+                    '        if self.%(child)s is not None:\n' +
+                    '            yield self.%(child)s\n') % (dict(child=child))
+
+            for seq_child in self.seq_child:
+                src += (
+                    '        for child in (self.%(child)s or []):\n'
+                    '            yield child\n') % (dict(child=seq_child))
+
+            if not (self.child or self.seq_child):
+                # Empty generator
+                src += (
+                    '        return\n' +
+                    '        yield\n'
+                    )
+        else:
+            # Empty generator
+            src += (
+                '        return\n' +
+                '        yield\n'
+                )
 
         return src
 
@@ -253,20 +283,30 @@ class NodeVisitor(object):
         *   Modeled after Python's own AST visiting facilities
             (the ast module of Python 3.0)
     """
+
+    _method_cache = None
+
     def visit(self, node):
         """ Visit a node.
         """
-        method = 'visit_' + node.__class__.__name__
-        visitor = getattr(self, method, self.generic_visit)
+
+        if self._method_cache is None:
+            self._method_cache = {}
+
+        visitor = self._method_cache.get(node.__class__.__name__, None)
+        if visitor is None:
+            method = 'visit_' + node.__class__.__name__
+            visitor = getattr(self, method, self.generic_visit)
+            self._method_cache[node.__class__.__name__] = visitor
+
         return visitor(node)
 
     def generic_visit(self, node):
         """ Called if no explicit visitor function exists for a
             node. Implements preorder visiting of the node.
         """
-        for c_name, c in node.children():
+        for c in node:
             self.visit(c)
-
 
 '''
 
