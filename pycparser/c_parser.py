@@ -939,6 +939,11 @@ class CParser(PLYParser):
         """
         p[0] = None
 
+    def p_struct_declaration_3(self, p):
+        """ struct_declaration : pppragma_directive
+        """
+        p[0] = [p[1]]
+
     def p_struct_declarator_list(self, p):
         """ struct_declarator_list  : struct_declarator
                                     | struct_declarator_list COMMA struct_declarator
