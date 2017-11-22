@@ -150,14 +150,12 @@ class NodeCfg(object):
                 # Empty generator
                 src += (
                     '        return\n' +
-                    '        yield\n'
-                    )
+                    '        yield\n')
         else:
             # Empty generator
             src += (
                 '        return\n' +
-                '        yield\n'
-                )
+                '        yield\n')
 
         return src
 
@@ -309,10 +307,3 @@ class NodeVisitor(object):
             self.visit(c)
 
 '''
-
-
-if __name__ == "__main__":
-    import sys
-    ast_gen = ASTCodeGenerator('_c_ast.cfg')
-    ast_gen.generate(open('c_ast.py', 'w'))
-

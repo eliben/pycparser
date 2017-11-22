@@ -39,7 +39,7 @@ class CGenerator(object):
 
     def visit_ID(self, n):
         return n.name
-    
+
     def visit_Pragma(self, n):
         ret = '#pragma'
         if n.string:
@@ -416,5 +416,5 @@ class CGenerator(object):
         """ Returns True for nodes that are "simple" - i.e. nodes that always
             have higher precedence than operators.
         """
-        return isinstance(n,(   c_ast.Constant, c_ast.ID, c_ast.ArrayRef,
-                                c_ast.StructRef, c_ast.FuncCall))
+        return isinstance(n, (c_ast.Constant, c_ast.ID, c_ast.ArrayRef,
+                              c_ast.StructRef, c_ast.FuncCall))

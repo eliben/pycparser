@@ -1766,22 +1766,3 @@ class CParser(PLYParser):
                             column=self.clex.find_tok_column(p)))
         else:
             self._parse_error('At end of input', self.clex.filename)
-
-
-#------------------------------------------------------------------------------
-if __name__ == "__main__":
-    import pprint
-    import time, sys
-
-    #t1 = time.time()
-    #parser = CParser(lex_optimize=True, yacc_debug=True, yacc_optimize=False)
-    #sys.write(time.time() - t1)
-
-    #buf = '''
-        #int (*k)(int);
-    #'''
-
-    ## set debuglevel to 2 for debugging
-    #t = parser.parse(buf, 'x.c', debuglevel=0)
-    #t.show(showcoord=True)
-
