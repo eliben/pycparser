@@ -1348,6 +1348,9 @@ class TestCParser_fundamentals(TestCParser_base):
                 for(;;) {}
                 #pragma
             }
+            struct s {
+            #pragma baz
+            } s;
             '''
         s1_ast = self.parse(s1)
         self.assertTrue(isinstance(s1_ast.ext[0], Pragma))
@@ -1361,6 +1364,10 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertTrue(isinstance(s1_ast.ext[1].body.block_items[2], Pragma))
         self.assertEqual(s1_ast.ext[1].body.block_items[2].string, '')
         self.assertEqual(s1_ast.ext[1].body.block_items[2].coord.line, 6)
+        
+        self.assertTrue(isinstance(s1_ast.ext[2].type.type.decls[0], Pragma))
+        self.assertEqual(s1_ast.ext[2].type.type.decls[0].string, 'baz')
+        self.assertEqual(s1_ast.ext[2].type.type.decls[0].coord.line, 9)
 
 
 class TestCParser_whole_code(TestCParser_base):
