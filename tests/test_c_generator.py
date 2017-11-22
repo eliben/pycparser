@@ -274,6 +274,9 @@ class TestCtoC(unittest.TestCase):
                 #pragma bar
                 i = (a, b, c);
             }
+            typedef struct s {
+            #pragma baz
+           } s;
         ''')
 
     def test_compound_literal(self):
