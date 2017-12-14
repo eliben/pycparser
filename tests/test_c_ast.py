@@ -38,7 +38,6 @@ class Test_c_ast(unittest.TestCase):
         self.assertEqual(weakref.getweakrefcount(coord), 1)
 
 
-
 class TestNodeVisitor(unittest.TestCase):
     class ConstantVisitor(c_ast.NodeVisitor):
         def __init__(self):
@@ -94,7 +93,57 @@ class TestNodeVisitor(unittest.TestCase):
         cv.visit(comp)
 
         self.assertEqual(cv.values,
-            ['5.6', 't', '5.6', 't', 't', '5.6', 't'])
+                         ['5.6', 't', '5.6', 't', 't', '5.6', 't'])
+
+    def test_repr(self):
+        c1 = c_ast.Constant(type='float', value='5.6')
+        c2 = c_ast.Constant(type='char', value='t')
+
+        b1 = c_ast.BinaryOp(
+            op='+',
+            left=c1,
+            right=c2)
+
+        b2 = c_ast.BinaryOp(
+            op='-',
+            left=b1,
+            right=c2)
+
+        comp = c_ast.Compound(
+            block_items=[b1, b2, c1, c2])
+
+        expected = ("Compound(block_items=[BinaryOp(op='+',\n"
+                    "                               left=Constant(type='float',\n"
+                    "                                             value='5.6'\n"
+                    "                                             ),\n"
+                    "                               right=Constant(type='char',\n"
+                    "                                              value='t'\n"
+                    "                                              )\n"
+                    "                               ),\n"
+                    "                      BinaryOp(op='-',\n"
+                    "                               left=BinaryOp(op='+',\n"
+                    "                                             left=Constant(type='float',\n"
+                    "                                                           value='5.6'\n"
+                    "                                                           ),\n"
+                    "                                             right=Constant(type='char',\n"
+                    "                                                            value='t'\n"
+                    "                                                            )\n"
+                    "                                             ),\n"
+                    "                               right=Constant(type='char',\n"
+                    "                                              value='t'\n"
+                    "                                              )\n"
+                    "                               ),\n"
+                    "                      Constant(type='float',\n"
+                    "                               value='5.6'\n"
+                    "                               ),\n"
+                    "                      Constant(type='char',\n"
+                    "                               value='t'\n"
+                    "                               )\n"
+                    "                     ]\n"
+                    "         )")
+
+        self.assertEqual(repr(comp),
+                         expected)
 
 
 if __name__ == '__main__':

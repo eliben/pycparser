@@ -63,6 +63,7 @@ class NodeCfg(object):
         contents: a list of contents - attributes and child nodes
         See comment at the top of the configuration file for details.
     """
+
     def __init__(self, name, contents):
         self.name = name
         self.all_entries = []
@@ -85,6 +86,7 @@ class NodeCfg(object):
         src = self._gen_init()
         src += '\n' + self._gen_children()
         src += '\n' + self._gen_iter()
+        src += '\n' + self._gen_repr()
         src += '\n' + self._gen_attr_names()
         return src
 
@@ -159,6 +161,21 @@ class NodeCfg(object):
 
         return src
 
+    def _gen_repr(self):
+        src = '    def __repr__(self):\n'
+        src += '        result = "%s("\n' % self.name
+        for entry in self.all_entries:
+            src += '        result += "%s=%%s%s" %% (_repr(self.%s).replace("\\n", "\\n%s"))\n' % (entry,
+                                                                                                   (',\\n' if entry != self.all_entries[-1] else '\\n'),
+                                                                                                   entry,
+                                                                                                   ' ' * (len(entry) + 1))
+
+        src += '        result += ")"\n'
+        src += '        result = result.replace("\\n", "\\n%s")\n' % (' ' *
+                                                                      (len(self.name) + 1))
+        src += '        return result\n'
+        return src
+
     def _gen_attr_names(self):
         src = "    attr_names = (" + ''.join("%r, " % nm for nm in self.attr) + ')'
         return src
@@ -187,6 +204,14 @@ r'''#-----------------------------------------------------------------
 _PROLOGUE_CODE = r'''
 import sys
 
+def _repr(obj):
+    """
+    Get the representation of an object, with dedicated pprint-like format for lists and tuples.
+    """
+    if isinstance(obj, list):
+        return '[' + (',\n '.join((_repr(e).replace('\n', '\n ') for e in obj))) + '\n]'
+    else:
+        return repr(obj) 
 
 class Node(object):
     __slots__ = ()
