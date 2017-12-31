@@ -25,6 +25,8 @@ def expand_decl(decl):
 
     if typ == TypeDecl:
         return ['TypeDecl', expand_decl(decl.type)]
+    elif typ == AtomicType:
+        return ['AtomicType', expand_decl(decl.type)]
     elif typ == IdentifierType:
         return ['IdentifierType', decl.names]
     elif typ == ID:
@@ -244,6 +246,12 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(self.get_decl('float _Complex fcc;'),
             ['Decl', 'fcc', ['TypeDecl', ['IdentifierType', ['float', '_Complex']]]])
 
+        self.assertEqual(self.get_decl('_Atomic int fcc;'),
+            ['Decl', ['_Atomic'], 'fcc', ['TypeDecl', ['IdentifierType', ['int']]]])
+
+        self.assertEqual(self.get_decl('_Atomic(int) fcc;'),
+            ['Decl', 'fcc', ['TypeDecl', ['AtomicType', ['IdentifierType', ['int']]]]])
+
         self.assertEqual(self.get_decl('char* string;'),
             ['Decl', 'string',
                 ['PtrDecl', ['TypeDecl', ['IdentifierType', ['char']]]]])
@@ -442,6 +450,7 @@ class TestCParser_fundamentals(TestCParser_base):
 
         assert_qs("extern int p;", 0, [], ['extern'])
         assert_qs("const long p = 6;", 0, ['const'], [])
+        assert_qs("_Thread_local int p;", 0, [], ['_Thread_local'])
 
         d1 = "static const int p, q, r;"
         for i in range(3):
@@ -1326,6 +1335,10 @@ class TestCParser_fundamentals(TestCParser_base):
     def test_inline_specifier(self):
         ps2 = self.parse('static inline void inlinefoo(void);')
         self.assertEqual(ps2.ext[0].funcspec, ['inline'])
+
+    def test_noreturn_specifier(self):
+        ps2 = self.parse('extern _Noreturn void noretfoo(void);')
+        self.assertEqual(ps2.ext[0].funcspec, ['_Noreturn'])
 
     # variable length array
     def test_vla(self):

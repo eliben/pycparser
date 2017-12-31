@@ -202,6 +202,19 @@ class Assignment(Node):
 
     attr_names = ('op', )
 
+class AtomicType(Node):
+    __slots__ = ('type', 'coord', '__weakref__')
+    def __init__(self, type, coord=None):
+        self.type = type
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.type is not None: nodelist.append(("type", self.type))
+        return tuple(nodelist)
+
+    attr_names = ()
+
 class BinaryOp(Node):
     __slots__ = ('op', 'left', 'right', 'coord', '__weakref__')
     def __init__(self, op, left, right, coord=None):
