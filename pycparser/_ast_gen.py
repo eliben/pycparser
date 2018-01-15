@@ -86,7 +86,7 @@ class NodeCfg(object):
         src = self._gen_init()
         src += '\n' + self._gen_children()
         src += '\n' + self._gen_iter()
-        src += '\n' + self._gen_repr()
+
         src += '\n' + self._gen_attr_names()
         return src
 
@@ -161,21 +161,6 @@ class NodeCfg(object):
 
         return src
 
-    def _gen_repr(self):
-        src = '    def __repr__(self):\n'
-        src += '        result = "%s("\n' % self.name
-        for entry in self.all_entries:
-            src += '        result += "%s=%%s%s" %% (_repr(self.%s).replace("\\n", "\\n%s"))\n' % (entry,
-                                                                                                   (',\\n' if entry != self.all_entries[-1] else '\\n'),
-                                                                                                   entry,
-                                                                                                   ' ' * (len(entry) + 1))
-
-        src += '        result += ")"\n'
-        src += '        result = result.replace("\\n", "\\n%s")\n' % (' ' *
-                                                                      (len(self.name) + 1))
-        src += '        return result\n'
-        return src
-
     def _gen_attr_names(self):
         src = "    attr_names = (" + ''.join("%r, " % nm for nm in self.attr) + ')'
         return src
@@ -217,6 +202,25 @@ class Node(object):
     __slots__ = ()
     """ Abstract base class for AST nodes.
     """
+    def __repr__(self):
+        """ Generates a python representation of the current node
+        """
+        result = self.__class__.__name__ + '('
+        
+        indent = ''
+        separator = ''
+        for name in self.__slots__[:-2]:
+            result += separator
+            result += indent
+            result += name + '=' + (_repr(getattr(self, name)).replace('\n', '\n  ' + (' ' * (len(name) + len(self.__class__.__name__)))))
+            
+            separator = ','
+            indent = '\n ' + (' ' * len(self.__class__.__name__))
+        
+        result += indent + ')'
+        
+        return result
+
     def children(self):
         """ A sequence of all children that are Nodes
         """

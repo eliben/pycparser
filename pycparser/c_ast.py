@@ -31,6 +31,25 @@ class Node(object):
     __slots__ = ()
     """ Abstract base class for AST nodes.
     """
+    def __repr__(self):
+        """ Generates a python representation of the current node
+        """
+        result = self.__class__.__name__ + '('
+        
+        indent = ''
+        separator = ''
+        for name in self.__slots__[:-2]:
+            result += separator
+            result += indent
+            result += name + '=' + (_repr(getattr(self, name)).replace('\n', '\n  ' + (' ' * (len(name) + len(self.__class__.__name__)))))
+            
+            separator = ','
+            indent = '\n ' + (' ' * len(self.__class__.__name__))
+        
+        result += indent + ')'
+        
+        return result
+
     def children(self):
         """ A sequence of all children that are Nodes
         """
@@ -165,15 +184,6 @@ class ArrayDecl(Node):
         if self.dim is not None:
             yield self.dim
 
-    def __repr__(self):
-        result = "ArrayDecl("
-        result += "type=%s,\n" % (_repr(self.type).replace("\n", "\n     "))
-        result += "dim=%s,\n" % (_repr(self.dim).replace("\n", "\n    "))
-        result += "dim_quals=%s\n" % (_repr(self.dim_quals).replace("\n", "\n          "))
-        result += ")"
-        result = result.replace("\n", "\n          ")
-        return result
-
     attr_names = ('dim_quals', )
 
 class ArrayRef(Node):
@@ -194,14 +204,6 @@ class ArrayRef(Node):
             yield self.name
         if self.subscript is not None:
             yield self.subscript
-
-    def __repr__(self):
-        result = "ArrayRef("
-        result += "name=%s,\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += "subscript=%s\n" % (_repr(self.subscript).replace("\n", "\n          "))
-        result += ")"
-        result = result.replace("\n", "\n         ")
-        return result
 
     attr_names = ()
 
@@ -225,15 +227,6 @@ class Assignment(Node):
         if self.rvalue is not None:
             yield self.rvalue
 
-    def __repr__(self):
-        result = "Assignment("
-        result += "op=%s,\n" % (_repr(self.op).replace("\n", "\n   "))
-        result += "lvalue=%s,\n" % (_repr(self.lvalue).replace("\n", "\n       "))
-        result += "rvalue=%s\n" % (_repr(self.rvalue).replace("\n", "\n       "))
-        result += ")"
-        result = result.replace("\n", "\n           ")
-        return result
-
     attr_names = ('op', )
 
 class BinaryOp(Node):
@@ -256,15 +249,6 @@ class BinaryOp(Node):
         if self.right is not None:
             yield self.right
 
-    def __repr__(self):
-        result = "BinaryOp("
-        result += "op=%s,\n" % (_repr(self.op).replace("\n", "\n   "))
-        result += "left=%s,\n" % (_repr(self.left).replace("\n", "\n     "))
-        result += "right=%s\n" % (_repr(self.right).replace("\n", "\n      "))
-        result += ")"
-        result = result.replace("\n", "\n         ")
-        return result
-
     attr_names = ('op', )
 
 class Break(Node):
@@ -278,12 +262,6 @@ class Break(Node):
     def __iter__(self):
         return
         yield
-
-    def __repr__(self):
-        result = "Break("
-        result += ")"
-        result = result.replace("\n", "\n      ")
-        return result
 
     attr_names = ()
 
@@ -307,14 +285,6 @@ class Case(Node):
         for child in (self.stmts or []):
             yield child
 
-    def __repr__(self):
-        result = "Case("
-        result += "expr=%s,\n" % (_repr(self.expr).replace("\n", "\n     "))
-        result += "stmts=%s\n" % (_repr(self.stmts).replace("\n", "\n      "))
-        result += ")"
-        result = result.replace("\n", "\n     ")
-        return result
-
     attr_names = ()
 
 class Cast(Node):
@@ -336,14 +306,6 @@ class Cast(Node):
         if self.expr is not None:
             yield self.expr
 
-    def __repr__(self):
-        result = "Cast("
-        result += "to_type=%s,\n" % (_repr(self.to_type).replace("\n", "\n        "))
-        result += "expr=%s\n" % (_repr(self.expr).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n     ")
-        return result
-
     attr_names = ()
 
 class Compound(Node):
@@ -361,13 +323,6 @@ class Compound(Node):
     def __iter__(self):
         for child in (self.block_items or []):
             yield child
-
-    def __repr__(self):
-        result = "Compound("
-        result += "block_items=%s\n" % (_repr(self.block_items).replace("\n", "\n            "))
-        result += ")"
-        result = result.replace("\n", "\n         ")
-        return result
 
     attr_names = ()
 
@@ -390,14 +345,6 @@ class CompoundLiteral(Node):
         if self.init is not None:
             yield self.init
 
-    def __repr__(self):
-        result = "CompoundLiteral("
-        result += "type=%s,\n" % (_repr(self.type).replace("\n", "\n     "))
-        result += "init=%s\n" % (_repr(self.init).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n                ")
-        return result
-
     attr_names = ()
 
 class Constant(Node):
@@ -415,14 +362,6 @@ class Constant(Node):
         return
         yield
 
-    def __repr__(self):
-        result = "Constant("
-        result += "type=%s,\n" % (_repr(self.type).replace("\n", "\n     "))
-        result += "value=%s\n" % (_repr(self.value).replace("\n", "\n      "))
-        result += ")"
-        result = result.replace("\n", "\n         ")
-        return result
-
     attr_names = ('type', 'value', )
 
 class Continue(Node):
@@ -436,12 +375,6 @@ class Continue(Node):
     def __iter__(self):
         return
         yield
-
-    def __repr__(self):
-        result = "Continue("
-        result += ")"
-        result = result.replace("\n", "\n         ")
-        return result
 
     attr_names = ()
 
@@ -472,19 +405,6 @@ class Decl(Node):
         if self.bitsize is not None:
             yield self.bitsize
 
-    def __repr__(self):
-        result = "Decl("
-        result += "name=%s,\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += "quals=%s,\n" % (_repr(self.quals).replace("\n", "\n      "))
-        result += "storage=%s,\n" % (_repr(self.storage).replace("\n", "\n        "))
-        result += "funcspec=%s,\n" % (_repr(self.funcspec).replace("\n", "\n         "))
-        result += "type=%s,\n" % (_repr(self.type).replace("\n", "\n     "))
-        result += "init=%s,\n" % (_repr(self.init).replace("\n", "\n     "))
-        result += "bitsize=%s\n" % (_repr(self.bitsize).replace("\n", "\n        "))
-        result += ")"
-        result = result.replace("\n", "\n     ")
-        return result
-
     attr_names = ('name', 'quals', 'storage', 'funcspec', )
 
 class DeclList(Node):
@@ -503,13 +423,6 @@ class DeclList(Node):
         for child in (self.decls or []):
             yield child
 
-    def __repr__(self):
-        result = "DeclList("
-        result += "decls=%s\n" % (_repr(self.decls).replace("\n", "\n      "))
-        result += ")"
-        result = result.replace("\n", "\n         ")
-        return result
-
     attr_names = ()
 
 class Default(Node):
@@ -527,13 +440,6 @@ class Default(Node):
     def __iter__(self):
         for child in (self.stmts or []):
             yield child
-
-    def __repr__(self):
-        result = "Default("
-        result += "stmts=%s\n" % (_repr(self.stmts).replace("\n", "\n      "))
-        result += ")"
-        result = result.replace("\n", "\n        ")
-        return result
 
     attr_names = ()
 
@@ -556,14 +462,6 @@ class DoWhile(Node):
         if self.stmt is not None:
             yield self.stmt
 
-    def __repr__(self):
-        result = "DoWhile("
-        result += "cond=%s,\n" % (_repr(self.cond).replace("\n", "\n     "))
-        result += "stmt=%s\n" % (_repr(self.stmt).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n        ")
-        return result
-
     attr_names = ()
 
 class EllipsisParam(Node):
@@ -578,12 +476,6 @@ class EllipsisParam(Node):
         return
         yield
 
-    def __repr__(self):
-        result = "EllipsisParam("
-        result += ")"
-        result = result.replace("\n", "\n              ")
-        return result
-
     attr_names = ()
 
 class EmptyStatement(Node):
@@ -597,12 +489,6 @@ class EmptyStatement(Node):
     def __iter__(self):
         return
         yield
-
-    def __repr__(self):
-        result = "EmptyStatement("
-        result += ")"
-        result = result.replace("\n", "\n               ")
-        return result
 
     attr_names = ()
 
@@ -622,14 +508,6 @@ class Enum(Node):
         if self.values is not None:
             yield self.values
 
-    def __repr__(self):
-        result = "Enum("
-        result += "name=%s,\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += "values=%s\n" % (_repr(self.values).replace("\n", "\n       "))
-        result += ")"
-        result = result.replace("\n", "\n     ")
-        return result
-
     attr_names = ('name', )
 
 class Enumerator(Node):
@@ -647,14 +525,6 @@ class Enumerator(Node):
     def __iter__(self):
         if self.value is not None:
             yield self.value
-
-    def __repr__(self):
-        result = "Enumerator("
-        result += "name=%s,\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += "value=%s\n" % (_repr(self.value).replace("\n", "\n      "))
-        result += ")"
-        result = result.replace("\n", "\n           ")
-        return result
 
     attr_names = ('name', )
 
@@ -674,13 +544,6 @@ class EnumeratorList(Node):
         for child in (self.enumerators or []):
             yield child
 
-    def __repr__(self):
-        result = "EnumeratorList("
-        result += "enumerators=%s\n" % (_repr(self.enumerators).replace("\n", "\n            "))
-        result += ")"
-        result = result.replace("\n", "\n               ")
-        return result
-
     attr_names = ()
 
 class ExprList(Node):
@@ -699,13 +562,6 @@ class ExprList(Node):
         for child in (self.exprs or []):
             yield child
 
-    def __repr__(self):
-        result = "ExprList("
-        result += "exprs=%s\n" % (_repr(self.exprs).replace("\n", "\n      "))
-        result += ")"
-        result = result.replace("\n", "\n         ")
-        return result
-
     attr_names = ()
 
 class FileAST(Node):
@@ -723,13 +579,6 @@ class FileAST(Node):
     def __iter__(self):
         for child in (self.ext or []):
             yield child
-
-    def __repr__(self):
-        result = "FileAST("
-        result += "ext=%s\n" % (_repr(self.ext).replace("\n", "\n    "))
-        result += ")"
-        result = result.replace("\n", "\n        ")
-        return result
 
     attr_names = ()
 
@@ -760,16 +609,6 @@ class For(Node):
         if self.stmt is not None:
             yield self.stmt
 
-    def __repr__(self):
-        result = "For("
-        result += "init=%s,\n" % (_repr(self.init).replace("\n", "\n     "))
-        result += "cond=%s,\n" % (_repr(self.cond).replace("\n", "\n     "))
-        result += "next=%s,\n" % (_repr(self.next).replace("\n", "\n     "))
-        result += "stmt=%s\n" % (_repr(self.stmt).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n    ")
-        return result
-
     attr_names = ()
 
 class FuncCall(Node):
@@ -791,14 +630,6 @@ class FuncCall(Node):
         if self.args is not None:
             yield self.args
 
-    def __repr__(self):
-        result = "FuncCall("
-        result += "name=%s,\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += "args=%s\n" % (_repr(self.args).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n         ")
-        return result
-
     attr_names = ()
 
 class FuncDecl(Node):
@@ -819,14 +650,6 @@ class FuncDecl(Node):
             yield self.args
         if self.type is not None:
             yield self.type
-
-    def __repr__(self):
-        result = "FuncDecl("
-        result += "args=%s,\n" % (_repr(self.args).replace("\n", "\n     "))
-        result += "type=%s\n" % (_repr(self.type).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n         ")
-        return result
 
     attr_names = ()
 
@@ -854,15 +677,6 @@ class FuncDef(Node):
         for child in (self.param_decls or []):
             yield child
 
-    def __repr__(self):
-        result = "FuncDef("
-        result += "decl=%s,\n" % (_repr(self.decl).replace("\n", "\n     "))
-        result += "param_decls=%s,\n" % (_repr(self.param_decls).replace("\n", "\n            "))
-        result += "body=%s\n" % (_repr(self.body).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n        ")
-        return result
-
     attr_names = ()
 
 class Goto(Node):
@@ -878,13 +692,6 @@ class Goto(Node):
     def __iter__(self):
         return
         yield
-
-    def __repr__(self):
-        result = "Goto("
-        result += "name=%s\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n     ")
-        return result
 
     attr_names = ('name', )
 
@@ -902,13 +709,6 @@ class ID(Node):
         return
         yield
 
-    def __repr__(self):
-        result = "ID("
-        result += "name=%s\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n   ")
-        return result
-
     attr_names = ('name', )
 
 class IdentifierType(Node):
@@ -924,13 +724,6 @@ class IdentifierType(Node):
     def __iter__(self):
         return
         yield
-
-    def __repr__(self):
-        result = "IdentifierType("
-        result += "names=%s\n" % (_repr(self.names).replace("\n", "\n      "))
-        result += ")"
-        result = result.replace("\n", "\n               ")
-        return result
 
     attr_names = ('names', )
 
@@ -957,15 +750,6 @@ class If(Node):
         if self.iffalse is not None:
             yield self.iffalse
 
-    def __repr__(self):
-        result = "If("
-        result += "cond=%s,\n" % (_repr(self.cond).replace("\n", "\n     "))
-        result += "iftrue=%s,\n" % (_repr(self.iftrue).replace("\n", "\n       "))
-        result += "iffalse=%s\n" % (_repr(self.iffalse).replace("\n", "\n        "))
-        result += ")"
-        result = result.replace("\n", "\n   ")
-        return result
-
     attr_names = ()
 
 class InitList(Node):
@@ -984,13 +768,6 @@ class InitList(Node):
         for child in (self.exprs or []):
             yield child
 
-    def __repr__(self):
-        result = "InitList("
-        result += "exprs=%s\n" % (_repr(self.exprs).replace("\n", "\n      "))
-        result += ")"
-        result = result.replace("\n", "\n         ")
-        return result
-
     attr_names = ()
 
 class Label(Node):
@@ -1008,14 +785,6 @@ class Label(Node):
     def __iter__(self):
         if self.stmt is not None:
             yield self.stmt
-
-    def __repr__(self):
-        result = "Label("
-        result += "name=%s,\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += "stmt=%s\n" % (_repr(self.stmt).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n      ")
-        return result
 
     attr_names = ('name', )
 
@@ -1039,14 +808,6 @@ class NamedInitializer(Node):
         for child in (self.name or []):
             yield child
 
-    def __repr__(self):
-        result = "NamedInitializer("
-        result += "name=%s,\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += "expr=%s\n" % (_repr(self.expr).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n                 ")
-        return result
-
     attr_names = ()
 
 class ParamList(Node):
@@ -1064,13 +825,6 @@ class ParamList(Node):
     def __iter__(self):
         for child in (self.params or []):
             yield child
-
-    def __repr__(self):
-        result = "ParamList("
-        result += "params=%s\n" % (_repr(self.params).replace("\n", "\n       "))
-        result += ")"
-        result = result.replace("\n", "\n          ")
-        return result
 
     attr_names = ()
 
@@ -1090,14 +844,6 @@ class PtrDecl(Node):
         if self.type is not None:
             yield self.type
 
-    def __repr__(self):
-        result = "PtrDecl("
-        result += "quals=%s,\n" % (_repr(self.quals).replace("\n", "\n      "))
-        result += "type=%s\n" % (_repr(self.type).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n        ")
-        return result
-
     attr_names = ('quals', )
 
 class Return(Node):
@@ -1114,13 +860,6 @@ class Return(Node):
     def __iter__(self):
         if self.expr is not None:
             yield self.expr
-
-    def __repr__(self):
-        result = "Return("
-        result += "expr=%s\n" % (_repr(self.expr).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n       ")
-        return result
 
     attr_names = ()
 
@@ -1140,14 +879,6 @@ class Struct(Node):
     def __iter__(self):
         for child in (self.decls or []):
             yield child
-
-    def __repr__(self):
-        result = "Struct("
-        result += "name=%s,\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += "decls=%s\n" % (_repr(self.decls).replace("\n", "\n      "))
-        result += ")"
-        result = result.replace("\n", "\n       ")
-        return result
 
     attr_names = ('name', )
 
@@ -1171,15 +902,6 @@ class StructRef(Node):
         if self.field is not None:
             yield self.field
 
-    def __repr__(self):
-        result = "StructRef("
-        result += "name=%s,\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += "type=%s,\n" % (_repr(self.type).replace("\n", "\n     "))
-        result += "field=%s\n" % (_repr(self.field).replace("\n", "\n      "))
-        result += ")"
-        result = result.replace("\n", "\n          ")
-        return result
-
     attr_names = ('type', )
 
 class Switch(Node):
@@ -1200,14 +922,6 @@ class Switch(Node):
             yield self.cond
         if self.stmt is not None:
             yield self.stmt
-
-    def __repr__(self):
-        result = "Switch("
-        result += "cond=%s,\n" % (_repr(self.cond).replace("\n", "\n     "))
-        result += "stmt=%s\n" % (_repr(self.stmt).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n       ")
-        return result
 
     attr_names = ()
 
@@ -1234,15 +948,6 @@ class TernaryOp(Node):
         if self.iffalse is not None:
             yield self.iffalse
 
-    def __repr__(self):
-        result = "TernaryOp("
-        result += "cond=%s,\n" % (_repr(self.cond).replace("\n", "\n     "))
-        result += "iftrue=%s,\n" % (_repr(self.iftrue).replace("\n", "\n       "))
-        result += "iffalse=%s\n" % (_repr(self.iffalse).replace("\n", "\n        "))
-        result += ")"
-        result = result.replace("\n", "\n          ")
-        return result
-
     attr_names = ()
 
 class TypeDecl(Node):
@@ -1261,15 +966,6 @@ class TypeDecl(Node):
     def __iter__(self):
         if self.type is not None:
             yield self.type
-
-    def __repr__(self):
-        result = "TypeDecl("
-        result += "declname=%s,\n" % (_repr(self.declname).replace("\n", "\n         "))
-        result += "quals=%s,\n" % (_repr(self.quals).replace("\n", "\n      "))
-        result += "type=%s\n" % (_repr(self.type).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n         ")
-        return result
 
     attr_names = ('declname', 'quals', )
 
@@ -1291,16 +987,6 @@ class Typedef(Node):
         if self.type is not None:
             yield self.type
 
-    def __repr__(self):
-        result = "Typedef("
-        result += "name=%s,\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += "quals=%s,\n" % (_repr(self.quals).replace("\n", "\n      "))
-        result += "storage=%s,\n" % (_repr(self.storage).replace("\n", "\n        "))
-        result += "type=%s\n" % (_repr(self.type).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n        ")
-        return result
-
     attr_names = ('name', 'quals', 'storage', )
 
 class Typename(Node):
@@ -1320,15 +1006,6 @@ class Typename(Node):
         if self.type is not None:
             yield self.type
 
-    def __repr__(self):
-        result = "Typename("
-        result += "name=%s,\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += "quals=%s,\n" % (_repr(self.quals).replace("\n", "\n      "))
-        result += "type=%s\n" % (_repr(self.type).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n         ")
-        return result
-
     attr_names = ('name', 'quals', )
 
 class UnaryOp(Node):
@@ -1346,14 +1023,6 @@ class UnaryOp(Node):
     def __iter__(self):
         if self.expr is not None:
             yield self.expr
-
-    def __repr__(self):
-        result = "UnaryOp("
-        result += "op=%s,\n" % (_repr(self.op).replace("\n", "\n   "))
-        result += "expr=%s\n" % (_repr(self.expr).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n        ")
-        return result
 
     attr_names = ('op', )
 
@@ -1373,14 +1042,6 @@ class Union(Node):
     def __iter__(self):
         for child in (self.decls or []):
             yield child
-
-    def __repr__(self):
-        result = "Union("
-        result += "name=%s,\n" % (_repr(self.name).replace("\n", "\n     "))
-        result += "decls=%s\n" % (_repr(self.decls).replace("\n", "\n      "))
-        result += ")"
-        result = result.replace("\n", "\n      ")
-        return result
 
     attr_names = ('name', )
 
@@ -1403,14 +1064,6 @@ class While(Node):
         if self.stmt is not None:
             yield self.stmt
 
-    def __repr__(self):
-        result = "While("
-        result += "cond=%s,\n" % (_repr(self.cond).replace("\n", "\n     "))
-        result += "stmt=%s\n" % (_repr(self.stmt).replace("\n", "\n     "))
-        result += ")"
-        result = result.replace("\n", "\n      ")
-        return result
-
     attr_names = ()
 
 class Pragma(Node):
@@ -1426,13 +1079,6 @@ class Pragma(Node):
     def __iter__(self):
         return
         yield
-
-    def __repr__(self):
-        result = "Pragma("
-        result += "string=%s\n" % (_repr(self.string).replace("\n", "\n       "))
-        result += ")"
-        result = result.replace("\n", "\n       ")
-        return result
 
     attr_names = ('string', )
 
