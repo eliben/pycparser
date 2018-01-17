@@ -63,6 +63,7 @@ class NodeCfg(object):
         contents: a list of contents - attributes and child nodes
         See comment at the top of the configuration file for details.
     """
+
     def __init__(self, name, contents):
         self.name = name
         self.all_entries = []
@@ -85,6 +86,7 @@ class NodeCfg(object):
         src = self._gen_init()
         src += '\n' + self._gen_children()
         src += '\n' + self._gen_iter()
+
         src += '\n' + self._gen_attr_names()
         return src
 
@@ -187,11 +189,38 @@ r'''#-----------------------------------------------------------------
 _PROLOGUE_CODE = r'''
 import sys
 
+def _repr(obj):
+    """
+    Get the representation of an object, with dedicated pprint-like format for lists.
+    """
+    if isinstance(obj, list):
+        return '[' + (',\n '.join((_repr(e).replace('\n', '\n ') for e in obj))) + '\n]'
+    else:
+        return repr(obj) 
 
 class Node(object):
     __slots__ = ()
     """ Abstract base class for AST nodes.
     """
+    def __repr__(self):
+        """ Generates a python representation of the current node
+        """
+        result = self.__class__.__name__ + '('
+        
+        indent = ''
+        separator = ''
+        for name in self.__slots__[:-2]:
+            result += separator
+            result += indent
+            result += name + '=' + (_repr(getattr(self, name)).replace('\n', '\n  ' + (' ' * (len(name) + len(self.__class__.__name__)))))
+            
+            separator = ','
+            indent = '\n ' + (' ' * len(self.__class__.__name__))
+        
+        result += indent + ')'
+        
+        return result
+
     def children(self):
         """ A sequence of all children that are Nodes
         """
