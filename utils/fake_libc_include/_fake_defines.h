@@ -43,14 +43,4 @@ typedef int va_list;
 #define va_arg(_ap, _type) __builtin_va_arg((_ap))
 #define va_end(_list)
 
-/* X11 defines */
-#define Atom CARD32
-#define Bool int
-#define KeySym CARD32
-#define Pixmap CARD32
-#define Time CARD32
-#define _XFUNCPROTOBEGIN
-#define _XFUNCPROTOEND
-#define _Xconst const
-
 #endif
