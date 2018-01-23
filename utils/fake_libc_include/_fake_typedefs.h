@@ -152,12 +152,6 @@ typedef _Bool bool;
 
 typedef int va_list;
 
-/* Xlib objects */
-typedef struct Display Display;
-typedef unsigned long XID;
-typedef unsigned long VisualID;
-typedef XID Window;
-
 /* Mir typedefs */
 typedef void* MirEGLNativeWindowType;
 typedef void* MirEGLNativeDisplayType;
