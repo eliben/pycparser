@@ -2,7 +2,7 @@
 // Statically-allocated memory manager
 //
 // by Eli Bendersky (eliben@gmail.com)
-//  
+//
 // This code is in the public domain.
 //----------------------------------------------------------------
 #include "memmgr.h"
@@ -11,7 +11,7 @@ typedef ulong Align;
 
 union mem_header_union
 {
-    struct 
+    struct
     {
         // Pointer to the next block in the free list
         //
@@ -19,7 +19,7 @@ union mem_header_union
 
         // Size of the block (in quantas of sizeof(mem_header_t))
         //
-        ulong size; 
+        ulong size;
     } s;
 
     // Used to align headers in memory to a boundary
@@ -80,9 +80,9 @@ static mem_header_t* get_mem_from_pool(ulong nquantas)
 
 
 // Allocations are done in 'quantas' of header size.
-// The search for a free block of adequate size begins at the point 'freep' 
+// The search for a free block of adequate size begins at the point 'freep'
 // where the last block was found.
-// If a too-big block is found, it is split and the tail is returned (this 
+// If a too-big block is found, it is split and the tail is returned (this
 // way the header of the original needs only to have its size adjusted).
 // The pointer returned to the user points to the free space within the block,
 // which begins one quanta after the header.
@@ -100,7 +100,7 @@ void* memmgr_alloc(ulong nbytes)
 
     // First alloc call, and no free list yet ? Use 'base' for an initial
     // denegerate block of size 0, which points to itself
-    // 
+    //
     if ((prevp = freep) == 0)
     {
         base.s.next = freep = prevp = &base;
@@ -110,7 +110,7 @@ void* memmgr_alloc(ulong nbytes)
     for (p = prevp->s.next; ; prevp = p, p = p->s.next)
     {
         // big enough ?
-        if (p->s.size >= nquantas) 
+        if (p->s.size >= nquantas)
         {
             // exactly ?
             if (p->s.size == nquantas)
@@ -151,7 +151,7 @@ void* memmgr_alloc(ulong nbytes)
 }
 
 
-// Scans the free list, starting at freep, looking the the place to insert the 
+// Scans the free list, starting at freep, looking the the place to insert the
 // free block. This is either between two existing blocks or at the end of the
 // list. In any case, if the block being freed is adjacent to either neighbor,
 // the adjacent blocks are combined.
@@ -169,9 +169,9 @@ void memmgr_free(void* ap)
     //
     for (p = freep; !(block > p && block < p->s.next); p = p->s.next)
     {
-        // Since the free list is circular, there is one link where a 
-        // higher-addressed block points to a lower-addressed block. 
-        // This condition checks if the block should be actually 
+        // Since the free list is circular, there is one link where a
+        // higher-addressed block points to a lower-addressed block.
+        // This condition checks if the block should be actually
         // inserted between them
         //
         if (p >= p->s.next && (block > p || block < p->s.next))
