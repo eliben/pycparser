@@ -613,8 +613,9 @@ class CParser(PLYParser):
                         | iteration_statement
                         | jump_statement
                         | pppragma_directive statement
+                        | pppragma_directive
         """
-        if isinstance(p[1], c_ast.Pragma):
+        if isinstance(p[1], c_ast.Pragma) and len(p) == 3:
             p[0] = c_ast.Compound(
                 block_items=[p[1], p[2]],
                 coord=self._token_coord(p, 1))
