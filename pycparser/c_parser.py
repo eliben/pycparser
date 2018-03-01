@@ -612,8 +612,13 @@ class CParser(PLYParser):
                         | selection_statement
                         | iteration_statement
                         | jump_statement
-                        | pppragma_directive statement
                         | pppragma_directive
+        """
+        p[0] = p[1]
+
+    def p_pragmacomp_or_statement(self, p):
+        """ pragmacomp_or_statement	: pppragma_directive statement
+                                        | statement
         """
         if isinstance(p[1], c_ast.Pragma) and len(p) == 3:
             p[0] = c_ast.Compound(
@@ -1416,44 +1421,44 @@ class CParser(PLYParser):
             coord=self._token_coord(p, 1))
 
     def p_labeled_statement_1(self, p):
-        """ labeled_statement : ID COLON statement """
+        """ labeled_statement : ID COLON pragmacomp_or_statement """
         p[0] = c_ast.Label(p[1], p[3], self._token_coord(p, 1))
 
     def p_labeled_statement_2(self, p):
-        """ labeled_statement : CASE constant_expression COLON statement """
+        """ labeled_statement : CASE constant_expression COLON pragmacomp_or_statement """
         p[0] = c_ast.Case(p[2], [p[4]], self._token_coord(p, 1))
 
     def p_labeled_statement_3(self, p):
-        """ labeled_statement : DEFAULT COLON statement """
+        """ labeled_statement : DEFAULT COLON pragmacomp_or_statement """
         p[0] = c_ast.Default([p[3]], self._token_coord(p, 1))
 
     def p_selection_statement_1(self, p):
-        """ selection_statement : IF LPAREN expression RPAREN statement """
+        """ selection_statement : IF LPAREN expression RPAREN pragmacomp_or_statement """
         p[0] = c_ast.If(p[3], p[5], None, self._token_coord(p, 1))
 
     def p_selection_statement_2(self, p):
-        """ selection_statement : IF LPAREN expression RPAREN statement ELSE statement """
+        """ selection_statement : IF LPAREN expression RPAREN statement ELSE pragmacomp_or_statement """
         p[0] = c_ast.If(p[3], p[5], p[7], self._token_coord(p, 1))
 
     def p_selection_statement_3(self, p):
-        """ selection_statement : SWITCH LPAREN expression RPAREN statement """
+        """ selection_statement : SWITCH LPAREN expression RPAREN pragmacomp_or_statement """
         p[0] = fix_switch_cases(
                 c_ast.Switch(p[3], p[5], self._token_coord(p, 1)))
 
     def p_iteration_statement_1(self, p):
-        """ iteration_statement : WHILE LPAREN expression RPAREN statement """
+        """ iteration_statement : WHILE LPAREN expression RPAREN pragmacomp_or_statement """
         p[0] = c_ast.While(p[3], p[5], self._token_coord(p, 1))
 
     def p_iteration_statement_2(self, p):
-        """ iteration_statement : DO statement WHILE LPAREN expression RPAREN SEMI """
+        """ iteration_statement : DO pragmacomp_or_statement WHILE LPAREN expression RPAREN SEMI """
         p[0] = c_ast.DoWhile(p[5], p[2], self._token_coord(p, 1))
 
     def p_iteration_statement_3(self, p):
-        """ iteration_statement : FOR LPAREN expression_opt SEMI expression_opt SEMI expression_opt RPAREN statement """
+        """ iteration_statement : FOR LPAREN expression_opt SEMI expression_opt SEMI expression_opt RPAREN pragmacomp_or_statement """
         p[0] = c_ast.For(p[3], p[5], p[7], p[9], self._token_coord(p, 1))
 
     def p_iteration_statement_4(self, p):
-        """ iteration_statement : FOR LPAREN declaration expression_opt SEMI expression_opt RPAREN statement """
+        """ iteration_statement : FOR LPAREN declaration expression_opt SEMI expression_opt RPAREN pragmacomp_or_statement """
         p[0] = c_ast.For(c_ast.DeclList(p[3], self._token_coord(p, 1)),
                          p[4], p[6], p[8], self._token_coord(p, 1))
 
