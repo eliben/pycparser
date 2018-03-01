@@ -612,9 +612,14 @@ class CParser(PLYParser):
                         | selection_statement
                         | iteration_statement
                         | jump_statement
-                        | pppragma_directive
+                        | pppragma_directive statement
         """
-        p[0] = p[1]
+        if isinstance(p[1], c_ast.Pragma):
+            p[0] = c_ast.Compound(
+                block_items=[p[1], p[2]],
+                coord=self._token_coord(p, 1))
+        else:
+            p[0] = p[1]
 
     # In C, declarations can come several in a line:
     #   int x, *px, romulo = 5;
