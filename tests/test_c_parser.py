@@ -1396,7 +1396,6 @@ class TestCParser_fundamentals(TestCParser_base):
             }
         '''
         s1_ast = self.parse(s1)
-        print(s1_ast.ext[0].body.block_items[5])
         self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[1], For))
         self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[1].stmt, Compound))
         self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[1].stmt.block_items[0], Pragma))
