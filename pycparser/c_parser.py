@@ -616,8 +616,50 @@ class CParser(PLYParser):
         """
         p[0] = p[1]
 
+    # A pragma is generally considered a decorator rather than an actual statement.
+    # Still, for the purposes of analyzing an abstract syntax tree of C code,
+    # pragma's should not be ignored and were previously treated as a statement.
+    # This presents a problem for constructs that take a statement such as labeled_statements,
+    # selection_statements, and iteration_statements, causing a misleading structure
+    # in the AST. For example, consider the following C code.
+    #
+    #   for (int i = 0; i < 3; i++)
+    #       #pragma omp critical
+    #       sum += 1;
+    #
+    # This code will compile and execute "sum += 1;" as the body of the for loop.
+    # Previous implementations of PyCParser would render the AST for this
+    # block of code as follows:
+    #
+    #   For:
+    #     DeclList:
+    #       Decl: i, [], [], []
+    #         TypeDecl: i, []
+    #           IdentifierType: ['int']
+    #         Constant: int, 0
+    #     BinaryOp: <
+    #       ID: i
+    #       Constant: int, 3
+    #     UnaryOp: p++
+    #       ID: i
+    #     Pragma: omp critical
+    #   Assignment: +=
+    #     ID: sum
+    #     Constant: int, 1
+    #
+    # This AST misleadingly takes the Pragma as the body of the loop and the
+    # assignment then becomes a sibling of the loop.
+    #
+    # To solve edge cases like these, the pragmacomp_or_statement rule groups
+    # a pragma and its following statement (which would otherwise be orphaned)
+    # using a compound block, effectively turning the above code into:
+    #
+    #   for (int i = 0; i < 3; i++) {
+    #       #pragma omp critical
+    #       sum += 1;
+    #   }
     def p_pragmacomp_or_statement(self, p):
-        """ pragmacomp_or_statement	: pppragma_directive statement
+        """ pragmacomp_or_statement     : pppragma_directive statement
                                         | statement
         """
         if isinstance(p[1], c_ast.Pragma) and len(p) == 3:
