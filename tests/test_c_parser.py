@@ -1369,6 +1369,54 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(s1_ast.ext[2].type.type.decls[0].string, 'baz')
         self.assertEqual(s1_ast.ext[2].type.type.decls[0].coord.line, 9)
 
+    def test_pragmacomp_or_statement(self):
+        s1 = r'''
+            void main() {
+                int sum = 0;
+                for (int i; i < 3; i++)
+                    #pragma omp critical
+                    sum += 1;
+
+                while(sum < 10)
+                    #pragma omp critical
+                    sum += 1;
+
+                mylabel:
+                    #pragma foo
+                    sum += 10;
+
+                if (sum > 10)
+                    #pragma bar
+                    sum = 10;
+
+                switch (sum)
+                case 10:
+                    #pragma foo
+                    sum = 20;
+            }
+        '''
+        s1_ast = self.parse(s1)
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[1], For))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[1].stmt, Compound))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[1].stmt.block_items[0], Pragma))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[1].stmt.block_items[1], Assignment))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[2], While))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[2].stmt, Compound))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[2].stmt.block_items[0], Pragma))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[2].stmt.block_items[1], Assignment))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[3], Label))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[3].stmt, Compound))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[3].stmt.block_items[0], Pragma))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[3].stmt.block_items[1], Assignment))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[4], If))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[4].iftrue, Compound))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[4].iftrue.block_items[0], Pragma))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[4].iftrue.block_items[1], Assignment))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[5], Switch))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0], Compound))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[0], Pragma))
+        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[1], Assignment))
+
 
 class TestCParser_whole_code(TestCParser_base):
     """ Testing of parsing whole chunks of code.
