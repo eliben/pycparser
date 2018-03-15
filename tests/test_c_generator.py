@@ -288,7 +288,7 @@ class TestCtoC(unittest.TestCase):
         s = textwrap.dedent(r'''
             enum e
             {
-              a = 1,
+              a,
               b = 2,
               c = 3
             };
