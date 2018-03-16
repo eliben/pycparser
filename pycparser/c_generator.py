@@ -138,11 +138,17 @@ class CGenerator(object):
         return self._generate_struct_union_enum(n, name='enum')
 
     def visit_Enumerator(self, n):
-        return '{indent}{name} = {value},\n'.format(
-            indent=self._make_indent(),
-            name=n.name,
-            value=self.visit(n.value),
-        )
+        if not n.value:
+            return '{indent}{name},\n'.format(
+                indent=self._make_indent(),
+                name=n.name,
+            )
+        else:
+            return '{indent}{name} = {value},\n'.format(
+                indent=self._make_indent(),
+                name=n.name,
+                value=self.visit(n.value),
+            )
 
     def visit_FuncDef(self, n):
         decl = self.visit(n.decl)

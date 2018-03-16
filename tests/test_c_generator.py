@@ -103,6 +103,12 @@ class TestCtoC(unittest.TestCase):
                 int b = (int) f;
                 int c = (int*) f;
             }''')
+        self._assert_ctoc_correct(r'''
+            int main() {
+                int a = (int) b + 8;
+                int t = (int) c;
+            }
+        ''')
 
     def test_initlist(self):
         self._assert_ctoc_correct('int arr[] = {1, 2, 3};')
@@ -128,14 +134,6 @@ class TestCtoC(unittest.TestCase):
                 b = - - a;
                 return a;
             }''')
-
-    def test_casts(self):
-        self._assert_ctoc_correct(r'''
-            int main() {
-                int a = (int) b + 8;
-                int t = (int) c;
-            }
-        ''')
 
     def test_struct_decl(self):
         self._assert_ctoc_correct(r'''
@@ -285,20 +283,22 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct('struct foo_s foo = (struct foo_s){ 1, 2 };')
 
     def test_enum(self):
-        s = textwrap.dedent(r'''
+        self._assert_ctoc_correct(r'''
             enum e
             {
-              a = 1,
+              a,
               b = 2,
               c = 3
             };
-        '''[1:])
-
-        self._assert_ctoc_correct(s)
-
-        ast = parse_to_ast(s)
-        generator = c_generator.CGenerator()
-        assert generator.visit(ast) == s
+        ''')
+        self._assert_ctoc_correct(r'''
+            enum f
+            {
+                g = 4,
+                h,
+                i
+            };
+        ''')
 
     def test_enum_typedef(self):
         self._assert_ctoc_correct('typedef enum EnumName EnumTypedefName;')
