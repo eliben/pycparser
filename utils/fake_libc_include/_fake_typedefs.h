@@ -2,7 +2,6 @@
 #define _FAKE_TYPEDEFS_H
 
 typedef int size_t;
-typedef int __builtin_va_list;
 typedef int __gnuc_va_list;
 typedef int __int8_t;
 typedef int __uint8_t;
@@ -149,8 +148,6 @@ typedef int uintmax_t;
 
 /* C99 stdbool.h bool type. _Bool is built-in in C99 */
 typedef _Bool bool;
-
-typedef int va_list;
 
 /* Mir typedefs */
 typedef void* MirEGLNativeWindowType;
