@@ -4,6 +4,7 @@
 typedef int size_t;
 typedef int __builtin_va_list;
 typedef int __gnuc_va_list;
+typedef int va_list;
 typedef int __int8_t;
 typedef int __uint8_t;
 typedef int __int16_t;
