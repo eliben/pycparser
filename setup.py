@@ -47,6 +47,8 @@ setup(
     url='https://github.com/eliben/pycparser',
     platforms='Cross Platform',
     classifiers = [
+        'Development Status :: 5 - Production/Stable',
+        'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
