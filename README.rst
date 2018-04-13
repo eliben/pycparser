@@ -165,10 +165,14 @@ Basic usage
 -----------
 
 Take a look at the |examples|_ directory of the distribution for a few examples
-of using **pycparser**. These should be enough to get you started.
+of using **pycparser**. These should be enough to get you started. Please note
+that most realistic C code samples would require running the C preprocessor
+before passing the code to **pycparser**; see the previous sections for more
+details.
 
 .. |examples| replace:: ``examples``
 .. _examples: examples
+
 
 Advanced usage
 --------------
