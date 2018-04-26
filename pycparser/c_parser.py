@@ -923,14 +923,23 @@ class CParser(PLYParser):
             coord=self._token_coord(p, 2))
 
     def p_struct_or_union_specifier_3(self, p):
-        """ struct_or_union_specifier   : struct_or_union ID brace_open struct_declaration_list brace_close
+        """ struct_or_union_specifier   : struct_or_union ID brace_open brace_close
+                                        | struct_or_union ID brace_open struct_declaration_list brace_close
+                                        | struct_or_union TYPEID brace_open brace_close
                                         | struct_or_union TYPEID brace_open struct_declaration_list brace_close
         """
         klass = self._select_struct_union_class(p[1])
-        p[0] = klass(
-            name=p[2],
-            decls=p[4],
-            coord=self._token_coord(p, 2))
+        if len(p) == 6:
+            p[0] = klass(
+                name=p[2],
+                decls=p[4],
+                coord=self._token_coord(p, 2))
+        else:
+            # Empty structs are not pure-C99, but accepted.
+            p[0] = klass(
+                name=p[2],
+                decls=[],
+                coord=self._token_coord(p, 2))
 
     def p_struct_or_union(self, p):
         """ struct_or_union : STRUCT
