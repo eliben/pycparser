@@ -998,6 +998,26 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(parsed_struct.type.type.decls[0].bitsize.value, '6')
         self.assertEqual(parsed_struct.type.type.decls[1].bitsize.value, '2')
 
+    def test_struct_empty(self):
+        """
+        Tests that parsing an empty struct works.
+        
+        Empty structs do NOT follow C99 (See 6.2.5-20 of the C99 standard).
+        This is nevertheless supported by some compilers (clang, gcc), 
+        especially when using FORTIFY code. 
+        Some compilers (visual) will fail to compile with an error.
+        """
+        # an empty struct. This is NOT C99 compliant
+        s1 = """
+                 struct foo { };
+             """
+
+        parsed_struct = self.parse(s1).ext[0]
+
+        self.assertEqual(expand_decl(parsed_struct),
+                         ['Decl', None, ['Struct', 'foo', []]]
+                         )
+
     def test_tags_namespace(self):
         """ Tests that the tags of structs/unions/enums reside in a separate namespace and
             can be named after existing types.
