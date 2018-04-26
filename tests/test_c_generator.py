@@ -228,6 +228,11 @@ class TestCtoC(unittest.TestCase):
             }
             ''')
 
+    def test_issue246(self):
+        self._assert_ctoc_correct(r'''
+            int array[3] = {[0] = 0, [1] = 1, [1+1] = 2};
+            ''')
+
     def test_exprlist_with_semi(self):
         self._assert_ctoc_correct(r'''
             void x() {

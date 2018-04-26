@@ -283,8 +283,8 @@ class CGenerator(object):
         for name in n.name:
             if isinstance(name, c_ast.ID):
                 s += '.' + name.name
-            elif isinstance(name, c_ast.Constant):
-                s += '[' + name.value + ']'
+            else:
+                s += '[' + self.visit(name) + ']'
         s += ' = ' + self._visit_expr(n.expr)
         return s
 
