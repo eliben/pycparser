@@ -908,6 +908,7 @@ class CParser(PLYParser):
                                         | struct_or_union TYPEID
         """
         klass = self._select_struct_union_class(p[1])
+        # None means no list of members
         p[0] = klass(
             name=p[2],
             decls=None,
@@ -919,7 +920,6 @@ class CParser(PLYParser):
         """
         klass = self._select_struct_union_class(p[1])
         if len(p) == 4:
-            # None means no members
             # Empty sequence means an empty list of members
             p[0] = klass(
                 name=None,
@@ -940,7 +940,6 @@ class CParser(PLYParser):
         """
         klass = self._select_struct_union_class(p[1])
         if len(p) == 5:
-            # None means no members
             # Empty sequence means an empty list of members
             p[0] = klass(
                 name=p[2],
