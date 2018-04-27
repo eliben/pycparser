@@ -102,8 +102,7 @@ class CParser(PLYParser):
             'parameter_type_list',
             'block_item_list',
             'type_qualifier_list',
-            'struct_declarator_list',
-            'struct_declaration_list',
+            'struct_declarator_list'
         ]
 
         for rule in rules_with_opt:
@@ -915,7 +914,8 @@ class CParser(PLYParser):
             coord=self._token_coord(p, 2))
 
     def p_struct_or_union_specifier_2(self, p):
-        """ struct_or_union_specifier : struct_or_union brace_open struct_declaration_list_opt brace_close
+        """ struct_or_union_specifier : struct_or_union brace_open struct_declaration_list brace_close
+                                      | struct_or_union brace_open brace_close
         """
         klass = self._select_struct_union_class(p[1])
         if len(p) == 4:
@@ -933,8 +933,10 @@ class CParser(PLYParser):
 
 
     def p_struct_or_union_specifier_3(self, p):
-        """ struct_or_union_specifier   : struct_or_union ID brace_open struct_declaration_list_opt brace_close
-                                        | struct_or_union TYPEID brace_open struct_declaration_list_opt brace_close
+        """ struct_or_union_specifier   : struct_or_union ID brace_open struct_declaration_list brace_close
+                                        | struct_or_union ID brace_open brace_close
+                                        | struct_or_union TYPEID brace_open struct_declaration_list brace_close
+                                        | struct_or_union TYPEID brace_open brace_close
         """
         klass = self._select_struct_union_class(p[1])
         if len(p) == 5:
