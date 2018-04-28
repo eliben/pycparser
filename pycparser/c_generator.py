@@ -300,10 +300,12 @@ class CGenerator(object):
             body_function = self._generate_struct_union_body
         else:
             assert name == 'enum'
-            members = () if n.values is None else n.values.enumerators
+            members = None if n.values is None else n.values.enumerators
             body_function = self._generate_enum_body
         s = name + ' ' + (n.name or '')
-        if members:
+        if members is not None:
+            # None means no members
+            # Empty sequence means an empty list of members
             s += '\n'
             s += self._make_indent()
             self.indent_level += 2

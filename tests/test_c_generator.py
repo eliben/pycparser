@@ -213,6 +213,18 @@ class TestCtoC(unittest.TestCase):
               return 0;
             }''')
 
+    def test_issue66(self):
+        # A non-existing body must not be generated
+        # (previous valid behavior, still working)
+        self._assert_ctoc_correct(r'''
+            struct foo;
+            ''')
+        # An empty body must be generated
+        # (added behavior)
+        self._assert_ctoc_correct(r'''
+            struct foo {};
+            ''')
+
     def test_issue83(self):
         self._assert_ctoc_correct(r'''
             void x(void) {

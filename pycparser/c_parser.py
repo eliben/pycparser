@@ -908,6 +908,7 @@ class CParser(PLYParser):
                                         | struct_or_union TYPEID
         """
         klass = self._select_struct_union_class(p[1])
+        # None means no list of members
         p[0] = klass(
             name=p[2],
             decls=None,
@@ -915,22 +916,40 @@ class CParser(PLYParser):
 
     def p_struct_or_union_specifier_2(self, p):
         """ struct_or_union_specifier : struct_or_union brace_open struct_declaration_list brace_close
+                                      | struct_or_union brace_open brace_close
         """
         klass = self._select_struct_union_class(p[1])
-        p[0] = klass(
-            name=None,
-            decls=p[3],
-            coord=self._token_coord(p, 2))
+        if len(p) == 4:
+            # Empty sequence means an empty list of members
+            p[0] = klass(
+                name=None,
+                decls=[],
+                coord=self._token_coord(p, 2))
+        else:
+            p[0] = klass(
+                name=None,
+                decls=p[3],
+                coord=self._token_coord(p, 2))
+
 
     def p_struct_or_union_specifier_3(self, p):
         """ struct_or_union_specifier   : struct_or_union ID brace_open struct_declaration_list brace_close
+                                        | struct_or_union ID brace_open brace_close
                                         | struct_or_union TYPEID brace_open struct_declaration_list brace_close
+                                        | struct_or_union TYPEID brace_open brace_close
         """
         klass = self._select_struct_union_class(p[1])
-        p[0] = klass(
-            name=p[2],
-            decls=p[4],
-            coord=self._token_coord(p, 2))
+        if len(p) == 5:
+            # Empty sequence means an empty list of members
+            p[0] = klass(
+                name=p[2],
+                decls=[],
+                coord=self._token_coord(p, 2))
+        else:
+            p[0] = klass(
+                name=p[2],
+                decls=p[4],
+                coord=self._token_coord(p, 2))
 
     def p_struct_or_union(self, p):
         """ struct_or_union : STRUCT
