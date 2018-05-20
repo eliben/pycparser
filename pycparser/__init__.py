@@ -10,7 +10,7 @@
 __all__ = ['c_lexer', 'c_parser', 'c_ast']
 __version__ = '2.18'
 
-from subprocess import Popen, PIPE
+from subprocess import check_output
 from .c_parser import CParser
 
 
@@ -39,10 +39,7 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
         # Note the use of universal_newlines to treat all newlines
         # as \n for Python's purpose
         #
-        pipe = Popen(   path_list,
-                        stdout=PIPE,
-                        universal_newlines=True)
-        text = pipe.communicate()[0]
+        text = check_output(path_list, universal_newlines=True)
     except OSError as e:
         raise RuntimeError("Unable to invoke 'cpp'.  " +
             'Make sure its path was passed correctly\n' +
