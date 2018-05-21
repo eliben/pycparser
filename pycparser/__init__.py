@@ -38,7 +38,6 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
     try:
         # Note the use of universal_newlines to treat all newlines
         # as \n for Python's purpose
-        #
         text = check_output(path_list, universal_newlines=True)
     except OSError as e:
         raise RuntimeError("Unable to invoke 'cpp'.  " +
