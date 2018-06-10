@@ -103,7 +103,7 @@ setup script will then place the ``pycparser`` module into ``site-packages`` in
 your Python's installation library.
 
 Alternatively, since **pycparser** is listed in the `Python Package Index
-<http://pypi.python.org/pypi/pycparser>`_ (PyPI), you can install it using your
+<https://pypi.org/project/pycparser/>`_ (PyPI), you can install it using your
 favorite Python packaging/distribution tool, for example with::
 
     > pip install pycparser
