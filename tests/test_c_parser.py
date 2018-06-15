@@ -393,6 +393,14 @@ class TestCParser_fundamentals(TestCParser_base):
                             ['TypeDecl', ['IdentifierType', ['int']]]]],
                         ['TypeDecl', ['IdentifierType', ['int']]]]]])
 
+        self.assertEqual(self.get_decl('int (*k)(const volatile int* q);'),
+            ['Decl', 'k',
+                ['PtrDecl',
+                    ['FuncDecl',
+                        [['Decl', ['const', 'volatile'], 'q',
+                            ['PtrDecl', ['TypeDecl', ['IdentifierType', ['int']]]]]],
+                        ['TypeDecl', ['IdentifierType', ['int']]]]]])
+
         # restrict qualifier
         self.assertEqual(self.get_decl('int (*k)(restrict int* q);'),
             ['Decl', 'k',
