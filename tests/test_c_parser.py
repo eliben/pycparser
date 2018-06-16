@@ -3,6 +3,7 @@
 import pprint
 import re
 import os, sys
+import io
 import unittest
 
 sys.path[0:0] = ['.', '..']
@@ -1772,7 +1773,7 @@ class TestCParser_whole_code(TestCParser_base):
         testdir = os.path.dirname(__file__)
         name = os.path.join(testdir, 'c_files', name)
         assert os.path.exists(name)
-        return open(name, 'rU')
+        return io.open(name)
 
     def test_whole_file(self):
         # See how pycparser handles a whole, real C file.
