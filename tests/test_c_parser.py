@@ -118,18 +118,18 @@ class TestCParser_fundamentals(TestCParser_base):
 
     def test_FileAST(self):
         t = self.parse('int a; char c;')
-        self.assertTrue(isinstance(t, FileAST))
+        self.assertIsInstance(t, FileAST)
         self.assertEqual(len(t.ext), 2)
 
         # empty file
         t2 = self.parse('')
-        self.assertTrue(isinstance(t2, FileAST))
+        self.assertIsInstance(t2, FileAST)
         self.assertEqual(len(t2.ext), 0)
 
     def test_empty_toplevel_decl(self):
         code = 'int foo;;'
         t = self.parse(code)
-        self.assertTrue(isinstance(t, FileAST))
+        self.assertIsInstance(t, FileAST)
         self.assertEqual(len(t.ext), 1)
         self.assertEqual(self.get_decl(code),
             ['Decl', 'foo',
@@ -458,7 +458,7 @@ class TestCParser_fundamentals(TestCParser_base):
         d2 = "static char * const p;"
         assert_qs(d2, 0, [], ['static'])
         pdecl = self.parse(d2).ext[0].type
-        self.assertTrue(isinstance(pdecl, PtrDecl))
+        self.assertIsInstance(pdecl, PtrDecl)
         self.assertEqual(pdecl.quals, ['const'])
 
     def test_sizeof(self):
@@ -476,9 +476,9 @@ class TestCParser_fundamentals(TestCParser_base):
         compound = self.parse(e).ext[0].body
 
         s1 = compound.block_items[0].init
-        self.assertTrue(isinstance(s1, UnaryOp))
+        self.assertIsInstance(s1, UnaryOp)
         self.assertEqual(s1.op, 'sizeof')
-        self.assertTrue(isinstance(s1.expr, ID))
+        self.assertIsInstance(s1.expr, ID)
         self.assertEqual(s1.expr.name, 'k')
 
         s2 = compound.block_items[1].init
@@ -504,15 +504,15 @@ class TestCParser_fundamentals(TestCParser_base):
             """
         compound = self.parse(e).ext[0].body
         s1 = compound.block_items[0].init
-        self.assertTrue(isinstance(s1, FuncCall))
-        self.assertTrue(isinstance(s1.name, ID))
+        self.assertIsInstance(s1, FuncCall)
+        self.assertIsInstance(s1.name, ID)
         self.assertEqual(s1.name.name, 'offsetof')
-        self.assertTrue(isinstance(s1.args.exprs[0], Typename))
-        self.assertTrue(isinstance(s1.args.exprs[1], ID))
+        self.assertIsInstance(s1.args.exprs[0], Typename)
+        self.assertIsInstance(s1.args.exprs[1], ID)
         s3 = compound.block_items[2].init
-        self.assertTrue(isinstance(s3.args.exprs[1], StructRef))
+        self.assertIsInstance(s3.args.exprs[1], StructRef)
         s4 = compound.block_items[3].init
-        self.assertTrue(isinstance(s4.args.exprs[1], ArrayRef))
+        self.assertIsInstance(s4.args.exprs[1], ArrayRef)
 
     def test_compound_statement(self):
         e = """
@@ -520,7 +520,7 @@ class TestCParser_fundamentals(TestCParser_base):
             }
             """
         compound = self.parse(e).ext[0].body
-        self.assertTrue(isinstance(compound, Compound))
+        self.assertIsInstance(compound, Compound)
         self.assert_coord(compound, 2)
 
     # The C99 compound literal feature
@@ -550,21 +550,21 @@ class TestCParser_fundamentals(TestCParser_base):
         e1 = "enum mycolor op;"
         e1_type = self.parse(e1).ext[0].type.type
 
-        self.assertTrue(isinstance(e1_type, Enum))
+        self.assertIsInstance(e1_type, Enum)
         self.assertEqual(e1_type.name, 'mycolor')
         self.assertEqual(e1_type.values, None)
 
         e2 = "enum mysize {large=20, small, medium} shoes;"
         e2_type = self.parse(e2).ext[0].type.type
 
-        self.assertTrue(isinstance(e2_type, Enum))
+        self.assertIsInstance(e2_type, Enum)
         self.assertEqual(e2_type.name, 'mysize')
 
         e2_elist = e2_type.values
-        self.assertTrue(isinstance(e2_elist, EnumeratorList))
+        self.assertIsInstance(e2_elist, EnumeratorList)
 
         for e2_eval in e2_elist.enumerators:
-            self.assertTrue(isinstance(e2_eval, Enumerator))
+            self.assertIsInstance(e2_eval, Enumerator)
 
         self.assertEqual(e2_elist.enumerators[0].name, 'large')
         self.assertEqual(e2_elist.enumerators[0].value.value, '20')
@@ -582,12 +582,12 @@ class TestCParser_fundamentals(TestCParser_base):
             """
 
         e3_type = self.parse(e3).ext[0].type.type
-        self.assertTrue(isinstance(e3_type, Enum))
+        self.assertIsInstance(e3_type, Enum)
         e3_elist = e3_type.values
-        self.assertTrue(isinstance(e3_elist, EnumeratorList))
+        self.assertIsInstance(e3_elist, EnumeratorList)
 
         for e3_eval in e3_elist.enumerators:
-            self.assertTrue(isinstance(e3_eval, Enumerator))
+            self.assertIsInstance(e3_eval, Enumerator)
 
         self.assertEqual(e3_elist.enumerators[0].name, 'red')
         self.assertEqual(e3_elist.enumerators[0].value, None)
@@ -1079,7 +1079,7 @@ class TestCParser_fundamentals(TestCParser_base):
 
         s3_type = self.parse(s3).ext[1].type
 
-        self.assertTrue(isinstance(s3_type, Enum))
+        self.assertIsInstance(s3_type, Enum)
         self.assertEqual(s3_type.name, 'mytag')
 
     def test_multi_decls(self):
@@ -1365,8 +1365,8 @@ class TestCParser_fundamentals(TestCParser_base):
                 int var2[*];
             }
         ''')
-        self.assertTrue(isinstance(ps2.ext[0].body.block_items[1].type.dim, Assignment))
-        self.assertTrue(isinstance(ps2.ext[0].body.block_items[2].type.dim, ID))
+        self.assertIsInstance(ps2.ext[0].body.block_items[1].type.dim, Assignment)
+        self.assertIsInstance(ps2.ext[0].body.block_items[2].type.dim, ID)
 
     def test_pragma(self):
         s1 = r'''
@@ -1381,19 +1381,19 @@ class TestCParser_fundamentals(TestCParser_base):
             } s;
             '''
         s1_ast = self.parse(s1)
-        self.assertTrue(isinstance(s1_ast.ext[0], Pragma))
+        self.assertIsInstance(s1_ast.ext[0], Pragma)
         self.assertEqual(s1_ast.ext[0].string, 'bar')
         self.assertEqual(s1_ast.ext[0].coord.line, 2)
 
-        self.assertTrue(isinstance(s1_ast.ext[1].body.block_items[0], Pragma))
+        self.assertIsInstance(s1_ast.ext[1].body.block_items[0], Pragma)
         self.assertEqual(s1_ast.ext[1].body.block_items[0].string, 'foo')
         self.assertEqual(s1_ast.ext[1].body.block_items[0].coord.line, 4)
 
-        self.assertTrue(isinstance(s1_ast.ext[1].body.block_items[2], Pragma))
+        self.assertIsInstance(s1_ast.ext[1].body.block_items[2], Pragma)
         self.assertEqual(s1_ast.ext[1].body.block_items[2].string, '')
         self.assertEqual(s1_ast.ext[1].body.block_items[2].coord.line, 6)
-        
-        self.assertTrue(isinstance(s1_ast.ext[2].type.type.decls[0], Pragma))
+
+        self.assertIsInstance(s1_ast.ext[2].type.type.decls[0], Pragma)
         self.assertEqual(s1_ast.ext[2].type.type.decls[0].string, 'baz')
         self.assertEqual(s1_ast.ext[2].type.type.decls[0].coord.line, 9)
 
@@ -1424,26 +1424,26 @@ class TestCParser_fundamentals(TestCParser_base):
             }
         '''
         s1_ast = self.parse(s1)
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[1], For))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[1].stmt, Compound))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[1].stmt.block_items[0], Pragma))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[1].stmt.block_items[1], Assignment))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[2], While))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[2].stmt, Compound))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[2].stmt.block_items[0], Pragma))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[2].stmt.block_items[1], Assignment))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[3], Label))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[3].stmt, Compound))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[3].stmt.block_items[0], Pragma))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[3].stmt.block_items[1], Assignment))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[4], If))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[4].iftrue, Compound))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[4].iftrue.block_items[0], Pragma))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[4].iftrue.block_items[1], Assignment))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[5], Switch))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0], Compound))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[0], Pragma))
-        self.assertTrue(isinstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[1], Assignment))
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[1], For)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[1].stmt, Compound)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[1].stmt.block_items[0], Pragma)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[1].stmt.block_items[1], Assignment)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[2], While)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[2].stmt, Compound)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[2].stmt.block_items[0], Pragma)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[2].stmt.block_items[1], Assignment)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[3], Label)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[3].stmt, Compound)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[3].stmt.block_items[0], Pragma)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[3].stmt.block_items[1], Assignment)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[4], If)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[4].iftrue, Compound)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[4].iftrue.block_items[0], Pragma)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[4].iftrue.block_items[1], Assignment)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[5], Switch)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0], Compound)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[0], Pragma)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[1], Assignment)
 
 
 class TestCParser_whole_code(TestCParser_base):
@@ -1659,12 +1659,12 @@ class TestCParser_whole_code(TestCParser_base):
 
     def test_switch_statement(self):
         def assert_case_node(node, const_value):
-            self.assertTrue(isinstance(node, Case))
-            self.assertTrue(isinstance(node.expr, Constant))
+            self.assertIsInstance(node, Case)
+            self.assertIsInstance(node.expr, Constant)
             self.assertEqual(node.expr.value, const_value)
 
         def assert_default_node(node):
-            self.assertTrue(isinstance(node, Default))
+            self.assertIsInstance(node, Default)
 
         s1 = r'''
         int foo(void) {
@@ -1802,16 +1802,16 @@ class TestCParser_whole_code(TestCParser_base):
             code = f.read()
         p = self.parse(code)
 
-        self.assertTrue(isinstance(p.ext[0], Typedef))
+        self.assertIsInstance(p.ext[0], Typedef)
         self.assertEqual(p.ext[0].coord.line, 213)
         self.assertEqual(p.ext[0].coord.file, r"D:\eli\cpp_stuff\libc_include/stddef.h")
 
-        self.assertTrue(isinstance(p.ext[-1], FuncDef))
+        self.assertIsInstance(p.ext[-1], FuncDef)
         self.assertEqual(p.ext[-1].coord.line, 15)
         self.assertEqual(p.ext[-1].coord.file, "example_c_file.c")
 
-        self.assertTrue(isinstance(p.ext[-8], Typedef))
-        self.assertTrue(isinstance(p.ext[-8].type, TypeDecl))
+        self.assertIsInstance(p.ext[-8], Typedef)
+        self.assertIsInstance(p.ext[-8].type, TypeDecl)
         self.assertEqual(p.ext[-8].name, 'cookie_io_functions_t')
 
 
@@ -1841,7 +1841,7 @@ class TestCParser_typenames(TestCParser_base):
                 unsigned TT;
             }
             '''
-        self.assertTrue(isinstance(self.parse(s2), FileAST))
+        self.assertIsInstance(self.parse(s2), FileAST)
 
     def test_ambiguous_parameters(self):
         # From ISO/IEC 9899:TC2, 6.7.5.3.11:
@@ -2073,7 +2073,7 @@ class TestCParser_typenames(TestCParser_base):
               TT x = 10;
             }
             '''
-        self.assertTrue(isinstance(self.parse(s1), FileAST))
+        self.assertIsInstance(self.parse(s1), FileAST)
 
     def test_samescope_reuse_name(self):
         # a typedef name cannot be reused as an object name in the same scope
