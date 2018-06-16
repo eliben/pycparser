@@ -3,7 +3,7 @@
 #
 # CParser class: Parser and AST builder for the C language
 #
-# Eli Bendersky [http://eli.thegreenplace.net]
+# Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 #------------------------------------------------------------------------------
 import re

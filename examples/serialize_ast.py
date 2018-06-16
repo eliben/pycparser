@@ -4,7 +4,7 @@
 # Simple example of serializing AST
 #
 # Hart Chu [https://github.com/CtheSky]
-# Eli Bendersky [http://eli.thegreenplace.net]
+# Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 #-----------------------------------------------------------------
 from __future__ import print_function

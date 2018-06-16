@@ -9,7 +9,7 @@
 # information from the AST.
 # It helps to have the pycparser/_c_ast.cfg file in front of you.
 #
-# Eli Bendersky [http://eli.thegreenplace.net]
+# Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 #-----------------------------------------------------------------
 from __future__ import print_function
