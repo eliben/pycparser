@@ -10,6 +10,7 @@
 __all__ = ['c_lexer', 'c_parser', 'c_ast']
 __version__ = '2.18'
 
+import io
 from subprocess import check_output
 from .c_parser import CParser
 
@@ -81,7 +82,7 @@ def parse_file(filename, use_cpp=False, cpp_path='cpp', cpp_args='',
     if use_cpp:
         text = preprocess_file(filename, cpp_path, cpp_args)
     else:
-        with open(filename, 'rU') as f:
+        with io.open(filename) as f:
             text = f.read()
 
     if parser is None:
