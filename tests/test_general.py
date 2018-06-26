@@ -23,7 +23,7 @@ class TestParsing(unittest.TestCase):
 
     def test_without_cpp(self):
         ast = parse_file(self._find_file('example_c_file.c'))
-        self.assertTrue(isinstance(ast, c_ast.FileAST))
+        self.assertIsInstance(ast, c_ast.FileAST)
 
     @unittest.skipUnless(platform.system() == 'Linux',
                          'cpp only works on Linux')
@@ -33,7 +33,7 @@ class TestParsing(unittest.TestCase):
         ast = parse_file(memmgr_path, use_cpp=True,
             cpp_path=CPPPATH,
             cpp_args='-I%s' % c_files_path)
-        self.assertTrue(isinstance(ast, c_ast.FileAST))
+        self.assertIsInstance(ast, c_ast.FileAST)
 
         fake_libc = os.path.join(c_files_path, '..', '..',
                                  'utils', 'fake_libc_include')
@@ -41,7 +41,7 @@ class TestParsing(unittest.TestCase):
             cpp_path=CPPPATH,
             cpp_args=[r'-I%s' % fake_libc])
 
-        self.assertTrue(isinstance(ast2, c_ast.FileAST))
+        self.assertIsInstance(ast2, c_ast.FileAST)
 
     @unittest.skipUnless(platform.system() == 'Linux',
                          'cpp only works on Linux')
@@ -53,14 +53,14 @@ class TestParsing(unittest.TestCase):
         c_files_path = os.path.join('tests', 'c_files')
         ast = parse_file(self._find_file('simplemain.c'), use_cpp=True,
             cpp_path=CPPPATH, cpp_args='-I%s' % c_files_path)
-        self.assertTrue(isinstance(ast, c_ast.FileAST))
+        self.assertIsInstance(ast, c_ast.FileAST)
 
     @unittest.skipUnless(platform.system() == 'Linux',
                          'cpp only works on Linux')
     def test_no_real_content_after_cpp(self):
         ast = parse_file(self._find_file('empty.h'), use_cpp=True,
             cpp_path=CPPPATH)
-        self.assertTrue(isinstance(ast, c_ast.FileAST))
+        self.assertIsInstance(ast, c_ast.FileAST)
 
 
 if __name__ == '__main__':
