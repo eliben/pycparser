@@ -29,7 +29,7 @@
 #   explain_c_declaration(c_decl, expand_struct=True)
 #   => p is a struct P containing {x is a int, y is a int}
 #
-# Eli Bendersky [http://eli.thegreenplace.net]
+# Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 #-----------------------------------------------------------------
 import copy
