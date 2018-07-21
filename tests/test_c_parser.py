@@ -797,6 +797,28 @@ class TestCParser_fundamentals(TestCParser_base):
                     ['Decl', 'heads',
                         ['PtrDecl', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['Node']]]]]]]]]])
 
+    def test_struct_with_empty_field_list(self):
+        s1 = """
+            struct {
+            } foo;
+        """
+        s1_ast = self.parse(s1)
+        self.assertEqual(expand_decl(s1_ast.ext[0]),
+            ['Decl', 'foo',
+                ['TypeDecl', ['Struct', None,
+                    []]]])
+
+    def test_union_with_empty_field_list(self):
+        s1 = """
+            union {
+            } bar;
+        """
+        s1_ast = self.parse(s1)
+        self.assertEqual(expand_decl(s1_ast.ext[0]),
+            ['Decl', 'bar',
+                ['TypeDecl', ['Union', None,
+                    []]]])
+
     def test_struct_with_extra_semis_inside(self):
         s1 = """
             struct {

@@ -961,10 +961,13 @@ class CParser(PLYParser):
     #
     def p_struct_declaration_list(self, p):
         """ struct_declaration_list     : struct_declaration
+                                        | empty
                                         | struct_declaration_list struct_declaration
         """
         if len(p) == 2:
             p[0] = p[1] or []
+        elif p[1] is None:
+            p[0] = []
         else:
             p[0] = p[1] + (p[2] or [])
 
