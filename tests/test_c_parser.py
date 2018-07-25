@@ -1009,10 +1009,10 @@ class TestCParser_fundamentals(TestCParser_base):
     def test_struct_empty(self):
         """
         Tests that parsing an empty struct works.
-        
+
         Empty structs do NOT follow C99 (See 6.2.5-20 of the C99 standard).
-        This is nevertheless supported by some compilers (clang, gcc), 
-        especially when using FORTIFY code. 
+        This is nevertheless supported by some compilers (clang, gcc),
+        especially when using FORTIFY code.
         Some compilers (visual) will fail to compile with an error.
         """
         # an empty struct. This is NOT C99 compliant
@@ -1392,7 +1392,7 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertTrue(isinstance(s1_ast.ext[1].body.block_items[2], Pragma))
         self.assertEqual(s1_ast.ext[1].body.block_items[2].string, '')
         self.assertEqual(s1_ast.ext[1].body.block_items[2].coord.line, 6)
-        
+
         self.assertTrue(isinstance(s1_ast.ext[2].type.type.decls[0], Pragma))
         self.assertEqual(s1_ast.ext[2].type.type.decls[0].string, 'baz')
         self.assertEqual(s1_ast.ext[2].type.type.decls[0].coord.line, 9)
