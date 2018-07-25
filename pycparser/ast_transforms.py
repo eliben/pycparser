@@ -3,7 +3,7 @@
 #
 # Some utilities used by the parser to create a friendlier AST.
 #
-# Eli Bendersky [http://eli.thegreenplace.net]
+# Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 #------------------------------------------------------------------------------
 

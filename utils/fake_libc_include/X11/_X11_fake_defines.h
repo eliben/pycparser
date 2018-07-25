@@ -10,4 +10,7 @@
 #define _XFUNCPROTOEND
 #define _Xconst const
 
+#define _X_RESTRICT_KYWD
+#define Cardinal unsigned int
+#define Boolean int
 #endif

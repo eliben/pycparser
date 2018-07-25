@@ -5,7 +5,7 @@
 # of 'cpp'. The same can be achieved with Clang instead of gcc. If you have
 # Clang installed, simply replace 'gcc' with 'clang' here.
 #
-# Eli Bendersky [http://eli.thegreenplace.net]
+# Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 #-------------------------------------------------------------------------------
 import sys

@@ -2,7 +2,7 @@
 pycparser v2.18
 ===============
 
-:Author: `Eli Bendersky <http://eli.thegreenplace.net>`_
+:Author: `Eli Bendersky <https://eli.thegreenplace.net/>`_
 
 
 .. contents::
@@ -79,7 +79,7 @@ Installing
 Prerequisites
 -------------
 
-* **pycparser** was tested on Python 2.7, 3.3-3.6, on both Linux and
+* **pycparser** was tested on Python 2.7, 3.4-3.6, on both Linux and
   Windows. It should work on any later version (in both the 2.x and 3.x lines)
   as well.
 
@@ -158,7 +158,7 @@ the source is a previously defined type. This is essential in order to be able
 to parse C correctly.
 
 See `this blog post
-<http://eli.thegreenplace.net/2015/on-parsing-c-type-declarations-and-fake-headers>`_
+<https://eli.thegreenplace.net/2015/on-parsing-c-type-declarations-and-fake-headers>`_
 for more details.
 
 Basic usage

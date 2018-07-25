@@ -16,11 +16,11 @@ class Test_c_ast(unittest.TestCase):
             left=c_ast.Constant(type='int', value='6'),
             right=c_ast.ID(name='joe'))
 
-        self.failUnless(isinstance(b1.left, c_ast.Constant))
+        self.assertIsInstance(b1.left, c_ast.Constant)
         self.assertEqual(b1.left.type, 'int')
         self.assertEqual(b1.left.value, '6')
 
-        self.failUnless(isinstance(b1.right, c_ast.ID))
+        self.assertIsInstance(b1.right, c_ast.ID)
         self.assertEqual(b1.right.name, 'joe')
 
     def test_weakref_works_on_nodes(self):
