@@ -1021,10 +1021,18 @@ class TestCParser_fundamentals(TestCParser_base):
              """
 
         parsed_struct = self.parse(s1).ext[0]
-
         self.assertEqual(expand_decl(parsed_struct),
-                         ['Decl', None, ['Struct', 'foo', []]]
-                         )
+                         ['Decl', None, ['Struct', 'foo', []]])
+
+        s2 = """struct { } foo;"""
+        parsed_struct = self.parse(s2).ext[0]
+        self.assertEqual(expand_decl(parsed_struct),
+                         ['Decl', 'foo', ['TypeDecl', ['Struct', None, []]]])
+
+        s3 = """union { } foo;"""
+        parsed_struct = self.parse(s3).ext[0]
+        self.assertEqual(expand_decl(parsed_struct),
+                         ['Decl', 'foo', ['TypeDecl', ['Union', None, []]]])
 
     def test_tags_namespace(self):
         """ Tests that the tags of structs/unions/enums reside in a separate namespace and
