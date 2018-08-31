@@ -1774,8 +1774,18 @@ class CParser(PLYParser):
         """ constant    : FLOAT_CONST
                         | HEX_FLOAT_CONST
         """
+        if 'x' in p[1].lower():
+            t = 'float'
+        else:
+            if p[1][-1] in ('f', 'F'):
+                t = 'float'
+            elif p[1][-1] in ('l', 'L'):
+                t = 'long double'
+            else:
+                t = 'double'
+
         p[0] = c_ast.Constant(
-            'float', p[1], self._token_coord(p, 1))
+            t, p[1], self._token_coord(p, 1))
 
     def p_constant_3(self, p):
         """ constant    : CHAR_CONST
