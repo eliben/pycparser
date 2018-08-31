@@ -1236,6 +1236,9 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(self.get_decl_init(d54),
             ['Constant', 'float', '1.0F'])
 
+        d55 = 'float ld = 0xDE.38p0;'
+        self.assertEqual(self.get_decl_init(d55),
+            ['Constant', 'float', '0xDE.38p0'])
 
     def test_decl_named_inits(self):
         d1 = 'int a = {.k = 16};'
