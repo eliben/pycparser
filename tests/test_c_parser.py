@@ -1216,6 +1216,27 @@ class TestCParser_fundamentals(TestCParser_base):
                  ['Constant', 'int', '5']],
                 ['Constant', 'int', '6']])
 
+        d5 = 'float d = 1.0;'
+        self.assertEqual(self.get_decl_init(d5),
+            ['Constant', 'double', '1.0'])
+
+        d51 = 'float ld = 1.0l;'
+        self.assertEqual(self.get_decl_init(d51),
+            ['Constant', 'long double', '1.0l'])
+
+        d52 = 'float ld = 1.0L;'
+        self.assertEqual(self.get_decl_init(d52),
+            ['Constant', 'long double', '1.0L'])
+
+        d53 = 'float ld = 1.0f;'
+        self.assertEqual(self.get_decl_init(d53),
+            ['Constant', 'float', '1.0f'])
+
+        d54 = 'float ld = 1.0F;'
+        self.assertEqual(self.get_decl_init(d54),
+            ['Constant', 'float', '1.0F'])
+
+
     def test_decl_named_inits(self):
         d1 = 'int a = {.k = 16};'
         self.assertEqual(self.get_decl_init(d1),
