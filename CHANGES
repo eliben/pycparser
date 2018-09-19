@@ -1,3 +1,10 @@
++ Version 2.19 (2018.09.19)
+
+  - PR #277: Fix parsing of floating point literals
+  - PR #254: Add support for parsing empty structs
+  - PR #240: Fix enum formatting in generated C code (also #216)
+  - PR #222: Add support for #pragma in struct declarations
+
 + Version 2.18 (2017.07.04)
 
   - PR #161 & #184: Update bundled PLY version to 3.10
