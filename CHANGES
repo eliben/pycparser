@@ -1,21 +1,21 @@
-+ Version 2.18 (04.07.2017)
++ Version 2.18 (2017.07.04)
 
   - PR #161 & #184: Update bundled PLY version to 3.10
   - PR #158: Add support for the __int128 type.
   - PR #169: Handle more tricky TYPEID in declarators.
   - PR #178: Add columns to the coord of each node
 
-+ Version 2.17 (29.10.2016)
++ Version 2.17 (2016.10.29)
 
   - Again functionality identical to 2.15 and 2.16; the difference is that the
     tarball now contains Python files with properly set permissions.
 
-+ Version 2.16 (18.10.2016)
++ Version 2.16 (2016.10.18)
 
   - Functionally identical to 2.15, but fixes a packaging problem that caused
     failed installation (_build_tables wasn't rerun in the pycparser/ dir).
 
-+ Version 2.15 (18.10.2016)
++ Version 2.15 (2016.10.18)
 
   - PR #121: Update bundled PLY version to 3.8
   - Issue #117: Fix parsing of extra semi-colons inside structure declarations.
@@ -28,7 +28,7 @@
   - Issue #116: Fix line numbers recorded for empty and compound statements.
   - Minor performance improvement to the invalid string literal regex.
 
-+ Version 2.14 (09.06.2015)
++ Version 2.14 (2015.06.09)
 
   - Added CParser parameter to specify output directory for generated parsing
     tables (#84).
@@ -36,7 +36,7 @@
     is no longer recommended, now that Clang has binary builds available for
     Windows.
 
-+ Version 2.13 (12.05.2015)
++ Version 2.13 (2015.05.12)
 
   - Added support for offsetof() the way gcc implements it (special builtin
     that takes a type as an argument).
@@ -45,13 +45,13 @@
     like Git and SQLite without modifications to pycparser.
   - Added support for empty initializer lists (#79).
 
-+ Version 2.12 (21.04.2015)
++ Version 2.12 (2015.04.21)
 
   - This is a fix release for 2.11; the memory optimization with __slots__ on
     Coord and AST nodes didn't take weakrefs into account, which broke cffi and
     its many dependents (issue #76). Fixed by adding __weakref__ to __slots__.
 
-+ Version 2.11 (21.04.2015)
++ Version 2.11 (2015.04.21)
 
   - Add support for C99 6.5.3.7 p7 - qualifiers within array dimensions in
     function declarations. Started with issue #21 (reported with initial patch
@@ -65,7 +65,7 @@
   - Reduce memory usage of AST nodes (issue #72).
   - Parsing order of nested pointer declarations fixed (issue #68).
 
-+ Version 2.10 (03.08.2013)
++ Version 2.10 (2013.08.03)
 
   - A number of improvements in the handling of typedef-name ambiguities,
     contributed by Sye van der Veen in GitHub issue #1:
@@ -81,13 +81,13 @@
   - Relax the lexer a bit w.r.t. some integer suffixes and $ in identifier names
     (which is supported by some other compilers).
 
-+ Version 2.09.1 (29.12.2012)
++ Version 2.09.1 (2012.12.29)
 
   - No actual functionality changes.
   - The source distribution was re-packaged to contain the pre-generated Lex and
     Yacc tables of PLY.
 
-+ Version 2.09 (27.12.2012)
++ Version 2.09 (2012.12.27)
 
   - The pycparser project has moved to Bitbucket. For this version, issue
     numbers still refer to the old Googlecode project, unless stated otherwise.
@@ -104,7 +104,7 @@
   - Issues #86 and #87: improve location reporting for parse errors.
   - Issue #89: fix C generation for K&R-style function definitions.
 
-+ Version 2.08 (10.08.2012)
++ Version 2.08 (2012.08.10)
 
   - Issue 73: initial support for #pragma directives. Consume them without
     errors and ignore (no tokens are returned). Line numbers are preserved.
@@ -118,7 +118,7 @@
     can also be used as a utility.
   - Issue 74: some Windows include paths were handled incorrectly.
 
-+ Version 2.07 (16.06.2012)
++ Version 2.07 (2012.06.16)
 
   - Issue 54: added an optional parser argument to parse_file
   - Issue 59: added some more fake headers for C99
@@ -126,7 +126,7 @@
   - Issue 57: support for C99 hexadecimal float constants
   - Made running tests that call on 'cpp' a bit more robust.
 
-+ Version 2.06 (04.02.2012)
++ Version 2.06 (2012.02.04)
 
   - Issue 48: gracefully handle parsing of empty files
   - Issues 49 & 50: handle more escaped chars in paths to #line - "..\..\test.h".
@@ -139,7 +139,7 @@
   - Improved the AST created for switch statements, making it closer to the
     semantic meaning than to the grammar.
 
-+ Version 2.05 (16.10.2011)
++ Version 2.05 (2011.10.16)
 
   - Added support for the C99 ``_Bool`` type and ``stdbool.h`` header file
   - Expanded ``examples/explore_ast.py`` with more details on working with the 
@@ -150,7 +150,7 @@
     * Fixed spacing issue for some type declarations
     * Issue 47: display empty statements (lone ';') correctly after parsing
 
-+ Version 2.04 (21.05.2011)
++ Version 2.04 (2011.05.21)
 
   - License changed from LGPL to BSD
   - Bug fixes:
@@ -161,7 +161,7 @@
   - Added C99 integer types to fake headers
   - Added unit tests for the c-to-c.py example
 
-+ Version 2.03 (06.03.2011)
++ Version 2.03 (2011.03.06)
 
   - Bug fixes:
   
@@ -178,7 +178,7 @@
   - Removed support for Python 2.5. ``pycparser`` supports Python 2
     from 2.6 and on, and Python 3.
 
-+ Version 2.02 (10.12.2010)
++ Version 2.02 (2010.12.10)
 
   * The name of a ``NamedInitializer`` node was turned into a sequence of nodes 
     instead of an attribute, to make it discoverable by the AST node visitor.  
@@ -190,13 +190,13 @@
     is done with a simple parser.
   * Fixed issue 12: installation problems
 
-+ Version 2.00 (31.10.2010)
++ Version 2.00 (2010.10.31)
 
   * Support for C99 (read
     `this wiki page <http://code.google.com/p/pycparser/wiki/C99support>`_
     for more information).
 
-+ Version 1.08 (09.10.2010)
++ Version 1.08 (2010.10.09)
 
   * Bug fixes:
 
@@ -204,12 +204,12 @@
     + Issues 6 & 7: Concatenation of string literals
     + Issue 9: Support for unnamed bitfields in structs
 
-+ Version 1.07 (18.05.2010)
++ Version 1.07 (2010.05.18)
 
   * Python 3.1 compatibility: ``pycparser`` was modified to run
     on Python 3.1 as well as 2.6
 
-+ Version 1.06 (10.04.2010)
++ Version 1.06 (2010.04.10)
 
   * Bug fixes: 
 
@@ -220,33 +220,33 @@
   * Linux compatibility: fixed end-of-line and ``cpp`` path issues to allow
     all tests and examples run on Linux
 
-+ Version 1.05 (16.10.2009)
++ Version 1.05 (2009.10.16)
 
   * Fixed the ``parse_file`` auxiliary function to handle multiple arguments to
     ``cpp`` correctly
 
-+ Version 1.04 (22.05.2009)
++ Version 1.04 (2009.05.22)
 
   * Added the ``fake_libc_include`` directory to allow parsing of C code that
     uses standard C library include files without dependency on a real C
     library.
   * Tested with Python 2.6 and PLY 3.2
 
-+ Version 1.03 (31.01.2009)
++ Version 1.03 (2009.01.31)
 
   * Accept enumeration lists with a comma after the last item (C99 feature).
 
-+ Version 1.02 (16.01.2009)
++ Version 1.02 (2009.01.16)
 
   * Fixed problem of parsing struct/enum/union names that were named similarly
     to previously defined ``typedef`` types. 
 
-+ Version 1.01 (09.01.2009)
++ Version 1.01 (2009.01.09)
 
   * Fixed subprocess invocation in the helper function parse_file - now
     it's more portable
 
-+ Version 1.0 (15.11.2008)
++ Version 1.0 (2008.11.15)
 
   * Initial release
   * Support for ANSI C89
