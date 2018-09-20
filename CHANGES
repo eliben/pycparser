@@ -4,6 +4,9 @@
   - PR #254: Add support for parsing empty structs
   - PR #240: Fix enum formatting in generated C code (also #216)
   - PR #222: Add support for #pragma in struct declarations
+  - There are reports that this release doesn't work with Python 2.6 (#281).
+    Please note that the minimal supported version is 2.7; the required versions
+    are listed in the README file. 
 
 + Version 2.18 (2017.07.04)
 
