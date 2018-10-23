@@ -17,9 +17,7 @@ sys.path.extend(['.', '..'])
 from pycparser import c_parser, c_ast, parse_file
 
 
-# A visitor with some state information (the funcname it's
-# looking for)
-#
+# A visitor with some state information (the funcname it's looking for)
 class FuncCallVisitor(c_ast.NodeVisitor):
     def __init__(self, funcname):
         self.funcname = funcname
@@ -27,6 +25,8 @@ class FuncCallVisitor(c_ast.NodeVisitor):
     def visit_FuncCall(self, node):
         if node.name.name == self.funcname:
             print('%s called at %s' % (self.funcname, node.name.coord))
+        # Visit args in case they contain more func calls.
+        self.visit(node.args)
 
 
 def show_func_calls(filename, funcname):
