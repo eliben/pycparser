@@ -15,7 +15,7 @@ from subprocess import check_output
 from .c_parser import CParser
 
 
-def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
+def preprocess_file(filename, cpp_path='cpp', cpp_args='', **kwargs):
     """ Preprocess a file using cpp.
 
         filename:
@@ -25,6 +25,9 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
         cpp_args:
             Refer to the documentation of parse_file for the meaning of these
             arguments.
+
+        kwargs:
+            Optional parameters passed to function `check_output`, such as `encoding`.
 
         When successful, returns the preprocessed file's contents.
         Errors from cpp will be printed out.
@@ -39,7 +42,7 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
     try:
         # Note the use of universal_newlines to treat all newlines
         # as \n for Python's purpose
-        text = check_output(path_list, universal_newlines=True)
+        text = check_output(path_list, universal_newlines=True, **kwargs)
     except OSError as e:
         raise RuntimeError("Unable to invoke 'cpp'.  " +
             'Make sure its path was passed correctly\n' +
@@ -49,7 +52,7 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
 
 
 def parse_file(filename, use_cpp=False, cpp_path='cpp', cpp_args='',
-               parser=None):
+               parser=None, **kwargs):
     """ Parse a C file using pycparser.
 
         filename:
@@ -74,13 +77,16 @@ def parse_file(filename, use_cpp=False, cpp_path='cpp', cpp_args='',
         parser:
             Optional parser object to be used instead of the default CParser
 
+        kwargs:
+            Other optional parameters to be used for function `preprocess_file`, such as `encoding`.
+
         When successful, an AST is returned. ParseError can be
         thrown if the file doesn't parse successfully.
 
         Errors from cpp will be printed out.
     """
     if use_cpp:
-        text = preprocess_file(filename, cpp_path, cpp_args)
+        text = preprocess_file(filename, cpp_path, cpp_args, **kwargs)
     else:
         with io.open(filename) as f:
             text = f.read()
