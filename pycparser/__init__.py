@@ -15,7 +15,7 @@ from subprocess import check_output
 from .c_parser import CParser
 
 
-def preprocess_file(filename, cpp_path='cpp', cpp_args='', encoding=None):
+def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
     """ Preprocess a file using cpp.
 
         filename:
@@ -25,9 +25,6 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args='', encoding=None):
         cpp_args:
             Refer to the documentation of parse_file for the meaning of these
             arguments.
-
-        encoding:
-            The encoding of the input file `filename`.
 
         When successful, returns the preprocessed file's contents.
         Errors from cpp will be printed out.
@@ -42,7 +39,7 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args='', encoding=None):
     try:
         # Note the use of universal_newlines to treat all newlines
         # as \n for Python's purpose
-        text = check_output(path_list, universal_newlines=True, encoding=encoding)
+        text = check_output(path_list, universal_newlines=True)
     except OSError as e:
         raise RuntimeError("Unable to invoke 'cpp'.  " +
             'Make sure its path was passed correctly\n' +
@@ -52,7 +49,7 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args='', encoding=None):
 
 
 def parse_file(filename, use_cpp=False, cpp_path='cpp', cpp_args='',
-               parser=None, encoding=None):
+               parser=None):
     """ Parse a C file using pycparser.
 
         filename:
@@ -74,9 +71,6 @@ def parse_file(filename, use_cpp=False, cpp_path='cpp', cpp_args='',
             r'-I../utils/fake_libc_include'
             If several arguments are required, pass a list of strings.
 
-        encoding:
-            The encoding of the input file `filename`.
-
         parser:
             Optional parser object to be used instead of the default CParser
 
@@ -86,7 +80,7 @@ def parse_file(filename, use_cpp=False, cpp_path='cpp', cpp_args='',
         Errors from cpp will be printed out.
     """
     if use_cpp:
-        text = preprocess_file(filename, cpp_path, cpp_args, encoding)
+        text = preprocess_file(filename, cpp_path, cpp_args)
     else:
         with io.open(filename) as f:
             text = f.read()
