@@ -1407,6 +1407,10 @@ class TestCParser_fundamentals(TestCParser_base):
             void main() {
                 #pragma foo
                 for(;;) {}
+                #pragma baz
+                {
+                    int i = 0;
+                }
                 #pragma
             }
             struct s {
@@ -1421,14 +1425,18 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(s1_ast.ext[1].body.block_items[0], Pragma)
         self.assertEqual(s1_ast.ext[1].body.block_items[0].string, 'foo')
         self.assertEqual(s1_ast.ext[1].body.block_items[0].coord.line, 4)
-
+        
         self.assertIsInstance(s1_ast.ext[1].body.block_items[2], Pragma)
-        self.assertEqual(s1_ast.ext[1].body.block_items[2].string, '')
+        self.assertEqual(s1_ast.ext[1].body.block_items[2].string, 'baz')
         self.assertEqual(s1_ast.ext[1].body.block_items[2].coord.line, 6)
+
+        self.assertIsInstance(s1_ast.ext[1].body.block_items[4], Pragma)
+        self.assertEqual(s1_ast.ext[1].body.block_items[4].string, '')
+        self.assertEqual(s1_ast.ext[1].body.block_items[4].coord.line, 10)
 
         self.assertIsInstance(s1_ast.ext[2].type.type.decls[0], Pragma)
         self.assertEqual(s1_ast.ext[2].type.type.decls[0].string, 'baz')
-        self.assertEqual(s1_ast.ext[2].type.type.decls[0].coord.line, 9)
+        self.assertEqual(s1_ast.ext[2].type.type.decls[0].coord.line, 13)
 
     def test_pragmacomp_or_statement(self):
         s1 = r'''
@@ -1475,8 +1483,10 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(s1_ast.ext[0].body.block_items[4].iftrue.block_items[1], Assignment)
         self.assertIsInstance(s1_ast.ext[0].body.block_items[5], Switch)
         self.assertIsInstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0], Compound)
-        self.assertIsInstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[0], Pragma)
-        self.assertIsInstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[1], Assignment)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[0],
+                              Pragma)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[1],
+                              Assignment)
 
 
 class TestCParser_whole_code(TestCParser_base):
