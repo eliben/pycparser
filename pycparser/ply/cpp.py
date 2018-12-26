@@ -580,11 +580,22 @@ class Preprocessor(object):
                 del tokens[i+1:j+1]
             i += 1
         tokens = self.expand_macros(tokens)
+        return self.evalexpr_expanded(tokens)
+
+    # ----------------------------------------------------------------------
+    # evalexpr_expanded()
+    #
+    # Helper for evalexpr that evaluates the expression that had its macros
+    # and defined(...) expressions expanded by evalexpr
+    # ----------------------------------------------------------------------
+
+    def evalexpr_expanded(self, tokens):
+
         for i,t in enumerate(tokens):
             if t.type == self.t_ID:
                 tokens[i] = copy.copy(t)
                 tokens[i].type = self.t_INTEGER
-                tokens[i].value = self.t_INTEGER_TYPE("0L")
+                tokens[i].value = self.t_INTEGER_TYPE("0")
             elif t.type == self.t_INTEGER:
                 tokens[i] = copy.copy(t)
                 # Strip off any trailing suffixes
@@ -592,10 +603,22 @@ class Preprocessor(object):
                 while tokens[i].value[-1] not in "0123456789abcdefABCDEF":
                     tokens[i].value = tokens[i].value[:-1]
 
-        expr = "".join([str(x.value) for x in tokens])
+        return self.evalexpr_string("".join([str(x.value) for x in tokens]))
+
+    # ----------------------------------------------------------------------
+    # evalexpr_string()
+    #
+    # Helper for evalexpr that evaluates a string expression
+    # This implementation does basic C->python conversion and then uses eval()
+    # ----------------------------------------------------------------------
+
+    def evalexpr_string(self, expr):
+
         expr = expr.replace("&&"," and ")
         expr = expr.replace("||"," or ")
         expr = expr.replace("!"," not ")
+        expr = expr.replace("not =","!=")
+
         try:
             result = eval(expr)
         except Exception:
@@ -768,7 +791,7 @@ class Preprocessor(object):
         for p in path:
             iname = os.path.join(p,filename)
             try:
-                data = open(iname,"r").read()
+                data = self.read_include_file(iname)
                 dname = os.path.dirname(iname)
                 if dname:
                     self.temp_path.insert(0,dname)
@@ -781,6 +804,19 @@ class Preprocessor(object):
                 pass
         else:
             print("Couldn't find '%s'" % filename)
+
+    # ----------------------------------------------------------------------
+    # read_include_file()
+    #
+    # Reads a source file for inclusion using #include
+    # Could be overridden to e.g. customize encoding, limit access to
+    # certain paths on the filesystem, or provide the contents of system
+    # include files
+    # ----------------------------------------------------------------------
+
+    def read_include_file(self, filepath):
+        with open(filepath, 'r', encoding='utf-8', errors='surrogateescape') as file:
+            return file.read()
 
     # ----------------------------------------------------------------------
     # define()
