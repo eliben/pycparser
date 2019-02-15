@@ -26,7 +26,8 @@ class FuncCallVisitor(c_ast.NodeVisitor):
         if node.name.name == self.funcname:
             print('%s called at %s' % (self.funcname, node.name.coord))
         # Visit args in case they contain more func calls.
-        self.visit(node.args)
+        if node.args:
+            self.visit(node.args)
 
 
 def show_func_calls(filename, funcname):
