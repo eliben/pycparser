@@ -3,4 +3,12 @@ python:
   - "2.7"
   - "3.6"
   - "3.7"
+
+# Enable 3.7 without globally enabling sudo and xenial for other build jobs
+# See https://github.com/travis-ci/travis-ci/issues/9815
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
 script: python tests/all_tests.py
