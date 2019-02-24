@@ -48,7 +48,7 @@ class CGenerator(object):
 
     def visit_ArrayRef(self, n):
         arrref = self._parenthesize_unless_simple(n.name)
-        return arrref + '[' + self.visit(n.subscript) + ']'
+        return arrref + '[' + str(self.visit(n.subscript)) + ']'
 
     def visit_StructRef(self, n):
         sref = self._parenthesize_unless_simple(n.name)
