@@ -136,6 +136,15 @@ class TestCParser_fundamentals(TestCParser_base):
             ['Decl', 'foo',
                 ['TypeDecl', ['IdentifierType', ['int']]]])
 
+    def test_initial_semi(self):
+        t = self.parse(';')
+        self.assertEqual(len(t.ext), 0)
+        t = self.parse(';int foo;')
+        self.assertEqual(len(t.ext), 1)
+        self.assertEqual(expand_decl(t.ext[0]),
+            ['Decl', 'foo',
+                ['TypeDecl', ['IdentifierType', ['int']]]])
+
     def test_coords(self):
         """ Tests the "coordinates" of parsed elements - file
             name, line and column numbers, with modification
@@ -827,6 +836,19 @@ class TestCParser_fundamentals(TestCParser_base):
                     ['Decl', 'c', ['TypeDecl', ['IdentifierType', ['float']]]],
                     ['Decl', 'd',
                         ['TypeDecl', ['IdentifierType', ['char']]]]]]]])
+
+    def test_struct_with_initial_semi(self):
+        s1 = """
+            struct {
+                ;int a;
+            } foo;
+        """
+        s1_ast = self.parse(s1)
+        self.assertEqual(expand_decl(s1_ast.ext[0]),
+            ['Decl', 'foo',
+                ['TypeDecl', ['Struct', None,
+                    [['Decl', 'a',
+                        ['TypeDecl', ['IdentifierType', ['int']]]]]]]])
 
     def test_anonymous_struct_union(self):
         s1 = """
