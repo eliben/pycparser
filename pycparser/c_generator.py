@@ -291,6 +291,13 @@ class CGenerator(object):
     def visit_FuncDecl(self, n):
         return self._generate_type(n)
 
+    def visit_ArrayDecl(self, n):
+        s = self.visit(n.type) + '['
+        if n.dim_quals: s += ' '.join(n.dim_quals) + ' '
+        if n.dim: s += self.visit(n.dim)
+        s += ']'
+        return s
+
     def _generate_struct_union_enum(self, n, name):
         """ Generates code for structs, unions, and enums. name should be
             'struct', 'union', or 'enum'.
@@ -382,7 +389,9 @@ class CGenerator(object):
                 if isinstance(modifier, c_ast.ArrayDecl):
                     if (i != 0 and isinstance(modifiers[i - 1], c_ast.PtrDecl)):
                         nstr = '(' + nstr + ')'
-                    nstr += '[' + self.visit(modifier.dim) + ']'
+                    nstr += '['
+                    if modifier.dim_quals: nstr += ' '.join(modifier.dim_quals) + ' '
+                    nstr += self.visit(modifier.dim) + ']'
                 elif isinstance(modifier, c_ast.FuncDecl):
                     if (i != 0 and isinstance(modifiers[i - 1], c_ast.PtrDecl)):
                         nstr = '(' + nstr + ')'
