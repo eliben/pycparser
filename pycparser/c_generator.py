@@ -292,10 +292,17 @@ class CGenerator(object):
         return self._generate_type(n)
 
     def visit_ArrayDecl(self, n):
-        s = self.visit(n.type) + '['
+        s = ''
+        s += self.visit(n.type) + '['
         if n.dim_quals: s += ' '.join(n.dim_quals) + ' '
         if n.dim: s += self.visit(n.dim)
         s += ']'
+        return s
+
+    def visit_TypeDecl(self, n):
+        s = ''
+        if n.quals: s += ' '.join(n.quals) + ' '
+        s += self.visit(n.type)
         return s
 
     def _generate_struct_union_enum(self, n, name):
