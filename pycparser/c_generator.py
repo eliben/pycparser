@@ -292,18 +292,13 @@ class CGenerator(object):
         return self._generate_type(n)
 
     def visit_ArrayDecl(self, n):
-        s = ''
-        s += self.visit(n.type) + '['
-        if n.dim_quals: s += ' '.join(n.dim_quals) + ' '
-        if n.dim: s += self.visit(n.dim)
-        s += ']'
-        return s
-
+        return self._generate_type(n, emit_declname=False)
+        
     def visit_TypeDecl(self, n):
-        s = ''
-        if n.quals: s += ' '.join(n.quals) + ' '
-        s += self.visit(n.type)
-        return s
+        return self._generate_type(n, emit_declname=False)
+        
+    def visit_PtrDecl(self, n):
+        return self._generate_type(n, emit_declname=False)
 
     def _generate_struct_union_enum(self, n, name):
         """ Generates code for structs, unions, and enums. name should be
@@ -373,7 +368,7 @@ class CGenerator(object):
         s += self._generate_type(n.type)
         return s
 
-    def _generate_type(self, n, modifiers=[]):
+    def _generate_type(self, n, modifiers=[], emit_declname = True):
         """ Recursive generation from a type node. n is the type node.
             modifiers collects the PtrDecl, ArrayDecl and FuncDecl modifiers
             encountered on the way down to a TypeDecl, to allow proper
@@ -387,7 +382,7 @@ class CGenerator(object):
             if n.quals: s += ' '.join(n.quals) + ' '
             s += self.visit(n.type)
 
-            nstr = n.declname if n.declname else ''
+            nstr = n.declname if n.declname and emit_declname else ''
             # Resolve modifiers.
             # Wrap in parens to distinguish pointer to array and pointer to
             # function syntax.
@@ -405,7 +400,7 @@ class CGenerator(object):
                     nstr += '(' + self.visit(modifier.args) + ')'
                 elif isinstance(modifier, c_ast.PtrDecl):
                     if modifier.quals:
-                        nstr = '* %s %s' % (' '.join(modifier.quals), nstr)
+                        nstr = '* %s%s' % (' '.join(modifier.quals), ' ' + nstr if nstr else '')
                     else:
                         nstr = '*' + nstr
             if nstr: s += ' ' + nstr
@@ -413,11 +408,11 @@ class CGenerator(object):
         elif typ == c_ast.Decl:
             return self._generate_decl(n.type)
         elif typ == c_ast.Typename:
-            return self._generate_type(n.type)
+            return self._generate_type(n.type, emit_declname = emit_declname)
         elif typ == c_ast.IdentifierType:
             return ' '.join(n.names) + ' '
         elif typ in (c_ast.ArrayDecl, c_ast.PtrDecl, c_ast.FuncDecl):
-            return self._generate_type(n.type, modifiers + [n])
+            return self._generate_type(n.type, modifiers + [n], emit_declname = emit_declname)
         else:
             return self.visit(n)
 
