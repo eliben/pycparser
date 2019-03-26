@@ -14,4 +14,4 @@ parser.out
 .tox
 utils/z.c
 *.egg-info
-
+*.swp
