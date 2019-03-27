@@ -336,17 +336,22 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct('int g(const int a[const 20]){}')
         ast = parse_to_ast('const int a[const 20];')
         generator = c_generator.CGenerator()
-        self.assertEqual(generator.visit(ast.ext[0].type), 'const int [const 20]')
-        self.assertEqual(generator.visit(ast.ext[0].type.type), 'const int')
+        self.assertEqual(generator.visit(ast.ext[0].type),
+                         'const int [const 20]')
+        self.assertEqual(generator.visit(ast.ext[0].type.type),
+                         'const int')
 
     def test_ptr_decl(self):
         src = 'const int ** const  x;'
         self._assert_ctoc_correct(src)
         ast = parse_to_ast(src)
         generator = c_generator.CGenerator()
-        self.assertEqual(generator.visit(ast.ext[0].type),'const int ** const')
-        self.assertEqual(generator.visit(ast.ext[0].type.type),'const int *')
-        self.assertEqual(generator.visit(ast.ext[0].type.type.type),'const int')
+        self.assertEqual(generator.visit(ast.ext[0].type),
+                         'const int ** const')
+        self.assertEqual(generator.visit(ast.ext[0].type.type),
+                         'const int *')
+        self.assertEqual(generator.visit(ast.ext[0].type.type.type),
+                         'const int')
 
 if __name__ == "__main__":
     unittest.main()
