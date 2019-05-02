@@ -1769,7 +1769,7 @@ class CParser(PLYParser):
         u = ''
         l = ''
         for x in p[1][-3:]:
-            if x in ('l', 'L):
+            if x in ('l', 'L'):
                 l += 'long '
             elif x in ('u', 'U'):
                 u = 'unsigned '
