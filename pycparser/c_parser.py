@@ -1766,8 +1766,16 @@ class CParser(PLYParser):
                         | INT_CONST_HEX
                         | INT_CONST_BIN
         """
+        u = ''
+        l = ''
+        for x in p[1][-3:]:
+            if x in ('l', 'L):
+                l += 'long '
+            elif x in ('u', 'U'):
+                u = 'unsigned '
+        t = U+l+'int'
         p[0] = c_ast.Constant(
-            'int', p[1], self._token_coord(p, 1))
+            t, p[1], self._token_coord(p, 1))
 
     def p_constant_2(self, p):
         """ constant    : FLOAT_CONST
