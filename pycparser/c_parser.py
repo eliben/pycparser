@@ -1774,7 +1774,7 @@ class CParser(PLYParser):
             elif x in ('u', 'U'):
                 uCount += 1
         t = ''
-        if uCount > 0:
+        if uCount > 1:
              raise ValueError('Constant cannot have more than one u/U suffix.')
         elif lCount > 2:
              raise ValueError('Constant cannot have more than two l/L suffix.')
