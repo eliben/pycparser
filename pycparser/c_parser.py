@@ -1766,14 +1766,26 @@ class CParser(PLYParser):
                         | INT_CONST_HEX
                         | INT_CONST_BIN
         """
-        u = ''
-        l = ''
+        uCount = 0
+        lCount = 0
         for x in p[1][-3:]:
             if x in ('l', 'L'):
-                l += 'long '
+                lCount += 1
             elif x in ('u', 'U'):
-                u = 'unsigned '
-        t = u+l+'int'
+                uCount += 1
+        t = ''
+        if uCount > 1:
+             raise GrammarError('Constant cannot have more than one u/U suffix.')
+        elif lCount > 2:
+             raise GrammarError('Constant cannot have more than two l/L suffix.')
+        else:
+            if uCount:
+                t += 'unsigned '
+            if lCount == 1:
+                t += 'long '
+            elif lCount == 2:
+                t += 'long long '
+            t += 'int'
         p[0] = c_ast.Constant(
             t, p[1], self._token_coord(p, 1))
 
