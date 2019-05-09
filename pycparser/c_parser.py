@@ -1778,16 +1778,9 @@ class CParser(PLYParser):
              raise ValueError('Constant cannot have more than one u/U suffix.')
         elif lCount > 2:
              raise ValueError('Constant cannot have more than two l/L suffix.')
-        else:
-            if uCount:
-                t += 'unsigned '
-            if lCount == 1:
-                t += 'long '
-            elif lCount == 2:
-                t += 'long long '
-            t += 'int'
+        prefix = 'unsigned ' * uCount + 'long ' * lCount
         p[0] = c_ast.Constant(
-            t, p[1], self._token_coord(p, 1))
+            prefix + 'int', p[1], self._token_coord(p, 1))
 
     def p_constant_2(self, p):
         """ constant    : FLOAT_CONST
