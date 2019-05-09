@@ -1262,6 +1262,22 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(self.get_decl_init(d55),
             ['Constant', 'float', '0xDE.38p0'])
 
+        d6 = 'int i = 1;'
+        self.assertEqual(self.get_decl_init(d6),
+            ['Constant', 'int', '1'])
+
+        d61 = 'long int li = 1l;'
+        self.assertEqual(self.get_decl_init(d61),
+            ['Constant', 'long int', '1l'])
+
+        d62 = 'unsigned int ui = 1u;'
+        self.assertEqual(self.get_decl_init(d62),
+            ['Constant', 'unsigned int', '1u'])
+
+        d63 = 'unsigned long long int ulli = 1LLU;'
+        self.assertEqual(self.get_decl_init(d63),
+            ['Constant', 'unsigned long long int', '1LLU'])
+
     def test_decl_named_inits(self):
         d1 = 'int a = {.k = 16};'
         self.assertEqual(self.get_decl_init(d1),
@@ -1447,7 +1463,7 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(s1_ast.ext[1].body.block_items[0], Pragma)
         self.assertEqual(s1_ast.ext[1].body.block_items[0].string, 'foo')
         self.assertEqual(s1_ast.ext[1].body.block_items[0].coord.line, 4)
-        
+
         self.assertIsInstance(s1_ast.ext[1].body.block_items[2], Pragma)
         self.assertEqual(s1_ast.ext[1].body.block_items[2].string, 'baz')
         self.assertEqual(s1_ast.ext[1].body.block_items[2].coord.line, 6)
