@@ -1463,7 +1463,7 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(s1_ast.ext[1].body.block_items[0], Pragma)
         self.assertEqual(s1_ast.ext[1].body.block_items[0].string, 'foo')
         self.assertEqual(s1_ast.ext[1].body.block_items[0].coord.line, 4)
-        
+
         self.assertIsInstance(s1_ast.ext[1].body.block_items[2], Pragma)
         self.assertEqual(s1_ast.ext[1].body.block_items[2].string, 'baz')
         self.assertEqual(s1_ast.ext[1].body.block_items[2].coord.line, 6)

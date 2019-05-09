@@ -1774,10 +1774,10 @@ class CParser(PLYParser):
             elif x in ('u', 'U'):
                 uCount += 1
         t = ''
-        if uCount > 1:
-             raise GrammarError('Constant cannot have more than one u/U suffix.')
+        if uCount > 0:
+             raise ValueError('Constant cannot have more than one u/U suffix.')
         elif lCount > 2:
-             raise GrammarError('Constant cannot have more than two l/L suffix.')
+             raise ValueError('Constant cannot have more than two l/L suffix.')
         else:
             if uCount:
                 t += 'unsigned '
