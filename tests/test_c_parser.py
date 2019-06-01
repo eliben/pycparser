@@ -422,6 +422,7 @@ class TestCParser_fundamentals(TestCParser_base):
                         ['TypeDecl', ['IdentifierType', ['int']]]]]])
 
     def test_func_decls_with_array_dim_qualifiers(self):
+        # named function parameter
         self.assertEqual(self.get_decl('int zz(int p[static 10]);'),
             ['Decl', 'zz',
                 ['FuncDecl',
@@ -448,6 +449,30 @@ class TestCParser_fundamentals(TestCParser_base):
             ['Decl', 'zz',
                 ['FuncDecl',
                     [['Decl', 'p', ['ArrayDecl', '10', ['const', 'restrict', 'static'],
+                        ['ArrayDecl', '5', [],
+                            ['TypeDecl', ['IdentifierType', ['int']]]]]]],
+                    ['TypeDecl', ['IdentifierType', ['int']]]]])
+
+        # unnamed function parameter
+        self.assertEqual(self.get_decl('int zz(int [const 10]);'),
+            ['Decl', 'zz',
+                ['FuncDecl',
+                    [['Typename', ['ArrayDecl', '10', ['const'],
+                                       ['TypeDecl', ['IdentifierType', ['int']]]]]],
+                    ['TypeDecl', ['IdentifierType', ['int']]]]])
+
+        self.assertEqual(self.get_decl('int zz(int [restrict][5]);'),
+            ['Decl', 'zz',
+                ['FuncDecl',
+                    [['Typename', ['ArrayDecl', '', ['restrict'],
+                        ['ArrayDecl', '5', [],
+                            ['TypeDecl', ['IdentifierType', ['int']]]]]]],
+                    ['TypeDecl', ['IdentifierType', ['int']]]]])
+
+        self.assertEqual(self.get_decl('int zz(int [const restrict volatile 10][5]);'),
+            ['Decl', 'zz',
+                ['FuncDecl',
+                    [['Typename', ['ArrayDecl', '10', ['const', 'restrict', 'volatile'],
                         ['ArrayDecl', '5', [],
                             ['TypeDecl', ['IdentifierType', ['int']]]]]]],
                     ['TypeDecl', ['IdentifierType', ['int']]]]])

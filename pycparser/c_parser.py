@@ -1410,12 +1410,13 @@ class CParser(PLYParser):
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
 
     def p_direct_abstract_declarator_3(self, p):
-        """ direct_abstract_declarator  : LBRACKET assignment_expression_opt RBRACKET
+        """ direct_abstract_declarator  : LBRACKET type_qualifier_list_opt assignment_expression_opt RBRACKET
         """
+        quals = (p[2] if len(p) > 4 else []) or []
         p[0] = c_ast.ArrayDecl(
             type=c_ast.TypeDecl(None, None, None),
-            dim=p[2],
-            dim_quals=[],
+            dim=p[3] if len(p) > 4 else p[2],
+            dim_quals=quals,
             coord=self._token_coord(p, 1))
 
     def p_direct_abstract_declarator_4(self, p):
