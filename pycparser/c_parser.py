@@ -129,7 +129,7 @@ class CParser(PLYParser):
         # Keeps track of the last token given to yacc (the lookahead token)
         self._last_yielded_token = None
 
-    def parse(self, text, scope_stack=None, filename='', debuglevel=0):
+    def parse(self, text, filename='', scope_stack=None, debuglevel=0):
         """ Parses C code and returns an AST.
 
             text:
