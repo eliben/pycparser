@@ -129,7 +129,7 @@ class CParser(PLYParser):
         # Keeps track of the last token given to yacc (the lookahead token)
         self._last_yielded_token = None
 
-    def parse(self, text, filename='', debuglevel=0):
+    def parse(self, text, scope_stack=None, filename='', debuglevel=0):
         """ Parses C code and returns an AST.
 
             text:
@@ -139,12 +139,16 @@ class CParser(PLYParser):
                 Name of the file being parsed (for meaningful
                 error messages)
 
+            scope_stack:
+                Initial stack of scopes to provide preexisting
+                typedefs to the parser
+
             debuglevel:
                 Debug level to yacc
         """
         self.clex.filename = filename
         self.clex.reset_lineno()
-        self._scope_stack = [dict()]
+        self._scope_stack = [dict()] if scope_stack is None else scope_stack
         self._last_yielded_token = None
         return self.cparser.parse(
                 input=text,
