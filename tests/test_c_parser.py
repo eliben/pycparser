@@ -83,8 +83,9 @@ def expand_init(init):
 
 
 class TestCParser_base(unittest.TestCase):
-    def parse(self, txt, filename=''):
-        return self.cparser.parse(txt, filename)
+    def parse(self, txt, filename='', scope_stack=None):
+        scope_stack = [dict()] if scope_stack is None else scope_stack
+        return self.cparser.parse(txt, filename, scope_stack)
 
     def setUp(self):
         self.cparser = _c_parser
@@ -676,6 +677,36 @@ class TestCParser_fundamentals(TestCParser_base):
         ps5 = self.parse(s5)
         self.assertEqual(expand_decl(ps5.ext[0]),
             ['Typedef', 'Hash', ['TypeDecl', ['Struct', 'tagHash', []]]])
+
+    def test_add_preexisting_typedefs(self):
+        # using a typename previously defined works correctly
+        s1 = r'''
+            typedef char TT;
+            TT tt;
+            '''
+        ps1 = self.parse(s1)
+        self.assertEqual(expand_decl(ps1.ext[0]),
+            ['Typedef', 'TT',
+                ['TypeDecl', ['IdentifierType', ['char']]]])
+        self.assertEqual(expand_decl(ps1.ext[1]),
+            ['Decl', 'tt',
+                ['TypeDecl', ['IdentifierType', ['TT']]]])
+
+        # using a typename not previously defined raises a ParserError
+        s2 = r'''
+            TT tt;
+            '''
+        self.assertRaises(ParseError, self.parse, s2)
+
+        # using scope_stack to provide preexisting typedefs corrects it
+        s3 = r'''
+            TT tt;
+            '''
+        scope_stack = [{'TT': True}]
+        ps3 = self.parse(s3, scope_stack=scope_stack)
+        self.assertEqual(expand_decl(ps3.ext[0]),
+            ['Decl', 'tt',
+                ['TypeDecl', ['IdentifierType', ['TT']]]])
 
     def test_struct_union(self):
         s1 = """
