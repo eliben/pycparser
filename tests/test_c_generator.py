@@ -1,4 +1,5 @@
 import os
+import platform
 import sys
 import textwrap
 import unittest
@@ -359,8 +360,8 @@ class TestCtoC(unittest.TestCase):
 
 class TestCasttoC(unittest.TestCase):
     def _find_file(self, name):
-        root_dir = os.path.dirname(__file__)
-        name = os.path.join(root_dir, 'c_files', name)
+        test_dir = os.path.dirname(__file__)
+        name = os.path.join(test_dir, 'c_files', name)
         assert os.path.exists(name)
         return name
 
@@ -378,8 +379,13 @@ class TestCasttoC(unittest.TestCase):
         self.assertEqual(generator.visit(c_ast.Cast(int_type, test_fun)),
                          '(int) test_fun()')
 
+    @unittest.skipUnless(platform.system() == 'Linux',
+                         'cpp only works on Linux')
+    def test_to_type_with_cpp(self):
+        generator = c_generator.CGenerator()
+        test_fun = c_ast.FuncCall(c_ast.ID('test_fun'), c_ast.ExprList([]))
         memmgr_path = self._find_file('memmgr.h')
-        print(memmgr_path)
+
         ast2 = parse_file(memmgr_path, use_cpp=True, cpp_path=CPPPATH)
         void_ptr_type = ast2.ext[-3].type.type
         void_type = void_ptr_type.type
