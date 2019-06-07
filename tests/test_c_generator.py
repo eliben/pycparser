@@ -358,6 +358,13 @@ class TestCtoC(unittest.TestCase):
 
 
 class TestCasttoC(unittest.TestCase):
+    def _find_file(self, name):
+        root_dir = os.path.dirname(__file__)
+        name = os.path.join(root_dir, 'c_files', name)
+        assert os.path.exists(name)
+        return name
+
+
     def test_to_type(self):
         src = 'int *x;'
         generator = c_generator.CGenerator()
@@ -371,8 +378,8 @@ class TestCasttoC(unittest.TestCase):
         self.assertEqual(generator.visit(c_ast.Cast(int_type, test_fun)),
                          '(int) test_fun()')
 
-        testdir = os.path.dirname(__file__)
-        memmgr_path = os.path.join(testdir, 'c_files', 'memmgr.h')
+        memmgr_path = self._find_file('memmgr.h')
+        print(memmgr_path)
         ast2 = parse_file(memmgr_path, use_cpp=True, cpp_path=CPPPATH)
         void_ptr_type = ast2.ext[-3].type.type
         void_type = void_ptr_type.type
