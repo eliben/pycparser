@@ -1,3 +1,4 @@
+import os
 import sys
 import textwrap
 import unittest
@@ -6,6 +7,8 @@ import unittest
 sys.path.insert(0, '.')
 
 from pycparser import c_parser, c_generator, c_ast, parse_file
+
+CPPPATH = 'cpp'
 
 _c_parser = c_parser.CParser(
                 lex_optimize=False,
@@ -368,7 +371,8 @@ class TestCasttoC(unittest.TestCase):
         self.assertEqual(generator.visit(c_ast.Cast(int_type, test_fun)),
                          '(int) test_fun()')
 
-        ast2 = parse_file('examples/c_files/memmgr.h', use_cpp=True)
+        memmgr_path = os.path.join('examples', 'c_files', 'memmgr.h')
+        ast2 = parse_file(memmgr_path, use_cpp=True, cpp_path=CPPPATH)
         void_ptr_type = ast2.ext[-3].type.type
         void_type = void_ptr_type.type
         self.assertEqual(generator.visit(c_ast.Cast(void_ptr_type, test_fun)),
