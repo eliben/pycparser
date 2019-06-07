@@ -119,7 +119,7 @@ class CGenerator(object):
         return s
 
     def visit_Cast(self, n):
-        s = '(' + self._generate_type(n.to_type) + ')'
+        s = '(' + self._generate_type(n.to_type, emit_declname=False) + ')'
         return s + ' ' + self._parenthesize_unless_simple(n.expr)
 
     def visit_ExprList(self, n):
@@ -293,10 +293,10 @@ class CGenerator(object):
 
     def visit_ArrayDecl(self, n):
         return self._generate_type(n, emit_declname=False)
-        
+
     def visit_TypeDecl(self, n):
         return self._generate_type(n, emit_declname=False)
-        
+
     def visit_PtrDecl(self, n):
         return self._generate_type(n, emit_declname=False)
 
@@ -389,7 +389,7 @@ class CGenerator(object):
             #
             for i, modifier in enumerate(modifiers):
                 if isinstance(modifier, c_ast.ArrayDecl):
-                    if (i != 0 and 
+                    if (i != 0 and
                         isinstance(modifiers[i - 1], c_ast.PtrDecl)):
                             nstr = '(' + nstr + ')'
                     nstr += '['
@@ -397,13 +397,13 @@ class CGenerator(object):
                         nstr += ' '.join(modifier.dim_quals) + ' '
                     nstr += self.visit(modifier.dim) + ']'
                 elif isinstance(modifier, c_ast.FuncDecl):
-                    if (i != 0 and 
+                    if (i != 0 and
                         isinstance(modifiers[i - 1], c_ast.PtrDecl)):
                             nstr = '(' + nstr + ')'
                     nstr += '(' + self.visit(modifier.args) + ')'
                 elif isinstance(modifier, c_ast.PtrDecl):
                     if modifier.quals:
-                        nstr = '* %s%s' % (' '.join(modifier.quals), 
+                        nstr = '* %s%s' % (' '.join(modifier.quals),
                                            ' ' + nstr if nstr else '')
                     else:
                         nstr = '*' + nstr
