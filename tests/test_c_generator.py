@@ -376,6 +376,8 @@ class TestCasttoC(unittest.TestCase):
         self.assertEqual(generator.visit(c_ast.Cast(int_type, test_fun)),
                          '(int) test_fun()')
 
+    @unittest.skipUnless(platform.system() == 'Linux',
+                         'cpp only works on Linux')
     def test_to_type_with_cpp(self):
         generator = c_generator.CGenerator()
         test_fun = c_ast.FuncCall(c_ast.ID('test_fun'), c_ast.ExprList([]))
