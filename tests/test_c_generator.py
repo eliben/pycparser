@@ -1,15 +1,12 @@
 import os
 import platform
 import sys
-import textwrap
 import unittest
 
 # Run from the root dir
 sys.path.insert(0, '.')
 
 from pycparser import c_parser, c_generator, c_ast, parse_file
-
-CPPPATH = 'cpp'
 
 _c_parser = c_parser.CParser(
                 lex_optimize=False,
@@ -379,14 +376,12 @@ class TestCasttoC(unittest.TestCase):
         self.assertEqual(generator.visit(c_ast.Cast(int_type, test_fun)),
                          '(int) test_fun()')
 
-    @unittest.skipUnless(platform.system() == 'Linux',
-                         'cpp only works on Linux')
     def test_to_type_with_cpp(self):
         generator = c_generator.CGenerator()
         test_fun = c_ast.FuncCall(c_ast.ID('test_fun'), c_ast.ExprList([]))
         memmgr_path = self._find_file('memmgr.h')
 
-        ast2 = parse_file(memmgr_path, use_cpp=True, cpp_path=CPPPATH)
+        ast2 = parse_file(memmgr_path, use_cpp=True)
         void_ptr_type = ast2.ext[-3].type.type
         void_type = void_ptr_type.type
         self.assertEqual(generator.visit(c_ast.Cast(void_ptr_type, test_fun)),
