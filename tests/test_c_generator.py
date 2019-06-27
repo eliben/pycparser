@@ -1,11 +1,12 @@
+import os
+import platform
 import sys
-import textwrap
 import unittest
 
 # Run from the root dir
 sys.path.insert(0, '.')
 
-from pycparser import c_parser, c_generator, c_ast
+from pycparser import c_parser, c_generator, c_ast, parse_file
 
 _c_parser = c_parser.CParser(
                 lex_optimize=False,
@@ -352,6 +353,43 @@ class TestCtoC(unittest.TestCase):
                          'const int *')
         self.assertEqual(generator.visit(ast.ext[0].type.type.type),
                          'const int')
+
+
+class TestCasttoC(unittest.TestCase):
+    def _find_file(self, name):
+        test_dir = os.path.dirname(__file__)
+        name = os.path.join(test_dir, 'c_files', name)
+        assert os.path.exists(name)
+        return name
+
+
+    def test_to_type(self):
+        src = 'int *x;'
+        generator = c_generator.CGenerator()
+        test_fun = c_ast.FuncCall(c_ast.ID('test_fun'), c_ast.ExprList([]))
+
+        ast1 = parse_to_ast(src)
+        int_ptr_type = ast1.ext[0].type
+        int_type = int_ptr_type.type
+        self.assertEqual(generator.visit(c_ast.Cast(int_ptr_type, test_fun)),
+                         '(int *) test_fun()')
+        self.assertEqual(generator.visit(c_ast.Cast(int_type, test_fun)),
+                         '(int) test_fun()')
+
+    @unittest.skipUnless(platform.system() == 'Linux',
+                         'cpp only works on Linux')
+    def test_to_type_with_cpp(self):
+        generator = c_generator.CGenerator()
+        test_fun = c_ast.FuncCall(c_ast.ID('test_fun'), c_ast.ExprList([]))
+        memmgr_path = self._find_file('memmgr.h')
+
+        ast2 = parse_file(memmgr_path, use_cpp=True)
+        void_ptr_type = ast2.ext[-3].type.type
+        void_type = void_ptr_type.type
+        self.assertEqual(generator.visit(c_ast.Cast(void_ptr_type, test_fun)),
+                         '(void *) test_fun()')
+        self.assertEqual(generator.visit(c_ast.Cast(void_type, test_fun)),
+                         '(void) test_fun()')
 
 if __name__ == "__main__":
     unittest.main()
