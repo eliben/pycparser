@@ -362,7 +362,6 @@ class TestCasttoC(unittest.TestCase):
         assert os.path.exists(name)
         return name
 
-
     def test_to_type(self):
         src = 'int *x;'
         generator = c_generator.CGenerator()
