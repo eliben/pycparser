@@ -83,7 +83,7 @@ def t_error(t):
     t.lexer.skip(1)
     return t
 
-import re
+import regex as re
 import copy
 import time
 import os.path

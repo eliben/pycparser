@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import pprint
-import re
+import regex as re
 import os, sys
 import io
 import unittest

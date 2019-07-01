@@ -59,7 +59,7 @@
 # own risk!
 # ----------------------------------------------------------------------------
 
-import re
+import regex as re
 import types
 import sys
 import os.path

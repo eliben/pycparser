@@ -38,7 +38,7 @@ from __future__ import print_function
 
 import json
 import sys
-import re
+import regex as re
 
 # This is not required if you've installed pycparser into
 # your site-packages/ with setup.py

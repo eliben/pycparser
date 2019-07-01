@@ -8,5 +8,8 @@ environment:
 
 build: off
 
+install:
+  - pip install regex
+
 test_script:
   - "%PYTHON%\\python.exe tests\\all_tests.py"

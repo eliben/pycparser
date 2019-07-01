@@ -1,4 +1,4 @@
-import re
+import regex as re
 import sys
 import unittest
 
@@ -148,6 +148,13 @@ class TestCLexerNoErrors(unittest.TestCase):
             ['STRING_LITERAL'])
         self.assertTokensTypes(
             '"\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123"',
+            ['STRING_LITERAL'])
+        # The lexer is permissive and allows decimal escapes (not just octal)
+        self.assertTokensTypes(
+            '"jx\9"',
+            ['STRING_LITERAL'])
+        self.assertTokensTypes(
+            '"fo\9999999"',
             ['STRING_LITERAL'])
 
     def test_mess(self):
@@ -433,9 +440,11 @@ class TestCLexerErrors(unittest.TestCase):
         self.assertLexerError(r"'\*'", ERR_INVALID_CCONST)
 
     def test_string_literals(self):
-        self.assertLexerError(r'"jx\9"', ERR_STRING_ESCAPE)
+        self.assertLexerError(r'"jx\`"', ERR_STRING_ESCAPE)
         self.assertLexerError(r'"hekllo\* on ix"', ERR_STRING_ESCAPE)
         self.assertLexerError(r'L"hekllo\* on ix"', ERR_STRING_ESCAPE)
+        # Should not suffer from slow backtracking
+        self.assertLexerError(r'"\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\`\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123""', ERR_STRING_ESCAPE)
 
     def test_preprocessor(self):
         self.assertLexerError('#line "ka"', ERR_FILENAME_BEFORE_LINE)

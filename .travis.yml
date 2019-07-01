@@ -10,4 +10,6 @@ matrix:
     - python: 3.7
       dist: xenial
       sudo: true
-script: python tests/all_tests.py
+script:
+  - pip install regex
+  - python tests/all_tests.py

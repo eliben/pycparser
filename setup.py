@@ -61,6 +61,9 @@ setup(
     ],
     python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     packages=['pycparser', 'pycparser.ply'],
+    install_requires=[
+        'regex',
+    ],
     package_data={'pycparser': ['*.cfg']},
     cmdclass={'install': install, 'sdist': sdist},
 )

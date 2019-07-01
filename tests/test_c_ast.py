@@ -1,5 +1,5 @@
 import pprint
-import re
+import regex as re
 import sys
 import unittest
 import weakref
