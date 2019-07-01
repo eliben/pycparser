@@ -206,9 +206,9 @@ class CLexer(object):
     # code.
     #
     simple_escape = r"""([a-zA-Z._~!=&\^\-\\?'"])"""
-    decimal_escape = r"""(\d+)"""
-    hex_escape = r"""(x[0-9a-fA-F]+)"""
-    bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-7])"""
+    decimal_escape = r"""(\d+)(?!\d)"""
+    hex_escape = r"""(x[0-9a-fA-F]+)(?![0-9a-fA-F])"""
+    bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-9])"""
 
     escape_sequence = r"""(\\("""+simple_escape+'|'+decimal_escape+'|'+hex_escape+'))'
     cconst_char = r"""([^'\\\n]|"""+escape_sequence+')'

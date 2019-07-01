@@ -116,6 +116,7 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes(r"""'\t'""", ['CHAR_CONST'])
         self.assertTokensTypes(r"""'\''""", ['CHAR_CONST'])
         self.assertTokensTypes(r"""'\?'""", ['CHAR_CONST'])
+        self.assertTokensTypes(r"""'\0'""", ['CHAR_CONST'])
         self.assertTokensTypes(r"""'\012'""", ['CHAR_CONST'])
         self.assertTokensTypes(r"""'\x2f'""", ['CHAR_CONST'])
         self.assertTokensTypes(r"""'\x2f12'""", ['CHAR_CONST'])
@@ -148,6 +149,13 @@ class TestCLexerNoErrors(unittest.TestCase):
             ['STRING_LITERAL'])
         self.assertTokensTypes(
             '"\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123"',
+            ['STRING_LITERAL'])
+        # The lexer is permissive and allows decimal escapes (not just octal)
+        self.assertTokensTypes(
+            '"jx\9"',
+            ['STRING_LITERAL'])
+        self.assertTokensTypes(
+            '"fo\9999999"',
             ['STRING_LITERAL'])
 
     def test_mess(self):
@@ -428,14 +436,22 @@ class TestCLexerErrors(unittest.TestCase):
     def test_char_constants(self):
         self.assertLexerError("'", ERR_UNMATCHED_QUOTE)
         self.assertLexerError("'b\n", ERR_UNMATCHED_QUOTE)
+        self.assertLexerError("'\\xaa\n'", ERR_UNMATCHED_QUOTE)
 
+        self.assertLexerError(r"'\12a'", ERR_INVALID_CCONST)
+        self.assertLexerError(r"'\xabg'", ERR_INVALID_CCONST)
+        self.assertLexerError("''", ERR_INVALID_CCONST)
         self.assertLexerError("'jx'", ERR_INVALID_CCONST)
         self.assertLexerError(r"'\*'", ERR_INVALID_CCONST)
 
     def test_string_literals(self):
-        self.assertLexerError(r'"jx\9"', ERR_STRING_ESCAPE)
+        self.assertLexerError(r'"jx\`"', ERR_STRING_ESCAPE)
         self.assertLexerError(r'"hekllo\* on ix"', ERR_STRING_ESCAPE)
         self.assertLexerError(r'L"hekllo\* on ix"', ERR_STRING_ESCAPE)
+        # Should not suffer from slow backtracking
+        self.assertLexerError(r'"\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\`\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123"', ERR_STRING_ESCAPE)
+        # Should not suffer from slow backtracking when there's no end quote
+        self.assertLexerError(r'"\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\`\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\12\123456', ERR_ILLEGAL_CHAR)
 
     def test_preprocessor(self):
         self.assertLexerError('#line "ka"', ERR_FILENAME_BEFORE_LINE)
