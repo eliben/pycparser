@@ -199,3 +199,6 @@
 #define va_end(_list)
 
 #endif
+
+/* Vectors */
+#define __m128i int
