@@ -201,4 +201,12 @@
 #endif
 
 /* Vectors */
+#define __m128  int
 #define __m128i int
+#define __m128d int
+#define __m256  int
+#define __m256i int
+#define __m256d int
+#define __m512  int
+#define __m512i int
+#define __m512d int
