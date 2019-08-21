@@ -205,7 +205,7 @@ class CLexer(object):
     # parse all correct code, even if it means to sometimes parse incorrect
     # code.
     #
-    simple_escape = r"""([a-zA-Z._~!=&\^\-\\?'"])"""
+    simple_escape = r"""([a-wyzA-Z._~!=&\^\-\\?'"]|x(?![0-9a-fA-F]))"""
     decimal_escape = r"""(\d+)(?!\d)"""
     hex_escape = r"""(x[0-9a-fA-F]+)(?![0-9a-fA-F])"""
     bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-9])"""
@@ -221,7 +221,7 @@ class CLexer(object):
     string_char = r"""([^"\\\n]|"""+escape_sequence+')'
     string_literal = '"'+string_char+'*"'
     wstring_literal = 'L'+string_literal
-    bad_string_literal = '"'+string_char+'*?'+bad_escape+string_char+'*"'
+    bad_string_literal = '"'+string_char+'*'+bad_escape+string_char+'*"'
 
     # floating constants (K&R2: A.2.5.3)
     exponent_part = r"""([eE][-+]?[0-9]+)"""

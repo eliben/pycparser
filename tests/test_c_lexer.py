@@ -150,6 +150,17 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes(
             '"\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123"',
             ['STRING_LITERAL'])
+        # Note: a-zA-Z and '.-~^_!=&;,' are allowed as escape chars to support #line
+        # directives with Windows paths as filenames (..\..\dir\file)
+        self.assertTokensTypes(
+            r'"\x"',
+            ['STRING_LITERAL'])
+        self.assertTokensTypes(
+            r'"\a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z\A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z"',
+            ['STRING_LITERAL'])
+        self.assertTokensTypes(
+            r'"C:\x\fa\x1e\xited"',
+            ['STRING_LITERAL'])
         # The lexer is permissive and allows decimal escapes (not just octal)
         self.assertTokensTypes(
             '"jx\9"',
@@ -449,14 +460,10 @@ class TestCLexerErrors(unittest.TestCase):
         self.assertLexerError(r'"hekllo\* on ix"', ERR_STRING_ESCAPE)
         self.assertLexerError(r'L"hekllo\* on ix"', ERR_STRING_ESCAPE)
         # Should not suffer from slow backtracking
-        print("Trying 1")
         self.assertLexerError(r'"\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\`\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123"', ERR_STRING_ESCAPE)
-        print("Trying 2")
         self.assertLexerError(r'"\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\x23\`\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23"', ERR_STRING_ESCAPE)
         # Should not suffer from slow backtracking when there's no end quote
-        print("Trying hex and decimal")
         self.assertLexerError(r'"\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\`\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\12\123456', ERR_ILLEGAL_CHAR)
-        print("Trying hex only")
         self.assertLexerError(r'"\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\`\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x2\x23456', ERR_ILLEGAL_CHAR)
 
     def test_preprocessor(self):
