@@ -1792,6 +1792,7 @@ class TestCParser_whole_code(TestCParser_base):
         switch = ps1.ext[0].body.block_items[0]
 
         block = switch.stmt.block_items
+        self.assertEqual(len(block), 4)
         assert_case_node(block[0], '10')
         self.assertEqual(len(block[0].stmts), 3)
         assert_case_node(block[1], '20')
@@ -1819,6 +1820,7 @@ class TestCParser_whole_code(TestCParser_base):
         switch = ps2.ext[0].body.block_items[0]
 
         block = switch.stmt.block_items
+        self.assertEqual(len(block), 5)
         assert_default_node(block[0])
         self.assertEqual(len(block[0].stmts), 2)
         assert_case_node(block[1], '10')
@@ -1829,6 +1831,18 @@ class TestCParser_whole_code(TestCParser_base):
         self.assertEqual(len(block[1].stmts), 0)
         assert_case_node(block[4], '40')
         self.assertEqual(len(block[4].stmts), 1)
+
+        s3 = r'''
+        int foo(void) {
+            switch (myvar) {
+            }
+            return 0;
+        }
+        '''
+        ps3 = self.parse(s3)
+        switch = ps3.ext[0].body.block_items[0]
+
+        self.assertEqual(switch.stmt.block_items, [])
 
     def test_for_statement(self):
         s2 = r'''
