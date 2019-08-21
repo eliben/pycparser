@@ -449,9 +449,15 @@ class TestCLexerErrors(unittest.TestCase):
         self.assertLexerError(r'"hekllo\* on ix"', ERR_STRING_ESCAPE)
         self.assertLexerError(r'L"hekllo\* on ix"', ERR_STRING_ESCAPE)
         # Should not suffer from slow backtracking
+        print("Trying 1")
         self.assertLexerError(r'"\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\`\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123"', ERR_STRING_ESCAPE)
+        print("Trying 2")
+        self.assertLexerError(r'"\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\x23\`\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23\xf1\x23"', ERR_STRING_ESCAPE)
         # Should not suffer from slow backtracking when there's no end quote
+        print("Trying hex and decimal")
         self.assertLexerError(r'"\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\`\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\123\12\123456', ERR_ILLEGAL_CHAR)
+        print("Trying hex only")
+        self.assertLexerError(r'"\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\`\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x23\x2\x23456', ERR_ILLEGAL_CHAR)
 
     def test_preprocessor(self):
         self.assertLexerError('#line "ka"', ERR_FILENAME_BEFORE_LINE)
