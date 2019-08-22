@@ -223,12 +223,19 @@ class CLexer(object):
     #
     # Without this change, python's `re` module would recursively try parsing each ambiguous escape sequence in multiple ways.
     # e.g. `\123` could be parsed as `\1`+`23`, `\12`+`3`, and `\123`.
+
     simple_escape = r"""([a-wyzA-Z._~!=&\^\-\\?'"]|x(?![0-9a-fA-F]))"""
     decimal_escape = r"""(\d+)(?!\d)"""
     hex_escape = r"""(x[0-9a-fA-F]+)(?![0-9a-fA-F])"""
     bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-9])"""
 
     escape_sequence = r"""(\\("""+simple_escape+'|'+decimal_escape+'|'+hex_escape+'))'
+
+    # This complicated regex with lookahead might be slow for strings, so because all of the valid escapes (including \x) allowed
+    # 0 or more non-escaped characters after the first character, simple_escape+decimal_escape+hex_escape got simplified to
+
+    escape_sequence_start_in_string = r"""(\\[0-9a-zA-Z._~!=&\^\-\\?'"])"""
+
     cconst_char = r"""([^'\\\n]|"""+escape_sequence+')'
     char_const = "'"+cconst_char+"'"
     wchar_const = 'L'+char_const
@@ -236,7 +243,7 @@ class CLexer(object):
     bad_char_const = r"""('"""+cconst_char+"""[^'\n]+')|('')|('"""+bad_escape+r"""[^'\n]*')"""
 
     # string literals (K&R2: A.2.6)
-    string_char = r"""([^"\\\n]|"""+escape_sequence+')'
+    string_char = r"""([^"\\\n]|"""+escape_sequence_start_in_string+')'
     string_literal = '"'+string_char+'*"'
     wstring_literal = 'L'+string_literal
     bad_string_literal = '"'+string_char+'*'+bad_escape+string_char+'*"'
