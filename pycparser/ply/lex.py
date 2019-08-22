@@ -317,13 +317,7 @@ class Lexer:
 
             # Look for a regular expression match
             for lexre, lexindexfunc in self.lexre:
-                try:
-                    m = lexre.match(lexdata, lexpos)
-                except KeyboardInterrupt:
-                    print('lexdata', lexdata)
-                    print('lexpos', lexpos)
-                    print('pattern', lexre.pattern)
-                    raise
+                m = lexre.match(lexdata, lexpos)
                 if not m:
                     continue
 
