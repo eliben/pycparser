@@ -1,3 +1,11 @@
+#-----------------------------------------------------------------
+# Benchmarking utility for internal use.
+#
+# Use with Python 3.6+
+#
+# Eli Bendersky [https://eli.thegreenplace.net/]
+# License: BSD
+#-----------------------------------------------------------------
 import os
 import statistics
 import sys
@@ -31,6 +39,13 @@ def measure_file(filename, n):
                                             statistics.stdev(times)))
 
 
+NUM_RUNS = 5
+
+
 if __name__ == '__main__':
-    for i in range(1, len(sys.argv)):
-        measure_file(sys.argv[i], 5)
+    if len(sys.argv) < 2:
+        print("Usage: %s <dir with input files>")
+        sys.exit(1)
+    for filename in os.listdir(sys.argv[1]):
+        filename = os.path.join(sys.argv[1], filename)
+        measure_file(filename, NUM_RUNS)
