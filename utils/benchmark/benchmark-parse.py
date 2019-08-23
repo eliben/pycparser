@@ -32,7 +32,7 @@ def measure_parse(text, n, progress_cb):
 def measure_file(filename, n):
     progress_cb = lambda i: print('.', sep='', end='', flush=True)
     with open(filename) as f:
-        print('%-20s' % os.path.basename(filename), end='', flush=True)
+        print('%-25s' % os.path.basename(filename), end='', flush=True)
         text = f.read()
         times = measure_parse(text, n, progress_cb)
     print('    Mean: %.3f  Stddev: %.3f' % (statistics.mean(times),
