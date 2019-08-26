@@ -17,6 +17,13 @@ from pycparser import c_parser, c_ast
 
 
 def measure_parse(text, n, progress_cb):
+    """Measure the parsing of text with pycparser.
+
+    text should represent a full file. n is the number of iterations to measure.
+    progress_cb will be called with the iteration number each time one is done.
+
+    Returns a list of elapsed times, one per iteration.
+    """
     times = []
     for i in range(n):
         parser = c_parser.CParser()
