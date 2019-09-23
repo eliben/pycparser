@@ -1766,6 +1766,7 @@ class CParser(PLYParser):
                         | INT_CONST_OCT
                         | INT_CONST_HEX
                         | INT_CONST_BIN
+                        | INT_CONST_CHAR
         """
         uCount = 0
         lCount = 0
