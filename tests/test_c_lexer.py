@@ -448,11 +448,11 @@ class TestCLexerErrors(unittest.TestCase):
         self.assertLexerError("'", ERR_UNMATCHED_QUOTE)
         self.assertLexerError("'b\n", ERR_UNMATCHED_QUOTE)
         self.assertLexerError("'\\xaa\n'", ERR_UNMATCHED_QUOTE)
-
-        self.assertLexerError(r"'\12a'", ERR_INVALID_CCONST)
-        self.assertLexerError(r"'\xabg'", ERR_INVALID_CCONST)
+        
+        self.assertLexerError(r"'123\12a'", ERR_INVALID_CCONST)
+        self.assertLexerError(r"'123\xabg'", ERR_INVALID_CCONST)
         self.assertLexerError("''", ERR_INVALID_CCONST)
-        self.assertLexerError("'jx'", ERR_INVALID_CCONST)
+        self.assertLexerError("'abcjx'", ERR_INVALID_CCONST)
         self.assertLexerError(r"'\*'", ERR_INVALID_CCONST)
 
     def test_string_literals(self):
