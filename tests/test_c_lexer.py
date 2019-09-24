@@ -77,6 +77,10 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes('0xf7', ['INT_CONST_HEX'])
         self.assertTokensTypes('0b110', ['INT_CONST_BIN'])
         self.assertTokensTypes('0x01202AAbbf7Ul', ['INT_CONST_HEX'])
+        self.assertTokensTypes("'12'", ['INT_CONST_CHAR'])
+        self.assertTokensTypes("'123'", ['INT_CONST_CHAR'])
+        self.assertTokensTypes("'1AB4'", ['INT_CONST_CHAR'])
+        self.assertTokensTypes(r"'1A\n4'", ['INT_CONST_CHAR'])
 
         # no 0 before x, so ID catches it
         self.assertTokensTypes('xf7', ['ID'])
