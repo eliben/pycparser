@@ -130,7 +130,7 @@ class CLexer(object):
         'TYPEID',
 
         # constants
-        'INT_CONST_DEC', 'INT_CONST_OCT', 'INT_CONST_HEX', 'INT_CONST_BIN',
+        'INT_CONST_DEC', 'INT_CONST_OCT', 'INT_CONST_HEX', 'INT_CONST_BIN', 'INT_CONST_CHAR',
         'FLOAT_CONST', 'HEX_FLOAT_CONST',
         'CHAR_CONST',
         'WCHAR_CONST',
@@ -239,6 +239,7 @@ class CLexer(object):
     cconst_char = r"""([^'\\\n]|"""+escape_sequence+')'
     char_const = "'"+cconst_char+"'"
     wchar_const = 'L'+char_const
+    multicharacter_constant = "'"+cconst_char+"{2,4}'"
     unmatched_quote = "('"+cconst_char+"*\\n)|('"+cconst_char+"*$)"
     bad_char_const = r"""('"""+cconst_char+"""[^'\n]+')|('')|('"""+bad_escape+r"""[^'\n]*')"""
 
@@ -468,6 +469,10 @@ class CLexer(object):
     # Must come before bad_char_const, to prevent it from
     # catching valid char constants as invalid
     #
+    @TOKEN(multicharacter_constant)
+    def t_INT_CONST_CHAR(self, t):
+        return t
+
     @TOKEN(char_const)
     def t_CHAR_CONST(self, t):
         return t
