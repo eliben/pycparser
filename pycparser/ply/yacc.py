@@ -2118,7 +2118,7 @@ class LRGeneratedTable(LRTable):
 
         self._add_count    = 0         # Internal counter used to detect cycles
 
-        # Diagonistic information filled in by the table generator
+        # Diagnostic information filled in by the table generator
         self.sr_conflict   = 0
         self.rr_conflict   = 0
         self.conflicts     = []        # List of conflicts
