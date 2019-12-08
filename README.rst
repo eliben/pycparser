@@ -117,6 +117,9 @@ Known problems
   you see unexplained errors from **pycparser** after an upgrade, remove it (by
   deleting the ``pycparser`` directory in your Python's ``site-packages``, or
   wherever you installed it) and install again.
+* The fake ``libc ``headers are not included in the ``pip`` package nor installed
+via ``setup.py``. See `#224 <https://github.com/eliben/pycparser/issues/224>`_.
+
 
 
 Using
@@ -161,6 +164,9 @@ See `this blog post
 <https://eli.thegreenplace.net/2015/on-parsing-c-type-declarations-and-fake-headers>`_
 for more details.
 
+Note that the fake headers are not included in the ``pip`` package nor installed via
+``setup.py`` (`#224 <https://github.com/eliben/pycparser/issues/224>`_).
+
 Basic usage
 -----------
 
@@ -201,6 +207,10 @@ There are a few points to keep in mind when modifying **pycparser**:
 
 Package contents
 ================
+
+**Warning:** If you install via ``pip`` or ``setup.py``, only the `pycparser/`
+directory will be installed. No other directories are included in the
+package. See `#224 <https://github.com/eliben/pycparser/issues/224>`_.
 
 Once you unzip the ``pycparser`` package, you'll see the following files and
 directories:
