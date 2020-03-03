@@ -529,6 +529,18 @@ class TestCParser_fundamentals(TestCParser_base):
                             ['IdentifierType', ['int']]]]]])
 
     def test_offsetof(self):
+        def expand_ref(n):
+            if isinstance(n, StructRef):
+                return ['StructRef', expand_ref(n.name), expand_ref(n.field)]
+            elif isinstance(n, ArrayRef):
+                return ['ArrayRef', expand_ref(n.name), expand_ref(n.subscript)]
+            elif isinstance(n, ID):
+                return ['ID', n.name]
+            elif isinstance(n, Constant):
+                return ['Constant', n.type, n.value]
+            else:
+                raise TypeError("Unexpected type " + n.__class__.__name__)
+
         e = """
             void foo() {
                 int a = offsetof(struct S, p);
@@ -546,8 +558,20 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(s1.args.exprs[1], ID)
         s3 = compound.block_items[2].init
         self.assertIsInstance(s3.args.exprs[1], StructRef)
+        self.assertEqual(expand_ref(s3.args.exprs[1]),
+            ['StructRef',
+                ['StructRef', ['ID', 'p'], ['ID', 'q']],
+                ['ID', 'r']])
         s4 = compound.block_items[3].init
         self.assertIsInstance(s4.args.exprs[1], ArrayRef)
+        self.assertEqual(expand_ref(s4.args.exprs[1]),
+            ['ArrayRef',
+                ['ArrayRef',
+                    ['StructRef',
+                        ['ArrayRef', ['ID', 'p'], ['Constant', 'int', '5']],
+                        ['ID', 'q']],
+                    ['Constant', 'int', '4']],
+                ['Constant', 'int', '5']])
 
     def test_compound_statement(self):
         e = """
