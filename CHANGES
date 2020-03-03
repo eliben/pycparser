@@ -6,7 +6,7 @@
   - PR #222: Add support for #pragma in struct declarations
   - There are reports that this release doesn't work with Python 2.6 (#281).
     Please note that the minimal supported version is 2.7; the required versions
-    are listed in the README file. 
+    are listed in the README file.
 
 + Version 2.18 (2017.07.04)
 
@@ -152,11 +152,11 @@
 + Version 2.05 (2011.10.16)
 
   - Added support for the C99 ``_Bool`` type and ``stdbool.h`` header file
-  - Expanded ``examples/explore_ast.py`` with more details on working with the 
+  - Expanded ``examples/explore_ast.py`` with more details on working with the
     AST
   - Relaxed the rules on parsing unnamed struct members (helps parse ``windows.h``)
   - Bug fixes:
-  
+
     * Fixed spacing issue for some type declarations
     * Issue 47: display empty statements (lone ';') correctly after parsing
 
@@ -164,34 +164,34 @@
 
   - License changed from LGPL to BSD
   - Bug fixes:
-  
+
     * Issue 31: constraining the scope of typedef definitions
     * Issues 33, 35: fixes for the c-to-c.py example
-  
+
   - Added C99 integer types to fake headers
   - Added unit tests for the c-to-c.py example
 
 + Version 2.03 (2011.03.06)
 
   - Bug fixes:
-  
+
     * Issue 17: empty file-level declarations
     * Issue 18: empty statements and declarations in functions
     * Issue 19: anonymous structs & union fields
     * Issue 23: fix coordinates of Cast nodes
-  
+
   - New example added (``examples/c-to-c.py``) for translating ASTs generated
     by ``pycparser`` back into C code.
   - ``pycparser`` is now on PyPI (Python Package Index)
   - Created `FAQ <http://code.google.com/p/pycparser/wiki/FAQ>`_ on
-    the ``pycparser`` project page 
+    the ``pycparser`` project page
   - Removed support for Python 2.5. ``pycparser`` supports Python 2
     from 2.6 and on, and Python 3.
 
 + Version 2.02 (2010.12.10)
 
-  * The name of a ``NamedInitializer`` node was turned into a sequence of nodes 
-    instead of an attribute, to make it discoverable by the AST node visitor.  
+  * The name of a ``NamedInitializer`` node was turned into a sequence of nodes
+    instead of an attribute, to make it discoverable by the AST node visitor.
   * Documentation updates
 
 + Version 2.01 (04.12.2010)
@@ -221,7 +221,7 @@
 
 + Version 1.06 (2010.04.10)
 
-  * Bug fixes: 
+  * Bug fixes:
 
     + coord not propagated to FuncCall nodes
     + lexing of the ^= token (XOREQUALS)
@@ -249,7 +249,7 @@
 + Version 1.02 (2009.01.16)
 
   * Fixed problem of parsing struct/enum/union names that were named similarly
-    to previously defined ``typedef`` types. 
+    to previously defined ``typedef`` types.
 
 + Version 1.01 (2009.01.09)
 
