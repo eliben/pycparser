@@ -161,6 +161,9 @@ See `this blog post
 <https://eli.thegreenplace.net/2015/on-parsing-c-type-declarations-and-fake-headers>`_
 for more details.
 
+Note that the fake headers are not included in the ``pip`` package nor installed
+via ``setup.py`` (`#224 <https://github.com/eliben/pycparser/issues/224>`_).
+
 Basic usage
 -----------
 
