@@ -11,9 +11,6 @@ pycparser v2.19
   :align: center
   :target: https://ci.appveyor.com/project/eliben/pycparser/
   
-:Author: `Eli Bendersky <https://eli.thegreenplace.net/>`_
-
-
 .. contents::
     :backlinks: none
 
