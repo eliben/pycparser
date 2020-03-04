@@ -19,7 +19,7 @@ Now create a new virtualenv and in it install the tarball with
 `pip install <tarballname>`. See that pycparser is importable in the Python
 interpreter of this virtualenv; run pycparser tests from this virtualenv.
 
-After this it's OK to rerun `python3.6 setup.py sdist upload` to push to PyPI
+After this it's OK to rerun `python3.6 -m twine upload dist/*` to push to PyPI
 (older Pythons use a deprecated API for PyPI uploading).
 
 - Tag in git. When pushing to GitHub, git push --tags
