@@ -2,9 +2,15 @@
 pycparser v2.20
 ===============
 
-:Author: `Eli Bendersky <https://eli.thegreenplace.net/>`_
 
-
+.. image:: https://travis-ci.org/eliben/pycparser.png?branch=master
+  :align: center
+  :target: https://travis-ci.org/eliben/pycparser
+  
+.. image:: https://ci.appveyor.com/api/projects/status/wrup68o5y8nuk1i9?svg=true
+  :align: center
+  :target: https://ci.appveyor.com/project/eliben/pycparser/
+  
 .. contents::
     :backlinks: none
 
@@ -243,18 +249,3 @@ updating this list because Github does a much better job at tracking
 contributions.
 
 
-CI Status
-=========
-
-**pycparser** has automatic testing enabled through the convenient
-`Travis CI project <https://travis-ci.org>`_. Here is the latest build status:
-
-.. image:: https://travis-ci.org/eliben/pycparser.png?branch=master
-  :align: center
-  :target: https://travis-ci.org/eliben/pycparser
-
-AppVeyor also helps run tests on Windows:
-
-.. image:: https://ci.appveyor.com/api/projects/status/wrup68o5y8nuk1i9?svg=true
-  :align: center
-  :target: https://ci.appveyor.com/project/eliben/pycparser/
