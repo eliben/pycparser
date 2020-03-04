@@ -1,3 +1,17 @@
++ Version 2.20 (2020.03.04)
+
+  - #61: Fix slow backtracking when parsing strings.
+  - #99: Parser for FuncDecl incorrectly sets declname attribute on return type.
+  - #310: Fix crash when file starts with a semicolon.
+  - #313: Fix array type generation.
+  - #314: Fix failed parsing of unnamed function parameters with array dim
+    qualifiers.
+  - #315: Fix pointer type generation.
+  - #324: Fixes for u/l constant integer suffix.
+  - #346: Fix error transforming an empty switch.
+  - #350: Recognize integer multicharacter constants like 'ABCD'.
+  - #363: Fix incorrect AST when parsing offsetof.
+
 + Version 2.19 (2018.09.19)
 
   - PR #277: Fix parsing of floating point literals

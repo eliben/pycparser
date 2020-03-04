@@ -43,7 +43,7 @@ setup(
         C compilers or analysis tools.
     """,
     license='BSD',
-    version='2.19',
+    version='2.20',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',
