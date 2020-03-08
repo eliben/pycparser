@@ -1,3 +1,6 @@
+#ifndef ZLIB_H
+#define ZLIB_H
+
 #include "_fake_defines.h"
 #include "_fake_typedefs.h"
 
@@ -19,3 +22,5 @@
 
 #define alloc_func int
 #define free_func int
+
+#endif
