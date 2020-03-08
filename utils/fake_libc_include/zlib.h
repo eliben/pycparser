@@ -8,7 +8,7 @@
 /* Some FAR types */
 #define Bytef int
 #define charf int
-#define inft inf
+#define intf inf
 
 #define voidpc int
 #define voidpf int
