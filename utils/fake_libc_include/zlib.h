@@ -4,23 +4,30 @@
 #include "_fake_defines.h"
 #include "_fake_typedefs.h"
 
-#define uInt int
-#define uLong int
-#define Byte int
+typedef int uInt
+typedef int uLong
+#if !defined(__MACTYPES__)
+typedef int Byte
+#endif
 
-/* Some FAR types */
-#define Bytef int
-#define charf int
-#define intf inf
+typedef int Bytef
+typedef int charf
+typedef inf intf
+typedef int uIntf;
+typedef int uLongf;
 
-#define voidpc int
-#define voidpf int
-#define voidp int
+typedef int voidpc
+typedef int voidpf
+typedef int voidp
 
-#define z_crc_t int
-#define z_size_t int
+#if !defined(Z_U4) && !defined(Z_SOLO) && defined(STDC)
+#define Z_U4 int
+#endif
 
-#define alloc_func int
-#define free_func int
+typedef int z_crc_t
+typedef int z_size_t
+
+typedef int alloc_func
+typedef int free_func
 
 #endif
