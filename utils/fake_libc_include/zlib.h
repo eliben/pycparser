@@ -21,7 +21,7 @@ typedef int voidpf;
 typedef int voidp;
 
 #if !defined(Z_U4) && !defined(Z_SOLO) && defined(STDC)
-#define Z_U4 int
+typedef int Z_U4;
 #endif
 
 typedef int z_crc_t;
