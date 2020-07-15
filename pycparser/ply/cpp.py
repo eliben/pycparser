@@ -766,19 +766,19 @@ class Preprocessor(object):
                 print("Malformed #include statement")
                 return
         for p in path:
+            
             iname = os.path.join(p,filename)
-            try:
-                data = open(iname,"r").read()
-                dname = os.path.dirname(iname)
-                if dname:
-                    self.temp_path.insert(0,dname)
-                for tok in self.parsegen(data,filename):
-                    yield tok
-                if dname:
-                    del self.temp_path[0]
-                break
-            except IOError:
-                pass
+            if os.path.exists(iname):
+                with open(iname, "r") as f:
+                    data = f.read()
+                    dname = os.path.dirname(iname)
+                    if dname:
+                        self.temp_path.insert(0,dname)
+                    for tok in self.parsegen(data,filename):
+                        yield tok
+                    if dname:
+                        del self.temp_path[0]
+                    break
         else:
             print("Couldn't find '%s'" % filename)
 
