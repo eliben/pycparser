@@ -464,7 +464,8 @@ class CParser(PLYParser):
     def _build_function_definition(self, spec, decl, param_decls, body):
         """ Builds a function definition.
         """
-        assert 'typedef' not in spec['storage']
+        if 'typedef' in spec['storage']:
+            self._parse_error("Invalid typedef", decl.coord)
 
         declaration = self._build_declarations(
             spec=spec,

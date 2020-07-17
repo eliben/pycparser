@@ -1190,6 +1190,13 @@ class TestCParser_fundamentals(TestCParser_base):
         for b in bad:
             self.assertRaises(ParseError, self.parse, b)
 
+    def test_invalid_typedef_storage_qual_error(self):
+        """ Tests that using typedef as a storage qualifier is correctly flagged
+            as an error.
+        """
+        bad = 'typedef const int foo(int a) { return 0; }'
+        self.assertRaises(ParseError, self.parse, bad)
+
     def test_duplicate_typedef(self):
         """ Tests that redeclarations of existing types are parsed correctly.
             This is non-standard, but allowed by many compilers.
