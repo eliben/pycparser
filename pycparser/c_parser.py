@@ -413,8 +413,8 @@ class CParser(PLYParser):
         # A similar problem can occur where the declaration ends up looking
         # like an abstract declarator.  Give it a name if this is the case.
         #
-        elif not isinstance(decls[0]['decl'],
-                (c_ast.Struct, c_ast.Union, c_ast.IdentifierType)):
+        elif not isinstance(decls[0]['decl'], (
+                c_ast.Enum, c_ast.Struct, c_ast.Union, c_ast.IdentifierType)):
             decls_0_tail = decls[0]['decl']
             while not isinstance(decls_0_tail, c_ast.TypeDecl):
                 decls_0_tail = decls_0_tail.type
@@ -442,8 +442,9 @@ class CParser(PLYParser):
                     bitsize=decl.get('bitsize'),
                     coord=decl['decl'].coord)
 
-            if isinstance(declaration.type,
-                    (c_ast.Struct, c_ast.Union, c_ast.IdentifierType)):
+            if isinstance(declaration.type, (
+                    c_ast.Enum, c_ast.Struct, c_ast.Union,
+                    c_ast.IdentifierType)):
                 fixed_decl = declaration
             else:
                 fixed_decl = self._fix_decl_name_type(declaration, spec['type'])
