@@ -33,6 +33,13 @@ def expand_decl(decl):
     elif typ in [Struct, Union]:
         decls = [expand_decl(d) for d in decl.decls or []]
         return [typ.__name__, decl.name, decls]
+    elif typ == Enum:
+        if decl.values is None:
+            values = None
+        else:
+            assert isinstance(decl.values, EnumeratorList)
+            values = [enum.name for enum in decl.values.enumerators]
+        return ['Enum', decl.name, values]
     else:
         nested = expand_decl(decl.type)
 
@@ -855,6 +862,31 @@ class TestCParser_fundamentals(TestCParser_base):
                     ['Decl', 'heads',
                         ['PtrDecl', ['PtrDecl', ['TypeDecl', ['IdentifierType', ['Node']]]]]]]]]])
 
+    def test_struct_enum(self):
+        s1 = """
+            struct Foo {
+                enum Bar { A = 1 };
+            };
+        """
+        self.assertEqual(expand_decl(self.parse(s1).ext[0]),
+            ['Decl', None,
+             ['Struct', 'Foo',
+              [['Decl', None,
+                ['Enum', 'Bar', ['A']]]]]])
+        s2 = """
+            struct Foo {
+                enum Bar { A = 1, B, C } bar;
+                enum Baz { D = A } baz;
+            } foo;
+        """
+        self.assertEqual(expand_decl(self.parse(s2).ext[0]),
+            ['Decl', 'foo',
+             ['TypeDecl', ['Struct', 'Foo',
+              [['Decl', 'bar',
+                ['TypeDecl', ['Enum', 'Bar', ['A', 'B', 'C']]]],
+               ['Decl', 'baz',
+                ['TypeDecl', ['Enum', 'Baz', ['D']]]]]]]])
+
     def test_struct_with_extra_semis_inside(self):
         s1 = """
             struct {
@@ -1189,6 +1221,13 @@ class TestCParser_fundamentals(TestCParser_base):
 
         for b in bad:
             self.assertRaises(ParseError, self.parse, b)
+
+    def test_invalid_typedef_storage_qual_error(self):
+        """ Tests that using typedef as a storage qualifier is correctly flagged
+            as an error.
+        """
+        bad = 'typedef const int foo(int a) { return 0; }'
+        self.assertRaises(ParseError, self.parse, bad)
 
     def test_duplicate_typedef(self):
         """ Tests that redeclarations of existing types are parsed correctly.

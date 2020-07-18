@@ -59,17 +59,18 @@ class CGenerator(object):
         return fref + '(' + self.visit(n.args) + ')'
 
     def visit_UnaryOp(self, n):
-        operand = self._parenthesize_unless_simple(n.expr)
-        if n.op == 'p++':
-            return '%s++' % operand
-        elif n.op == 'p--':
-            return '%s--' % operand
-        elif n.op == 'sizeof':
+        if n.op == 'sizeof':
             # Always parenthesize the argument of sizeof since it can be
             # a name.
             return 'sizeof(%s)' % self.visit(n.expr)
         else:
-            return '%s%s' % (n.op, operand)
+            operand = self._parenthesize_unless_simple(n.expr)
+            if n.op == 'p++':
+                return '%s++' % operand
+            elif n.op == 'p--':
+                return '%s--' % operand
+            else:
+                return '%s%s' % (n.op, operand)
 
     def visit_BinaryOp(self, n):
         lval_str = self._parenthesize_if(n.left,

@@ -354,6 +354,13 @@ class TestCtoC(unittest.TestCase):
         self.assertEqual(generator.visit(ast.ext[0].type.type.type),
                          'const int')
 
+    def test_nested_sizeof(self):
+        src = '1'
+        for _ in range(30):
+            src = 'sizeof(' + src + ')'
+        src = 'int x = ' + src + ';'
+        self._assert_ctoc_correct(src)
+
 
 class TestCasttoC(unittest.TestCase):
     def _find_file(self, name):
