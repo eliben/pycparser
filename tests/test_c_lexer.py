@@ -167,10 +167,10 @@ class TestCLexerNoErrors(unittest.TestCase):
             ['STRING_LITERAL'])
         # The lexer is permissive and allows decimal escapes (not just octal)
         self.assertTokensTypes(
-            '"jx\9"',
+            r'"jx\9"',
             ['STRING_LITERAL'])
         self.assertTokensTypes(
-            '"fo\9999999"',
+            r'"fo\9999999"',
             ['STRING_LITERAL'])
 
     def test_mess(self):
