@@ -1,4 +1,4 @@
-name: pycparser tests
+name: pycparser-tests
 on:
   push:
     branches:
