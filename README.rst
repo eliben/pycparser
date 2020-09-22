@@ -7,6 +7,8 @@ pycparser v2.20
   :align: center
   :target: https://github.com/eliben/pycparser/actions
 
+----
+
 .. contents::
     :backlinks: none
 
