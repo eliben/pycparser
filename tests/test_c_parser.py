@@ -1503,6 +1503,16 @@ class TestCParser_fundamentals(TestCParser_base):
         d5 = self.get_decl_init(r'char* s = "foo\"" "bar";')
         self.assertEqual(d5, ['Constant', 'string', r'"foo\"bar"'])
 
+        # This is not correct based on the the C spec, but testing it here to
+        # see the behavior in action. Will have to fix this
+        # for https://github.com/eliben/pycparser/issues/392
+        #
+        # The spec says in section 6.4.5 that "escape sequences are converted
+        # into single members of the execution character set just prior to
+        # adjacent string literal concatenation".
+        d6 = self.get_decl_init(r'char* s = "\1" "23";')
+        self.assertEqual(d6, ['Constant', 'string', r'"\123"'])
+
     def test_unified_wstring_literals(self):
         d1 = self.get_decl_init('char* s = L"hello" L"world";')
         self.assertEqual(d1, ['Constant', 'string', 'L"helloworld"'])
