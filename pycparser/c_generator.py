@@ -103,10 +103,10 @@ class CGenerator(object):
         """
         if not hasattr(self, '_prededence_map_cache'):
             self._prededence_map_cache = {}
-            for precedence, (associativity, *operators) in enumerate(c_parser.CParser.precedence):
-                if associativity != 'left':
+            for precedence, associativity_operators in enumerate(c_parser.CParser.precedence):
+                if associativity_operators[0] != 'left':
                     raise NotImplementedError("Non-left associativity is not supported (yet).")
-                for op_name in operators:
+                for op_name in associativity_operators[1:]:
                     self._prededence_map_cache[self.op_token_map[op_name]] = precedence
         return self._prededence_map_cache
 
