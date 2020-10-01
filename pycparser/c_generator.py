@@ -6,7 +6,7 @@
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 #------------------------------------------------------------------------------
-from . import c_ast
+from . import c_ast, c_parser
 
 
 class CGenerator(object):
@@ -14,11 +14,12 @@ class CGenerator(object):
         return a value from each visit method, using string accumulation in
         generic_visit.
     """
-    def __init__(self):
+    def __init__(self, flatten=False):
         # Statements start with indentation of self.indent_level spaces, using
         # the _make_indent method
         #
         self.indent_level = 0
+        self.flatten = flatten
 
     def _make_indent(self):
         return ' ' * self.indent_level
@@ -72,11 +73,53 @@ class CGenerator(object):
             else:
                 return '%s%s' % (n.op, operand)
 
+    op_token_map = {
+        'PLUS': '+',
+        'MINUS': '-',
+        'TIMES': '*',
+        'DIVIDE': '/',
+        'MOD': '%',
+        'OR': '|',
+        'AND': '&',
+        'NOT': '~',
+        'XOR': '^',
+        'LSHIFT': '<<',
+        'RSHIFT': '>>',
+        'LOR': '||',
+        'LAND': '&&',
+        'LNOT': '!',
+        'LT': '<',
+        'GT': '>',
+        'LE': '<=',
+        'GE': '>=',
+        'EQ': '==',
+        'NE': '!='
+    }
+
+    @property
+    def _prededence_map(self):
+        """
+        Map of operands (e.g., '%') to precedence (higher number -> stronger precedence).
+        """
+        if not hasattr(self, '_prededence_map_cache'):
+            self._prededence_map_cache = {}
+            for precedence, (associativity, *operators) in enumerate(c_parser.CParser.precedence):
+                if associativity != 'left':
+                    raise NotImplementedError("Non-left associativity is not supported (yet).")
+                for op_name in operators:
+                    self._prededence_map_cache[self.op_token_map[op_name]] = precedence
+        return self._prededence_map_cache
+
     def visit_BinaryOp(self, n):
-        lval_str = self._parenthesize_if(n.left,
-                            lambda d: not self._is_simple_node(d))
+        lval_str = self._parenthesize_if(
+            n.left,
+            lambda d: not self._is_simple_node(d) and \
+                      self.flatten and isinstance(d, c_ast.BinaryOp) and \
+                      self._prededence_map[d.op] < self._prededence_map[n.op])
         rval_str = self._parenthesize_if(n.right,
-                            lambda d: not self._is_simple_node(d))
+            lambda d: not self._is_simple_node(d) and \
+                      self.flatten and isinstance(d, c_ast.BinaryOp) and \
+                      self._prededence_map[d.op] <= self._prededence_map[n.op])
         return '%s %s %s' % (lval_str, n.op, rval_str)
 
     def visit_Assignment(self, n):
