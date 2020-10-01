@@ -113,13 +113,14 @@ class CGenerator(object):
     def visit_BinaryOp(self, n):
         lval_str = self._parenthesize_if(
             n.left,
-            lambda d: not self._is_simple_node(d) and \
-                      self.flatten and isinstance(d, c_ast.BinaryOp) and \
-                      self._prededence_map[d.op] < self._prededence_map[n.op])
-        rval_str = self._parenthesize_if(n.right,
-            lambda d: not self._is_simple_node(d) and \
-                      self.flatten and isinstance(d, c_ast.BinaryOp) and \
-                      self._prededence_map[d.op] <= self._prededence_map[n.op])
+            lambda d: not (self._is_simple_node(d) or
+                      self.flatten and isinstance(d, c_ast.BinaryOp) and
+                      self._prededence_map[d.op] >= self._prededence_map[n.op]))
+        rval_str = self._parenthesize_if(
+            n.right,
+            lambda d: not (self._is_simple_node(d) or
+                      self.flatten and isinstance(d, c_ast.BinaryOp) and
+                      self._prededence_map[d.op] > self._prededence_map[n.op]))
         return '%s %s %s' % (lval_str, n.op, rval_str)
 
     def visit_Assignment(self, n):
