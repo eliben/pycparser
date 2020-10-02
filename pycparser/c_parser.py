@@ -502,7 +502,7 @@ class CParser(PLYParser):
         ('left', 'GT', 'GE', 'LT', 'LE'),
         ('left', 'RSHIFT', 'LSHIFT'),
         ('left', 'PLUS', 'MINUS'),
-        ('left', 'TIMES', 'DIVIDE', 'MODULO')
+        ('left', 'TIMES', 'DIVIDE', 'MOD')
     )
 
     ##
@@ -1614,7 +1614,7 @@ class CParser(PLYParser):
         """ binary_expression   : cast_expression
                                 | binary_expression TIMES binary_expression
                                 | binary_expression DIVIDE binary_expression
-                                | binary_expression MODULO binary_expression
+                                | binary_expression MOD binary_expression
                                 | binary_expression PLUS binary_expression
                                 | binary_expression MINUS binary_expression
                                 | binary_expression RSHIFT binary_expression
