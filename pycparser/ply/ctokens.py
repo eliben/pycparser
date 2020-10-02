@@ -12,7 +12,7 @@ tokens = [
     'ID', 'TYPEID', 'INTEGER', 'FLOAT', 'STRING', 'CHARACTER',
 
     # Operators (+,-,*,/,%,|,&,~,^,<<,>>, ||, &&, !, <, <=, >, >=, ==, !=)
-    'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD',
+    'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MODULO',
     'OR', 'AND', 'NOT', 'XOR', 'LSHIFT', 'RSHIFT',
     'LOR', 'LAND', 'LNOT',
     'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',

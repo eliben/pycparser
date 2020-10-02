@@ -78,7 +78,7 @@ class CGenerator(object):
         'MINUS': '-',
         'TIMES': '*',
         'DIVIDE': '/',
-        'MOD': '%',
+        'MODULO': '%',
         'OR': '|',
         'AND': '&',
         'NOT': '~',
