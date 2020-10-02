@@ -14,12 +14,12 @@ class CGenerator(object):
         return a value from each visit method, using string accumulation in
         generic_visit.
     """
-    def __init__(self, flatten=False):
+    def __init__(self, reduce_parentheses=False):
         # Statements start with indentation of self.indent_level spaces, using
         # the _make_indent method
         #
         self.indent_level = 0
-        self.flatten = flatten
+        self.reduce_parentheses = reduce_parentheses
 
     def _make_indent(self):
         return ' ' * self.indent_level
@@ -91,12 +91,12 @@ class CGenerator(object):
         lval_str = self._parenthesize_if(
             n.left,
             lambda d: not (self._is_simple_node(d) or
-                      self.flatten and isinstance(d, c_ast.BinaryOp) and
+                      self.reduce_parentheses and isinstance(d, c_ast.BinaryOp) and
                       self.precedence_map[d.op] >= self.precedence_map[n.op]))
         rval_str = self._parenthesize_if(
             n.right,
             lambda d: not (self._is_simple_node(d) or
-                      self.flatten and isinstance(d, c_ast.BinaryOp) and
+                      self.reduce_parentheses and isinstance(d, c_ast.BinaryOp) and
                       self.precedence_map[d.op] > self.precedence_map[n.op]))
         return '%s %s %s' % (lval_str, n.op, rval_str)
 
