@@ -378,7 +378,7 @@ class TestCtoC(unittest.TestCase):
             'int x = a+(b-c)-d;'
         ]
         for src in test_snippets:
-            src2 = self._assert_ctoc_correct(src, flatten=True)
+            src2 = self._assert_ctoc_correct(src, reduce_parentheses=True)
             self.assertTrue(
                 src2.count('(') == src.count('('),
                 msg="{!r} did not have minimum number of parenthesis, should be like {!r}.".format(
