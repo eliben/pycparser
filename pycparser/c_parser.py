@@ -491,6 +491,7 @@ class CParser(PLYParser):
     ##
     ## Precedence and associativity of operators
     ##
+    # If this changes, c_generator.CGenerator.precedence_map needs to change as well
     precedence = (
         ('left', 'LOR'),
         ('left', 'LAND'),
