@@ -15,6 +15,11 @@ class CGenerator(object):
         generic_visit.
     """
     def __init__(self, reduce_parentheses=False):
+        """ Constructs C-code generator
+
+            reduce_parentheses:
+                if True, eliminates needless parentheses on binary operators
+        """
         # Statements start with indentation of self.indent_level spaces, using
         # the _make_indent method
         #
@@ -73,9 +78,11 @@ class CGenerator(object):
             else:
                 return '%s%s' % (n.op, operand)
 
+    # Precedence map of binary operators:
     precedence_map = {
-        # Some what of a duplicate of c_generator.CGenerator.precedence
-        '||': 0,
+        # Some what of a duplicate of c_paarser.CParser.precedence
+        # Higher numbers are stronger binding
+        '||': 0,  # weakest binding
         '&&': 1,
         '|': 2,
         '^': 3,
@@ -84,15 +91,31 @@ class CGenerator(object):
         '>': 6, '>=': 6, '<': 6, '<=': 6,
         '>>': 7, '<<': 7,
         '+': 8, '-': 8,
-        '*': 9, '/': 9, '%': 9
+        '*': 9, '/': 9, '%': 9  # strongest binding
     }
 
     def visit_BinaryOp(self, n):
+        # Note: all binary operators are left-to-right associative
+        #
+        # If `n.left.op` has a stronger or equally binding precedence in
+        # comparison to `n.op`, no parenthesis are needed for the left:
+        # e.g., `(a*b) + c` is equivelent to `a*b + c`, as well as
+        #       `(a+b) - c` is equivelent to `a+b - c` (same precedence).
+        # If the left operator is weaker binding than the current, then
+        # parentheses are necessary:
+        # e.g., `(a+b) * c` is NOT equivelent to `a+b * c`.
         lval_str = self._parenthesize_if(
             n.left,
             lambda d: not (self._is_simple_node(d) or
                       self.reduce_parentheses and isinstance(d, c_ast.BinaryOp) and
                       self.precedence_map[d.op] >= self.precedence_map[n.op]))
+        # If `n.right.op` has a stronger -but not equal- binding precedence,
+        # parenthesis can be omitted on the right:
+        # e.g., `a + (b*c)` is equivelent to `a + b*c`.
+        # If the right operator is weaker or equally binding, then parentheses
+        # are necessary:
+        # e.g., `a * (b+c)` is NOT equivelent to `a * b+c` and
+        #       `a - (b+c)` is NOT equivelent to `a - b+c` (same precedence).
         rval_str = self._parenthesize_if(
             n.right,
             lambda d: not (self._is_simple_node(d) or
