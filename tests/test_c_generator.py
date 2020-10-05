@@ -90,9 +90,6 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct('int test(const char* const* arg);')
         self._assert_ctoc_correct('int test(const char** const arg);')
 
-        #s = 'int test(const char* const* arg);'
-        #parse_to_ast(s).show()
-
     def test_ternary(self):
         self._assert_ctoc_correct('''
             int main(void)

@@ -21,8 +21,7 @@ class CGenerator(object):
                 if True, eliminates needless parentheses on binary operators
         """
         # Statements start with indentation of self.indent_level spaces, using
-        # the _make_indent method
-        #
+        # the _make_indent method.
         self.indent_level = 0
         self.reduce_parentheses = reduce_parentheses
 
@@ -34,7 +33,6 @@ class CGenerator(object):
         return getattr(self, method, self.generic_visit)(node)
 
     def generic_visit(self, node):
-        #~ print('generic:', type(node))
         if node is None:
             return ''
         else:
@@ -80,7 +78,7 @@ class CGenerator(object):
 
     # Precedence map of binary operators:
     precedence_map = {
-        # Some what of a duplicate of c_paarser.CParser.precedence
+        # Should be in sync with c_parser.CParser.precedence
         # Higher numbers are stronger binding
         '||': 0,  # weakest binding
         '&&': 1,
