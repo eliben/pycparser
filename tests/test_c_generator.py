@@ -361,7 +361,13 @@ class TestCtoC(unittest.TestCase):
         src = 'int x = ' + src + ';'
         self._assert_ctoc_correct(src)
 
-    def test_flattened_binaryops(self):
+    def test_reduce_parentheses_binaryops(self):
+        c1 = 'int x = a + b + c + d;';
+        self.assertEqual(self._run_c_to_c(c1), 'int x = ((a + b) + c) + d;\n')
+        self.assertEqual(
+                self._run_c_to_c(c1, reduce_parentheses=True),
+                'int x = a + b + c + d;\n')
+
         # codes with minimum number of (necessary) parenthesis:
         test_snippets = [
             'int x = a*b*c*d;',
