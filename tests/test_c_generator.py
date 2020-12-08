@@ -423,5 +423,21 @@ class TestCasttoC(unittest.TestCase):
         self.assertEqual(generator.visit(c_ast.Cast(void_type, test_fun)),
                          '(void) test_fun()')
 
+    def test_nested_else_if_line_breaks(self):
+        generator = c_generator.CGenerator()
+        test_ast1 = c_ast.If(None, None, None)
+        test_ast2 = c_ast.If(None, None, c_ast.If(None, None, None))
+        test_ast3 = c_ast.If(None, None, c_ast.If(None, None, c_ast.If(None, None, None)))
+        test_ast4 = c_ast.If(None, c_ast.Compound([]), c_ast.If(None, c_ast.Compound([]), c_ast.If(None, c_ast.Compound([]), None)))
+
+        self.assertEqual(generator.visit(test_ast1),
+                         'if ()\n  \n')
+        self.assertEqual(generator.visit(test_ast2),
+                         'if ()\n  \nelse\n  if ()\n  \n')
+        self.assertEqual(generator.visit(test_ast3),
+                         'if ()\n  \nelse\n  if ()\n  \nelse\n  if ()\n  \n')
+        self.assertEqual(generator.visit(test_ast4),
+                         'if ()\n{\n}\nelse\n  if ()\n{\n}\nelse\n  if ()\n{\n}\n')
+
 if __name__ == "__main__":
     unittest.main()
