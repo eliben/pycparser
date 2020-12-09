@@ -399,6 +399,8 @@ class CGenerator(object):
             # compute its own indentation.
             #
             return self.visit(n)
+        elif typ in (c_ast.If,):
+            return indent + self.visit(n)
         else:
             return indent + self.visit(n) + '\n'
 
