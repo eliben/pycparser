@@ -1,0 +1,6 @@
+[build-system]
+requires = ["setuptools>=44", "wheel", "setuptools_scm[toml]>=3.4.3"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+tag_regex = "^release_v(?P<version>\\d+(?:\\.\\d+)+)$"
