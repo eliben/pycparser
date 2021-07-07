@@ -85,8 +85,20 @@ def expand_init(init):
         return ['Constant', init.type, init.value]
     elif typ == ID:
         return ['ID', init.name]
+    elif typ == Decl:
+        return ['Decl', init.name]
     elif typ == UnaryOp:
         return ['UnaryOp', init.op, expand_decl(init.expr)]
+    elif typ == BinaryOp:
+        return ['BinaryOp', expand_init(init.left), init.op, expand_init(init.right)]
+    elif typ == Compound:
+        blocks = []
+        if init.block_items:
+            blocks = [expand_init(i) for i in init.block_items]
+        return ['Compound', blocks]
+    else:
+        # Fallback to type name
+        return [typ.__name__]
 
 
 class TestCParser_base(unittest.TestCase):
