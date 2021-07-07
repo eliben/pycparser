@@ -1564,6 +1564,10 @@ class CParser(PLYParser):
             p[1].exprs.append(p[3])
             p[0] = p[1]
 
+    def p_parenthesized_compound_expression(self, p):
+        """ assignment_expression : LPAREN compound_statement RPAREN """
+        p[0] = p[2]
+
     def p_typedef_name(self, p):
         """ typedef_name : TYPEID """
         p[0] = c_ast.IdentifierType([p[1]], coord=self._token_coord(p, 1))
