@@ -85,8 +85,20 @@ def expand_init(init):
         return ['Constant', init.type, init.value]
     elif typ == ID:
         return ['ID', init.name]
+    elif typ == Decl:
+        return ['Decl', init.name]
     elif typ == UnaryOp:
         return ['UnaryOp', init.op, expand_decl(init.expr)]
+    elif typ == BinaryOp:
+        return ['BinaryOp', expand_init(init.left), init.op, expand_init(init.right)]
+    elif typ == Compound:
+        blocks = []
+        if init.block_items:
+            blocks = [expand_init(i) for i in init.block_items]
+        return ['Compound', blocks]
+    else:
+        # Fallback to type name
+        return [typ.__name__]
 
 
 class TestCParser_base(unittest.TestCase):
@@ -611,6 +623,47 @@ class TestCParser_fundamentals(TestCParser_base):
             [
                 ([['ID', 'a']], [['Constant', 'int', '1'], ['Constant', 'int', '2']]),
                 ([['ID', 'b'], ['Constant', 'int', '0']], ['ID', 't'])])
+
+    def test_parenthesized_compounds(self):
+        e = self.parse(r'''
+        void foo() {
+         	int a;
+            ({});
+            ({ 1; });
+            ({ 1; 2; });
+            int b = ({ 1; });
+            int c, d = ({ int x = 1; x + 2; });
+            a = ({ int x = 1; 2 * x; });   
+        }''')
+        body = e.ext[0].body.block_items
+
+        self.assertIsInstance(body[1], Compound)
+        self.assertEqual(body[1].block_items, None)
+
+        self.assertIsInstance(body[2], Compound)
+        self.assertEqual(len(body[2].block_items), 1)
+        self.assertIsInstance(body[2].block_items[0], Constant)
+
+        self.assertIsInstance(body[3], Compound)
+        self.assertEqual(len(body[3].block_items), 2)
+        self.assertIsInstance(body[3].block_items[0], Constant)
+        self.assertIsInstance(body[3].block_items[1], Constant)
+
+        self.assertIsInstance(body[4], Decl)
+        self.assertEqual(expand_init(body[4].init),
+            ['Compound', [['Constant', 'int', '1']]])
+
+        self.assertIsInstance(body[5], Decl)
+        self.assertEqual(body[5].init, None)
+
+        self.assertIsInstance(body[6], Decl)
+        self.assertEqual(expand_init(body[6].init),
+            ['Compound', [['Decl', 'x'], ['BinaryOp', ['ID', 'x'], '+', ['Constant', 'int', '2']]]])
+
+        self.assertIsInstance(body[7], Assignment)
+        self.assertIsInstance(body[7].rvalue, Compound)
+        self.assertEqual(expand_init(body[7].rvalue),
+            ['Compound', [['Decl', 'x'], ['BinaryOp', ['Constant', 'int', '2'], '*', ['ID', 'x']]]])
 
     def test_enums(self):
         e1 = "enum mycolor op;"
