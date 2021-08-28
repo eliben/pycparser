@@ -348,6 +348,11 @@ class TestCParser_fundamentals(TestCParser_base):
                 ['PtrDecl', ['PtrDecl', ['const'],
                     ['TypeDecl', ['IdentifierType', ['char']]]]]])
 
+        self.assertEqual(self.get_decl('const char* const* p;'),
+            ['Decl', ['const'], 'p',
+                ['PtrDecl', ['PtrDecl', ['const'],
+                    ['TypeDecl', ['IdentifierType', ['char']]]]]])
+
         self.assertEqual(self.get_decl('char* * const p;'),
             ['Decl', 'p',
                 ['PtrDecl', ['const'], ['PtrDecl',
@@ -760,6 +765,19 @@ class TestCParser_fundamentals(TestCParser_base):
         ps5 = self.parse(s5)
         self.assertEqual(expand_decl(ps5.ext[0]),
             ['Typedef', 'Hash', ['TypeDecl', ['Struct', 'tagHash', []]]])
+
+        s6 = '''typedef int (* const * const T)(void);'''
+        ps6 = self.parse(s6)
+        self.assertEqual(expand_decl(ps6.ext[0]),
+         ['Typedef',
+          'T',
+          ['PtrDecl',
+           ['const'],
+           ['PtrDecl',
+            ['const'],
+            ['FuncDecl',
+             [['Typename', ['TypeDecl', ['IdentifierType', ['void']]]]],
+             ['TypeDecl', ['IdentifierType', ['int']]]]]]])
 
     def test_struct_union(self):
         s1 = """
