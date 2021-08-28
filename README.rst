@@ -199,7 +199,8 @@ There are a few points to keep in mind when modifying **pycparser**:
 
 * The code for **pycparser**'s AST nodes is automatically generated from a
   configuration file - ``_c_ast.cfg``, by ``_ast_gen.py``. If you modify the AST
-  configuration, make sure to re-generate the code.
+  configuration, make sure to re-generate the code. This can be done by running
+  the ``_build_tables.py`` script from the ``pycparser`` directory.
 * Make sure you understand the optimized mode of **pycparser** - for that you
   must read the docstring in the constructor of the ``CParser`` class. For
   development you should create the parser without optimizations, so that it
