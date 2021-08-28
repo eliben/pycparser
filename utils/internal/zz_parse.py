@@ -7,7 +7,7 @@ from pycparser import c_parser, c_generator, c_ast, parse_file
 if __name__ == "__main__":
     parser = c_parser.CParser()
     code = r'''
-    void* ptr = (int[ ]){0};
+    const int * const p;
     '''
 
     print(code)

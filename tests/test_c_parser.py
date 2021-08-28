@@ -633,7 +633,7 @@ class TestCParser_fundamentals(TestCParser_base):
             ({ 1; 2; });
             int b = ({ 1; });
             int c, d = ({ int x = 1; x + 2; });
-            a = ({ int x = 1; 2 * x; });   
+            a = ({ int x = 1; 2 * x; });
         }''')
         body = e.ext[0].body.block_items
 
