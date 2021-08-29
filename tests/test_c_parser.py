@@ -369,6 +369,18 @@ class TestCParser_fundamentals(TestCParser_base):
                 ['PtrDecl', ['PtrDecl', ['PtrDecl',
                     ['ArrayDecl', '40', [], ['TypeDecl', ['IdentifierType', ['char']]]]]]]])
 
+        self.assertEqual(self.get_decl('int (*const*const x)(char, int);'),
+         ['Decl',
+          'x',
+          ['PtrDecl',
+           ['const'],
+           ['PtrDecl',
+            ['const'],
+            ['FuncDecl',
+             [['Typename', ['TypeDecl', ['IdentifierType', ['char']]]],
+              ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]],
+             ['TypeDecl', ['IdentifierType', ['int']]]]]]])
+
         self.assertEqual(self.get_decl('int (*x[4])(char, int);'),
             ['Decl', 'x',
                 ['ArrayDecl', '4', [],

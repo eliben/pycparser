@@ -263,13 +263,10 @@ class CParser(PLYParser):
         modifier_tail = modifier
 
         # The modifier may be a nested list. Reach its tail.
-        #
         while modifier_tail.type:
             modifier_tail = modifier_tail.type
 
-        # If the decl is a basic type, just tack the modifier onto
-        # it
-        #
+        # If the decl is a basic type, just tack the modifier onto it.
         if isinstance(decl, c_ast.TypeDecl):
             modifier_tail.type = decl
             return modifier
@@ -277,7 +274,6 @@ class CParser(PLYParser):
             # Otherwise, the decl is a list of modifiers. Reach
             # its tail and splice the modifier onto the tail,
             # pointing to the underlying basic type.
-            #
             decl_tail = decl
 
             while not isinstance(decl_tail.type, c_ast.TypeDecl):
@@ -302,7 +298,6 @@ class CParser(PLYParser):
     #   and structs.
     #
     # This method fixes these problems.
-    #
     def _fix_decl_name_type(self, decl, typename):
         """ Fixes a declaration. Modifies decl.
         """
@@ -491,7 +486,8 @@ class CParser(PLYParser):
     ##
     ## Precedence and associativity of operators
     ##
-    # If this changes, c_generator.CGenerator.precedence_map needs to change as well
+    # If this changes, c_generator.CGenerator.precedence_map needs to change as
+    # well
     precedence = (
         ('left', 'LOR'),
         ('left', 'LAND'),
@@ -512,7 +508,6 @@ class CParser(PLYParser):
 
     # Wrapper around a translation unit, to allow for empty input.
     # Not strictly part of the C99 Grammar, but useful in practice.
-    #
     def p_translation_unit_or_empty(self, p):
         """ translation_unit_or_empty   : translation_unit
                                         | empty
@@ -526,7 +521,6 @@ class CParser(PLYParser):
         """ translation_unit    : external_declaration
         """
         # Note: external_declaration is already a list
-        #
         p[0] = p[1]
 
     def p_translation_unit_2(self, p):
@@ -539,7 +533,6 @@ class CParser(PLYParser):
     # several in one line), so we wrap the function definition
     # into a list as well, to make the return value of
     # external_declaration homogenous.
-    #
     def p_external_declaration_1(self, p):
         """ external_declaration    : function_definition
         """
@@ -578,7 +571,6 @@ class CParser(PLYParser):
 
     # In function definitions, the declarator can be followed by
     # a declaration list, for old "K&R style" function definitios.
-    #
     def p_function_definition_1(self, p):
         """ function_definition : id_declarator declaration_list_opt compound_statement
         """
@@ -618,19 +610,20 @@ class CParser(PLYParser):
         """
         p[0] = p[1]
 
-    # A pragma is generally considered a decorator rather than an actual statement.
-    # Still, for the purposes of analyzing an abstract syntax tree of C code,
-    # pragma's should not be ignored and were previously treated as a statement.
-    # This presents a problem for constructs that take a statement such as labeled_statements,
-    # selection_statements, and iteration_statements, causing a misleading structure
-    # in the AST. For example, consider the following C code.
+    # A pragma is generally considered a decorator rather than an actual
+    # statement. Still, for the purposes of analyzing an abstract syntax tree of
+    # C code, pragma's should not be ignored and were previously treated as a
+    # statement. This presents a problem for constructs that take a statement
+    # such as labeled_statements, selection_statements, and
+    # iteration_statements, causing a misleading structure in the AST. For
+    # example, consider the following C code.
     #
     #   for (int i = 0; i < 3; i++)
     #       #pragma omp critical
     #       sum += 1;
     #
-    # This code will compile and execute "sum += 1;" as the body of the for loop.
-    # Previous implementations of PyCParser would render the AST for this
+    # This code will compile and execute "sum += 1;" as the body of the for
+    # loop. Previous implementations of PyCParser would render the AST for this
     # block of code as follows:
     #
     #   For:
