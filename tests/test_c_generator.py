@@ -7,6 +7,7 @@ import unittest
 sys.path.insert(0, '.')
 
 from pycparser import c_parser, c_generator, c_ast, parse_file
+from tests.test_util import cpp_supported, cpp_path, cpp_args
 
 _c_parser = c_parser.CParser(
                 lex_optimize=False,
@@ -82,6 +83,9 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct('int a;')
         self._assert_ctoc_correct('int b, a;')
         self._assert_ctoc_correct('int c, b, a;')
+        self._assert_ctoc_correct('auto int a;')
+        self._assert_ctoc_correct('register int a;')
+        self._assert_ctoc_correct('_Thread_local int a;')
 
     def test_complex_decls(self):
         self._assert_ctoc_correct('int** (*a)(void);')
@@ -246,6 +250,13 @@ class TestCtoC(unittest.TestCase):
             int array[3] = {[0] = 0, [1] = 1, [1+1] = 2};
             ''')
 
+    def test_noreturn(self):
+        self._assert_ctoc_correct(r'''
+            _Noreturn int x(void) {
+                abort();
+            }
+            ''')
+
     def test_exprlist_with_semi(self):
         self._assert_ctoc_correct(r'''
             void x() {
@@ -361,6 +372,10 @@ class TestCtoC(unittest.TestCase):
         src = 'int x = ' + src + ';'
         self._assert_ctoc_correct(src)
 
+    def test_static_assert(self):
+        self._assert_ctoc_correct('_Static_assert(sizeof(int) == sizeof(int), "123");')
+        self._assert_ctoc_correct('int main() { _Static_assert(sizeof(int) == sizeof(int), "123"); } ')
+
     def test_reduce_parentheses_binaryops(self):
         c1 = 'int x = a + b + c + d;';
         self.assertEqual(self._run_c_to_c(c1), 'int x = ((a + b) + c) + d;\n')
@@ -408,14 +423,14 @@ class TestCasttoC(unittest.TestCase):
         self.assertEqual(generator.visit(c_ast.Cast(int_type, test_fun)),
                          '(int) test_fun()')
 
-    @unittest.skipUnless(platform.system() == 'Linux',
-                         'cpp only works on Linux')
+    @unittest.skipUnless(cpp_supported(), 'cpp only works on Unix')
     def test_to_type_with_cpp(self):
         generator = c_generator.CGenerator()
         test_fun = c_ast.FuncCall(c_ast.ID('test_fun'), c_ast.ExprList([]))
         memmgr_path = self._find_file('memmgr.h')
 
-        ast2 = parse_file(memmgr_path, use_cpp=True)
+        ast2 = parse_file(memmgr_path, use_cpp=True,
+            cpp_path = cpp_path(), cpp_args = cpp_args())
         void_ptr_type = ast2.ext[-3].type.type
         void_type = void_ptr_type.type
         self.assertEqual(generator.visit(c_ast.Cast(void_ptr_type, test_fun)),

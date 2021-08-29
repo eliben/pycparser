@@ -206,8 +206,6 @@
 #define va_arg(_ap, _type) __builtin_va_arg((_ap))
 #define va_end(_list)
 
-#endif
-
 /* Vectors */
 #define __m128    int
 #define __m128_u  int
@@ -227,3 +225,15 @@
 #define __m512d_u int
 #define __m512i   int
 #define __m512i_u int
+
+/* C11 stdnoreturn.h defines */
+#define __noreturn_is_defined 1
+#define noreturn _Noreturn
+
+/* C11 threads.h defines */
+#define thread_local _Thread_local
+
+/* C11 assert.h defines */
+#define static_assert _Static_assert
+
+#endif

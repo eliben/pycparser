@@ -286,6 +286,14 @@ class CGenerator(object):
         s += ');'
         return s
 
+    def visit_StaticAssert(self, n):
+        s = '_Static_assert('
+        s += self.visit(n.cond)
+        s += ','
+        s += self.visit(n.message)
+        s += ')'
+        return s
+
     def visit_Switch(self, n):
         s = 'switch (' + self.visit(n.cond) + ')\n'
         s += self._generate_stmt(n.stmt, add_indent=True)
