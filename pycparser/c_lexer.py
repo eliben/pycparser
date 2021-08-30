@@ -120,7 +120,7 @@ class CLexer(object):
             keyword_map[keyword.lower()] = keyword
 
     for keyword in keywords_new:
-        keyword_map[''.join([keyword[:2].upper(), keyword[2:].lower()])] = keyword
+        keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
 
     ##
     ## All the tokens recognized by the lexer
