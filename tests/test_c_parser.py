@@ -40,6 +40,8 @@ def expand_decl(decl):
             assert isinstance(decl.values, EnumeratorList)
             values = [enum.name for enum in decl.values.enumerators]
         return ['Enum', decl.name, values]
+    elif typ == StaticAssert:
+        return ['StaticAssert', decl.cond.value, decl.message.value]
     else:
         nested = expand_decl(decl.type)
 
@@ -520,6 +522,7 @@ class TestCParser_fundamentals(TestCParser_base):
             self.assertEqual(d.storage, storage)
 
         assert_qs("extern int p;", 0, [], ['extern'])
+        assert_qs("_Thread_local int p;", 0, [], ['_Thread_local'])
         assert_qs("const long p = 6;", 0, ['const'], [])
 
         d1 = "static const int p, q, r;"
@@ -1556,6 +1559,18 @@ class TestCParser_fundamentals(TestCParser_base):
                     [['ID', 'p']],
                     ['TypeDecl', ['IdentifierType', ['int']]]]])
 
+    def test_static_assert(self):
+        f1 = self.parse('''
+        _Static_assert(1, "123");
+        int factorial(int p)
+        {
+            _Static_assert(2, "456");
+        }
+        ''')
+
+        self.assertEqual(expand_decl(f1.ext[0]), ['StaticAssert', '1', '"123"'])
+        self.assertEqual(expand_decl(f1.ext[1].body.block_items[0]), ['StaticAssert', '2', '"456"'])
+
     def test_unified_string_literals(self):
         # simple string, for reference
         d1 = self.get_decl_init('char* s = "hello";')
@@ -1606,6 +1621,10 @@ class TestCParser_fundamentals(TestCParser_base):
     def test_inline_specifier(self):
         ps2 = self.parse('static inline void inlinefoo(void);')
         self.assertEqual(ps2.ext[0].funcspec, ['inline'])
+
+    def test_noreturn_specifier(self):
+        ps2 = self.parse('static _Noreturn void noreturnfoo(void);')
+        self.assertEqual(ps2.ext[0].funcspec, ['_Noreturn'])
 
     # variable length array
     def test_vla(self):

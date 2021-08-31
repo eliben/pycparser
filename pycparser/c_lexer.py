@@ -100,7 +100,7 @@ class CLexer(object):
     ## Reserved keywords
     ##
     keywords = (
-        '_BOOL', '_COMPLEX', 'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
+        'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
         'CONTINUE', 'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
         'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG',
         'REGISTER', 'OFFSETOF',
@@ -109,19 +109,23 @@ class CLexer(object):
         'VOLATILE', 'WHILE', '__INT128',
     )
 
+    keywords_new = (
+        '_BOOL', '_COMPLEX',
+        '_NORETURN', '_THREAD_LOCAL', '_STATIC_ASSERT'
+        )
+
     keyword_map = {}
+
     for keyword in keywords:
-        if keyword == '_BOOL':
-            keyword_map['_Bool'] = keyword
-        elif keyword == '_COMPLEX':
-            keyword_map['_Complex'] = keyword
-        else:
             keyword_map[keyword.lower()] = keyword
+
+    for keyword in keywords_new:
+        keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
 
     ##
     ## All the tokens recognized by the lexer
     ##
-    tokens = keywords + (
+    tokens = keywords + keywords_new + (
         # Identifiers
         'ID',
 

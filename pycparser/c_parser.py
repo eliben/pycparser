@@ -554,6 +554,16 @@ class CParser(PLYParser):
         """
         p[0] = []
 
+    def p_external_declaration_5(self, p):
+        """ external_declaration    : static_assert
+        """
+        p[0] = p[1]
+
+    def p_static_assert_declaration(self, p):
+        """ static_assert           : _STATIC_ASSERT LPAREN constant_expression COMMA unified_string_literal RPAREN
+        """
+        p[0] = [c_ast.StaticAssert(p[3], p[5], self._token_coord(p, 1))]
+
     def p_pp_directive(self, p):
         """ pp_directive  : PPHASH
         """
@@ -599,6 +609,10 @@ class CParser(PLYParser):
             param_decls=p[3],
             body=p[4])
 
+    # Note, according to C18 A.2.2 6.7.10 static_assert-declaration _Static_assert
+    # is a declaration, not a statement. We additionally recognise it as a statement
+    # to fix parsing of _Static_assert inside the functions.
+    #
     def p_statement(self, p):
         """ statement   : labeled_statement
                         | expression_statement
@@ -607,6 +621,7 @@ class CParser(PLYParser):
                         | iteration_statement
                         | jump_statement
                         | pppragma_directive
+                        | static_assert
         """
         p[0] = p[1]
 
@@ -806,11 +821,13 @@ class CParser(PLYParser):
                                     | STATIC
                                     | EXTERN
                                     | TYPEDEF
+                                    | _THREAD_LOCAL
         """
         p[0] = p[1]
 
     def p_function_specifier(self, p):
         """ function_specifier  : INLINE
+                                | _NORETURN
         """
         p[0] = p[1]
 
