@@ -430,7 +430,7 @@ class TestCasttoC(unittest.TestCase):
         memmgr_path = self._find_file('memmgr.h')
 
         ast2 = parse_file(memmgr_path, use_cpp=True,
-            cpp_path = cpp_path(), cpp_args = cpp_args())
+            cpp_path=cpp_path(), cpp_args=cpp_args())
         void_ptr_type = ast2.ext[-3].type.type
         void_type = void_ptr_type.type
         self.assertEqual(generator.visit(c_ast.Cast(void_ptr_type, test_fun)),
