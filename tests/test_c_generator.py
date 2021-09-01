@@ -94,6 +94,42 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct('int test(const char* const* arg);')
         self._assert_ctoc_correct('int test(const char** const arg);')
 
+    def test_atomic_decls(self):
+        self._assert_ctoc_correct('_Atomic(int *) a;')
+        self._assert_ctoc_correct('_Atomic(int) *a;')
+        self._assert_ctoc_correct('_Atomic int *a;')
+        self._assert_ctoc_correct('auto const _Atomic(int *) a;')
+        self._assert_ctoc_correct('_Atomic(_Atomic(int) *) a;')
+        self._assert_ctoc_correct('typedef _Atomic(int) atomic_int;')
+        self._assert_ctoc_correct('typedef _Atomic(_Atomic(_Atomic(int (*)(void)) *) *) t;')
+        self._assert_ctoc_correct(r'''
+            typedef struct node_t {
+                _Atomic(void*) a;
+                _Atomic(void) *b;
+                _Atomic void *c;
+            } node;
+            ''')
+
+    def test_alignment(self):
+        self._assert_ctoc_correct('_Alignas(32) int b;')
+        self._assert_ctoc_correct('int _Alignas(32) a;')
+        self._assert_ctoc_correct('_Alignas(32) _Atomic(int) b;')
+        self._assert_ctoc_correct('_Atomic(int) _Alignas(32) b;')
+        self._assert_ctoc_correct('_Alignas(long long) int a;')
+        self._assert_ctoc_correct('int _Alignas(long long) a;')
+        self._assert_ctoc_correct(r'''
+            typedef struct node_t {
+                _Alignas(64) void* next;
+                int data;
+            } node;
+            ''')
+        self._assert_ctoc_correct(r'''
+            typedef struct node_t {
+                void _Alignas(64) * next;
+                int data;
+            } node;
+            ''')
+
     def test_ternary(self):
         self._assert_ctoc_correct('''
             int main(void)

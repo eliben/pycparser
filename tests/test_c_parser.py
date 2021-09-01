@@ -2385,6 +2385,10 @@ class TestCParser_typenames(TestCParser_base):
             '''
         self.assertRaises(ParseError, self.parse, s2)
 
+    def test_static_assert(self):
+        s = '_Static_assert(1, "surprise");'
+        s_ast = self.parse(s)
+        self.assertEqual(type(s_ast.ext[0]), StaticAssert)
 
 if __name__ == '__main__':
     #~ suite = unittest.TestLoader().loadTestsFromNames(

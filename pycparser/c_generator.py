@@ -180,6 +180,12 @@ class CGenerator(object):
     def visit_Enum(self, n):
         return self._generate_struct_union_enum(n, name='enum')
 
+    def visit_Alignas(self, n):
+        return '_Alignas({})'.format(self.visit(n.alignment))
+
+    def visit_Atomic(self, n):
+        return '_Atomic({})'.format(self.visit(n.subtype))
+
     def visit_Enumerator(self, n):
         if not n.value:
             return '{indent}{name},\n'.format(
@@ -418,6 +424,7 @@ class CGenerator(object):
         s = ''
         if n.funcspec: s = ' '.join(n.funcspec) + ' '
         if n.storage: s += ' '.join(n.storage) + ' '
+        if n.align: s += self.visit(n.align[0]) + ' '
         s += self._generate_type(n.type)
         return s
 

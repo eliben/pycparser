@@ -111,13 +111,14 @@ class CLexer(object):
 
     keywords_new = (
         '_BOOL', '_COMPLEX',
-        '_NORETURN', '_THREAD_LOCAL', '_STATIC_ASSERT'
+        '_NORETURN', '_THREAD_LOCAL', '_STATIC_ASSERT',
+        '_ATOMIC', '_ALIGNOF', '_ALIGNAS',
         )
 
     keyword_map = {}
 
     for keyword in keywords:
-            keyword_map[keyword.lower()] = keyword
+        keyword_map[keyword.lower()] = keyword
 
     for keyword in keywords_new:
         keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword

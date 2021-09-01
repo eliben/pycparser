@@ -90,6 +90,7 @@ class TestCLexerNoErrors(unittest.TestCase):
 
     def test_special_names(self):
         self.assertTokensTypes('sizeof offsetof', ['SIZEOF', 'OFFSETOF'])
+        self.assertTokensTypes('_Alignas _Alignof', ['_ALIGNAS', '_ALIGNOF'])
 
     def test_floating_constants(self):
         self.assertTokensTypes('1.5f', ['FLOAT_CONST'])
