@@ -545,6 +545,18 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(pdecl, PtrDecl)
         self.assertEqual(pdecl.quals, ['const'])
 
+    def test_atomic_specifier(self):
+        self.assertEqual(self.get_decl('_Atomic(int) ai;'),
+             ['Decl',
+              ['_Atomic'],
+              'ai',
+              ['TypeDecl', ['IdentifierType', ['int']]]])
+
+        self.assertEqual(self.get_decl('_Atomic(int*) ai;'),
+             ['Decl',
+              'ai',
+              ['TypeDecl', ['PtrDecl', ['_Atomic'], ['IdentifierType', ['int']]]]])
+
     def test_sizeof(self):
         e = """
             void foo()

@@ -315,15 +315,20 @@ class CParser(PLYParser):
         # type in the list (it's illegal to declare "int enum ..")
         # If all the types are basic, they're collected in the
         # IdentifierType holder.
-        #
         for tn in typename:
             if not isinstance(tn, c_ast.IdentifierType):
                 if len(typename) > 1:
                     self._parse_error(
                         "Invalid multiple types specified", tn.coord)
                 else:
-                    type.type = tn
-                    return decl
+                    # This is a nested TypeDecl which we don't need.
+                    if isinstance(tn, c_ast.TypeDecl):
+                        type.type = tn.type
+                        type.quals.extend(tn.quals)
+                        return decl
+                    else:
+                        type.type = tn
+                        return decl
 
         if not typename:
             # Functions default to returning int
@@ -783,7 +788,6 @@ class CParser(PLYParser):
         """
         p[0] = self._add_declaration_specifier(p[2], p[1], 'function')
 
-
     def p_declaration_specifiers_1(self, p):
         """ declaration_specifiers  : declaration_specifiers type_qualifier
         """
@@ -813,7 +817,6 @@ class CParser(PLYParser):
         """ declaration_specifiers  : declaration_specifiers_no_type type_specifier
         """
         p[0] = self._add_declaration_specifier(p[1], p[2], 'type', append=True)
-
 
     def p_storage_class_specifier(self, p):
         """ storage_class_specifier : AUTO
@@ -847,13 +850,38 @@ class CParser(PLYParser):
         """
         p[0] = c_ast.IdentifierType([p[1]], coord=self._token_coord(p, 1))
 
-    def p_type_specifier(self, p):
+    def p_type_specifier_1(self, p):
         """ type_specifier  : typedef_name
                             | enum_specifier
                             | struct_or_union_specifier
                             | type_specifier_no_typeid
         """
         p[0] = p[1]
+
+    # See section 6.7.2.4 of the C11 standard.
+    # Note: according to the standard, "The type name in an atomic type
+    # specifier shall not refer to an array type, a function type, an atomic
+    # type, or a qualified type."
+    def p_type_specifier_2(self, p):
+        """ type_specifier  : _ATOMIC LPAREN type_name RPAREN
+        """
+        assert isinstance(p[3], c_ast.Typename)
+        typ = p[3].type
+
+        # Since type_name may already include a TypeDecl, and this
+        # type_specifier node itself creates a TypeDecl, do some de-duplication.
+        # This will leave some cases unchanged, because we need to propagate the
+        # atomic qualifier somewhere. These leftover cases will be de=duplicated
+        # in _fix_decl_name_type.
+        searchNode = typ
+        while hasattr(searchNode, 'type') and searchNode.type is not None:
+            if isinstance(searchNode.type, c_ast.TypeDecl):
+                searchNode.type = searchNode.type.type
+                break
+            searchNode = searchNode.type
+
+        typ.quals.append('_Atomic')
+        p[0] = typ
 
     def p_type_qualifier(self, p):
         """ type_qualifier  : CONST
