@@ -91,6 +91,8 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct('int** (*a)(void);')
         self._assert_ctoc_correct('int** (*a)(void*, int);')
         self._assert_ctoc_correct('int (*b)(char * restrict k, float);')
+        self._assert_ctoc_correct('int (*b)(char * _Atomic k, float);')
+        self._assert_ctoc_correct('int (*b)(char * _Atomic volatile k, float);')
         self._assert_ctoc_correct('int test(const char* const* arg);')
         self._assert_ctoc_correct('int test(const char** const arg);')
 

@@ -859,6 +859,7 @@ class CParser(PLYParser):
         """ type_qualifier  : CONST
                             | RESTRICT
                             | VOLATILE
+                            | _ATOMIC
         """
         p[0] = p[1]
 

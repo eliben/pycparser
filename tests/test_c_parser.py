@@ -441,6 +441,14 @@ class TestCParser_fundamentals(TestCParser_base):
                             ['TypeDecl', ['IdentifierType', ['int']]]]],
                         ['TypeDecl', ['IdentifierType', ['int']]]]]])
 
+        self.assertEqual(self.get_decl('int (*k)(_Atomic volatile int q);'),
+            ['Decl', 'k',
+                ['PtrDecl',
+                    ['FuncDecl',
+                        [['Decl', ['_Atomic', 'volatile'], 'q',
+                            ['TypeDecl', ['IdentifierType', ['int']]]]],
+                        ['TypeDecl', ['IdentifierType', ['int']]]]]])
+
         self.assertEqual(self.get_decl('int (*k)(const volatile int* q);'),
             ['Decl', 'k',
                 ['PtrDecl',
@@ -524,6 +532,8 @@ class TestCParser_fundamentals(TestCParser_base):
         assert_qs("extern int p;", 0, [], ['extern'])
         assert_qs("_Thread_local int p;", 0, [], ['_Thread_local'])
         assert_qs("const long p = 6;", 0, ['const'], [])
+        assert_qs("_Atomic int p;", 0, ['_Atomic'], [])
+        assert_qs("_Atomic restrict int* p;", 0, ['_Atomic', 'restrict'], [])
 
         d1 = "static const int p, q, r;"
         for i in range(3):

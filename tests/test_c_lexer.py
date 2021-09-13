@@ -91,6 +91,10 @@ class TestCLexerNoErrors(unittest.TestCase):
     def test_special_names(self):
         self.assertTokensTypes('sizeof offsetof', ['SIZEOF', 'OFFSETOF'])
 
+    def test_new_keywords(self):
+        self.assertTokensTypes('_Bool', ['_BOOL'])
+        self.assertTokensTypes('_Atomic', ['_ATOMIC'])
+
     def test_floating_constants(self):
         self.assertTokensTypes('1.5f', ['FLOAT_CONST'])
         self.assertTokensTypes('01.5', ['FLOAT_CONST'])
@@ -452,7 +456,7 @@ class TestCLexerErrors(unittest.TestCase):
         self.assertLexerError("'", ERR_UNMATCHED_QUOTE)
         self.assertLexerError("'b\n", ERR_UNMATCHED_QUOTE)
         self.assertLexerError("'\\xaa\n'", ERR_UNMATCHED_QUOTE)
-        
+
         self.assertLexerError(r"'123\12a'", ERR_INVALID_CCONST)
         self.assertLexerError(r"'123\xabg'", ERR_INVALID_CCONST)
         self.assertLexerError("''", ERR_INVALID_CCONST)
