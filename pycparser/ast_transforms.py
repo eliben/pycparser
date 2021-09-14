@@ -120,7 +120,9 @@ def fix_atomic_specifiers(decl):
         if not found:
             break
 
-    # Make sure to add an _Atomic qual on the topmost decl if needed.
+    # Make sure to add an _Atomic qual on the topmost decl if needed. Also
+    # restore the declname on the innermost TypeDecl (it gets placed in the
+    # wrong place during construction).
     typ = decl
     while not isinstance(typ, c_ast.TypeDecl):
         try:
@@ -129,6 +131,8 @@ def fix_atomic_specifiers(decl):
             return decl
     if '_Atomic' in typ.quals and '_Atomic' not in decl.quals:
         decl.quals.append('_Atomic')
+    if typ.declname is None:
+        typ.declname = decl.name
 
     return decl
 
@@ -158,4 +162,3 @@ def _fix_atomic_specifiers_once(decl):
     if '_Atomic' not in node.type.quals:
         node.type.quals.append('_Atomic')
     return decl, True
-

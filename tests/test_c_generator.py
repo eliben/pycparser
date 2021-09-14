@@ -367,6 +367,31 @@ class TestCtoC(unittest.TestCase):
         self.assertEqual(generator.visit(ast.ext[0].type.type.type),
                          'const int')
 
+    def test_atomic_qual(self):
+        #s = '_Atomic(_Atomic(int)*) x;'
+        #ast = parse_to_ast(s)
+        #print(c_generator.CGenerator().visit(ast))
+
+        self._assert_ctoc_correct('_Atomic int x;')
+        self._assert_ctoc_correct('_Atomic int* x;')
+        self._assert_ctoc_correct('int* _Atomic x;')
+
+        # _Atomic specifier gets turned into qualifier.
+        s1 = '_Atomic(int) x;'
+        c1 = self._run_c_to_c(s1)
+        self.assertEqual(c1, '_Atomic int x;\n')
+        self._assert_ctoc_correct(s1)
+
+        s2 = '_Atomic(int*) x;'
+        c2 = self._run_c_to_c(s2)
+        self.assertEqual(c2, 'int * _Atomic x;\n')
+        self._assert_ctoc_correct(s2)
+
+        s3 = '_Atomic(_Atomic(int)*) x;'
+        c3 = self._run_c_to_c(s3)
+        self.assertEqual(c3, '_Atomic int * _Atomic x;\n')
+        self._assert_ctoc_correct(s3)
+
     def test_nested_sizeof(self):
         src = '1'
         for _ in range(30):
