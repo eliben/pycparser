@@ -547,15 +547,30 @@ class TestCParser_fundamentals(TestCParser_base):
 
     def test_atomic_specifier(self):
         self.assertEqual(self.get_decl('_Atomic(int) ai;'),
-             ['Decl',
-              ['_Atomic'],
+             ['Decl', ['_Atomic'],
               'ai',
               ['TypeDecl', ['IdentifierType', ['int']]]])
 
         self.assertEqual(self.get_decl('_Atomic(int*) ai;'),
              ['Decl',
               'ai',
-              ['TypeDecl', ['PtrDecl', ['_Atomic'], ['IdentifierType', ['int']]]]])
+              ['PtrDecl', ['_Atomic'], ['TypeDecl', ['IdentifierType', ['int']]]]])
+
+        self.assertEqual(self.get_decl('_Atomic(_Atomic(int)*) aai;'),
+             ['Decl', ['_Atomic'],
+              'aai',
+              ['PtrDecl', ['_Atomic'], ['TypeDecl', ['IdentifierType', ['int']]]]])
+
+        # Multiple declarations with _Atomic(...)
+        s = '_Atomic(int) foo, bar;'
+        self.assertEqual(self.get_decl(s, 0),
+             ['Decl', ['_Atomic'],
+              'foo',
+              ['TypeDecl', ['IdentifierType', ['int']]]])
+        self.assertEqual(self.get_decl(s, 1),
+             ['Decl', ['_Atomic'],
+              'bar',
+              ['TypeDecl', ['IdentifierType', ['int']]]])
 
     def test_sizeof(self):
         e = """

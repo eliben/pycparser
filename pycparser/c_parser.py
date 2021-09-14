@@ -13,7 +13,7 @@ from .ply import yacc
 from . import c_ast
 from .c_lexer import CLexer
 from .plyparser import PLYParser, Coord, ParseError, parameterized, template
-from .ast_transforms import fix_switch_cases
+from .ast_transforms import fix_switch_cases, fix_atomic_specifiers
 
 
 @template
@@ -308,7 +308,7 @@ class CParser(PLYParser):
             type = type.type
 
         decl.name = type.declname
-        type.quals = decl.quals
+        type.quals = decl.quals[:]
 
         # The typename is a list of types. If any type in this
         # list isn't an IdentifierType, it must be the only
@@ -321,14 +321,8 @@ class CParser(PLYParser):
                     self._parse_error(
                         "Invalid multiple types specified", tn.coord)
                 else:
-                    # This is a nested TypeDecl which we don't need.
-                    if isinstance(tn, c_ast.TypeDecl):
-                        type.type = tn.type
-                        type.quals.extend(tn.quals)
-                        return decl
-                    else:
-                        type.type = tn
-                        return decl
+                    type.type = tn
+                    return decl
 
         if not typename:
             # Functions default to returning int
@@ -382,7 +376,6 @@ class CParser(PLYParser):
         declarations = []
 
         # Bit-fields are allowed to be unnamed.
-        #
         if decls[0].get('bitsize') is not None:
             pass
 
@@ -390,7 +383,6 @@ class CParser(PLYParser):
         # problem can occur where the identifier gets grouped into
         # spec['type'], leaving decl as None.  This can only occur for the
         # first declarator.
-        #
         elif decls[0]['decl'] is None:
             if len(spec['type']) < 2 or len(spec['type'][-1].names) != 1 or \
                     not self._is_type_in_scope(spec['type'][-1].names[0]):
@@ -412,7 +404,6 @@ class CParser(PLYParser):
 
         # A similar problem can occur where the declaration ends up looking
         # like an abstract declarator.  Give it a name if this is the case.
-        #
         elif not isinstance(decls[0]['decl'], (
                 c_ast.Enum, c_ast.Struct, c_ast.Union, c_ast.IdentifierType)):
             decls_0_tail = decls[0]['decl']
@@ -451,13 +442,13 @@ class CParser(PLYParser):
 
             # Add the type name defined by typedef to a
             # symbol table (for usage in the lexer)
-            #
             if typedef_namespace:
                 if is_typedef:
                     self._add_typedef_name(fixed_decl.name, fixed_decl.coord)
                 else:
                     self._add_identifier(fixed_decl.name, fixed_decl.coord)
 
+            fixed_decl = fix_atomic_specifiers(fixed_decl)
             declarations.append(fixed_decl)
 
         return declarations
@@ -859,27 +850,10 @@ class CParser(PLYParser):
         p[0] = p[1]
 
     # See section 6.7.2.4 of the C11 standard.
-    # Note: according to the standard, "The type name in an atomic type
-    # specifier shall not refer to an array type, a function type, an atomic
-    # type, or a qualified type."
     def p_type_specifier_2(self, p):
         """ type_specifier  : _ATOMIC LPAREN type_name RPAREN
         """
-        assert isinstance(p[3], c_ast.Typename)
-        typ = p[3].type
-
-        # Since type_name may already include a TypeDecl, and this
-        # type_specifier node itself creates a TypeDecl, do some de-duplication.
-        # This will leave some cases unchanged, because we need to propagate the
-        # atomic qualifier somewhere. These leftover cases will be de=duplicated
-        # in _fix_decl_name_type.
-        searchNode = typ
-        while hasattr(searchNode, 'type') and searchNode.type is not None:
-            if isinstance(searchNode.type, c_ast.TypeDecl):
-                searchNode.type = searchNode.type.type
-                break
-            searchNode = searchNode.type
-
+        typ = p[3]
         typ.quals.append('_Atomic')
         p[0] = typ
 
@@ -1407,7 +1381,7 @@ class CParser(PLYParser):
         """
         typename = c_ast.Typename(
             name='',
-            quals=p[1]['qual'],
+            quals=p[1]['qual'][:],
             type=p[2] or c_ast.TypeDecl(None, None, None),
             coord=self._token_coord(p, 2))
 
