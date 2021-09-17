@@ -96,22 +96,6 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct('int test(const char* const* arg);')
         self._assert_ctoc_correct('int test(const char** const arg);')
 
-    def test_atomic_decls(self):
-        self._assert_ctoc_correct('_Atomic(int *) a;')
-        self._assert_ctoc_correct('_Atomic(int) *a;')
-        self._assert_ctoc_correct('_Atomic int *a;')
-        self._assert_ctoc_correct('auto const _Atomic(int *) a;')
-        self._assert_ctoc_correct('_Atomic(_Atomic(int) *) a;')
-        self._assert_ctoc_correct('typedef _Atomic(int) atomic_int;')
-        self._assert_ctoc_correct('typedef _Atomic(_Atomic(_Atomic(int (*)(void)) *) *) t;')
-        self._assert_ctoc_correct(r'''
-            typedef struct node_t {
-                _Atomic(void*) a;
-                _Atomic(void) *b;
-                _Atomic void *c;
-            } node;
-            ''')
-
     def test_ternary(self):
         self._assert_ctoc_correct('''
             int main(void)
@@ -407,6 +391,26 @@ class TestCtoC(unittest.TestCase):
         c3 = self._run_c_to_c(s3)
         self.assertEqual(c3, '_Atomic int * _Atomic x;\n')
         self._assert_ctoc_correct(s3)
+
+        s4 = 'typedef _Atomic(int) atomic_int;'
+        c4 = self._run_c_to_c(s4)
+        self.assertEqual(c4, 'typedef _Atomic int atomic_int;\n')
+        self._assert_ctoc_correct(s4)
+
+        s5 = 'typedef _Atomic(_Atomic(_Atomic(int (*)(void)) *) *) t;'
+        c5 = self._run_c_to_c(s5)
+        self.assertEqual(c5, 'typedef int (* _Atomic * _Atomic * _Atomic t)(void);\n')
+        self._assert_ctoc_correct(s5)
+
+        self._assert_ctoc_correct(r'''
+            typedef struct node_t {
+                _Atomic(void*) a;
+                _Atomic(void) *b;
+                _Atomic void *c;
+            } node;
+            ''')
+
+        self._assert_ctoc_correct('auto const _Atomic(int *) a;')
 
     def test_nested_sizeof(self):
         src = '1'
