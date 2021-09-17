@@ -96,6 +96,22 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct('int test(const char* const* arg);')
         self._assert_ctoc_correct('int test(const char** const arg);')
 
+    def test_atomic_decls(self):
+        self._assert_ctoc_correct('_Atomic(int *) a;')
+        self._assert_ctoc_correct('_Atomic(int) *a;')
+        self._assert_ctoc_correct('_Atomic int *a;')
+        self._assert_ctoc_correct('auto const _Atomic(int *) a;')
+        self._assert_ctoc_correct('_Atomic(_Atomic(int) *) a;')
+        self._assert_ctoc_correct('typedef _Atomic(int) atomic_int;')
+        self._assert_ctoc_correct('typedef _Atomic(_Atomic(_Atomic(int (*)(void)) *) *) t;')
+        self._assert_ctoc_correct(r'''
+            typedef struct node_t {
+                _Atomic(void*) a;
+                _Atomic(void) *b;
+                _Atomic void *c;
+            } node;
+            ''')
+
     def test_ternary(self):
         self._assert_ctoc_correct('''
             int main(void)

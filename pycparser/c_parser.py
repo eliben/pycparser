@@ -779,6 +779,13 @@ class CParser(PLYParser):
         """
         p[0] = self._add_declaration_specifier(p[2], p[1], 'function')
 
+    # This is a bit ugly, but we need to process atomic specifier before qualifiers
+    # for _Atomic(x) in typedefs.
+    def p_declaration_specifiers_no_type_4(self, p):
+        """ declaration_specifiers_no_type  : atomic_specifier declaration_specifiers_no_type_opt
+        """
+        p[0] = self._add_declaration_specifier(p[2], p[1], 'type')
+
     def p_declaration_specifiers_1(self, p):
         """ declaration_specifiers  : declaration_specifiers type_qualifier
         """
@@ -841,17 +848,18 @@ class CParser(PLYParser):
         """
         p[0] = c_ast.IdentifierType([p[1]], coord=self._token_coord(p, 1))
 
-    def p_type_specifier_1(self, p):
+    def p_type_specifier(self, p):
         """ type_specifier  : typedef_name
                             | enum_specifier
                             | struct_or_union_specifier
                             | type_specifier_no_typeid
+                            | atomic_specifier
         """
         p[0] = p[1]
 
     # See section 6.7.2.4 of the C11 standard.
-    def p_type_specifier_2(self, p):
-        """ type_specifier  : _ATOMIC LPAREN type_name RPAREN
+    def p_atomic_specifier(self, p):
+        """ atomic_specifier  : _ATOMIC LPAREN type_name RPAREN
         """
         typ = p[3]
         typ.quals.append('_Atomic')
