@@ -779,8 +779,8 @@ class CParser(PLYParser):
         """
         p[0] = self._add_declaration_specifier(p[2], p[1], 'function')
 
-    # This is a bit ugly, but we need to process atomic specifier before qualifiers
-    # for _Atomic(x) in typedefs.
+    # Withot this, `typedef _Atomic(T) U` will parse incorrectly because the
+    # _Atomic qualifier will match, instead of the specifier.
     def p_declaration_specifiers_no_type_4(self, p):
         """ declaration_specifiers_no_type  : atomic_specifier declaration_specifiers_no_type_opt
         """

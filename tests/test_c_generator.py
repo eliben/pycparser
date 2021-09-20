@@ -368,10 +368,6 @@ class TestCtoC(unittest.TestCase):
                          'const int')
 
     def test_atomic_qual(self):
-        #s = '_Atomic(_Atomic(int)*) x;'
-        #ast = parse_to_ast(s)
-        #print(c_generator.CGenerator().visit(ast))
-
         self._assert_ctoc_correct('_Atomic int x;')
         self._assert_ctoc_correct('_Atomic int* x;')
         self._assert_ctoc_correct('int* _Atomic x;')
@@ -392,7 +388,7 @@ class TestCtoC(unittest.TestCase):
         self.assertEqual(c3, '_Atomic int * _Atomic x;\n')
         self._assert_ctoc_correct(s3)
 
-        # FIXME: Regeneration with multiple qualifiers is not fully supported.
+        # TODO: Regeneration with multiple qualifiers is not fully supported.
         # REF: https://github.com/eliben/pycparser/issues/433
         # self._assert_ctoc_correct('auto const _Atomic(int *) a;')
 
