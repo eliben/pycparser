@@ -86,7 +86,7 @@ class NodeCfg(object):
         src = self._gen_init()
         src += '\n' + self._gen_children()
         src += '\n' + self._gen_iter()
-
+        src += '\n' + self._gen_eq()
         src += '\n' + self._gen_attr_names()
         return src
 
@@ -131,6 +131,22 @@ class NodeCfg(object):
             src += '        return tuple(nodelist)\n'
         else:
             src += '        return ()\n'
+
+        return src
+
+    def _gen_eq(self):
+        src  = '    def __eq__(self, o):\n'
+        src += '        if not o: return False\n'
+        src += '        if not isinstance(o, {}): return False\n'.format(self.name)
+
+        if self.all_entries:
+            for entry in self.all_entries:
+                src += '        if self.{0} != o.{0}: return False\n'.format(entry)
+
+        src += '        return True\n\n'
+
+        src += '    def __ne__(self, o):\n'
+        src += '        return not self == o\n'
 
         return src
 
