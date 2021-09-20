@@ -572,6 +572,20 @@ class TestCParser_fundamentals(TestCParser_base):
               'bar',
               ['TypeDecl', ['IdentifierType', ['int']]]])
 
+        # typedefs with _Atomic specifiers.
+        s = 'typedef _Atomic(int) atomic_int;'
+        self.assertEqual(self.get_decl(s, 0),
+            ['Typedef', 'atomic_int', ['TypeDecl', ['IdentifierType', ['int']]]])
+
+        s = 'typedef _Atomic(_Atomic(_Atomic(int (*)(void)) *) *) t;'
+        self.assertEqual(self.get_decl(s, 0),
+            ['Typedef', 't',
+             ['PtrDecl', ['_Atomic'],
+              ['PtrDecl', ['_Atomic'],
+               ['PtrDecl', ['_Atomic'],
+                ['FuncDecl', [['Typename', ['TypeDecl', ['IdentifierType', ['void']]]]],
+                 ['TypeDecl', ['IdentifierType', ['int']]]]]]]])
+
     def test_sizeof(self):
         e = """
             void foo()

@@ -392,6 +392,28 @@ class TestCtoC(unittest.TestCase):
         self.assertEqual(c3, '_Atomic int * _Atomic x;\n')
         self._assert_ctoc_correct(s3)
 
+        # FIXME: Regeneration with multiple qualifiers is not fully supported.
+        # REF: https://github.com/eliben/pycparser/issues/433
+        # self._assert_ctoc_correct('auto const _Atomic(int *) a;')
+
+        s4 = 'typedef _Atomic(int) atomic_int;'
+        c4 = self._run_c_to_c(s4)
+        self.assertEqual(c4, 'typedef _Atomic int atomic_int;\n')
+        self._assert_ctoc_correct(s4)
+
+        s5 = 'typedef _Atomic(_Atomic(_Atomic(int (*)(void)) *) *) t;'
+        c5 = self._run_c_to_c(s5)
+        self.assertEqual(c5, 'typedef int (* _Atomic * _Atomic * _Atomic t)(void);\n')
+        self._assert_ctoc_correct(s5)
+
+        self._assert_ctoc_correct(r'''
+            typedef struct node_t {
+                _Atomic(void*) a;
+                _Atomic(void) *b;
+                _Atomic void *c;
+            } node;
+            ''')
+
     def test_nested_sizeof(self):
         src = '1'
         for _ in range(30):
