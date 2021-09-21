@@ -426,7 +426,6 @@ class CParser(PLYParser):
                 declaration = c_ast.Typedef(
                     name=None,
                     quals=spec['qual'],
-                    align=spec['alignment'],
                     storage=spec['storage'],
                     type=decl['decl'],
                     coord=decl['decl'].coord)

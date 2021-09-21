@@ -1436,11 +1436,10 @@ class TypeDecl(Node):
     attr_names = ('declname', 'quals', 'align', )
 
 class Typedef(Node):
-    __slots__ = ('name', 'quals', 'align', 'storage', 'type', 'coord', '__weakref__')
-    def __init__(self, name, quals, align, storage, type, coord=None):
+    __slots__ = ('name', 'quals', 'storage', 'type', 'coord', '__weakref__')
+    def __init__(self, name, quals, storage, type, coord=None):
         self.name = name
         self.quals = quals
-        self.align = align
         self.storage = storage
         self.type = type
         self.coord = coord
@@ -1459,7 +1458,6 @@ class Typedef(Node):
         if not isinstance(o, Typedef): return False
         if self.name != o.name: return False
         if self.quals != o.quals: return False
-        if self.align != o.align: return False
         if self.storage != o.storage: return False
         if self.type != o.type: return False
         return True
@@ -1467,7 +1465,7 @@ class Typedef(Node):
     def __ne__(self, o):
         return not self == o
 
-    attr_names = ('name', 'quals', 'align', 'storage', )
+    attr_names = ('name', 'quals', 'storage', )
 
 class Typename(Node):
     __slots__ = ('name', 'quals', 'align', 'type', 'coord', '__weakref__')

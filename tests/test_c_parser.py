@@ -40,16 +40,21 @@ def expand_decl(decl):
             assert isinstance(decl.values, EnumeratorList)
             values = [enum.name for enum in decl.values.enumerators]
         return ['Enum', decl.name, values]
+    elif typ == Alignas:
+        return ['Alignas', expand_init(decl.alignment)]
     elif typ == StaticAssert:
         return ['StaticAssert', decl.cond.value, decl.message.value]
     else:
         nested = expand_decl(decl.type)
 
         if typ == Decl:
+            r = ['Decl']
             if decl.quals:
-                return ['Decl', decl.quals, decl.name, nested]
-            else:
-                return ['Decl', decl.name, nested]
+                r.append(decl.quals)
+            if decl.align:
+                r.append(expand_decl(decl.align[0]))
+            r.extend([decl.name, nested])
+            return r
         elif typ == Typename: # for function parameters
             if decl.quals:
                 return ['Typename', decl.quals, nested]
@@ -617,6 +622,12 @@ class TestCParser_fundamentals(TestCParser_base):
                     ['PtrDecl',
                         ['TypeDecl',
                             ['IdentifierType', ['int']]]]]])
+
+    def test_alignof(self):
+        self.assertEqual(expand_decl(self.parse('_Alignas(_Alignof(int)) char a;').ext[0]),
+            ['Decl', ['Alignas',
+                ['UnaryOp', '_Alignof', ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]]],
+                'a', ['TypeDecl', ['IdentifierType', ['char']]]])
 
     def test_offsetof(self):
         def expand_ref(n):
