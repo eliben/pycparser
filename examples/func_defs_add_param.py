@@ -39,7 +39,7 @@ class ParamAdder(c_ast.NodeVisitor):
             node.args.params.append(newdecl)
         else:
             node.args = c_ast.ParamList(params=[newdecl])
-        
+
 
 if __name__ == '__main__':
     parser = c_parser.CParser()
