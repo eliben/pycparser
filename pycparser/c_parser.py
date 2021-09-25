@@ -920,8 +920,7 @@ class CParser(PLYParser):
     def p_specifier_qualifier_list_4(self, p):
         """ specifier_qualifier_list  : type_qualifier_list type_specifier
         """
-        spec = dict(qual=p[1], storage=[], type=[], function=[])
-        p[0] = self._add_declaration_specifier(spec, p[2], 'type', append=True)
+        p[0] = dict(qual=p[1], storage=[], type=[p[2]], function=[])
 
     # TYPEID is allowed here (and in other struct/enum related tag names), because
     # struct/enum tags reside in their own namespace and can be named the same as types
