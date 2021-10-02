@@ -103,6 +103,8 @@ def expand_init(init):
         if init.block_items:
             blocks = [expand_init(i) for i in init.block_items]
         return ['Compound', blocks]
+    elif typ == Typename:
+        return expand_decl(init)
     else:
         # Fallback to type name
         return [typ.__name__]
@@ -624,9 +626,24 @@ class TestCParser_fundamentals(TestCParser_base):
                             ['IdentifierType', ['int']]]]]])
 
     def test_alignof(self):
+        r = self.parse('int a = _Alignof(int);')
+        self.assertEqual(expand_decl(r.ext[0]), ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['int']]]])
+        self.assertEqual(expand_init(r.ext[0].init), ['UnaryOp', '_Alignof',
+            ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]])
+
         self.assertEqual(expand_decl(self.parse('_Alignas(_Alignof(int)) char a;').ext[0]),
             ['Decl', ['Alignas',
                 ['UnaryOp', '_Alignof', ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]]],
+                'a', ['TypeDecl', ['IdentifierType', ['char']]]])
+
+        self.assertEqual(expand_decl(self.parse('_Alignas(4) char a;').ext[0]),
+            ['Decl', ['Alignas',
+                ['Constant', 'int', '4']],
+                'a', ['TypeDecl', ['IdentifierType', ['char']]]])
+
+        self.assertEqual(expand_decl(self.parse('_Alignas(int) char a;').ext[0]),
+            ['Decl', ['Alignas',
+                ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]],
                 'a', ['TypeDecl', ['IdentifierType', ['char']]]])
 
     def test_offsetof(self):
