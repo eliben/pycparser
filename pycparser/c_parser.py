@@ -310,11 +310,6 @@ class CParser(PLYParser):
         decl.name = type.declname
         type.quals = decl.quals[:]
 
-        for tn in typename:
-            if isinstance(tn, c_ast.Alignas):
-                type.align = tn
-                typename.remove(tn)
-
         # The typename is a list of types. If any type in this
         # list isn't an IdentifierType, it must be the only
         # type in the list (it's illegal to declare "int enum ..")
