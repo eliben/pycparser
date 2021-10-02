@@ -940,8 +940,7 @@ class CParser(PLYParser):
     def p_specifier_qualifier_list_5(self, p):
         """ specifier_qualifier_list  : alignment_specifier
         """
-        spec = dict(qual=[], alignment=[], storage=[], type=[], function=[])
-        p[0] = self._add_declaration_specifier(spec, p[1], 'alignment')
+        p[0] = dict(qual=[], alignment=[p[1]], storage=[], type=[], function=[])
 
     def p_specifier_qualifier_list_6(self, p):
         """ specifier_qualifier_list  : specifier_qualifier_list alignment_specifier
