@@ -43,7 +43,10 @@ def expand_decl(decl):
     elif typ == Alignas:
         return ['Alignas', expand_init(decl.alignment)]
     elif typ == StaticAssert:
-        return ['StaticAssert', decl.cond.value, decl.message.value]
+        if decl.message:
+            return ['StaticAssert', decl.cond.value, decl.message.value]
+        else:
+            return ['StaticAssert', decl.cond.value]
     else:
         nested = expand_decl(decl.type)
 
@@ -1644,11 +1647,13 @@ class TestCParser_fundamentals(TestCParser_base):
         int factorial(int p)
         {
             _Static_assert(2, "456");
+            _Static_assert(3);
         }
         ''')
 
         self.assertEqual(expand_decl(f1.ext[0]), ['StaticAssert', '1', '"123"'])
         self.assertEqual(expand_decl(f1.ext[1].body.block_items[0]), ['StaticAssert', '2', '"456"'])
+        self.assertEqual(expand_decl(f1.ext[1].body.block_items[2]), ['StaticAssert', '3'])
 
     def test_unified_string_literals(self):
         # simple string, for reference

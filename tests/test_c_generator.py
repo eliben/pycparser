@@ -458,6 +458,7 @@ class TestCtoC(unittest.TestCase):
     def test_static_assert(self):
         self._assert_ctoc_correct('_Static_assert(sizeof(int) == sizeof(int), "123");')
         self._assert_ctoc_correct('int main() { _Static_assert(sizeof(int) == sizeof(int), "123"); } ')
+        self._assert_ctoc_correct('_Static_assert(sizeof(int) == sizeof(int));')
 
     def test_reduce_parentheses_binaryops(self):
         c1 = 'int x = a + b + c + d;';
