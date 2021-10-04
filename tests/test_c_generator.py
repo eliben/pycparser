@@ -17,21 +17,39 @@ _c_parser = c_parser.CParser(
 
 
 def compare_asts(ast1, ast2):
+    """Compares two ASTs recursively just enough for the purpose of testing.
+
+    Since this function is recursive it also accepts non-ast parameters, in
+    which case it compares them literally (with ==) or recursively (for tuples
+    or lists).
+    """
+    # After the initial `if`, all the `elif` clauses assume that the types of
+    # ast1 and ast2 are the same.
     if type(ast1) != type(ast2):
         return False
-    if isinstance(ast1, tuple) and isinstance(ast2, tuple):
-        if ast1[0] != ast2[0]:
+    elif isinstance(ast1, (list, tuple)):
+        if len(ast1) != len(ast2):
             return False
-        ast1 = ast1[1]
-        ast2 = ast2[1]
-        return compare_asts(ast1, ast2)
-    for attr in ast1.attr_names:
-        if getattr(ast1, attr) != getattr(ast2, attr):
+        for i in range(len(ast1)):
+            if not compare_asts(ast1[i], ast2[i]):
+                return False
+        return True
+    elif isinstance(ast1, c_ast.Node):
+        for attr in ast1.attr_names:
+            attr1 = getattr(ast1, attr)
+            attr2 = getattr(ast2, attr)
+            if not compare_asts(attr1, attr2):
+                return False
+        children1 = ast1.children()
+        children2 = ast2.children()
+        if len(children1) != len(children2):
             return False
-    for i, c1 in enumerate(ast1.children()):
-        if compare_asts(c1, ast2.children()[i]) == False:
-            return False
-    return True
+        for i in range(len(children1)):
+            if not compare_asts(children1[i], children2[i]):
+                return False
+        return True
+    else:
+        return ast1 == ast2
 
 
 def parse_to_ast(src):
@@ -96,26 +114,25 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct('int test(const char* const* arg);')
         self._assert_ctoc_correct('int test(const char** const arg);')
 
-    # FIXME: These require custom equality comparison.
-    # def test_alignment(self):
-    #     self._assert_ctoc_correct('_Alignas(32) int b;')
-    #     self._assert_ctoc_correct('int _Alignas(32) a;')
-    #     self._assert_ctoc_correct('_Alignas(32) _Atomic(int) b;')
-    #     self._assert_ctoc_correct('_Atomic(int) _Alignas(32) b;')
-    #     self._assert_ctoc_correct('_Alignas(long long) int a;')
-    #     self._assert_ctoc_correct('int _Alignas(long long) a;')
-    #     self._assert_ctoc_correct(r'''
-    #         typedef struct node_t {
-    #             _Alignas(64) void* next;
-    #             int data;
-    #         } node;
-    #         ''')
-    #     self._assert_ctoc_correct(r'''
-    #         typedef struct node_t {
-    #             void _Alignas(64) * next;
-    #             int data;
-    #         } node;
-    #         ''')
+    def test_alignment(self):
+        self._assert_ctoc_correct('_Alignas(32) int b;')
+        self._assert_ctoc_correct('int _Alignas(32) a;')
+        self._assert_ctoc_correct('_Alignas(32) _Atomic(int) b;')
+        self._assert_ctoc_correct('_Atomic(int) _Alignas(32) b;')
+        self._assert_ctoc_correct('_Alignas(long long) int a;')
+        self._assert_ctoc_correct('int _Alignas(long long) a;')
+        self._assert_ctoc_correct(r'''
+            typedef struct node_t {
+                _Alignas(64) void* next;
+                int data;
+            } node;
+            ''')
+        self._assert_ctoc_correct(r'''
+            typedef struct node_t {
+                void _Alignas(64) * next;
+                int data;
+            } node;
+            ''')
 
     def test_ternary(self):
         self._assert_ctoc_correct('''
