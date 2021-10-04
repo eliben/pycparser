@@ -139,6 +139,9 @@ class CLexer(object):
         'FLOAT_CONST', 'HEX_FLOAT_CONST',
         'CHAR_CONST',
         'WCHAR_CONST',
+        'U8CHAR_CONST',
+        'U16CHAR_CONST',
+        'U32CHAR_CONST',
 
         # String literals
         'STRING_LITERAL',
@@ -247,6 +250,9 @@ class CLexer(object):
     cconst_char = r"""([^'\\\n]|"""+escape_sequence+')'
     char_const = "'"+cconst_char+"'"
     wchar_const = 'L'+char_const
+    u8char_const = 'u8'+char_const
+    u16char_const = 'u'+char_const
+    u32char_const = 'U'+char_const
     multicharacter_constant = "'"+cconst_char+"{2,4}'"
     unmatched_quote = "('"+cconst_char+"*\\n)|('"+cconst_char+"*$)"
     bad_char_const = r"""('"""+cconst_char+"""[^'\n]+')|('')|('"""+bad_escape+r"""[^'\n]*')"""
@@ -490,6 +496,18 @@ class CLexer(object):
 
     @TOKEN(wchar_const)
     def t_WCHAR_CONST(self, t):
+        return t
+
+    @TOKEN(u8char_const)
+    def t_U8CHAR_CONST(self, t):
+        return t
+
+    @TOKEN(u16char_const)
+    def t_U16CHAR_CONST(self, t):
+        return t
+
+    @TOKEN(u32char_const)
+    def t_U32CHAR_CONST(self, t):
         return t
 
     @TOKEN(unmatched_quote)

@@ -1865,6 +1865,9 @@ class CParser(PLYParser):
     def p_constant_3(self, p):
         """ constant    : CHAR_CONST
                         | WCHAR_CONST
+                        | U8CHAR_CONST
+                        | U16CHAR_CONST
+                        | U32CHAR_CONST
         """
         p[0] = c_ast.Constant(
             'char', p[1], self._token_coord(p, 1))

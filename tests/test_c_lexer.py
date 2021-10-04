@@ -122,6 +122,9 @@ class TestCLexerNoErrors(unittest.TestCase):
     def test_char_constants(self):
         self.assertTokensTypes(r"""'x'""", ['CHAR_CONST'])
         self.assertTokensTypes(r"""L'x'""", ['WCHAR_CONST'])
+        self.assertTokensTypes(r"""u8'x'""", ['U8CHAR_CONST'])
+        self.assertTokensTypes(r"""u'x'""", ['U16CHAR_CONST'])
+        self.assertTokensTypes(r"""U'x'""", ['U32CHAR_CONST'])
         self.assertTokensTypes(r"""'\t'""", ['CHAR_CONST'])
         self.assertTokensTypes(r"""'\''""", ['CHAR_CONST'])
         self.assertTokensTypes(r"""'\?'""", ['CHAR_CONST'])

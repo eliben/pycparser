@@ -44,6 +44,11 @@ int main()
   char32_t *c32 = U"12345";
   char *u8 = u8"12345";
 
+  wchar_t wc = L'1';
+  char16_t c16c = u'1';
+  char32_t c32c = U'1';
+  char u8c = u8'1';
+
   printf("Flag: %d\n", flag);
   printf("Flag2: %d\n", flag2);
   func();
