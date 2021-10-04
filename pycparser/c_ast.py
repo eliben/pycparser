@@ -184,17 +184,6 @@ class ArrayDecl(Node):
         if self.dim is not None:
             yield self.dim
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, ArrayDecl): return False
-        if self.type != o.type: return False
-        if self.dim != o.dim: return False
-        if self.dim_quals != o.dim_quals: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ('dim_quals', )
 
 class ArrayRef(Node):
@@ -215,16 +204,6 @@ class ArrayRef(Node):
             yield self.name
         if self.subscript is not None:
             yield self.subscript
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, ArrayRef): return False
-        if self.name != o.name: return False
-        if self.subscript != o.subscript: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ()
 
@@ -248,17 +227,6 @@ class Assignment(Node):
         if self.rvalue is not None:
             yield self.rvalue
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Assignment): return False
-        if self.op != o.op: return False
-        if self.lvalue != o.lvalue: return False
-        if self.rvalue != o.rvalue: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ('op', )
 
 class Alignas(Node):
@@ -275,15 +243,6 @@ class Alignas(Node):
     def __iter__(self):
         if self.alignment is not None:
             yield self.alignment
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Alignas): return False
-        if self.alignment != o.alignment: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ()
 
@@ -307,17 +266,6 @@ class BinaryOp(Node):
         if self.right is not None:
             yield self.right
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, BinaryOp): return False
-        if self.op != o.op: return False
-        if self.left != o.left: return False
-        if self.right != o.right: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ('op', )
 
 class Break(Node):
@@ -331,14 +279,6 @@ class Break(Node):
     def __iter__(self):
         return
         yield
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Break): return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ()
 
@@ -362,16 +302,6 @@ class Case(Node):
         for child in (self.stmts or []):
             yield child
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Case): return False
-        if self.expr != o.expr: return False
-        if self.stmts != o.stmts: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class Cast(Node):
@@ -393,16 +323,6 @@ class Cast(Node):
         if self.expr is not None:
             yield self.expr
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Cast): return False
-        if self.to_type != o.to_type: return False
-        if self.expr != o.expr: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class Compound(Node):
@@ -420,15 +340,6 @@ class Compound(Node):
     def __iter__(self):
         for child in (self.block_items or []):
             yield child
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Compound): return False
-        if self.block_items != o.block_items: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ()
 
@@ -451,16 +362,6 @@ class CompoundLiteral(Node):
         if self.init is not None:
             yield self.init
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, CompoundLiteral): return False
-        if self.type != o.type: return False
-        if self.init != o.init: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class Constant(Node):
@@ -478,16 +379,6 @@ class Constant(Node):
         return
         yield
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Constant): return False
-        if self.type != o.type: return False
-        if self.value != o.value: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ('type', 'value', )
 
 class Continue(Node):
@@ -501,14 +392,6 @@ class Continue(Node):
     def __iter__(self):
         return
         yield
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Continue): return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ()
 
@@ -540,22 +423,6 @@ class Decl(Node):
         if self.bitsize is not None:
             yield self.bitsize
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Decl): return False
-        if self.name != o.name: return False
-        if self.quals != o.quals: return False
-        if self.align != o.align: return False
-        if self.storage != o.storage: return False
-        if self.funcspec != o.funcspec: return False
-        if self.type != o.type: return False
-        if self.init != o.init: return False
-        if self.bitsize != o.bitsize: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ('name', 'quals', 'align', 'storage', 'funcspec', )
 
 class DeclList(Node):
@@ -574,15 +441,6 @@ class DeclList(Node):
         for child in (self.decls or []):
             yield child
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, DeclList): return False
-        if self.decls != o.decls: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class Default(Node):
@@ -600,15 +458,6 @@ class Default(Node):
     def __iter__(self):
         for child in (self.stmts or []):
             yield child
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Default): return False
-        if self.stmts != o.stmts: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ()
 
@@ -631,16 +480,6 @@ class DoWhile(Node):
         if self.stmt is not None:
             yield self.stmt
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, DoWhile): return False
-        if self.cond != o.cond: return False
-        if self.stmt != o.stmt: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class EllipsisParam(Node):
@@ -655,14 +494,6 @@ class EllipsisParam(Node):
         return
         yield
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, EllipsisParam): return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class EmptyStatement(Node):
@@ -676,14 +507,6 @@ class EmptyStatement(Node):
     def __iter__(self):
         return
         yield
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, EmptyStatement): return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ()
 
@@ -703,16 +526,6 @@ class Enum(Node):
         if self.values is not None:
             yield self.values
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Enum): return False
-        if self.name != o.name: return False
-        if self.values != o.values: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ('name', )
 
 class Enumerator(Node):
@@ -730,16 +543,6 @@ class Enumerator(Node):
     def __iter__(self):
         if self.value is not None:
             yield self.value
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Enumerator): return False
-        if self.name != o.name: return False
-        if self.value != o.value: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ('name', )
 
@@ -759,15 +562,6 @@ class EnumeratorList(Node):
         for child in (self.enumerators or []):
             yield child
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, EnumeratorList): return False
-        if self.enumerators != o.enumerators: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class ExprList(Node):
@@ -786,15 +580,6 @@ class ExprList(Node):
         for child in (self.exprs or []):
             yield child
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, ExprList): return False
-        if self.exprs != o.exprs: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class FileAST(Node):
@@ -812,15 +597,6 @@ class FileAST(Node):
     def __iter__(self):
         for child in (self.ext or []):
             yield child
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, FileAST): return False
-        if self.ext != o.ext: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ()
 
@@ -851,18 +627,6 @@ class For(Node):
         if self.stmt is not None:
             yield self.stmt
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, For): return False
-        if self.init != o.init: return False
-        if self.cond != o.cond: return False
-        if self.next != o.next: return False
-        if self.stmt != o.stmt: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class FuncCall(Node):
@@ -884,16 +648,6 @@ class FuncCall(Node):
         if self.args is not None:
             yield self.args
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, FuncCall): return False
-        if self.name != o.name: return False
-        if self.args != o.args: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class FuncDecl(Node):
@@ -914,16 +668,6 @@ class FuncDecl(Node):
             yield self.args
         if self.type is not None:
             yield self.type
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, FuncDecl): return False
-        if self.args != o.args: return False
-        if self.type != o.type: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ()
 
@@ -951,17 +695,6 @@ class FuncDef(Node):
         for child in (self.param_decls or []):
             yield child
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, FuncDef): return False
-        if self.decl != o.decl: return False
-        if self.param_decls != o.param_decls: return False
-        if self.body != o.body: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class Goto(Node):
@@ -977,15 +710,6 @@ class Goto(Node):
     def __iter__(self):
         return
         yield
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Goto): return False
-        if self.name != o.name: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ('name', )
 
@@ -1003,15 +727,6 @@ class ID(Node):
         return
         yield
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, ID): return False
-        if self.name != o.name: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ('name', )
 
 class IdentifierType(Node):
@@ -1027,15 +742,6 @@ class IdentifierType(Node):
     def __iter__(self):
         return
         yield
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, IdentifierType): return False
-        if self.names != o.names: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ('names', )
 
@@ -1062,17 +768,6 @@ class If(Node):
         if self.iffalse is not None:
             yield self.iffalse
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, If): return False
-        if self.cond != o.cond: return False
-        if self.iftrue != o.iftrue: return False
-        if self.iffalse != o.iffalse: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class InitList(Node):
@@ -1091,15 +786,6 @@ class InitList(Node):
         for child in (self.exprs or []):
             yield child
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, InitList): return False
-        if self.exprs != o.exprs: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class Label(Node):
@@ -1117,16 +803,6 @@ class Label(Node):
     def __iter__(self):
         if self.stmt is not None:
             yield self.stmt
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Label): return False
-        if self.name != o.name: return False
-        if self.stmt != o.stmt: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ('name', )
 
@@ -1150,16 +826,6 @@ class NamedInitializer(Node):
         for child in (self.name or []):
             yield child
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, NamedInitializer): return False
-        if self.name != o.name: return False
-        if self.expr != o.expr: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class ParamList(Node):
@@ -1177,15 +843,6 @@ class ParamList(Node):
     def __iter__(self):
         for child in (self.params or []):
             yield child
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, ParamList): return False
-        if self.params != o.params: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ()
 
@@ -1205,16 +862,6 @@ class PtrDecl(Node):
         if self.type is not None:
             yield self.type
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, PtrDecl): return False
-        if self.quals != o.quals: return False
-        if self.type != o.type: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ('quals', )
 
 class Return(Node):
@@ -1231,15 +878,6 @@ class Return(Node):
     def __iter__(self):
         if self.expr is not None:
             yield self.expr
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Return): return False
-        if self.expr != o.expr: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ()
 
@@ -1262,16 +900,6 @@ class StaticAssert(Node):
         if self.message is not None:
             yield self.message
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, StaticAssert): return False
-        if self.cond != o.cond: return False
-        if self.message != o.message: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class Struct(Node):
@@ -1290,16 +918,6 @@ class Struct(Node):
     def __iter__(self):
         for child in (self.decls or []):
             yield child
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Struct): return False
-        if self.name != o.name: return False
-        if self.decls != o.decls: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ('name', )
 
@@ -1323,17 +941,6 @@ class StructRef(Node):
         if self.field is not None:
             yield self.field
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, StructRef): return False
-        if self.name != o.name: return False
-        if self.type != o.type: return False
-        if self.field != o.field: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ('type', )
 
 class Switch(Node):
@@ -1354,16 +961,6 @@ class Switch(Node):
             yield self.cond
         if self.stmt is not None:
             yield self.stmt
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Switch): return False
-        if self.cond != o.cond: return False
-        if self.stmt != o.stmt: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ()
 
@@ -1390,17 +987,6 @@ class TernaryOp(Node):
         if self.iffalse is not None:
             yield self.iffalse
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, TernaryOp): return False
-        if self.cond != o.cond: return False
-        if self.iftrue != o.iftrue: return False
-        if self.iffalse != o.iffalse: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class TypeDecl(Node):
@@ -1420,18 +1006,6 @@ class TypeDecl(Node):
     def __iter__(self):
         if self.type is not None:
             yield self.type
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, TypeDecl): return False
-        if self.declname != o.declname: return False
-        if self.quals != o.quals: return False
-        if self.align != o.align: return False
-        if self.type != o.type: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ('declname', 'quals', 'align', )
 
@@ -1453,18 +1027,6 @@ class Typedef(Node):
         if self.type is not None:
             yield self.type
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Typedef): return False
-        if self.name != o.name: return False
-        if self.quals != o.quals: return False
-        if self.storage != o.storage: return False
-        if self.type != o.type: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ('name', 'quals', 'storage', )
 
 class Typename(Node):
@@ -1485,18 +1047,6 @@ class Typename(Node):
         if self.type is not None:
             yield self.type
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Typename): return False
-        if self.name != o.name: return False
-        if self.quals != o.quals: return False
-        if self.align != o.align: return False
-        if self.type != o.type: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ('name', 'quals', 'align', )
 
 class UnaryOp(Node):
@@ -1514,16 +1064,6 @@ class UnaryOp(Node):
     def __iter__(self):
         if self.expr is not None:
             yield self.expr
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, UnaryOp): return False
-        if self.op != o.op: return False
-        if self.expr != o.expr: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ('op', )
 
@@ -1543,16 +1083,6 @@ class Union(Node):
     def __iter__(self):
         for child in (self.decls or []):
             yield child
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Union): return False
-        if self.name != o.name: return False
-        if self.decls != o.decls: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ('name', )
 
@@ -1575,16 +1105,6 @@ class While(Node):
         if self.stmt is not None:
             yield self.stmt
 
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, While): return False
-        if self.cond != o.cond: return False
-        if self.stmt != o.stmt: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
-
     attr_names = ()
 
 class Pragma(Node):
@@ -1600,15 +1120,6 @@ class Pragma(Node):
     def __iter__(self):
         return
         yield
-
-    def __eq__(self, o):
-        if not o: return False
-        if not isinstance(o, Pragma): return False
-        if self.string != o.string: return False
-        return True
-
-    def __ne__(self, o):
-        return not self == o
 
     attr_names = ('string', )
 
