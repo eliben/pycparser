@@ -143,6 +143,9 @@ class CLexer(object):
         # String literals
         'STRING_LITERAL',
         'WSTRING_LITERAL',
+        'U8STRING_LITERAL',
+        'U16STRING_LITERAL',
+        'U32STRING_LITERAL',
 
         # Operators
         'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD',
@@ -252,6 +255,9 @@ class CLexer(object):
     string_char = r"""([^"\\\n]|"""+escape_sequence_start_in_string+')'
     string_literal = '"'+string_char+'*"'
     wstring_literal = 'L'+string_literal
+    u8string_literal = 'u8'+string_literal
+    u16string_literal = 'u'+string_literal
+    u32string_literal = 'U'+string_literal
     bad_string_literal = '"'+string_char+'*'+bad_escape+string_char+'*"'
 
     # floating constants (K&R2: A.2.5.3)
@@ -498,6 +504,18 @@ class CLexer(object):
 
     @TOKEN(wstring_literal)
     def t_WSTRING_LITERAL(self, t):
+        return t
+
+    @TOKEN(u8string_literal)
+    def t_U8STRING_LITERAL(self, t):
+        return t
+
+    @TOKEN(u16string_literal)
+    def t_U16STRING_LITERAL(self, t):
+        return t
+
+    @TOKEN(u32string_literal)
+    def t_U32STRING_LITERAL(self, t):
         return t
 
     # unmatched string literals are caught by the preprocessor

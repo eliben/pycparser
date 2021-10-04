@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdatomic.h>
 #include <stdalign.h>
+#include <wchar.h>
 
 /* C11 thread locals */
 _Thread_local int flag;
@@ -37,6 +38,11 @@ int main()
   static_assert(sizeof(flag) == sizeof(flag4), "Unexpected size difference");
   static_assert(_Alignof(int) == sizeof(int), "Unexpected int alignment");
   static_assert(alignof(int) == sizeof(int), "Unexpected int alignment");
+
+  wchar_t *w = L"12345";
+  char16_t *c16 = u"12345";
+  char32_t *c32 = U"12345";
+  char *u8 = u8"12345";
 
   printf("Flag: %d\n", flag);
   printf("Flag2: %d\n", flag2);

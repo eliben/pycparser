@@ -147,6 +147,9 @@ class TestCLexerNoErrors(unittest.TestCase):
     def test_string_literal(self):
         self.assertTokensTypes('"a string"', ['STRING_LITERAL'])
         self.assertTokensTypes('L"ing"', ['WSTRING_LITERAL'])
+        self.assertTokensTypes('u8"ing"', ['U8STRING_LITERAL'])
+        self.assertTokensTypes('u"ing"', ['U16STRING_LITERAL'])
+        self.assertTokensTypes('U"ing"', ['U32STRING_LITERAL'])
         self.assertTokensTypes(
             '"i am a string too \t"',
             ['STRING_LITERAL'])

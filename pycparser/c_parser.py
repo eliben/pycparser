@@ -1887,7 +1887,13 @@ class CParser(PLYParser):
 
     def p_unified_wstring_literal(self, p):
         """ unified_wstring_literal : WSTRING_LITERAL
+                                    | U8STRING_LITERAL
+                                    | U16STRING_LITERAL
+                                    | U32STRING_LITERAL
                                     | unified_wstring_literal WSTRING_LITERAL
+                                    | unified_wstring_literal U8STRING_LITERAL
+                                    | unified_wstring_literal U16STRING_LITERAL
+                                    | unified_wstring_literal U32STRING_LITERAL
         """
         if len(p) == 2: # single literal
             p[0] = c_ast.Constant(
