@@ -4,6 +4,7 @@
 #include <threads.h>
 #include <assert.h>
 #include <stdatomic.h>
+#include <stdalign.h>
 
 /* C11 thread locals */
 _Thread_local int flag;
@@ -12,6 +13,9 @@ _Atomic int flag3;
 _Atomic(int) flag4;
 _Atomic(_Atomic(int) *) flag5;
 atomic_bool flag6;
+_Alignas(32) int q32;
+_Alignas(long long) int qll;
+alignas(64) int qqq;
 
 static_assert(sizeof(flag) == sizeof(flag2), "Really unexpected size difference");
 
@@ -31,6 +35,8 @@ int main()
   static_assert(sizeof(flag) == sizeof(flag2), "Unexpected size difference");
   static_assert(sizeof(flag) == sizeof(flag3), "Unexpected size difference");
   static_assert(sizeof(flag) == sizeof(flag4), "Unexpected size difference");
+  static_assert(_Alignof(int) == sizeof(int), "Unexpected int alignment");
+  static_assert(alignof(int) == sizeof(int), "Unexpected int alignment");
 
   printf("Flag: %d\n", flag);
   printf("Flag2: %d\n", flag2);

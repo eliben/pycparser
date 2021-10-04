@@ -40,16 +40,21 @@ def expand_decl(decl):
             assert isinstance(decl.values, EnumeratorList)
             values = [enum.name for enum in decl.values.enumerators]
         return ['Enum', decl.name, values]
+    elif typ == Alignas:
+        return ['Alignas', expand_init(decl.alignment)]
     elif typ == StaticAssert:
         return ['StaticAssert', decl.cond.value, decl.message.value]
     else:
         nested = expand_decl(decl.type)
 
         if typ == Decl:
+            r = ['Decl']
             if decl.quals:
-                return ['Decl', decl.quals, decl.name, nested]
-            else:
-                return ['Decl', decl.name, nested]
+                r.append(decl.quals)
+            if decl.align:
+                r.append(expand_decl(decl.align[0]))
+            r.extend([decl.name, nested])
+            return r
         elif typ == Typename: # for function parameters
             if decl.quals:
                 return ['Typename', decl.quals, nested]
@@ -98,6 +103,8 @@ def expand_init(init):
         if init.block_items:
             blocks = [expand_init(i) for i in init.block_items]
         return ['Compound', blocks]
+    elif typ == Typename:
+        return expand_decl(init)
     else:
         # Fallback to type name
         return [typ.__name__]
@@ -617,6 +624,27 @@ class TestCParser_fundamentals(TestCParser_base):
                     ['PtrDecl',
                         ['TypeDecl',
                             ['IdentifierType', ['int']]]]]])
+
+    def test_alignof(self):
+        r = self.parse('int a = _Alignof(int);')
+        self.assertEqual(expand_decl(r.ext[0]), ['Decl', 'a', ['TypeDecl', ['IdentifierType', ['int']]]])
+        self.assertEqual(expand_init(r.ext[0].init), ['UnaryOp', '_Alignof',
+            ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]])
+
+        self.assertEqual(expand_decl(self.parse('_Alignas(_Alignof(int)) char a;').ext[0]),
+            ['Decl', ['Alignas',
+                ['UnaryOp', '_Alignof', ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]]],
+                'a', ['TypeDecl', ['IdentifierType', ['char']]]])
+
+        self.assertEqual(expand_decl(self.parse('_Alignas(4) char a;').ext[0]),
+            ['Decl', ['Alignas',
+                ['Constant', 'int', '4']],
+                'a', ['TypeDecl', ['IdentifierType', ['char']]]])
+
+        self.assertEqual(expand_decl(self.parse('_Alignas(int) char a;').ext[0]),
+            ['Decl', ['Alignas',
+                ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]],
+                'a', ['TypeDecl', ['IdentifierType', ['char']]]])
 
     def test_offsetof(self):
         def expand_ref(n):

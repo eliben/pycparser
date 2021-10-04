@@ -29,6 +29,7 @@ class ParamAdder(c_ast.NodeVisitor):
         newdecl = c_ast.Decl(
                     name='_hidden',
                     quals=[],
+                    align=[],
                     storage=[],
                     funcspec=[],
                     type=ty,

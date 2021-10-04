@@ -251,4 +251,10 @@
 #define ATOMIC_FLAG_INIT { 0 }
 #define kill_dependency(y) (y)
 
+/* C11 stdalign.h defines */
+#define alignas _Alignas
+#define alignof _Alignof
+#define __alignas_is_defined 1
+#define __alignof_is_defined 1
+
 #endif

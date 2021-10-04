@@ -229,6 +229,23 @@ class Assignment(Node):
 
     attr_names = ('op', )
 
+class Alignas(Node):
+    __slots__ = ('alignment', 'coord', '__weakref__')
+    def __init__(self, alignment, coord=None):
+        self.alignment = alignment
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.alignment is not None: nodelist.append(("alignment", self.alignment))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.alignment is not None:
+            yield self.alignment
+
+    attr_names = ()
+
 class BinaryOp(Node):
     __slots__ = ('op', 'left', 'right', 'coord', '__weakref__')
     def __init__(self, op, left, right, coord=None):
@@ -379,10 +396,11 @@ class Continue(Node):
     attr_names = ()
 
 class Decl(Node):
-    __slots__ = ('name', 'quals', 'storage', 'funcspec', 'type', 'init', 'bitsize', 'coord', '__weakref__')
-    def __init__(self, name, quals, storage, funcspec, type, init, bitsize, coord=None):
+    __slots__ = ('name', 'quals', 'align', 'storage', 'funcspec', 'type', 'init', 'bitsize', 'coord', '__weakref__')
+    def __init__(self, name, quals, align, storage, funcspec, type, init, bitsize, coord=None):
         self.name = name
         self.quals = quals
+        self.align = align
         self.storage = storage
         self.funcspec = funcspec
         self.type = type
@@ -405,7 +423,7 @@ class Decl(Node):
         if self.bitsize is not None:
             yield self.bitsize
 
-    attr_names = ('name', 'quals', 'storage', 'funcspec', )
+    attr_names = ('name', 'quals', 'align', 'storage', 'funcspec', )
 
 class DeclList(Node):
     __slots__ = ('decls', 'coord', '__weakref__')
@@ -972,10 +990,11 @@ class TernaryOp(Node):
     attr_names = ()
 
 class TypeDecl(Node):
-    __slots__ = ('declname', 'quals', 'type', 'coord', '__weakref__')
-    def __init__(self, declname, quals, type, coord=None):
+    __slots__ = ('declname', 'quals', 'align', 'type', 'coord', '__weakref__')
+    def __init__(self, declname, quals, align, type, coord=None):
         self.declname = declname
         self.quals = quals
+        self.align = align
         self.type = type
         self.coord = coord
 
@@ -988,7 +1007,7 @@ class TypeDecl(Node):
         if self.type is not None:
             yield self.type
 
-    attr_names = ('declname', 'quals', )
+    attr_names = ('declname', 'quals', 'align', )
 
 class Typedef(Node):
     __slots__ = ('name', 'quals', 'storage', 'type', 'coord', '__weakref__')
@@ -1011,10 +1030,11 @@ class Typedef(Node):
     attr_names = ('name', 'quals', 'storage', )
 
 class Typename(Node):
-    __slots__ = ('name', 'quals', 'type', 'coord', '__weakref__')
-    def __init__(self, name, quals, type, coord=None):
+    __slots__ = ('name', 'quals', 'align', 'type', 'coord', '__weakref__')
+    def __init__(self, name, quals, align, type, coord=None):
         self.name = name
         self.quals = quals
+        self.align = align
         self.type = type
         self.coord = coord
 
@@ -1027,7 +1047,7 @@ class Typename(Node):
         if self.type is not None:
             yield self.type
 
-    attr_names = ('name', 'quals', )
+    attr_names = ('name', 'quals', 'align', )
 
 class UnaryOp(Node):
     __slots__ = ('op', 'expr', 'coord', '__weakref__')

@@ -111,7 +111,8 @@ class CLexer(object):
 
     keywords_new = (
         '_BOOL', '_COMPLEX',
-        '_NORETURN', '_THREAD_LOCAL', '_STATIC_ASSERT', '_ATOMIC',
+        '_NORETURN', '_THREAD_LOCAL', '_STATIC_ASSERT',
+        '_ATOMIC', '_ALIGNOF', '_ALIGNAS',
         )
 
     keyword_map = {}
