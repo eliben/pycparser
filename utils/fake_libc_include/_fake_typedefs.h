@@ -42,6 +42,8 @@ typedef int __ULong;
 typedef int __FILE;
 typedef int ptrdiff_t;
 typedef int wchar_t;
+typedef int char16_t;
+typedef int char32_t;
 typedef int __off_t;
 typedef int __pid_t;
 typedef int __loff_t;

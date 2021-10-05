@@ -1865,6 +1865,9 @@ class CParser(PLYParser):
     def p_constant_3(self, p):
         """ constant    : CHAR_CONST
                         | WCHAR_CONST
+                        | U8CHAR_CONST
+                        | U16CHAR_CONST
+                        | U32CHAR_CONST
         """
         p[0] = c_ast.Constant(
             'char', p[1], self._token_coord(p, 1))
@@ -1887,7 +1890,13 @@ class CParser(PLYParser):
 
     def p_unified_wstring_literal(self, p):
         """ unified_wstring_literal : WSTRING_LITERAL
+                                    | U8STRING_LITERAL
+                                    | U16STRING_LITERAL
+                                    | U32STRING_LITERAL
                                     | unified_wstring_literal WSTRING_LITERAL
+                                    | unified_wstring_literal U8STRING_LITERAL
+                                    | unified_wstring_literal U16STRING_LITERAL
+                                    | unified_wstring_literal U32STRING_LITERAL
         """
         if len(p) == 2: # single literal
             p[0] = c_ast.Constant(
