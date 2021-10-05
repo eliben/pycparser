@@ -33,6 +33,7 @@ _Noreturn void func(void)
 int main()
 {
   _Static_assert(sizeof(flag) == sizeof(flag2), "Unexpected size difference");
+  _Static_assert(sizeof(flag) == sizeof(flag2));
   static_assert(sizeof(flag) == sizeof(flag2), "Unexpected size difference");
   static_assert(sizeof(flag) == sizeof(flag3), "Unexpected size difference");
   static_assert(sizeof(flag) == sizeof(flag4), "Unexpected size difference");

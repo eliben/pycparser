@@ -560,8 +560,12 @@ class CParser(PLYParser):
 
     def p_static_assert_declaration(self, p):
         """ static_assert           : _STATIC_ASSERT LPAREN constant_expression COMMA unified_string_literal RPAREN
+                                    | _STATIC_ASSERT LPAREN constant_expression RPAREN
         """
-        p[0] = [c_ast.StaticAssert(p[3], p[5], self._token_coord(p, 1))]
+        if len(p) == 5:
+            p[0] = [c_ast.StaticAssert(p[3], None, self._token_coord(p, 1))]
+        else:
+            p[0] = [c_ast.StaticAssert(p[3], p[5], self._token_coord(p, 1))]
 
     def p_pp_directive(self, p):
         """ pp_directive  : PPHASH

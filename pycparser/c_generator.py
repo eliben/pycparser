@@ -292,8 +292,9 @@ class CGenerator(object):
     def visit_StaticAssert(self, n):
         s = '_Static_assert('
         s += self.visit(n.cond)
-        s += ','
-        s += self.visit(n.message)
+        if n.message:
+            s += ','
+            s += self.visit(n.message)
         s += ')'
         return s
 
