@@ -20,7 +20,7 @@ import sys
 #
 sys.path.extend(['.', '..'])
 
-from pycparser import c_parser, c_ast
+from pycparser import c_parser
 
 # This is some C source to parse. Note that pycparser must begin
 # at the top level of the C file, i.e. with either declarations

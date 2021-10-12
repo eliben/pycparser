@@ -1,7 +1,6 @@
 from __future__ import print_function
 
-import sys
-from pycparser import c_parser, c_generator, c_ast, parse_file
+from pycparser import c_parser, c_generator
 
 
 if __name__ == "__main__":

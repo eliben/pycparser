@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import pprint
-import re
 import os, sys
 import io
 import unittest
@@ -10,7 +8,7 @@ sys.path[0:0] = ['.', '..']
 
 from pycparser import c_parser
 from pycparser.c_ast import *
-from pycparser.c_parser import CParser, Coord, ParseError
+from pycparser.c_parser import ParseError
 
 _c_parser = c_parser.CParser(
                 lex_optimize=False,
