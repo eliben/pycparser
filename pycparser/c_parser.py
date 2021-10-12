@@ -1221,7 +1221,7 @@ class CParser(PLYParser):
         arr = c_ast.ArrayDecl(
             type=None,
             dim=c_ast.ID(p[4], self._token_coord(p, 4)),
-            dim_quals=p[3] if p[3] != None else [],
+            dim_quals=p[3] if p[3] is not None else [],
             coord=p[1].coord)
 
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
