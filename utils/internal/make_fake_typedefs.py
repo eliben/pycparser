@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 sys.path.insert(0, '../..')
 
@@ -6,7 +7,7 @@ from pycparser import c_parser, c_ast, parse_file
 
 class MyVisitor(c_ast.NodeVisitor):
     def visit_Typedef(self, node):
-        print 'typedef int %s;' % node.name
+        print('typedef int %s;' % node.name)
 
 
 
