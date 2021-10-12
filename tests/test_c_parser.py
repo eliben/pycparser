@@ -729,7 +729,7 @@ class TestCParser_fundamentals(TestCParser_base):
     def test_parenthesized_compounds(self):
         e = self.parse(r'''
         void foo() {
-         	int a;
+            int a;
             ({});
             ({ 1; });
             ({ 1; 2; });
