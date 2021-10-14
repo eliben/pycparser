@@ -3652,7 +3652,7 @@ struct Btree {
   sqlite3 *db;
   BtShared *pBt;
   u8 inTrans;
-  u8 sharable;
+  u8 shareable;
   u8 locked;
   u8 hasIncrblobCur;
   int wantToLock;
@@ -3785,7 +3785,7 @@ static int querySharedCacheTableLock(Btree *p, Pgno iTab, u8 eLock){
   assert( eLock==1 || pBt->inTransaction==2 );
 
 
-  if( !p->sharable ){
+  if( !p->shareable ){
     return 0;
   }
 
@@ -3830,7 +3830,7 @@ static int setSharedCacheTableLock(Btree *p, Pgno iTable, u8 eLock){
 
 
 
-  assert( p->sharable );
+  assert( p->shareable );
   assert( 0==querySharedCacheTableLock(p, iTable, eLock) );
 
 
@@ -3872,7 +3872,7 @@ static void clearAllSharedCacheTableLocks(Btree *p){
   BtLock **ppIter = &pBt->pLock;
 
   assert( sqlite3BtreeHoldsMutex(p) );
-  assert( p->sharable || 0==*ppIter );
+  assert( p->shareable || 0==*ppIter );
   assert( p->inTrans>0 );
 
   while( *ppIter ){
@@ -5378,7 +5378,7 @@ int sqlite3BtreeOpen(
       char *zFullPathname = sqlite3Malloc(((nFullPathname)>(nFilename)?(nFullPathname):(nFilename)));
       sqlite3_mutex *mutexShared;
 
-      p->sharable = 1;
+      p->shareable = 1;
       if( !zFullPathname ){
         sqlite3_free(p);
         return 7;
@@ -5498,7 +5498,7 @@ int sqlite3BtreeOpen(
 
 
     pBt->nRef = 1;
-    if( p->sharable ){
+    if( p->shareable ){
       sqlite3_mutex *mutexShared;
       mutexShared = sqlite3MutexAlloc(2);
       if( 1 && sqlite3Config.bCoreMutex ){
@@ -5521,11 +5521,11 @@ int sqlite3BtreeOpen(
 
 
 
-  if( p->sharable ){
+  if( p->shareable ){
     int i;
     Btree *pSib;
     for(i=0; i<db->nDb; i++){
-      if( (pSib = db->aDb[i].pBt)!=0 && pSib->sharable ){
+      if( (pSib = db->aDb[i].pBt)!=0 && pSib->shareable ){
         while( pSib->pPrev ){ pSib = pSib->pPrev; }
         if( (uptr)p->pBt<(uptr)pSib->pBt ){
           p->pNext = pSib;
@@ -5679,7 +5679,7 @@ int sqlite3BtreeClose(Btree *p){
 
 
   assert( p->wantToLock==0 && p->locked==0 );
-  if( !p->sharable || removeFromSharingList(pBt) ){
+  if( !p->shareable || removeFromSharingList(pBt) ){
 
 
 
@@ -6193,7 +6193,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
     if( p->inTrans==0 ){
       pBt->nTransaction++;
 
-      if( p->sharable ){
+      if( p->shareable ){
         assert( p->lock.pBtree==p && p->lock.iTable==1 );
         p->lock.eLock = 1;
         p->lock.pNext = pBt->pLock;
@@ -11268,7 +11268,7 @@ int sqlite3BtreeSchemaLocked(Btree *p){
 int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
   int rc = 0;
   assert( p->inTrans!=0 );
-  if( p->sharable ){
+  if( p->shareable ){
     u8 lockType = 1 + isWriteLock;
     assert( 1 +1==2 );
     assert( isWriteLock==0 || isWriteLock==1 );
@@ -11383,7 +11383,7 @@ int sqlite3HeaderSizeBtree(void){ return (((sizeof(MemPage))+7)&~7); }
 
 
 int sqlite3BtreeSharable(Btree *p){
-  return p->sharable;
+  return p->shareable;
 }
 
 

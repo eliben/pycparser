@@ -97,11 +97,11 @@ class CGenerator(object):
         #
         # If `n.left.op` has a stronger or equally binding precedence in
         # comparison to `n.op`, no parenthesis are needed for the left:
-        # e.g., `(a*b) + c` is equivelent to `a*b + c`, as well as
-        #       `(a+b) - c` is equivelent to `a+b - c` (same precedence).
+        # e.g., `(a*b) + c` is equivalent to `a*b + c`, as well as
+        #       `(a+b) - c` is equivalent to `a+b - c` (same precedence).
         # If the left operator is weaker binding than the current, then
         # parentheses are necessary:
-        # e.g., `(a+b) * c` is NOT equivelent to `a+b * c`.
+        # e.g., `(a+b) * c` is NOT equivalent to `a+b * c`.
         lval_str = self._parenthesize_if(
             n.left,
             lambda d: not (self._is_simple_node(d) or
@@ -109,11 +109,11 @@ class CGenerator(object):
                       self.precedence_map[d.op] >= self.precedence_map[n.op]))
         # If `n.right.op` has a stronger -but not equal- binding precedence,
         # parenthesis can be omitted on the right:
-        # e.g., `a + (b*c)` is equivelent to `a + b*c`.
+        # e.g., `a + (b*c)` is equivalent to `a + b*c`.
         # If the right operator is weaker or equally binding, then parentheses
         # are necessary:
-        # e.g., `a * (b+c)` is NOT equivelent to `a * b+c` and
-        #       `a - (b+c)` is NOT equivelent to `a - b+c` (same precedence).
+        # e.g., `a * (b+c)` is NOT equivalent to `a * b+c` and
+        #       `a - (b+c)` is NOT equivalent to `a - b+c` (same precedence).
         rval_str = self._parenthesize_if(
             n.right,
             lambda d: not (self._is_simple_node(d) or
