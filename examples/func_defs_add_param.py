@@ -8,7 +8,6 @@
 # License: BSD
 #-----------------------------------------------------------------
 from __future__ import print_function
-import sys
 
 from pycparser import c_parser, c_ast, c_generator
 

@@ -1,5 +1,5 @@
 from __future__ import print_function
-from pycparser import parse_file, c_parser, c_generator
+from pycparser import c_parser, c_generator
 
 if __name__ == '__main__':
     src = r'''

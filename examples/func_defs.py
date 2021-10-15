@@ -17,7 +17,7 @@ import sys
 # your site-packages/ with setup.py
 sys.path.extend(['.', '..'])
 
-from pycparser import c_parser, c_ast, parse_file
+from pycparser import c_ast, parse_file
 
 
 # A simple visitor for FuncDef nodes that prints the names and

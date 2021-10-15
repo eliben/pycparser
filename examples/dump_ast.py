@@ -14,7 +14,7 @@ import sys
 # your site-packages/ with setup.py
 sys.path.extend(['.', '..'])
 
-from pycparser import c_parser, c_ast, parse_file
+from pycparser import parse_file
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser('Dump AST')

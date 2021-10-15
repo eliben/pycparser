@@ -1,5 +1,3 @@
-import pprint
-import re
 import sys
 import unittest
 import weakref

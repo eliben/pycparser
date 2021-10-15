@@ -6,13 +6,11 @@
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 #------------------------------------------------------------------------------
-import re
-
 from .ply import yacc
 
 from . import c_ast
 from .c_lexer import CLexer
-from .plyparser import PLYParser, Coord, ParseError, parameterized, template
+from .plyparser import PLYParser, ParseError, parameterized, template
 from .ast_transforms import fix_switch_cases, fix_atomic_specifiers
 
 
@@ -1221,7 +1219,7 @@ class CParser(PLYParser):
         arr = c_ast.ArrayDecl(
             type=None,
             dim=c_ast.ID(p[4], self._token_coord(p, 4)),
-            dim_quals=p[3] if p[3] != None else [],
+            dim_quals=p[3] if p[3] is not None else [],
             coord=p[1].coord)
 
         p[0] = self._type_modify_decl(decl=p[1], modifier=arr)

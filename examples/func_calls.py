@@ -14,7 +14,7 @@ import sys
 # your site-packages/ with setup.py
 sys.path.extend(['.', '..'])
 
-from pycparser import c_parser, c_ast, parse_file
+from pycparser import c_ast, parse_file
 
 
 # A visitor with some state information (the funcname it's looking for)

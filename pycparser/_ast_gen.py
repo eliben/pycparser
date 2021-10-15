@@ -10,7 +10,6 @@
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 #-----------------------------------------------------------------
-import pprint
 from string import Template
 
 
