@@ -24,6 +24,7 @@ class ParamAdder(c_ast.NodeVisitor):
     def visit_FuncDecl(self, node):
         ty = c_ast.TypeDecl(declname='_hidden',
                             quals=[],
+                            align=[],
                             type=c_ast.IdentifierType(['int']))
         newdecl = c_ast.Decl(
                     name='_hidden',
