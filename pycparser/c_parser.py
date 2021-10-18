@@ -529,7 +529,7 @@ class CParser(PLYParser):
     # Declarations always come as lists (because they can be
     # several in one line), so we wrap the function definition
     # into a list as well, to make the return value of
-    # external_declaration homogenous.
+    # external_declaration homogeneous.
     def p_external_declaration_1(self, p):
         """ external_declaration    : function_definition
         """
@@ -786,7 +786,7 @@ class CParser(PLYParser):
         """
         p[0] = self._add_declaration_specifier(p[2], p[1], 'function')
 
-    # Withot this, `typedef _Atomic(T) U` will parse incorrectly because the
+    # Without this, `typedef _Atomic(T) U` will parse incorrectly because the
     # _Atomic qualifier will match, instead of the specifier.
     def p_declaration_specifiers_no_type_4(self, p):
         """ declaration_specifiers_no_type  : atomic_specifier declaration_specifiers_no_type_opt
