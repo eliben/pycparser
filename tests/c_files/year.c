@@ -12,8 +12,8 @@ void convert(int thousands, int hundreds, int tens, int ones)
 char *num[] = {"", "One", "Two", "Three", "Four", "Five", "Six",
 	       "Seven", "Eight", "Nine"};
 
-char *for_ten[] = {"", "", "Twenty", "Thirty", "Fourty", "Fifty", "Sixty",
-		   "Seventy", "Eighty", "Ninty"};
+char *for_ten[] = {"", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty",
+		   "Seventy", "Eighty", "Ninety"};
 
 char *af_ten[] = {"Ten", "Eleven", "Twelve", "Thirteen", "Fourteen",
 		  "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Ninteen"};

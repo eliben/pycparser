@@ -177,7 +177,7 @@ class TestCParser_fundamentals(TestCParser_base):
     def test_coords(self):
         """ Tests the "coordinates" of parsed elements - file
             name, line and column numbers, with modification
-            insterted by #line directives.
+            inserted by #line directives.
         """
         self.assert_coord(self.parse('int a;').ext[0], 1, 5)
 
@@ -1169,7 +1169,7 @@ class TestCParser_fundamentals(TestCParser_base):
                             ['TypeDecl',
                                 ['IdentifierType', ['float']]]]]]]])
 
-        # ISO/IEC 9899:201x Commitee Draft 2010-11-16, N1539
+        # ISO/IEC 9899:201x Committee Draft 2010-11-16, N1539
         # section 6.7.2.1, par. 19, example 1
         s3 = """
             struct v {

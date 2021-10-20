@@ -49,7 +49,7 @@
 //    minimize pool fragmentation in case of multiple allocations
 //    and deallocations, it is advisable to not allocate
 //    blocks that are too small.
-//    This flag sets the minimal ammount of quantas for 
+//    This flag sets the minimal amount of quantas for 
 //    an allocation. If the size of a ulong is 4 and you
 //    set this flag to 16, the minimal size of an allocation
 //    will be 4 * 2 * 16 = 128 bytes

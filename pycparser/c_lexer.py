@@ -170,7 +170,7 @@ class CLexer(object):
         # Conditional operator (?)
         'CONDOP',
 
-        # Delimeters
+        # Delimiters
         'LPAREN', 'RPAREN',         # ( )
         'LBRACKET', 'RBRACKET',     # [ ]
         'LBRACE', 'RBRACE',         # { }
@@ -414,7 +414,7 @@ class CLexer(object):
     # ?
     t_CONDOP            = r'\?'
 
-    # Delimeters
+    # Delimiters
     t_LPAREN            = r'\('
     t_RPAREN            = r'\)'
     t_LBRACKET          = r'\['

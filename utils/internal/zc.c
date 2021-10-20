@@ -12,7 +12,7 @@
 void print_help(int exval);
 
 int main (int argc, char *argv[]) {
- /* word delimeter for strtok() */
+ /* word delimiter for strtok() */
  char delim[] = ".,:;`/\"+-_(){}[]<>*&^%$#@!?~/|\\=1234567890 \t\n";
  char line[MAXLINE];     /* input buff, fgets() */
  char *stray = NULL;     /* returned value by strtok() */
