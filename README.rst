@@ -151,10 +151,10 @@ What about the standard C library headers?
 C code almost always ``#include``\s various header files from the standard C
 library, like ``stdio.h``. While (with some effort) **pycparser** can be made to
 parse the standard headers from any C compiler, it's much simpler to use the
-provided "fake" standard  includes in ``utils/fake_libc_include``. These are
-standard C header files that contain only the bare necessities to allow valid
-parsing of the files that use them. As a bonus, since they're minimal, it can
-significantly improve the performance of parsing large C files.
+provided "fake" standard includes for C11 in ``utils/fake_libc_include``. These
+are standard C header files that contain only the bare necessities to allow
+valid parsing of the files that use them. As a bonus, since they're minimal, it
+can significantly improve the performance of parsing large C files.
 
 The key point to understand here is that **pycparser** doesn't really care about
 the semantics of types. It only needs to know whether some token encountered in
@@ -233,6 +233,8 @@ tests/:
 
 utils/fake_libc_include:
   Minimal standard C library include files that should allow to parse any C code.
+  Note that these headers now include C11 code, so they may not work when the
+  preprocessor is configured to an earlier C standard (like ``-std=c99``).
 
 utils/internal/:
   Internal utilities for my own use. You probably don't need them.
