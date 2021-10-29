@@ -7,7 +7,9 @@
 # License: BSD
 #-----------------------------------------------------------------
 from __future__ import print_function
+import sys
 
+sys.path.extend(['.', '..'])
 from pycparser import c_parser
 
 text = r"""
