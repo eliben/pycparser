@@ -15,7 +15,7 @@ import sys
 
 def cpp_supported():
     """Is cpp (the C preprocessor) supported as a native command?"""
-    return platform.system() == 'Linux' or platform.system() == 'Darwin'
+    return platform.system() == 'Linux'
 
 
 def cpp_path():
