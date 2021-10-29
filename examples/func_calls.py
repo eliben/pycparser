@@ -8,6 +8,7 @@
 # License: BSD
 #-----------------------------------------------------------------
 from __future__ import print_function
+import platform
 import sys
 
 # This is not required if you've installed pycparser into
@@ -30,6 +31,10 @@ class FuncCallVisitor(c_ast.NodeVisitor):
             self.visit(node.args)
 
 
+def cpp_supported():
+    return platform.system() == 'Linux'
+
+
 def show_func_calls(filename, funcname):
     ast = parse_file(filename, use_cpp=True)
     v = FuncCallVisitor(funcname)
@@ -41,7 +46,7 @@ if __name__ == "__main__":
         filename = sys.argv[1]
         func = sys.argv[2]
     else:
-        filename = 'examples/c_files/hash.c'
-        func = 'malloc'
+        filename = 'examples/c_files/basic.c'
+        func = 'foo'
 
     show_func_calls(filename, func)
