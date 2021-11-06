@@ -15,8 +15,11 @@ Python files in the pycparser/ directory are OK. Check to see that lextab.py and
 yacctab.py are there.
 
 Now create a new virtualenv and in it install the tarball with
-`pip install <tarballname>`. See that pycparser is importable in the Python
-interpreter of this virtualenv; run pycparser tests from this virtualenv.
+`pip install <tarballname>`. May need to install `wheel` first if seeing errors
+about `bdist_wheel`.
+
+See that pycparser is importable in the Python interpreter of this virtualenv;
+run pycparser tests from this virtualenv.
 
 After this it's OK to rerun `python3.6 -m twine upload dist/*` to push to PyPI
 (older Pythons use a deprecated API for PyPI uploading).
