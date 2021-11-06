@@ -7,7 +7,6 @@ Version Update
 setup.py, __init__.py, README, CHANGES
 - Make sure _build_tables was run in pycparser/
 - If PLY version changes, note it in README and ply/LICENSE
-- Run tox tests
 
 python setup.py sdist
 

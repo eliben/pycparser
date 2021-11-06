@@ -1,3 +1,11 @@
++ Version 2.21 (2021.11.06)
+
+  - Much improved support for C11 (multiple PRs)
+  - Support for parehthesized compount statements (#423)
+  - Support for modern Python versions (3.9 and 3.10)
+  - Fix support for structs with nested enums (#387)
+  - Multiple small bug fixes
+
 + Version 2.20 (2020.03.04)
 
   - #61: Fix slow backtracking when parsing strings.
