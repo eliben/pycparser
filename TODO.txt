@@ -8,7 +8,7 @@ setup.py, __init__.py, README, CHANGES
 - Make sure _build_tables was run in pycparser/
 - If PLY version changes, note it in README and ply/LICENSE
 
-python setup.py sdist
+python setup.py sdist bdist_wheel
 
 Copy the newly created tarball and untar it; check that the permissions of
 Python files in the pycparser/ directory are OK. Check to see that lextab.py and
