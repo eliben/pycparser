@@ -26,6 +26,8 @@
 #define EXIT_FAILURE 1
 #define EXIT_SUCCESS 0
 
+#define SCHAR_MIN -128
+#define SCHAR_MAX 127
 #define CHAR_MIN -128
 #define CHAR_MAX 127
 #define UCHAR_MAX 255
