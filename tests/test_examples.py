@@ -21,12 +21,12 @@ class TestExamplesSucceed(unittest.TestCase):
                 # Use it when we finally drop Python 2...
                 path = os.path.join(root, filename)
                 t1 = time.time()
-                rc, stdout = run_exe(path)
+                rc, stdout, stderr = run_exe(path)
                 elapsed = time.time() - t1
                 if EMIT_ELAPSED_TIME:
                     print('{}... elapsed: {}'.format(filename, elapsed))
                 self.assertEqual(
-                    rc, 0, 'example "{}" failed with stdout =\n{}'.format(filename, stdout))
+                    rc, 0, 'example "{}" failed with stdout =\n{}\nstderr =\n{}'.format(filename, stdout, stderr))
 
 
 if __name__ == '__main__':
