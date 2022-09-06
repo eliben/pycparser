@@ -18,6 +18,7 @@ import sys
 sys.path.extend(['.', '..'])
 
 from pycparser import c_ast, parse_file
+import platform
 
 
 # A simple visitor for FuncDef nodes that prints the names and
@@ -28,10 +29,16 @@ class FuncDefVisitor(c_ast.NodeVisitor):
 
 
 def show_func_defs(filename):
-    # Note that cpp is used. Provide a path to your own cpp or
+    # Note that cpp is used for all systems but Darwin, where cpp
+    # is not usable. Provide a path to your own cpp or
     # make sure one exists in PATH.
-    ast = parse_file(filename, use_cpp=True,
-                     cpp_args=r'-Iutils/fake_libc_include')
+    if platform.system() == 'Darwin':
+        ast = parse_file(filename, use_cpp=True,
+                 cpp_path='gcc',
+                 cpp_args=['-E', '-Iutils/fake_libc_include'])
+    else:
+        ast = parse_file(filename, use_cpp=True,
+                         cpp_args=r'-Iutils/fake_libc_include')
 
     v = FuncDefVisitor()
     v.visit(ast)
