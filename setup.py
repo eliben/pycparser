@@ -42,7 +42,7 @@ setup(
         It parses C code into an AST and can serve as a front-end for
         C compilers or analysis tools.
     """,
-    license='BSD',
+    license='BSD-3-Clause',
     version='2.21',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
