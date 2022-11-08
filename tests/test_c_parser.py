@@ -1776,6 +1776,7 @@ class TestCParser_fundamentals(TestCParser_base):
 
                 if (sum > 10)
                     #pragma bar
+                    #pragma baz
                     sum = 10;
 
                 switch (sum)
@@ -1800,7 +1801,8 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(s1_ast.ext[0].body.block_items[4], If)
         self.assertIsInstance(s1_ast.ext[0].body.block_items[4].iftrue, Compound)
         self.assertIsInstance(s1_ast.ext[0].body.block_items[4].iftrue.block_items[0], Pragma)
-        self.assertIsInstance(s1_ast.ext[0].body.block_items[4].iftrue.block_items[1], Assignment)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[4].iftrue.block_items[1], Pragma)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[4].iftrue.block_items[2], Assignment)
         self.assertIsInstance(s1_ast.ext[0].body.block_items[5], Switch)
         self.assertIsInstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0], Compound)
         self.assertIsInstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[0],
