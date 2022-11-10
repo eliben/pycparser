@@ -339,10 +339,17 @@ class TestCtoC(unittest.TestCase):
             void f() {
                 #pragma bar
                 i = (a, b, c);
+                if (d)
+                    #pragma qux
+                    j = e;
+                if (d)
+                    #pragma qux
+                    #pragma quux
+                    j = e;
             }
             typedef struct s {
             #pragma baz
-           } s;
+            } s;
         ''')
 
     def test_compound_literal(self):
