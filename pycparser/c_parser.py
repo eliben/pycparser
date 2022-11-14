@@ -480,6 +480,13 @@ class CParser(PLYParser):
         else:
             return c_ast.Union
 
+    def _to_list(self, p):
+        """ Normalize the input to a list: if given a list, return as-is, 
+            else return single-element list.
+        """
+        return p if isinstance(p, list) else [p]
+
+
     ##
     ## Precedence and associativity of operators
     ##
@@ -682,10 +689,10 @@ class CParser(PLYParser):
         """
         if len(p) == 3:
             p[0] = c_ast.Compound(
-                block_items=p[1]+[p[2]],
+                block_items=p[1] + self._to_list(p[2]),
                 coord=self._token_coord(p, 1))
         else:
-            p[0] = p[1]
+            p[0] = c_ast.Compound(block_items=p[1], coord=self._token_coord(p, 1)) if isinstance(p[1], list) else p[1]
 
     # In C, declarations can come several in a line:
     #   int x, *px, romulo = 5;
@@ -759,8 +766,9 @@ class CParser(PLYParser):
     # line is reached.
     def p_declaration(self, p):
         """ declaration : decl_body SEMI
+                        | decl_body pppragma_directive_list SEMI
         """
-        p[0] = p[1]
+        p[0] = p[1] if len(p) == 3 else self._to_list(p[1]) + p[2]
 
     # Since each declaration is a list of declarations, this
     # rule will combine all the declarations and return a single
@@ -1529,7 +1537,7 @@ class CParser(PLYParser):
         """ block_item  : declaration
                         | statement
         """
-        p[0] = p[1] if isinstance(p[1], list) else [p[1]]
+        p[0] = self._to_list(p[1])
 
     # Since we made block_item a list, this just combines lists
     #
@@ -1563,7 +1571,7 @@ class CParser(PLYParser):
         p[0] = c_ast.If(p[3], p[5], None, self._token_coord(p, 1))
 
     def p_selection_statement_2(self, p):
-        """ selection_statement : IF LPAREN expression RPAREN statement ELSE pragmacomp_or_statement """
+        """ selection_statement : IF LPAREN expression RPAREN pragmacomp_or_statement ELSE pragmacomp_or_statement """
         p[0] = c_ast.If(p[3], p[5], p[7], self._token_coord(p, 1))
 
     def p_selection_statement_3(self, p):
@@ -1576,8 +1584,10 @@ class CParser(PLYParser):
         p[0] = c_ast.While(p[3], p[5], self._token_coord(p, 1))
 
     def p_iteration_statement_2(self, p):
-        """ iteration_statement : DO pragmacomp_or_statement WHILE LPAREN expression RPAREN SEMI """
-        p[0] = c_ast.DoWhile(p[5], p[2], self._token_coord(p, 1))
+        """ iteration_statement : DO pragmacomp_or_statement WHILE LPAREN expression RPAREN SEMI
+                                | DO pragmacomp_or_statement WHILE LPAREN expression RPAREN pppragma_directive_list SEMI
+        """
+        p[0] = c_ast.DoWhile(p[5], p[2], self._token_coord(p, 1)) if len(p) == 8 else [c_ast.DoWhile(p[5], p[2], self._token_coord(p, 1))] + p[7]
 
     def p_iteration_statement_3(self, p):
         """ iteration_statement : FOR LPAREN expression_opt SEMI expression_opt SEMI expression_opt RPAREN pragmacomp_or_statement """
@@ -1589,16 +1599,22 @@ class CParser(PLYParser):
                          p[4], p[6], p[8], self._token_coord(p, 1))
 
     def p_jump_statement_1(self, p):
-        """ jump_statement  : GOTO ID SEMI """
-        p[0] = c_ast.Goto(p[2], self._token_coord(p, 1))
+        """ jump_statement  : GOTO ID SEMI 
+                            | GOTO ID pppragma_directive_list SEMI
+        """
+        p[0] = c_ast.Goto(p[2], self._token_coord(p, 1)) if len(p) == 4 else [c_ast.Goto(p[2], self._token_coord(p, 1))] + p[3]
 
     def p_jump_statement_2(self, p):
-        """ jump_statement  : BREAK SEMI """
-        p[0] = c_ast.Break(self._token_coord(p, 1))
+        """ jump_statement  : BREAK SEMI 
+                            | BREAK pppragma_directive_list SEMI
+        """
+        p[0] = c_ast.Break(self._token_coord(p, 1)) if len(p) == 3 else [c_ast.Break(self._token_coord(p, 1))] + p[2]
 
     def p_jump_statement_3(self, p):
-        """ jump_statement  : CONTINUE SEMI """
-        p[0] = c_ast.Continue(self._token_coord(p, 1))
+        """ jump_statement  : CONTINUE SEMI
+                            | CONTINUE pppragma_directive_list SEMI
+        """
+        p[0] = c_ast.Continue(self._token_coord(p, 1)) if len(p) == 3 else [c_ast.Continue(self._token_coord(p, 1))] + p[2]
 
     def p_jump_statement_4(self, p):
         """ jump_statement  : RETURN expression SEMI
@@ -1606,10 +1622,20 @@ class CParser(PLYParser):
         """
         p[0] = c_ast.Return(p[2] if len(p) == 4 else None, self._token_coord(p, 1))
 
+    def p_jump_statement_5(self, p):
+        """ jump_statement  : RETURN expression pppragma_directive_list SEMI
+                            | RETURN pppragma_directive_list SEMI
+        """
+        p[0] = [c_ast.Return(p[2] if len(p) == 5 else None, self._token_coord(p, 1))] + p[3 if len(p) == 5 else 2]
+
     def p_expression_statement(self, p):
-        """ expression_statement : expression_opt SEMI """
+        """ expression_statement : expression_opt SEMI 
+                                 | expression pppragma_directive_list SEMI
+        """
         if p[1] is None:
             p[0] = c_ast.EmptyStatement(self._token_coord(p, 2))
+        elif len(p) == 4:
+            p[0] = [p[1]] + p[2]
         else:
             p[0] = p[1]
 

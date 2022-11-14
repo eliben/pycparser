@@ -1810,6 +1810,152 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[1],
                               Assignment)
 
+    def test_pragma_in_statement(self):
+        s1 = r'''
+            void f(void) {
+                a = 1;
+                a = 1
+                #pragma foo
+                ;
+                a = 1
+                #pragma bar
+                #pragma fuz
+                ;
+                f();
+                f()
+                #pragma foo
+                ;
+                f()
+                #pragma bar
+                #pragma fuz
+                ;
+
+                do {
+                    break
+                    #pragma in_break
+                    ;
+                } while (1)
+                #pragma after_while
+                ;
+
+                if (1)
+                   a += 1
+                   #pragma in_if
+                   ;
+                else
+                   a +=2
+                   #pragma in_else
+                   ;
+
+                return
+                #pragma after_return
+                ;
+                return 1
+                #pragma after_return
+                ;
+
+                goto target
+                #pragma after_goto
+                ;
+
+                if (1)
+                   a += 1
+                   #pragma in_if_noelse
+                   ;
+
+                while (0)
+                   a += 1
+                   #pragma in_while
+                   ;
+
+                target:
+                return;
+            }
+            struct knote;
+            #pragma clang diagnostic push
+            #pragma clang diagnostic ignored "-Wnullability-completeness"
+            struct klist { struct knote *slh_first; }
+            #pragma clang diagnostic pop
+            ;
+            '''
+        s1_ast = self.parse(s1)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[2], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[2].string, 'foo')
+        self.assertEqual(s1_ast.ext[0].body.block_items[2].coord.line, 5)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[4], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[4].string, 'bar')
+        self.assertEqual(s1_ast.ext[0].body.block_items[4].coord.line, 8)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[5], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[5].string, 'fuz')
+        self.assertEqual(s1_ast.ext[0].body.block_items[5].coord.line, 9)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[8], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[8].string, 'foo')
+        self.assertEqual(s1_ast.ext[0].body.block_items[8].coord.line, 13)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[10], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[10].string, 'bar')
+        self.assertEqual(s1_ast.ext[0].body.block_items[10].coord.line, 16)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[11], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[11].string, 'fuz')
+        self.assertEqual(s1_ast.ext[0].body.block_items[11].coord.line, 17)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[12], DoWhile)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[12].stmt, Compound)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[12].stmt.block_items[1], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[12].stmt.block_items[1].string, 'in_break')
+        self.assertEqual(s1_ast.ext[0].body.block_items[12].stmt.block_items[1].coord.line, 22)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[13], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[13].string, 'after_while')
+        self.assertEqual(s1_ast.ext[0].body.block_items[13].coord.line, 25)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[14], If)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[14].iftrue, Compound)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[14].iftrue.block_items[1], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[14].iftrue.block_items[1].string, 'in_if')
+        self.assertEqual(s1_ast.ext[0].body.block_items[14].iftrue.block_items[1].coord.line, 30)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[14].iffalse, Compound)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[14].iffalse.block_items[1], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[14].iffalse.block_items[1].string, 'in_else')
+        self.assertEqual(s1_ast.ext[0].body.block_items[14].iffalse.block_items[1].coord.line, 34)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[15], Return)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[16], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[16].string, 'after_return')
+        self.assertEqual(s1_ast.ext[0].body.block_items[16].coord.line, 38)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[17], Return)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[18], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[18].string, 'after_return')
+        self.assertEqual(s1_ast.ext[0].body.block_items[18].coord.line, 41)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[19], Goto)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[20], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[20].string, 'after_goto')
+        self.assertEqual(s1_ast.ext[0].body.block_items[20].coord.line, 45)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[21], If)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[21].iftrue, Compound)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[21].iftrue.block_items[1], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[21].iftrue.block_items[1].string, 'in_if_noelse')
+        self.assertEqual(s1_ast.ext[0].body.block_items[21].iftrue.block_items[1].coord.line, 50)
+
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[22], While)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[22].stmt, Compound)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[22].stmt.block_items[1], Pragma)
+        self.assertEqual(s1_ast.ext[0].body.block_items[22].stmt.block_items[1].string, 'in_while')
+        self.assertEqual(s1_ast.ext[0].body.block_items[22].stmt.block_items[1].coord.line, 55)
+
+        self.assertIsInstance(s1_ast.ext[1], Decl)
+        self.assertIsInstance(s1_ast.ext[2], Pragma)
+        self.assertIsInstance(s1_ast.ext[3], Pragma)
+        self.assertIsInstance(s1_ast.ext[4], Decl)
+        self.assertIsInstance(s1_ast.ext[5], Pragma)
+
 
 class TestCParser_whole_code(TestCParser_base):
     """ Testing of parsing whole chunks of code.
