@@ -83,7 +83,7 @@ Installing
 Prerequisites
 -------------
 
-* **pycparser** was tested on Python 3.7+ on Linux, Mac OS and Windows.
+* **pycparser** was tested with Python 3.7+ on Linux, Mac OS and Windows.
 
 * **pycparser** has no external dependencies. The only non-stdlib library it
   uses is PLY, which is bundled in ``pycparser/ply``. The current PLY version is
@@ -99,27 +99,9 @@ though.
 Installation process
 --------------------
 
-Installing **pycparser** is very simple. Once you download and unzip the
-package, you just have to execute the standard ``python setup.py install``. The
-setup script will then place the ``pycparser`` module into ``site-packages`` in
-your Python's installation library.
-
-Alternatively, since **pycparser** is listed in the `Python Package Index
-<https://pypi.org/project/pycparser/>`_ (PyPI), you can install it using your
-favorite Python packaging/distribution tool, for example with::
+The recommended way to install **pycparser** is with ``pip``::
 
     > pip install pycparser
-
-Known problems
---------------
-
-* Some users who've installed a new version of **pycparser** over an existing
-  version ran into a problem using the newly installed library. This has to do
-  with parse tables staying around as ``.pyc`` files from the older version. If
-  you see unexplained errors from **pycparser** after an upgrade, remove it (by
-  deleting the ``pycparser`` directory in your Python's ``site-packages``, or
-  wherever you installed it) and install again.
-
 
 Using
 =====
