@@ -34,10 +34,7 @@ def cpp_args(args=[]):
     return args
 
 def _bytes2str(b):
-    if sys.version_info[0] == 3:
-        return b.decode('latin-1')
-    else:
-        return b
+    return b.decode('latin-1')
 
 def run_exe(exe_path, args=[], echo=False):
     """ Runs the given executable as a subprocess, given the
