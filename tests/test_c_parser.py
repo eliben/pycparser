@@ -1736,6 +1736,7 @@ class TestCParser_fundamentals(TestCParser_base):
             struct s {
             #pragma baz
             } s;
+            _Pragma("other \"string\"")
             '''
         s1_ast = self.parse(s1)
         self.assertIsInstance(s1_ast.ext[0], Pragma)
@@ -1757,6 +1758,10 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(s1_ast.ext[2].type.type.decls[0], Pragma)
         self.assertEqual(s1_ast.ext[2].type.type.decls[0].string, 'baz')
         self.assertEqual(s1_ast.ext[2].type.type.decls[0].coord.line, 13)
+
+        self.assertIsInstance(s1_ast.ext[3], Pragma)
+        self.assertEqual(s1_ast.ext[3].string.value, r'"other \"string\""')
+        self.assertEqual(s1_ast.ext[3].coord.line, 15)
 
     def test_pragmacomp_or_statement(self):
         s1 = r'''
