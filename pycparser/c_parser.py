@@ -571,11 +571,19 @@ class CParser(PLYParser):
         self._parse_error('Directives not supported yet',
                           self._token_coord(p, 1))
 
+    # This encompasses two types of C99-compatible pragmas:
+    # - The #pragma directive:
+    #       # pragma character_sequence
+    # - The _Pragma unary operator:
+    #       _Pragma ( " string_literal " )
     def p_pppragma_directive(self, p):
         """ pppragma_directive      : PPPRAGMA
                                     | PPPRAGMA PPPRAGMASTR
+                                    | _PRAGMA LPAREN unified_string_literal RPAREN
         """
-        if len(p) == 3:
+        if len(p) == 5:
+            p[0] = c_ast.Pragma(p[3], self._token_coord(p, 2))
+        elif len(p) == 3:
             p[0] = c_ast.Pragma(p[2], self._token_coord(p, 2))
         else:
             p[0] = c_ast.Pragma("", self._token_coord(p, 1))

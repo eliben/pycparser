@@ -357,6 +357,7 @@ class TestCLexerNoErrors(unittest.TestCase):
         #pragma "string"
         #pragma somestring="some_other_string"
         #pragma id 124124 and numbers 0235495
+        _Pragma("something else")
         59
         '''
         # Check that pragmas are tokenized, including trailing string
@@ -389,9 +390,19 @@ class TestCLexerNoErrors(unittest.TestCase):
             tb = self.clex.token()
             self.assertEqual(tb.type, 'PPPRAGMASTR')
 
-        t6 = self.clex.token()
-        self.assertEqual(t6.type, 'INT_CONST_DEC')
-        self.assertEqual(t6.lineno, 12)
+        t6a = self.clex.token()
+        t6l = self.clex.token()
+        t6b = self.clex.token()
+        t6r = self.clex.token()
+        self.assertEqual(t6a.type, '_PRAGMA')
+        self.assertEqual(t6l.type, 'LPAREN')
+        self.assertEqual(t6b.type, 'STRING_LITERAL')
+        self.assertEqual(t6b.value, '"something else"')
+        self.assertEqual(t6r.type, 'RPAREN')
+
+        t7 = self.clex.token()
+        self.assertEqual(t7.type, 'INT_CONST_DEC')
+        self.assertEqual(t7.lineno, 13)
 
 
 
