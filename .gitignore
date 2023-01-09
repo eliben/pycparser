@@ -16,3 +16,4 @@ utils/z.c
 *.egg-info
 *.swp
 .DS_Store
+ast.pickle

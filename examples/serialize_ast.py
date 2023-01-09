@@ -24,11 +24,12 @@ void func(void)
 if __name__ == '__main__':
     parser = c_parser.CParser()
     ast = parser.parse(text)
+    dump_filename = 'ast.pickle'
 
-    with open('ast', 'wb') as f:
+    with open(dump_filename, 'wb') as f:
         pickle.dump(ast, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     # Deserialize.
-    with open('ast', 'rb') as f:
+    with open(dump_filename, 'rb') as f:
         ast = pickle.load(f)
         ast.show()
