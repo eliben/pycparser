@@ -162,8 +162,8 @@ class CParser(PLYParser):
         """
         if not self._scope_stack[-1].get(name, True):
             self._parse_error(
-                "Typedef %r previously declared as non-typedef "
-                "in this scope" % name, coord)
+                'Typedef %r previously declared as non-typedef '
+                'in this scope' % name, coord)
         self._scope_stack[-1][name] = True
 
     def _add_identifier(self, name, coord):
@@ -172,8 +172,8 @@ class CParser(PLYParser):
         """
         if self._scope_stack[-1].get(name, False):
             self._parse_error(
-                "Non-typedef %r previously declared as typedef "
-                "in this scope" % name, coord)
+                'Non-typedef %r previously declared as typedef '
+                'in this scope' % name, coord)
         self._scope_stack[-1][name] = False
 
     def _is_type_in_scope(self, name):
@@ -197,18 +197,15 @@ class CParser(PLYParser):
         self._pop_scope()
 
     def _lex_type_lookup_func(self, name):
-        """ Looks up types that were previously defined with
-            typedef.
-            Passed to the lexer for recognizing identifiers that
-            are types.
+        """ Looks up types that were previously defined with typedef.
+            Passed to the lexer for recognizing identifiers that are types.
         """
         is_type = self._is_type_in_scope(name)
         return is_type
 
     def _get_yacc_lookahead_token(self):
         """ We need access to yacc's lookahead token in certain cases.
-            This is the last token yacc requested from the lexer, so we
-            ask the lexer.
+            This is the last token yacc requested from the lexer, so we ask the lexer.
         """
         return self.clex.last_token
 
@@ -249,7 +246,6 @@ class CParser(PLYParser):
     def _type_modify_decl(self, decl, modifier):
         """ Tacks a type modifier on a declarator, and returns
             the modified declarator.
-
             Note: the declarator and modifier may be modified
         """
         # ~ print '****'
@@ -316,7 +312,7 @@ class CParser(PLYParser):
             if not isinstance(tn, c_ast.IdentifierType):
                 if len(typename) > 1:
                     self._parse_error(
-                        "Invalid multiple types specified", tn.coord)
+                        'Invalid multiple types specified', tn.coord)
                 else:
                     type.type = tn
                     return decl
@@ -325,7 +321,7 @@ class CParser(PLYParser):
             # Functions default to returning int
             if not isinstance(decl.type, c_ast.FuncDecl):
                 self._parse_error(
-                        "Missing type in declaration", decl.coord)
+                        'Missing type in declaration', decl.coord)
             type.type = c_ast.IdentifierType(
                     ['int'],
                     coord=decl.coord)
@@ -455,7 +451,7 @@ class CParser(PLYParser):
         """ Builds a function definition.
         """
         if 'typedef' in spec['storage']:
-            self._parse_error("Invalid typedef", decl.coord)
+            self._parse_error('Invalid typedef', decl.coord)
 
         declaration = self._build_declarations(
             spec=spec,
@@ -1233,7 +1229,7 @@ class CParser(PLYParser):
         # trigger a rule on that token, then TT will have already been read
         # and incorrectly interpreted as TYPEID.  We need to add the
         # parameters to the scope the moment the lexer sees LBRACE.
-        if self._get_yacc_lookahead_token().type == "LBRACE":
+        if self._get_yacc_lookahead_token().type == 'LBRACE':
             if func.args is not None:
                 for param in func.args.params:
                     if isinstance(param, c_ast.EllipsisParam):
@@ -1790,7 +1786,7 @@ class CParser(PLYParser):
         elif len(p) == 5:
             p[0] = c_ast.ArrayRef(p[1], p[3], p[1].coord)
         else:
-            raise NotImplementedError("Unexpected parsing state. len(p): %u" % len(p))
+            raise NotImplementedError('Unexpected parsing state. len(p): %u' % len(p))
 
     def p_argument_expression_list(self, p):
         """ argument_expression_list    : assignment_expression

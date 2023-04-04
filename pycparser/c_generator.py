@@ -363,8 +363,7 @@ class CGenerator(object):
         return self._generate_type(n, emit_declname=False)
 
     def _generate_struct_union_enum(self, n, name):
-        """ Generates code for structs, unions, and enums. name should be
-            'struct', 'union', or 'enum'.
+        """ Generates code for structs, unions, and enums. name should be 'struct', 'union', or 'enum'.
         """
         if name in ('struct', 'union'):
             members = n.decls
@@ -439,8 +438,7 @@ class CGenerator(object):
     def _generate_type(self, n, modifiers=[], emit_declname=True):
         """ Recursive generation from a type node. n is the type node.
             modifiers collects the PtrDecl, ArrayDecl and FuncDecl modifiers
-            encountered on the way down to a TypeDecl, to allow proper
-            generation from it.
+            encountered on the way down to a TypeDecl, to allow proper generation from it.
         """
         typ = type(n)
         # ~ print(n, modifiers)

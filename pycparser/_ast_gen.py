@@ -15,8 +15,7 @@ from string import Template
 
 class ASTCodeGenerator(object):
     def __init__(self, cfg_filename='_c_ast.cfg'):
-        """ Initialize the code generator from a configuration
-            file.
+        """ Initialize the code generator from a configuration file.
         """
         self.cfg_filename = cfg_filename
         self.node_cfg = [NodeCfg(name, contents)
@@ -35,10 +34,9 @@ class ASTCodeGenerator(object):
         file.write(src)
 
     def parse_cfgfile(self, filename):
-        """ Parse the configuration file and yield pairs of
-            (name, contents) for each node.
+        """ Parse the configuration file and yield pairs of (name, contents) for each node.
         """
-        with open(filename, "r") as f:
+        with open(filename, 'r') as f:
             for line in f:
                 line = line.strip()
                 if not line or line.startswith('#'):
@@ -89,7 +87,7 @@ class NodeCfg(object):
         return src
 
     def _gen_init(self):
-        src = "class %s(Node):\n" % self.name
+        src = 'class %s(Node):\n' % self.name
 
         if self.all_entries:
             args = ', '.join(self.all_entries)
@@ -164,7 +162,8 @@ class NodeCfg(object):
         return src
 
 
-_PROLOGUE_COMMENT = r'''# -----------------------------------------------------------------
+_PROLOGUE_COMMENT = r'''
+# -----------------------------------------------------------------
 # ** ATTENTION **
 # This code was automatically generated from the file:
 # $cfg_filename

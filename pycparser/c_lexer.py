@@ -447,7 +447,7 @@ class CLexer(object):
 
     @TOKEN(bad_octal_constant)
     def t_BAD_CONST_OCT(self, t):
-        msg = "Invalid octal constant"
+        msg = 'Invalid octal constant'
         self._error(msg, t)
 
     @TOKEN(octal_constant)
@@ -491,7 +491,7 @@ class CLexer(object):
 
     @TOKEN(bad_char_const)
     def t_BAD_CHAR_CONST(self, t):
-        msg = "Invalid char constant %s" % t.value
+        msg = 'Invalid char constant %s' % t.value
         self._error(msg, t)
 
     @TOKEN(wstring_literal)
@@ -514,14 +514,14 @@ class CLexer(object):
 
     @TOKEN(bad_string_literal)
     def t_BAD_STRING_LITERAL(self, t):
-        msg = "String contains invalid escape code"
+        msg = 'String contains invalid escape code'
         self._error(msg, t)
 
     @TOKEN(identifier)
     def t_ID(self, t):
-        t.type = self.keyword_map.get(t.value, "ID")
+        t.type = self.keyword_map.get(t.value, 'ID')
         if t.type == 'ID' and self.type_lookup_func(t.value):
-            t.type = "TYPEID"
+            t.type = 'TYPEID'
         return t
 
     def t_error(self, t):
