@@ -1,11 +1,11 @@
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # pycparser: c_lexer.py
 #
 # CLexer class: lexer for the C language
 #
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 import re
 
 from .ply import lex
@@ -48,9 +48,7 @@ class CLexer(object):
         # Keeps track of the last token returned from self.token()
         self.last_token = None
 
-        # Allow either "# line" or "# <num>" to support GCC's
-        # cpp output
-        #
+        # Allow either "# line" or "# <num>" to support GCC's cpp output
         self.line_pattern = re.compile(r'([ \t]*line\W)|([ \t]*\d+)')
         self.pragma_pattern = re.compile(r'[ \t]*pragma\W')
 
@@ -82,22 +80,18 @@ class CLexer(object):
         last_cr = self.lexer.lexdata.rfind('\n', 0, token.lexpos)
         return token.lexpos - last_cr
 
-    ######################--   PRIVATE   --######################
+    # #####################--   PRIVATE   --##################### #
 
-    ##
-    ## Internal auxiliary methods
-    ##
+    # Internal auxiliary methods
     def _error(self, msg, token):
         location = self._make_tok_location(token)
         self.error_func(msg, location[0], location[1])
         self.lexer.skip(1)
 
     def _make_tok_location(self, token):
-        return (token.lineno, self.find_tok_column(token))
+        return token.lineno, self.find_tok_column(token)
 
-    ##
-    ## Reserved keywords
-    ##
+    # Reserved keywords
     keywords = (
         'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
         'CONTINUE', 'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
@@ -123,18 +117,15 @@ class CLexer(object):
     for keyword in keywords_new:
         keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
 
-    ##
-    ## All the tokens recognized by the lexer
-    ##
+    # All the tokens recognized by the lexer
     tokens = keywords + keywords_new + (
         # Identifiers
         'ID',
 
-        # Type identifiers (identifiers previously defined as
-        # types with typedef)
+        # Type identifiers (identifiers previously defined as types with typedef)
         'TYPEID',
 
-        # constants
+        # Constants
         'INT_CONST_DEC', 'INT_CONST_OCT', 'INT_CONST_HEX', 'INT_CONST_BIN', 'INT_CONST_CHAR',
         'FLOAT_CONST', 'HEX_FLOAT_CONST',
         'CHAR_CONST',
@@ -159,7 +150,7 @@ class CLexer(object):
         # Assignment
         'EQUALS', 'TIMESEQUAL', 'DIVEQUAL', 'MODEQUAL',
         'PLUSEQUAL', 'MINUSEQUAL',
-        'LSHIFTEQUAL','RSHIFTEQUAL', 'ANDEQUAL', 'XOREQUAL',
+        'LSHIFTEQUAL', 'RSHIFTEQUAL', 'ANDEQUAL', 'XOREQUAL',
         'OREQUAL',
 
         # Increment/decrement
@@ -181,18 +172,14 @@ class CLexer(object):
         # Ellipsis (...)
         'ELLIPSIS',
 
-        # pre-processor
+        # Pre-processor
         'PPHASH',       # '#'
         'PPPRAGMA',     # 'pragma'
         'PPPRAGMASTR',
     )
 
-    ##
-    ## Regexes for use in tokens
-    ##
-    ##
-
-    # valid C identifiers (K&R2: A.2.3), plus '$' (supported by some compilers)
+    # Regexes for use in tokens
+    # Valid C identifiers (K&R2: A.2.3), plus '$' (supported by some compilers)
     identifier = r'[a-zA-Z_$][0-9a-zA-Z_$]*'
 
     hex_prefix = '0[xX]'
@@ -200,7 +187,7 @@ class CLexer(object):
     bin_prefix = '0[bB]'
     bin_digits = '[01]+'
 
-    # integer constants (K&R2: A.2.5.1)
+    # Integer constants (K&R2: A.2.5.1)
     integer_suffix_opt = r'(([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?'
     decimal_constant = '(0'+integer_suffix_opt+')|([1-9][0-9]*'+integer_suffix_opt+')'
     octal_constant = '0[0-7]*'+integer_suffix_opt
@@ -209,12 +196,11 @@ class CLexer(object):
 
     bad_octal_constant = '0[0-7]*[89]'
 
-    # character constants (K&R2: A.2.5.2)
+    # Character constants (K&R2: A.2.5.2)
     # Note: a-zA-Z and '.-~^_!=&;,' are allowed as escape chars to support #line
     # directives with Windows paths as filenames (..\..\dir\file)
     # For the same reason, decimal_escape allows all digit sequences. We want to
-    # parse all correct code, even if it means to sometimes parse incorrect
-    # code.
+    # parse all correct code, even if it means to sometimes parse incorrect code.
     #
     # The original regexes were taken verbatim from the C syntax definition,
     # and were later modified to avoid worst-case exponential running time.
@@ -232,7 +218,7 @@ class CLexer(object):
     # - decimal_escape allows one or more decimal characters, but requires that the next character(if any) is not a decimal
     # - bad_escape does not allow any decimals (8-9), to avoid conflicting with the permissive decimal_escape.
     #
-    # Without this change, python's `re` module would recursively try parsing each ambiguous escape sequence in multiple ways.
+    # Without this change, Python's `re` module would recursively try parsing each ambiguous escape sequence in multiple ways.
     # e.g. `\123` could be parsed as `\1`+`23`, `\12`+`3`, and `\123`.
 
     simple_escape = r"""([a-wyzA-Z._~!=&\^\-\\?'"]|x(?![0-9a-fA-F]))"""
@@ -274,21 +260,17 @@ class CLexer(object):
     hex_fractional_constant = '((('+hex_digits+r""")?\."""+hex_digits+')|('+hex_digits+r"""\.))"""
     hex_floating_constant = '('+hex_prefix+'('+hex_digits+'|'+hex_fractional_constant+')'+binary_exponent_part+'[FfLl]?)'
 
-    ##
-    ## Lexer states: used for preprocessor \n-terminated directives
-    ##
+    # Lexer states: used for preprocessor \n-terminated directives
     states = (
         # ppline: preprocessor line directives
-        #
         ('ppline', 'exclusive'),
 
         # pppragma: pragma
-        #
         ('pppragma', 'exclusive'),
     )
 
     def t_PPHASH(self, t):
-        r'[ \t]*\#'
+        r"""[ \t]*\#"""
         if self.line_pattern.match(t.lexer.lexdata, pos=t.lexer.lexpos):
             t.lexer.begin('ppline')
             self.pp_line = self.pp_filename = None
@@ -298,9 +280,7 @@ class CLexer(object):
             t.type = 'PPHASH'
             return t
 
-    ##
-    ## Rules for the ppline state
-    ##
+    # Rules for the ppline state
     @TOKEN(string_literal)
     def t_ppline_FILENAME(self, t):
         if self.pp_line is None:
@@ -318,7 +298,7 @@ class CLexer(object):
             pass
 
     def t_ppline_NEWLINE(self, t):
-        r'\n'
+        r"""\n"""
         if self.pp_line is None:
             self._error('line number missing in #line', t)
         else:
@@ -330,7 +310,7 @@ class CLexer(object):
         t.lexer.begin('INITIAL')
 
     def t_ppline_PPLINE(self, t):
-        r'line'
+        r"""line"""
         pass
 
     t_ppline_ignore = ' \t'
@@ -338,36 +318,32 @@ class CLexer(object):
     def t_ppline_error(self, t):
         self._error('invalid #line directive', t)
 
-    ##
-    ## Rules for the pppragma state
-    ##
+    # Rules for the pppragma state
     def t_pppragma_NEWLINE(self, t):
-        r'\n'
+        r"""\n"""
         t.lexer.lineno += 1
         t.lexer.begin('INITIAL')
 
     def t_pppragma_PPPRAGMA(self, t):
-        r'pragma'
+        r"""pragma"""
         return t
 
     t_pppragma_ignore = ' \t'
 
     def t_pppragma_STR(self, t):
-        '.+'
+        r""".+"""
         t.type = 'PPPRAGMASTR'
         return t
 
     def t_pppragma_error(self, t):
         self._error('invalid #pragma directive', t)
 
-    ##
-    ## Rules for the normal state
-    ##
+    # Rules for the normal state
     t_ignore = ' \t'
 
     # Newlines
     def t_NEWLINE(self, t):
-        r'\n+'
+        r"""\n+"""
         t.lexer.lineno += t.value.count("\n")
 
     # Operators
@@ -437,11 +413,11 @@ class CLexer(object):
     # already been read and incorrectly interpreted as TYPEID.  So, we need
     # to open and close scopes from within the lexer.
     # Similar for the TT immediately outside the end of the function.
-    #
     @TOKEN(r'\{')
     def t_LBRACE(self, t):
         self.on_lbrace_func()
         return t
+
     @TOKEN(r'\}')
     def t_RBRACE(self, t):
         self.on_rbrace_func()
@@ -453,7 +429,6 @@ class CLexer(object):
     # functions to impose a strict order (otherwise, decimal
     # is placed before the others because its regex is longer,
     # and this is bad)
-    #
     @TOKEN(floating_constant)
     def t_FLOAT_CONST(self, t):
         return t
@@ -485,7 +460,6 @@ class CLexer(object):
 
     # Must come before bad_char_const, to prevent it from
     # catching valid char constants as invalid
-    #
     @TOKEN(multicharacter_constant)
     def t_INT_CONST_CHAR(self, t):
         return t

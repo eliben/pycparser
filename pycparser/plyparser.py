@@ -1,4 +1,4 @@
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 # plyparser.py
 #
 # PLYParser class and other utilities for simplifying programming
@@ -6,9 +6,9 @@
 #
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
-#-----------------------------------------------------------------
-
+# -----------------------------------------------------------------
 import warnings
+
 
 class Coord(object):
     """ Coordinates of a syntactic element. Consists of:
@@ -17,6 +17,7 @@ class Coord(object):
             - (optional) column number, for the Lexer
     """
     __slots__ = ('file', 'line', 'column', '__weakref__')
+
     def __init__(self, file, line, column=None):
         self.file = file
         self.line = line
@@ -24,11 +25,13 @@ class Coord(object):
 
     def __str__(self):
         str = "%s:%s" % (self.file, self.line)
-        if self.column: str += ":%s" % self.column
+        if self.column:
+            str += ":%s" % self.column
         return str
 
 
-class ParseError(Exception): pass
+class ParseError(Exception):
+    pass
 
 
 class PLYParser(object):
@@ -60,7 +63,7 @@ class PLYParser(object):
         last_cr = p.lexer.lexer.lexdata.rfind('\n', 0, p.lexpos(token_idx))
         if last_cr < 0:
             last_cr = -1
-        column = (p.lexpos(token_idx) - (last_cr))
+        column = (p.lexpos(token_idx) - last_cr)
         return self._coord(p.lineno(token_idx), column)
 
     def _parse_error(self, msg, coord):

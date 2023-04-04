@@ -1,4 +1,4 @@
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 # _ast_gen.py
 #
 # Generates the AST Node classes from a specification given in
@@ -9,7 +9,7 @@
 #
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 from string import Template
 
 
@@ -20,7 +20,7 @@ class ASTCodeGenerator(object):
         """
         self.cfg_filename = cfg_filename
         self.node_cfg = [NodeCfg(name, contents)
-            for (name, contents) in self.parse_cfgfile(cfg_filename)]
+                         for (name, contents) in self.parse_cfgfile(cfg_filename)]
 
     def generate(self, file=None):
         """ Generates the code into file, an open file buffer.
@@ -164,8 +164,7 @@ class NodeCfg(object):
         return src
 
 
-_PROLOGUE_COMMENT = \
-r'''#-----------------------------------------------------------------
+_PROLOGUE_COMMENT = r'''# -----------------------------------------------------------------
 # ** ATTENTION **
 # This code was automatically generated from the file:
 # $cfg_filename
@@ -180,7 +179,7 @@ r'''#-----------------------------------------------------------------
 #
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 
 '''
 
