@@ -6,7 +6,6 @@
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 #-----------------------------------------------------------------
-from __future__ import print_function
 import sys
 
 sys.path.extend(['.', '..'])
