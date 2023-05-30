@@ -1,5 +1,4 @@
 # Cleanup all tables and PYC files to ensure no PLY stuff is cached
-from __future__ import print_function
 import itertools
 import fnmatch
 import os, shutil

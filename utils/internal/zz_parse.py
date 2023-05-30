@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from pycparser import c_parser, c_generator
 
 

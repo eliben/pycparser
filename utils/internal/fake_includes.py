@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os.path
 
 for cur_path, dirs, files in os.walk('.'):
