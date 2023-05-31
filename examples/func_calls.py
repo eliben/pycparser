@@ -7,7 +7,6 @@
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 #-----------------------------------------------------------------
-import platform
 import sys
 
 # This is not required if you've installed pycparser into
