@@ -83,7 +83,7 @@ Installing
 Prerequisites
 -------------
 
-* **pycparser** was tested with Python 3.7+ on Linux, Mac OS and Windows.
+* **pycparser** was tested with Python 3.8+ on Linux, macOS and Windows.
 
 * **pycparser** has no external dependencies. The only non-stdlib library it
   uses is PLY, which is bundled in ``pycparser/ply``. The current PLY version is
