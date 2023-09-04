@@ -225,68 +225,68 @@ class Node(object):
         pass
 
     def show(self, buf=sys.stdout, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None, indent='', islast = True):
-        """ Pretty print the Node and all its attributes and
-            children (recursively) to a buffer.
-
-            buf:
-                Open IO buffer into which the Node is printed.
-
-            attrnames:
-                True if you want to see the attribute names in
-                name=value pairs. False to only see the values.
-
-            nodenames:
-                True if you want to see the actual node names
-                within their parents.
-
-            showcoord:
-                Do you want the coordinates of each Node to be
-                displayed.
-
-            indent:
-                Spaces and lines to be displayed behind node.
-
-            islast:
-                Denotes if node is final element in its tree.
-        """
-        marker = "└─" if islast else "├─"
-        lead = indent + marker
-        
-        if nodenames and _my_node_name is not None:
-            buf.write(lead + self.__class__.__name__+ ' <' + _my_node_name + '>: ')
-        else:
-            buf.write(lead + self.__class__.__name__+ ': ')
-
-        if self.attr_names:
-            if attrnames:
-                nvlist = [(n, getattr(self,n)) for n in self.attr_names]
-                attrstr = ', '.join('%s=%s' % nv for nv in nvlist)
-            else:
-                vlist = [getattr(self, n) for n in self.attr_names]
-                attrstr = ', '.join('%s' % v for v in vlist)
-            buf.write(attrstr)
-
-        if showcoord:
-            buf.write(' (at %s)' % self.coord)
-        buf.write('\n')
-
-        indent += "  " if islast else "│ "
-        
-        lastChild = None
-        
-        children = self.children()
-        if len(children) > 0:
-            _, lastChild = children[-1]
+            """ Pretty print the Node and all its attributes and
+                children (recursively) to a buffer.
+    
+                buf:
+                    Open IO buffer into which the Node is printed.
+    
+                attrnames:
+                    True if you want to see the attribute names in
+                    name=value pairs. False to only see the values.
+    
+                nodenames:
+                    True if you want to see the actual node names
+                    within their parents.
+    
+                showcoord:
+                    Do you want the coordinates of each Node to be
+                    displayed.
+    
+                indent:
+                    Spaces and lines to be displayed behind node.
+    
+                islast:
+                    Denotes if node is final element in its tree.
+            """
+            marker = "└─" if islast else "├─"
+            lead = indent + marker
             
-        for (child_name, child) in self.children():
-            child.show(
-                buf,
-                attrnames=attrnames,
-                nodenames=nodenames,
-                showcoord=showcoord,
-                _my_node_name=child_name,
-                indent=indent,
-                islast=(lastChild == child))
+            if nodenames and _my_node_name is not None:
+                buf.write(lead + self.__class__.__name__+ ' <' + _my_node_name + '>: ')
+            else:
+                buf.write(lead + self.__class__.__name__+ ': ')
+    
+            if self.attr_names:
+                if attrnames:
+                    nvlist = [(n, getattr(self,n)) for n in self.attr_names]
+                    attrstr = ', '.join('%s=%s' % nv for nv in nvlist)
+                else:
+                    vlist = [getattr(self, n) for n in self.attr_names]
+                    attrstr = ', '.join('%s' % v for v in vlist)
+                buf.write(attrstr)
+    
+            if showcoord:
+                buf.write(' (at %s)' % self.coord)
+            buf.write('\n')
+    
+            indent += "  " if islast else "│ "
+            
+            lastChild = None
+            
+            children = self.children()
+            if len(children) > 0:
+                _, lastChild = children[-1]
+                
+            for (child_name, child) in self.children():
+                child.show(
+                    buf,
+                    attrnames=attrnames,
+                    nodenames=nodenames,
+                    showcoord=showcoord,
+                    _my_node_name=child_name,
+                    indent=indent,
+                    islast=(lastChild == child))
 
 
 class NodeVisitor(object):
