@@ -224,15 +224,12 @@ class Node(object):
         """
         pass
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None):
+    def show(self, buf=sys.stdout, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None, indent='', islast = True):
         """ Pretty print the Node and all its attributes and
             children (recursively) to a buffer.
 
             buf:
                 Open IO buffer into which the Node is printed.
-
-            offset:
-                Initial offset (amount of leading spaces)
 
             attrnames:
                 True if you want to see the attribute names in
@@ -245,8 +242,16 @@ class Node(object):
             showcoord:
                 Do you want the coordinates of each Node to be
                 displayed.
+
+            indent:
+                Spaces and lines to be displayed behind node.
+
+            islast:
+                Denotes if node is final element in its tree.
         """
-        lead = ' ' * offset
+        marker = "└─" if islast else "├─"
+        lead = indent + marker
+        
         if nodenames and _my_node_name is not None:
             buf.write(lead + self.__class__.__name__+ ' <' + _my_node_name + '>: ')
         else:
@@ -265,14 +270,23 @@ class Node(object):
             buf.write(' (at %s)' % self.coord)
         buf.write('\n')
 
+        indent += "  " if islast else "│ "
+        
+        lastChild = None
+        
+        children = self.children()
+        if len(children) > 0:
+            _, lastChild = children[-1]
+            
         for (child_name, child) in self.children():
             child.show(
                 buf,
-                offset=offset + 2,
                 attrnames=attrnames,
                 nodenames=nodenames,
                 showcoord=showcoord,
-                _my_node_name=child_name)
+                _my_node_name=child_name,
+                indent=indent,
+                islast=(lastChild == child))
 
 
 class NodeVisitor(object):
