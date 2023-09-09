@@ -55,7 +55,7 @@ class Node(object):
         """
         pass
 
-        def show(self, buf=sys.stdout, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None, indent='', islast = True):
+    def show(self, buf=sys.stdout, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None, indent='', islast = True):
         """ Pretty print the Node and all its attributes and
             children (recursively) to a buffer.
 
