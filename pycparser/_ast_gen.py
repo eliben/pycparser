@@ -244,7 +244,7 @@ class Node(object):
                 displayed.
 
             indent:
-                Spaces and verticle lines to be displayed infront of node.
+                Spaces and vertical lines to be displayed in front of node.
 
             islast:
                 Denotes if node is final element in its tree.
