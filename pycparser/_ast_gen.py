@@ -224,12 +224,15 @@ class Node(object):
         """
         pass
 
-    def show(self, buf=sys.stdout, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None, indent='', islast = True):
+    def show(self, buf=sys.stdout, offset=0, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None, indent='', islast = True):
         """ Pretty print the Node and all its attributes and
             children (recursively) to a buffer.
 
             buf:
                 Open IO buffer into which the Node is printed.
+
+            offset:
+                Initial offset (amount of leading spaces)
 
             attrnames:
                 True if you want to see the attribute names in
@@ -250,7 +253,7 @@ class Node(object):
                 Denotes if node is final element in its tree.
         """
         marker = "└─" if islast else "├─"
-        lead = indent + marker
+        lead = ' ' * offset + indent + marker
         
         if nodenames and _my_node_name is not None:
             buf.write(lead + self.__class__.__name__+ ' <' + _my_node_name + '>: ')
@@ -275,6 +278,7 @@ class Node(object):
         for idx, (child_name, child) in enumerate(self.children()):
             child.show(
                 buf,
+                offset=offset,
                 attrnames=attrnames,
                 nodenames=nodenames,
                 showcoord=showcoord,
