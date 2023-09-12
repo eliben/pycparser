@@ -55,12 +55,15 @@ class Node(object):
         """
         pass
 
-    def show(self, buf=sys.stdout, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None, indent='', islast = True):
+    def show(self, buf=sys.stdout, offset=0, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None, indent='', islast = True):
         """ Pretty print the Node and all its attributes and
             children (recursively) to a buffer.
 
             buf:
                 Open IO buffer into which the Node is printed.
+
+            offset:
+                Initial offset (amount of leading spaces)
 
             attrnames:
                 True if you want to see the attribute names in
@@ -75,13 +78,13 @@ class Node(object):
                 displayed.
 
             indent:
-                Spaces and lines to be displayed behind node.
+                Spaces and vertical lines to be displayed in front of node.
 
             islast:
                 Denotes if node is final element in its tree.
         """
         marker = "└─" if islast else "├─"
-        lead = indent + marker
+        lead = ' ' * offset + indent + marker
         
         if nodenames and _my_node_name is not None:
             buf.write(lead + self.__class__.__name__+ ' <' + _my_node_name + '>: ')
@@ -102,22 +105,17 @@ class Node(object):
         buf.write('\n')
 
         indent += "  " if islast else "│ "
-        
-        lastChild = None
-        
-        children = self.children()
-        if len(children) > 0:
-            _, lastChild = children[-1]
-            
-        for (child_name, child) in self.children():
+                    
+        for idx, (child_name, child) in enumerate(self.children()):
             child.show(
                 buf,
+                offset=offset,
                 attrnames=attrnames,
                 nodenames=nodenames,
                 showcoord=showcoord,
                 _my_node_name=child_name,
                 indent=indent,
-                islast=(lastChild == child))
+                islast=(idx == len(self.children())-1))
 
 
 class NodeVisitor(object):
