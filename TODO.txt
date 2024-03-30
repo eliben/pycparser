@@ -25,6 +25,7 @@ After this it's OK to rerun `python3.6 -m twine upload dist/*` to push to PyPI
 (older Pythons use a deprecated API for PyPI uploading).
 
 - Tag in git. When pushing to GitHub, git push --tags
+- Create new GitHub release (?)
 
 Misc
 ----
