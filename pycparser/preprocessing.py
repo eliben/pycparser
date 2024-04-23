@@ -188,7 +188,7 @@ def find_undefined_types_in_variables(code_list):
     return list(undefined_types), code_list
 
 
-def find_undefined_function_types(code_list, gpu_token):
+def find_undefined_function_types(code_list):
 
     defined_types = set(['int', 'char', 'float', 'double', 'long', 'short', 'void'])
     undefined_types = set()
