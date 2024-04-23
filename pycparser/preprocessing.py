@@ -186,3 +186,26 @@ def find_undefined_types_in_variables(code_list):
                 code_list[line[0]][1] = (line[1][1].replace((variable_declaration.split()[0]+ ' '), 'int '))
 
     return list(undefined_types), code_list
+
+
+def find_undefined_function_types(code_list, gpu_token):
+
+    defined_types = set(['int', 'char', 'float', 'double', 'long', 'short', 'void'])
+    undefined_types = set()
+    
+    function_pattern = r'\b([a-zA-Z_]\w*\s*\**)\s+\w+\s*\([^)]*\)\s*{'
+    
+    temp_list = [i[1] for i in code_list]
+    lines = "\n".join(temp_list)
+    temp = lines
+
+    function_matches = re.findall(function_pattern, lines)
+    
+    for return_type in function_matches:
+        if return_type.strip('*') not in defined_types:
+            undefined_types.add(return_type.strip('*'))
+
+            temp = (temp.replace(return_type, 'int'))
+
+    
+    return list(undefined_types), temp
