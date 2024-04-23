@@ -1,3 +1,48 @@
+def code_preprocessing(file):
+    
+    comment_lines, raw_codeLines = comment_finder(file)
+    comment_lines.reverse()
+    for i in comment_lines:
+        raw_codeLines.pop(i)
+    for line_number in range(len(raw_codeLines)):
+        placeHolder = raw_codeLines[line_number][1]
+        placeHolder = space_out(placeHolder, ";")
+        placeHolder = space_out(placeHolder, "(")
+        placeHolder = space_out(placeHolder, ")")
+        placeHolder = space_out(placeHolder, ",")
+        raw_codeLines[line_number][1] = placeHolder
+
+    return raw_codeLines, comment_lines.reverse()
+
+
+def insert_space(string, index):
+    string_copy = ""
+    for i in range(len(string)):
+        if i==(index):
+            string_copy += " "
+            string_copy += string[i]
+            string_copy += " "
+            continue
+        string_copy += string[i]
+    return string_copy
+
+def find_char_indices(input_string, char):
+    indices = []
+    replacement_token = 0
+    for index, character in enumerate(input_string):
+        if character == char:
+            indices.append(index + 2*replacement_token)
+            replacement_token+=1
+    return indices
+
+def space_out(string, char):
+    indices = find_char_indices(string, char)
+
+    for i in indices:
+        string = insert_space(string, i)
+    return string
+
+
 def comment_finder(file):
     with open(file) as dataset_obj:
         codeLines = dataset_obj.read()
