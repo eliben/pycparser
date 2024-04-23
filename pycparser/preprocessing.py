@@ -1,3 +1,5 @@
+import re
+
 def code_preprocessing(file):
     
     comment_lines, raw_codeLines = comment_finder(file)
@@ -75,3 +77,112 @@ def comment_finder(file):
                 comment_start = raw_codeLines[line_number][1].find('//')
                 raw_codeLines[line_number][1] = raw_codeLines[line_number][1][:comment_start]
     return comment_lines, raw_codeLines
+
+def find_undefined_types_in_variables(code_list):
+
+    cpp_keywords = [
+    "alignas",
+    "alignof",
+    "and",
+    "and_eq",
+    "asm",
+    "auto",
+    "bitand",
+    "bitor",
+    "bool",
+    "break",
+    "case",
+    "catch",
+    "char",
+    "char16_t",
+    "char32_t",
+    "class",
+    "compl",
+    "const",
+    "constexpr",
+    "const_cast",
+    "continue",
+    "decltype",
+    "default",
+    "delete",
+    "do",
+    "double",
+    "dynamic_cast",
+    "else",
+    "enum",
+    "explicit",
+    "export",
+    "extern",
+    "false",
+    "float",
+    "for",
+    "friend",
+    "goto",
+    "if",
+    "inline",
+    "int",
+    "long",
+    "mutable",
+    "namespace",
+    "new",
+    "noexcept",
+    "not",
+    "not_eq",
+    "nullptr",
+    "operator",
+    "or",
+    "or_eq",
+    "private",
+    "protected",
+    "public",
+    "register",
+    "reinterpret_cast",
+    "return",
+    "short",
+    "signed",
+    "sizeof",
+    "static",
+    "static_assert",
+    "static_cast",
+    "struct",
+    "switch",
+    "template",
+    "this",
+    "thread_local",
+    "throw",
+    "true",
+    "try",
+    "typedef",
+    "typeid",
+    "typename",
+    "union",
+    "unsigned",
+    "using",
+    "virtual",
+    "void",
+    "volatile",
+    "wchar_t",
+    "while",
+    "xor",
+    "xor_eq",
+    "%d",
+    "%f",
+    "%s"
+]
+
+    defined_types = {'int', 'char', 'float', 'double', 'long', 'short', 'void'}
+    undefined_types = set()
+
+    variable_pattern = r'\b((?:[a-zA-Z_]\w*\**)\s+\**\s*\**[a-zA-Z_]\w*\[*\w*\]*)\s*(?:,|\s*;|\s*=|\s*\))'
+
+    for line in enumerate(code_list):
+        variable_matches = re.findall(variable_pattern, line[1][1])
+        for variable_declaration in variable_matches:
+            data_type = variable_declaration.split()[0]
+            if data_type == 'd':
+                pass
+            elif (data_type not in defined_types) and (data_type not in cpp_keywords):
+                undefined_types.add(data_type)
+                code_list[line[0]][1] = (line[1][1].replace((variable_declaration.split()[0]+ ' '), 'int '))
+
+    return list(undefined_types), code_list
