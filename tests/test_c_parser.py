@@ -483,6 +483,21 @@ class TestCParser_fundamentals(TestCParser_base):
                     [['Decl', 'p', ['ArrayDecl', '10', ['static'],
                                        ['TypeDecl', ['IdentifierType', ['int']]]]]],
                     ['TypeDecl', ['IdentifierType', ['int']]]]])
+        # anonymous function parameter
+        self.assertEqual(self.get_decl('int zz(int [static 10]);'),
+            ['Decl', 'zz',
+                ['FuncDecl',
+                    [['Typename',
+                      ['ArrayDecl', '10', ['static'],
+                       ['TypeDecl', ['IdentifierType', ['int']]]]]],
+                    ['TypeDecl', ['IdentifierType', ['int']]]]])
+        self.assertEqual(self.get_decl('int zz(int [static const restrict 10]);'),
+            ['Decl', 'zz',
+                ['FuncDecl',
+                    [['Typename',
+                      ['ArrayDecl', '10', ['static', 'const', 'restrict'],
+                       ['TypeDecl', ['IdentifierType', ['int']]]]]],
+                    ['TypeDecl', ['IdentifierType', ['int']]]]])
 
         self.assertEqual(self.get_decl('int zz(int p[const 10]);'),
             ['Decl', 'zz',

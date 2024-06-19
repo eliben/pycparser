@@ -1530,6 +1530,20 @@ class CParser(PLYParser):
             type=c_ast.TypeDecl(None, None, None, None),
             coord=self._token_coord(p, 1))
 
+    def p_direct_abstract_declarator_8(self, p):
+        """ direct_abstract_declarator  : LBRACKET STATIC type_qualifier_list_opt assignment_expression RBRACKET
+                                         | LBRACKET type_qualifier_list STATIC assignment_expression RBRACKET
+        """
+        listed_quals = [item if isinstance(item, list) else [item]
+            for item in [p[2],p[3]]]
+        quals = [qual for sublist in listed_quals for qual in sublist
+            if qual is not None]
+        p[0] = c_ast.ArrayDecl(
+            type=c_ast.TypeDecl(None, None, None, None),
+            dim=p[4],
+            dim_quals=quals,
+            coord=self._token_coord(p, 1))
+
     # declaration is a list, statement isn't. To make it consistent, block_item
     # will always be a list
     #
