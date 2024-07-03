@@ -1674,7 +1674,7 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(d1, ['Constant', 'string', '"hello"'])
 
         d2 = self.get_decl_init('char* s = "hello" " world";')
-        self.assertEqual(d2, ['Constant', 'string', '"hello world"'])
+        self.assertEqual(d2, ['Constant', 'string', '"hello"" world"'])
 
         # the test case from issue 6
         d3 = self.parse(r'''
@@ -1690,13 +1690,13 @@ class TestCParser_fundamentals(TestCParser_base):
 
         self.assertEqual(
             d3.ext[0].body.block_items[0].args.exprs[1].value,
-            r'"Wrong Params?\nUsage:\n%s <binary_file_path>\n"')
+            r'"Wrong Params?\n""Usage:\n""%s <binary_file_path>\n"')
 
         d4 = self.get_decl_init('char* s = "" "foobar";')
-        self.assertEqual(d4, ['Constant', 'string', '"foobar"'])
+        self.assertEqual(d4, ['Constant', 'string', '"""foobar"'])
 
         d5 = self.get_decl_init(r'char* s = "foo\"" "bar";')
-        self.assertEqual(d5, ['Constant', 'string', r'"foo\"bar"'])
+        self.assertEqual(d5, ['Constant', 'string', r'"foo\"""bar"'])
 
         # This is not correct based on the the C spec, but testing it here to
         # see the behavior in action. Will have to fix this
@@ -1706,7 +1706,10 @@ class TestCParser_fundamentals(TestCParser_base):
         # into single members of the execution character set just prior to
         # adjacent string literal concatenation".
         d6 = self.get_decl_init(r'char* s = "\1" "23";')
-        self.assertEqual(d6, ['Constant', 'string', r'"\123"'])
+        self.assertEqual(d6, ['Constant', 'string', r'"\1""23"'])
+
+        d7 = self.get_decl_init(r'char* s = "\07" "7";')
+        self.assertNotEqual(d7, ['Constant', 'string', r'"\07""7"'])  
 
     def test_unified_wstring_literals(self):
         d1 = self.get_decl_init('char* s = L"hello" L"world";')
