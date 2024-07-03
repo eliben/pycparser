@@ -1915,7 +1915,7 @@ class CParser(PLYParser):
             p[0] = c_ast.Constant(
                 'string', p[1], self._token_coord(p, 1))
         else:
-            p[1].value = p[1].value[:-1] + p[2][1:]
+            p[1].value = p[1].value + p[2]
             p[0] = p[1]
 
     def p_unified_wstring_literal(self, p):
