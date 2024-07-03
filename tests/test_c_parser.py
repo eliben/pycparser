@@ -1709,7 +1709,7 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(d6, ['Constant', 'string', r'"\1""23"'])
 
         d7 = self.get_decl_init(r'char* s = "\07" "7";')
-        self.assertNotEqual(d7, ['Constant', 'string', r'"\07""7"'])  
+        self.assertEqual(d7, ['Constant', 'string', r'"\07""7"'])  
 
     def test_unified_wstring_literals(self):
         d1 = self.get_decl_init('char* s = L"hello" L"world";')
