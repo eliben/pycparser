@@ -18,10 +18,10 @@ from .ast_transforms import fix_switch_cases, fix_atomic_specifiers
 class CParser(PLYParser):
     def __init__(
             self,
-            lex_optimize=True,
+            lex_optimize=False,
             lexer=CLexer,
             lextab='pycparser.lextab',
-            yacc_optimize=True,
+            yacc_optimize=False,
             yacctab='pycparser.yacctab',
             yacc_debug=False,
             taboutputdir=''):
@@ -876,6 +876,7 @@ class CParser(PLYParser):
                                       | SIGNED
                                       | UNSIGNED
                                       | __INT128
+                                      | U0
         """
         p[0] = c_ast.IdentifierType([p[1]], coord=self._token_coord(p, 1))
 
