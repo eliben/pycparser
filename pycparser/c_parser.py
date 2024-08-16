@@ -876,7 +876,16 @@ class CParser(PLYParser):
                                       | SIGNED
                                       | UNSIGNED
                                       | __INT128
-                                      | U0 | I8 | U8 | I16 | U16 | I32 | U32 | I64 | U64 | F64
+                                      | U0 
+                                      | I8 
+                                      | U8 
+                                      | I16 
+                                      | U16 
+                                      | I32 
+                                      | U32 
+                                      | I64 
+                                      | U64 
+                                      | F64
         """
         p[0] = c_ast.IdentifierType([p[1]], coord=self._token_coord(p, 1))
 
