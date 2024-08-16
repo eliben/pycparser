@@ -10,17 +10,13 @@ def parse(hc):
 	ast = pycparser.parse_file( hc )
 	print(ast)
 
-HW_JIT = r'''
-U0 Hello(){
-    "Hello World\n";
-}
-Hello;
-'''
-
 HW = r'''
 U0 Hello(){
     "Hello World\n";
+	Hello;
 }
+Hello;
+Hello();
 '''
 
 if __name__=='__main__':
