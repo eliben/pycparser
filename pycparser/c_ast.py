@@ -829,9 +829,10 @@ class NamedInitializer(Node):
     attr_names = ()
 
 class ParamList(Node):
-    __slots__ = ('params', 'coord', '__weakref__')
+    __slots__ = ('params', 'holy_param_defaults', 'coord', '__weakref__')
     def __init__(self, params, coord=None):
         self.params = params
+        self.holy_param_defaults = {}
         self.coord = coord
 
     def children(self):
