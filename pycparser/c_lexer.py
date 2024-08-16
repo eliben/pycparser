@@ -115,6 +115,8 @@ class CLexer(object):
         '_PRAGMA',
         )
 
+    holyc = ('U0',)
+
     keyword_map = {}
 
     for keyword in keywords:
@@ -123,10 +125,14 @@ class CLexer(object):
     for keyword in keywords_new:
         keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
 
+    for keyword in holyc:
+        keyword_map[keyword] = keyword
+
+
     ##
     ## All the tokens recognized by the lexer
     ##
-    tokens = keywords + keywords_new + (
+    tokens = keywords + keywords_new + holyc + (
         # Identifiers
         'ID',
 
