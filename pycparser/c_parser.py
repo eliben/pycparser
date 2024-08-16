@@ -1325,9 +1325,15 @@ class CParser(PLYParser):
     def p_parameter_list(self, p):
         """ parameter_list  : parameter_declaration
                             | parameter_list COMMA parameter_declaration
+                            | parameter_list EQUALS STRING_LITERAL COMMA parameter_declaration
         """
         if len(p) == 2: # single parameter
             p[0] = c_ast.ParamList([p[1]], p[1].coord)
+        elif len(p) == 6:
+            assert type(p[1]) is c_ast.ParamList
+            pname = p[1].params[-1].name
+            p[1].holy_param_defaults[ pname ] = p[3]
+            p[0] = p[1]
         else:
             p[1].params.append(p[3])
             p[0] = p[1]
