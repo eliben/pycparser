@@ -1972,3 +1972,15 @@ class CParser(PLYParser):
                             column=self.clex.find_tok_column(p)))
         else:
             self._parse_error('At end of input', self.clex.filename)
+
+    def p_external_declaration_holyc_0(self, p):
+        """ external_declaration    : ID SEMI
+        """
+        coord = self._token_coord(p, 1)
+        p[0] = c_ast.FuncCall(p[1], args=None, coord=coord)
+
+    def p_external_declaration_holyc_1(self, p):
+        """ external_declaration    : ID LPAREN RPAREN SEMI
+        """
+        coord = self._token_coord(p, 1)
+        p[0] = c_ast.FuncCall(p[1], args=None, coord=coord)
