@@ -1333,6 +1333,7 @@ class CParser(PLYParser):
             assert type(p[1]) is c_ast.ParamList
             pname = p[1].params[-1].name
             p[1].holy_param_defaults[ pname ] = p[3]
+            p[1].params.append(p[5])
             p[0] = p[1]
         else:
             p[1].params.append(p[3])
