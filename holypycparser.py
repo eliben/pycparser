@@ -31,6 +31,38 @@ HOLYCTYPES = '''
 #define I32 int
 '''
 
+class holywrapper(object):
+	def __init__(self, f, meta):
+		self.func = f
+		self.name = meta['name']
+		cargs = []
+		for arg in meta['args']:
+			if arg.startswith('U8'):
+				if '*' in arg:
+					cargs.append(ctypes.c_char_p)
+				else:
+					cargs.append(ctypes.c_char)
+			elif arg.startswith('F64'):
+				cargs.append(ctypes.c_double)
+			elif arg.startswith('U'):
+				cargs.append(ctypes.c_uint)
+			else:
+				cargs.append(ctypes.c_int)
+		if cargs:
+			f.argtypes = tuple(cargs)
+
+		if meta['returns'] == 'I32':
+			f.restype = ctypes.c_int
+		elif meta['returns'] == 'F64':
+			f.restype = ctypes.c_double
+
+	def __call__(self, *args):
+		cargs = []
+		for a in args:
+			if type(a) is str: a = a.encode('utf-8')
+			cargs.append(a)
+		return self.func(*cargs)
+
 def holyjit( h ):
 	py = []
 	c  = [HOLYCTYPES]
@@ -51,7 +83,6 @@ def holyjit( h ):
 	print('\n'.join(py))
 	print('_'*80)
 	print(funcs)
-
 	tmp = '/tmp/holyjit.c'
 	open(tmp, 'wb').write('\n'.join(c).encode("utf-8"))
 	cmd = ['gcc', '-fPIC', '-shared', '-o', '/tmp/holyjit.so', tmp]
@@ -59,13 +90,15 @@ def holyjit( h ):
 	subprocess.check_call(cmd)
 	lib = ctypes.CDLL('/tmp/holyjit.so')
 	print(lib)
-
 	scope = {}
-
 	for fn in funcs:
 		f = getattr(lib, fn['name'])
 		print(f)
-		scope[fn['name']] = f
+		scope[fn['name']] = holywrapper(f, fn)
+
+	exec('\n'.join(py), scope, scope)
+	print(scope)
+	return scope
 
 if __name__=='__main__':
 	test = None
@@ -83,10 +116,3 @@ if __name__=='__main__':
 	c = gen.visit(ast)
 	print(c)
 	holyjit(c)
-	sys.exit()
-
-	tmp = '/tmp/test.c'
-	open(tmp,'wb').write( (HOLYCTYPES + c).encode('utf-8') )
-	cmd = ['gcc', '-o', '/tmp/test.exe', tmp]
-	print(cmd)
-	subprocess.check_call(cmd)
