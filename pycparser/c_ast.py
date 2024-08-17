@@ -629,6 +629,33 @@ class For(Node):
 
     attr_names = ()
 
+class HolyJit(Node):
+    __slots__ = ('node', 'coord', '__weakref__')
+    def __init__(self, node, coord=None):
+        self.node = node
+        self.coord = coord
+    def children(self):
+        nodelist = [("node", self.node)]
+        return tuple(nodelist)
+    def __iter__(self):
+        if self.node is not None:
+            yield self.node
+    attr_names = ()
+
+
+class HolyFuncCall(Node):
+    __slots__ = ('name', 'coord', '__weakref__')
+    def __init__(self, name, coord=None):
+        self.name = name
+        self.coord = coord
+    def children(self):
+        nodelist = [("name", self.name)]
+        return tuple(nodelist)
+    def __iter__(self):
+        if self.name is not None:
+            yield self.name
+    attr_names = ()
+
 class FuncCall(Node):
     __slots__ = ('name', 'args', 'coord', '__weakref__')
     def __init__(self, name, args, coord=None):
