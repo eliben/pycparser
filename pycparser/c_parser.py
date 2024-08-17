@@ -1983,10 +1983,10 @@ class CParser(PLYParser):
         """ external_declaration    : ID SEMI
         """
         coord = self._token_coord(p, 1)
-        p[0] = c_ast.FuncCall(p[1], args=None, coord=coord)
+        p[0] = c_ast.FuncCall(c_ast.HolyFuncCall(p[1]), args=None, coord=coord)
 
     def p_external_declaration_holyc_1(self, p):
         """ external_declaration    : ID LPAREN RPAREN SEMI
         """
         coord = self._token_coord(p, 1)
-        p[0] = c_ast.FuncCall(p[1], args=None, coord=coord)
+        p[0] = c_ast.FuncCall(c_ast.HolyFuncCall(p[1]), args=None, coord=coord)
