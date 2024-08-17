@@ -1990,3 +1990,9 @@ class CParser(PLYParser):
         """
         coord = self._token_coord(p, 1)
         p[0] = c_ast.FuncCall(c_ast.HolyFuncCall(p[1]), args=None, coord=coord)
+
+    def p_external_declaration_holyc_2(self, p):
+        """ external_declaration    : statement
+        """
+        coord = self._token_coord(p, 1)
+        p[0] = c_ast.HolyJit(p[1])
