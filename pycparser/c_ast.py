@@ -208,12 +208,13 @@ class ArrayRef(Node):
     attr_names = ()
 
 class Assignment(Node):
-    __slots__ = ('op', 'lvalue', 'rvalue', 'coord', '__weakref__')
-    def __init__(self, op, lvalue, rvalue, coord=None):
+    __slots__ = ('op', 'lvalue', 'rvalue', 'coord', 'jit', '__weakref__')
+    def __init__(self, op, lvalue, rvalue, coord=None, jit=False):
         self.op = op
         self.lvalue = lvalue
         self.rvalue = rvalue
         self.coord = coord
+        self.jit = jit
 
     def children(self):
         nodelist = []
@@ -644,12 +645,13 @@ class HolyJit(Node):
 
 
 class HolyFuncCall(Node):
-    __slots__ = ('name', 'coord', '__weakref__')
-    def __init__(self, name, coord=None):
+    __slots__ = ('name', 'coord', 'jit', '__weakref__')
+    def __init__(self, name, coord=None, jit=False):
         self.name = name
         self.coord = coord
+        self.jit = jit
     def children(self):
-        nodelist = [("name", self.name)]
+        nodelist = [("name", self.name), ("jit", self.jit)]
         return tuple(nodelist)
     def __iter__(self):
         if self.name is not None:
@@ -657,16 +659,18 @@ class HolyFuncCall(Node):
     attr_names = ()
 
 class FuncCall(Node):
-    __slots__ = ('name', 'args', 'coord', '__weakref__')
-    def __init__(self, name, args, coord=None):
+    __slots__ = ('name', 'args', 'coord', 'jit', '__weakref__')
+    def __init__(self, name, args, coord=None, jit=False):
         self.name = name
         self.args = args
         self.coord = coord
+        self.jit = jit
 
     def children(self):
         nodelist = []
         if self.name is not None: nodelist.append(("name", self.name))
         if self.args is not None: nodelist.append(("args", self.args))
+        if self.jit is not None: nodelist.append(("jit", self.jit))
         return tuple(nodelist)
 
     def __iter__(self):
