@@ -24,6 +24,7 @@ class CGenerator(object):
         # the _make_indent method.
         self.indent_level = 0
         self.reduce_parentheses = reduce_parentheses
+        self.functions = {}
 
     def _make_indent(self):
         return ' ' * self.indent_level
@@ -62,9 +63,32 @@ class CGenerator(object):
         return n.name + '()'
     
     def visit_FuncCall(self, n):
+        cargs = []
+        if n.name.name in self.functions:
+            spec = self.functions[n.name.name]
+            if spec.args.holy_param_defaults:
+                if len(n.args.exprs) < len(spec.args.params):
+                    for arg in spec.args.params:
+                        arg = arg.name
+                        if arg in spec.args.holy_param_defaults:
+                            cargs.append(spec.args.holy_param_defaults[arg])
         fref = self._parenthesize_unless_simple(n.name)
-        return fref + '(' + self.visit(n.args) + ')'
-
+        if cargs:
+            return fref + '(' + ','.join(cargs) + ',' + self.visit(n.args) + ')'
+        else:
+            return fref + '(' + self.visit(n.args) + ')'
+    
+    def visit_FuncDef(self, n):
+        self.functions[n.decl.name] = n.decl.type
+        decl = self.visit(n.decl)
+        self.indent_level = 0
+        body = self.visit(n.body)
+        if n.param_decls:
+            knrdecls = ';\n'.join(self.visit(p) for p in n.param_decls)
+            return decl + '\n' + knrdecls + ';\n' + body + '\n'
+        else:
+            return decl + '\n' + body + '\n'
+    
     def visit_UnaryOp(self, n):
         if n.op == 'sizeof':
             # Always parenthesize the argument of sizeof since it can be
@@ -198,16 +222,6 @@ class CGenerator(object):
                 name=n.name,
                 value=self.visit(n.value),
             )
-
-    def visit_FuncDef(self, n):
-        decl = self.visit(n.decl)
-        self.indent_level = 0
-        body = self.visit(n.body)
-        if n.param_decls:
-            knrdecls = ';\n'.join(self.visit(p) for p in n.param_decls)
-            return decl + '\n' + knrdecls + ';\n' + body + '\n'
-        else:
-            return decl + '\n' + body + '\n'
 
     def visit_FileAST(self, n):
         s = ''
