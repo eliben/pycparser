@@ -60,7 +60,10 @@ class CGenerator(object):
         return sref + n.type + self.visit(n.field)
 
     def visit_HolyFuncCall(self, n):
-        return n.name + '()'
+        if n.jit:
+            return '//JIT//%s()' %n.name
+        else:
+            return n.name + '()'
     
     def visit_FuncCall(self, n):
         cargs = []
@@ -152,7 +155,10 @@ class CGenerator(object):
         rval_str = self._parenthesize_if(
                             n.rvalue,
                             lambda n: isinstance(n, c_ast.Assignment))
-        return '%s %s %s' % (self.visit(n.lvalue), n.op, rval_str)
+        if n.jit:
+            return '//JIT//%s %s %s' % (self.visit(n.lvalue), n.op, rval_str)
+        else:
+            return '%s %s %s' % (self.visit(n.lvalue), n.op, rval_str)
 
     def visit_IdentifierType(self, n):
         return ' '.join(n.names)
