@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys
+import os, sys, subprocess
 assert os.path.isdir('./pycparser')
 sys.path.insert(0, './pycparser')
 import pycparser
@@ -17,13 +17,19 @@ U0 Hello(){
 }
 Hello;
 Hello();
-I32 add(I32 x="foooo", I32 y){
-    return x+y;
+I32 add(U8 *x="foooo", I32 y, I32 z){
+    return y+z;
 }
 I32 X;
-X = add(8);
+X = add(1,2);
+X = add("bar", 3,4);
 '''
 
+HOLYCTYPES = '''
+#define U0 void
+#define U8 unsigned char
+#define I32 int
+'''
 
 if __name__=='__main__':
 	test = None
@@ -40,3 +46,9 @@ if __name__=='__main__':
 	print(gen)
 	c = gen.visit(ast)
 	print(c)
+
+	tmp = '/tmp/test.c'
+	open(tmp,'wb').write( (HOLYCTYPES + c).encode('utf-8') )
+	cmd = ['gcc', '-o', '/tmp/test.exe', tmp]
+	print(cmd)
+	subprocess.check_call(cmd)
