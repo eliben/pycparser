@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, subprocess
+import os, sys, subprocess, json, ctypes
 assert os.path.isdir('./pycparser')
 sys.path.insert(0, './pycparser')
 import pycparser
@@ -31,6 +31,42 @@ HOLYCTYPES = '''
 #define I32 int
 '''
 
+def holyjit( h ):
+	py = []
+	c  = [HOLYCTYPES]
+	js = []
+	funcs = []
+	for ln in h.splitlines():
+		if ln.startswith('//JIT//'):
+			py.append(ln[len('//JIT//'):])
+		elif ln.startswith('//JSON//'):
+			f = json.loads(ln[len('//JSON//'):])
+			funcs.append(f)
+		else:
+			c.append(ln)
+
+	print('='*80)
+	print('\n'.join(c))
+	print('-'*80)
+	print('\n'.join(py))
+	print('_'*80)
+	print(funcs)
+
+	tmp = '/tmp/holyjit.c'
+	open(tmp, 'wb').write('\n'.join(c).encode("utf-8"))
+	cmd = ['gcc', '-fPIC', '-shared', '-o', '/tmp/holyjit.so', tmp]
+	print(cmd)
+	subprocess.check_call(cmd)
+	lib = ctypes.CDLL('/tmp/holyjit.so')
+	print(lib)
+
+	scope = {}
+
+	for fn in funcs:
+		f = getattr(lib, fn['name'])
+		print(f)
+		scope[fn['name']] = f
+
 if __name__=='__main__':
 	test = None
 	for arg in sys.argv:
@@ -46,6 +82,8 @@ if __name__=='__main__':
 	print(gen)
 	c = gen.visit(ast)
 	print(c)
+	holyjit(c)
+	sys.exit()
 
 	tmp = '/tmp/test.c'
 	open(tmp,'wb').write( (HOLYCTYPES + c).encode('utf-8') )
