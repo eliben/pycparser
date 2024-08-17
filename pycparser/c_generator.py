@@ -84,6 +84,7 @@ class CGenerator(object):
     def visit_FuncDef(self, n):
         self.functions[n.decl.name] = n.decl.type
         decl = self.visit(n.decl)
+        decl = '//JSON//'+self.cast2json(n.decl) + '\n' + decl
         self.indent_level = 0
         body = self.visit(n.body)
         if n.param_decls:
@@ -523,3 +524,14 @@ class CGenerator(object):
         """
         return isinstance(n, (c_ast.Constant, c_ast.ID, c_ast.ArrayRef,
                               c_ast.StructRef, c_ast.FuncCall))
+
+    def cast2json(self, n):
+        import json
+        f = {'name': n.name, 'args':[], 'defaults':{}, 'returns':self.visit(n.type.type)}
+        if n.type.args:
+            for arg in n.type.args:
+                f['args'].append( self.visit(arg) )
+            if n.type.args.holy_param_defaults:
+                for a in n.type.args.holy_param_defaults:
+                    f['defaults'][a] = n.type.args.holy_param_defaults[a]
+        return json.dumps(f)
