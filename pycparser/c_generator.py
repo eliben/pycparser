@@ -58,6 +58,9 @@ class CGenerator(object):
         sref = self._parenthesize_unless_simple(n.name)
         return sref + n.type + self.visit(n.field)
 
+    def visit_HolyFuncCall(self, n):
+        return n.name + '()'
+    
     def visit_FuncCall(self, n):
         fref = self._parenthesize_unless_simple(n.name)
         return fref + '(' + self.visit(n.args) + ')'
