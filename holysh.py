@@ -4,11 +4,14 @@ import holypycparser
 print(holypycparser)
 
 scope = {}
-
 HOLYC = None
+MODS = 0
+
 def holyc_compile(hc):
+	global MODS
 	c = holypycparser.holyc_to_c(hc)
-	jit = holypycparser.holyjit(c)
+	jit = holypycparser.holyjit(c, output='/tmp/jit%s.so' % MODS)
+	MODS += 1
 	for name in jit:
 		f = jit[name]
 		if isinstance(f, holypycparser.holywrapper):
@@ -21,16 +24,13 @@ I32 add(I32 y, I32 z){
 }
 '''
 
-holyc_compile(TEST)
+user_hc = []
 for arg in sys.argv:
 	if arg.endswith(('.HC', '.hc')):
 		holyc_compile(arg)
-
-def pymode():
-	global HOLYC
-	sys.ps1 = 'python>>>'
-	sys.ps2 = '... '
-	HOLYC = None
+		user_hc.append(arg)
+if not user_hc:
+	holyc_compile(TEST)
 
 HELP0 = '''
 SYNTAX FUNCTION
@@ -65,9 +65,7 @@ def help():
 
 com = {
 	'help'  : help,
-	'holyc' : holyc_compile,
-	'python': pymode,
-	'exit': pymode,
+	'exit': lambda: sys.exit(),
 
 	## TempleOS
 	'Dir': lambda : os.system('ls -lh'),
@@ -94,7 +92,6 @@ def run(co, filename=None, symbol=None):
 			pymode()
 		else:
 			HOLYC.append(co)
-			#print(co)
 		if co == '}':
 			holyc_compile(HOLYC)
 			HOLYC = None
