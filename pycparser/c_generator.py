@@ -92,7 +92,8 @@ class CGenerator(object):
     def visit_FuncDef(self, n):
         self.functions[n.decl.name] = n.decl.type
         decl = self.visit(n.decl)
-        decl = '//JSON//'+self.cast2json(n.decl) + '\n' + decl
+        if self.dump_json:
+            decl = '//JSON//'+self.cast2json(n.decl) + '\n' + decl
         self.indent_level = 0
         body = self.visit(n.body)
         if n.param_decls:
