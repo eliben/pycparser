@@ -74,6 +74,8 @@ class CGenerator(object):
             return n.name + '()'
     
     def visit_FuncCall(self, n):
+        if self.holy and n.name.name=='printf':
+            return self.visit(n.args)
         cargs = []
         if n.name.name in self.functions:
             spec = self.functions[n.name.name]
