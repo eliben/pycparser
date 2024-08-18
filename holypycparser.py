@@ -119,7 +119,25 @@ def holyc_to_c(hc):
 	c = gen.visit(ast)
 	return c
 
+def c_to_hollyc(c):
+	tmp = '/tmp/c2hc.c'
+	if type(c) is list:
+		c = '\n'.join(c)
+	open(tmp,'wb').write(c.encode('utf-8'))
+	ast = parse(tmp)
+	gen = c_generator.CGenerator( make_holy=True )
+	hc = gen.visit(ast)
+	print('✝'*80)
+	print(hc)
+	return hc
+
+TEST = '''
+void main(unsigned char c){printf("foo", c);}
+'''
 if __name__=='__main__':
+	if '--test-c' in sys.argv:
+		c_to_hollyc(TEST)
+		sys.exit()
 	test = None
 	for arg in sys.argv:
 		if arg.endswith( ('.HC', '.hc') ):
