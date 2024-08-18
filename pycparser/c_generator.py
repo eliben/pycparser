@@ -8,7 +8,7 @@
 #------------------------------------------------------------------------------
 from . import c_ast
 
-c2holly = {
+c2holy = {
     'void': 'U0', 'char':'I8', 'short':'I16', 'int':'I32', 'long':'I64',
     'unsigned char': 'U8', 'unsigned short':'U16', 'unsigned int':'U32', 
     'unsigned long':'U64', 'float':'F64', 'double':'F64',
@@ -170,12 +170,12 @@ class CGenerator(object):
             return '%s %s %s' % (self.visit(n.lvalue), n.op, rval_str)
 
     def visit_IdentifierType(self, n):
-        if self.holly:
+        if self.holy:
             itype = []
             unsigned = False
             for a in n.names:
-                if unsigned and 'unsigned '+a in c2holly: a = c2holly['unsigned '+a]
-                elif a in c2holly: a = c2holly[a]
+                if unsigned and 'unsigned '+a in c2holy: a = c2holy['unsigned '+a]
+                elif a in c2holy: a = c2holy[a]
                 elif a == 'unsigned':
                     unsigned = True
                     continue
