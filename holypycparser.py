@@ -6,9 +6,7 @@ import pycparser
 from pycparser import c_generator
 
 def parse(hc):
-	print('parsing:', hc)
 	ast = pycparser.parse_file( hc )
-	print(ast)
 	return ast
 
 HW = r'''
@@ -63,7 +61,7 @@ class holywrapper(object):
 			cargs.append(a)
 		return self.func(*cargs)
 
-def holyjit( h ):
+def holyjit( h, debug=False ):
 	py = []
 	c  = [HOLYCTYPES]
 	js = []
@@ -77,12 +75,14 @@ def holyjit( h ):
 		else:
 			c.append(ln)
 
-	print('='*80)
-	print('\n'.join(c))
-	print('-'*80)
-	print('\n'.join(py))
-	print('_'*80)
-	print(funcs)
+	if debug:
+		print('='*80)
+		print('\n'.join(c))
+		print('-'*80)
+		print('\n'.join(py))
+		print('_'*80)
+		print(funcs)
+
 	tmp = '/tmp/holyjit.c'
 	open(tmp, 'wb').write('\n'.join(c).encode("utf-8"))
 	cmd = ['gcc', '-fPIC', '-shared', '-o', '/tmp/holyjit.so', tmp]
@@ -90,15 +90,34 @@ def holyjit( h ):
 	subprocess.check_call(cmd)
 	lib = ctypes.CDLL('/tmp/holyjit.so')
 	print(lib)
+
 	scope = {}
+	errors = []
 	for fn in funcs:
-		f = getattr(lib, fn['name'])
-		print(f)
+		try:
+			f = getattr(lib, fn['name'])
+		except AttributeError:
+			errors.append(fn['name'])
+		if debug: print(f)
 		scope[fn['name']] = holywrapper(f, fn)
 
-	exec('\n'.join(py), scope, scope)
-	print(scope)
+	if errors:
+		os.system('nm /tmp/holyjit.so')
+		print('WARN: missing functions', errors)
+	else:
+		exec('\n'.join(py), scope, scope)
+	if debug: print(scope)
 	return scope
+
+def holyc_to_c(hc):
+	tmp = '/tmp/hc2c.HC'
+	if type(hc) is list:
+		hc = '\n'.join(hc)
+	open(tmp,'wb').write(hc.encode('utf-8'))
+	ast = parse(tmp)
+	gen = c_generator.CGenerator()
+	c = gen.visit(ast)
+	return c
 
 if __name__=='__main__':
 	test = None
@@ -112,7 +131,5 @@ if __name__=='__main__':
 
 	ast = parse(test)
 	gen = c_generator.CGenerator()
-	print(gen)
 	c = gen.visit(ast)
-	print(c)
 	holyjit(c)
