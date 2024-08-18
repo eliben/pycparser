@@ -61,7 +61,7 @@ class holywrapper(object):
 			cargs.append(a)
 		return self.func(*cargs)
 
-def holyjit( h, debug=False ):
+def holyjit( h, output='/tmp/holyjit.so', debug=False ):
 	py = []
 	c  = [HOLYCTYPES]
 	js = []
@@ -85,10 +85,10 @@ def holyjit( h, debug=False ):
 
 	tmp = '/tmp/holyjit.c'
 	open(tmp, 'wb').write('\n'.join(c).encode("utf-8"))
-	cmd = ['gcc', '-fPIC', '-shared', '-o', '/tmp/holyjit.so', tmp]
+	cmd = ['gcc', '-fPIC', '-shared', '-o', output, tmp]
 	print(cmd)
 	subprocess.check_call(cmd)
-	lib = ctypes.CDLL('/tmp/holyjit.so')
+	lib = ctypes.CDLL(output)
 	print(lib)
 
 	scope = {}
@@ -102,7 +102,7 @@ def holyjit( h, debug=False ):
 		scope[fn['name']] = holywrapper(f, fn)
 
 	if errors:
-		os.system('nm /tmp/holyjit.so')
+		os.system('nm -g %s' % output)
 		print('WARN: missing functions', errors)
 	else:
 		exec('\n'.join(py), scope, scope)
