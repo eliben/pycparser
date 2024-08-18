@@ -13,7 +13,10 @@ c2holy = {
     'unsigned char': 'U8', 'unsigned short':'U16', 'unsigned int':'U32', 
     'unsigned long':'U64', 'float':'F64', 'double':'F64',
 }
-
+holy2c = {
+    'U0':'void', 'U8':'unsigned char', 'U16':'unsigned short', 'U32':'unsigned int', 'U64':'unsigned long',
+    'I8':'char', 'I16':'short', 'I32':'int', 'I64':'long', 'F64':'double',
+}
 
 class CGenerator(object):
     """ Uses the same visitor pattern as c_ast.NodeVisitor, but modified to
@@ -185,7 +188,11 @@ class CGenerator(object):
                 itype.append(a)
             return ' '.join(itype)
         else:
-            return ' '.join(n.names)
+            ctype = []
+            for a in n.names:
+                if a in holy2c: a = holy2c[a]
+                ctype.append(a)
+            return ' '.join(ctype)
 
     def _visit_expr(self, n):
         if isinstance(n, c_ast.InitList):
