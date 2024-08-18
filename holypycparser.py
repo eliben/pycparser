@@ -119,7 +119,7 @@ def holyc_to_c(hc):
 	c = gen.visit(ast)
 	return c
 
-def c_to_hollyc(c):
+def c_to_holyc(c):
 	tmp = '/tmp/c2hc.c'
 	if type(c) is list:
 		c = '\n'.join(c)
@@ -127,8 +127,6 @@ def c_to_hollyc(c):
 	ast = parse(tmp)
 	gen = c_generator.CGenerator( make_holy=True )
 	hc = gen.visit(ast)
-	print('✝'*80)
-	print(hc)
 	return hc
 
 TEST = '''
@@ -136,7 +134,11 @@ void main(unsigned char c){printf("foo", c);}
 '''
 if __name__=='__main__':
 	if '--test-c' in sys.argv:
-		c_to_hollyc(TEST)
+		hc = c_to_holyc(TEST)
+		print(hc)
+		print('✝'*80)
+		c = holyc_to_c(hc)
+		print(c)
 		sys.exit()
 	test = None
 	for arg in sys.argv:
