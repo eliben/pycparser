@@ -8,13 +8,19 @@
 #------------------------------------------------------------------------------
 from . import c_ast
 
+c2holly = {
+    'void': 'U0', 'char':'I8', 'short':'I16', 'int':'I32', 'long':'I64',
+    'unsigned char': 'U8', 'unsigned short':'U16', 'unsigned int':'U32', 
+    'unsigned long':'U64', 'float':'F64', 'double':'F64',
+}
+
 
 class CGenerator(object):
     """ Uses the same visitor pattern as c_ast.NodeVisitor, but modified to
         return a value from each visit method, using string accumulation in
         generic_visit.
     """
-    def __init__(self, reduce_parentheses=False):
+    def __init__(self, reduce_parentheses=False, make_holy=False):
         """ Constructs C-code generator
 
             reduce_parentheses:
@@ -25,6 +31,8 @@ class CGenerator(object):
         self.indent_level = 0
         self.reduce_parentheses = reduce_parentheses
         self.functions = {}
+        self.holy = make_holy
+        self.dump_json = not self.holy
 
     def _make_indent(self):
         return ' ' * self.indent_level
@@ -156,13 +164,25 @@ class CGenerator(object):
         rval_str = self._parenthesize_if(
                             n.rvalue,
                             lambda n: isinstance(n, c_ast.Assignment))
-        if n.jit:
+        if n.jit and self.dump_json:
             return '//JIT//%s %s %s' % (self.visit(n.lvalue), n.op, rval_str)
         else:
             return '%s %s %s' % (self.visit(n.lvalue), n.op, rval_str)
 
     def visit_IdentifierType(self, n):
-        return ' '.join(n.names)
+        if self.holly:
+            itype = []
+            unsigned = False
+            for a in n.names:
+                if unsigned and 'unsigned '+a in c2holly: a = c2holly['unsigned '+a]
+                elif a in c2holly: a = c2holly[a]
+                elif a == 'unsigned':
+                    unsigned = True
+                    continue
+                itype.append(a)
+            return ' '.join(itype)
+        else:
+            return ' '.join(n.names)
 
     def _visit_expr(self, n):
         if isinstance(n, c_ast.InitList):
