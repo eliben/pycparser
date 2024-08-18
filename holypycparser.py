@@ -119,37 +119,77 @@ def holyc_to_c(hc):
 	c = gen.visit(ast)
 	return c
 
-def c_to_holyc(c):
+def c_to_holyc(c, defines=None):
 	tmp = '/tmp/c2hc.c'
 	if type(c) is list:
 		c = '\n'.join(c)
 	open(tmp,'wb').write(c.encode('utf-8'))
+	if '#ifdef' in c or defines:
+		cmd = ['gcc', '-E']
+		if defines:
+			for d in defines:
+				cmd.append('-D%s' % d)
+		cmd.append(tmp)
+		print(cmd)
+		c = subprocess.check_output(cmd).decode('utf-8')
+		open(tmp,'wb').write(c.encode('utf-8'))
+
 	ast = parse(tmp)
 	gen = c_generator.CGenerator( make_holy=True )
 	hc = gen.visit(ast)
 	return hc
 
 TEST = '''
+#ifdef FOO
 void main(unsigned char c){printf("foo", c);}
+#endif
 '''
+
+def main():
+	hc = None
+	c  = None
+	out = None
+	for arg in sys.argv:
+		if arg.endswith( ('.HC', '.hc') ):
+			hc = arg
+		elif arg.endswith( ('.c', '.h') ):
+			c = arg
+		elif arg.startswith('--out='):
+			out = arg.split('=')[-1]
+
+	if hc:
+		c = holyc_to_c(open(hc,'rb').read().decode('utf-8'))
+		if out: open(out, 'wb').write(c.encode('utf-8'))
+		else: print(c)
+	elif c:
+		hc = c_to_holyc(open(c,'rb').read().decode('utf-8'))
+		if out: open(out, 'wb').write(hc.encode('utf-8'))
+		else: print(hc)
+	else:
+		print('no input files given:')
+		print('arguments: [FILE.c] | [FILE.hc] --out=OUTPUT.c|hc')
+
+
 if __name__=='__main__':
 	if '--test-c' in sys.argv:
-		hc = c_to_holyc(TEST)
+		hc = c_to_holyc(TEST, defines=['FOO'])
 		print(hc)
 		print('✝'*80)
 		c = holyc_to_c(hc)
 		print(c)
-		sys.exit()
-	test = None
-	for arg in sys.argv:
-		if arg.endswith( ('.HC', '.hc') ):
-			test = arg
+	elif '--test-holyc' in sys.argv:
+		test = None
+		for arg in sys.argv:
+			if arg.endswith( ('.HC', '.hc') ):
+				test = arg
 
-	if not test:
-		test = '/tmp/hw.HC'
-		open(test,'wb').write(HW.encode('utf-8'))
+		if not test:
+			test = '/tmp/hw.HC'
+			open(test,'wb').write(HW.encode('utf-8'))
 
-	ast = parse(test)
-	gen = c_generator.CGenerator()
-	c = gen.visit(ast)
-	holyjit(c)
+		ast = parse(test)
+		gen = c_generator.CGenerator()
+		c = gen.visit(ast)
+		holyjit(c)
+	else:
+		main()
