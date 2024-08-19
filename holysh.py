@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-import os, sys, subprocess, json, ctypes, code
+import os, sys, subprocess, json, ctypes, code, atexit
 import holypycparser
 print(holypycparser)
 
+startdir = os.getcwd()
+atexit.register(lambda:os.chdir(startdir))
 scope = {}
 HOLYC = None
 MODS = 0
@@ -17,6 +19,7 @@ def holyc_compile(hc):
 		if isinstance(f, holypycparser.holywrapper):
 			print('new holyc function:', name, f)
 			scope[name] = f
+	return jit
 
 TEST = '''
 I32 add(I32 y, I32 z){
@@ -103,6 +106,16 @@ def run(co, filename=None, symbol=None):
 			HOLYC = [co]
 	elif co in scope:
 		print(scope[co])
+	elif co.split()[0] + '.HC' in os.listdir('.'):
+		jit = holyc_compile(co.split()[0] + '.HC')
+		if ' ' in co:
+			cmd = co.split()[0]
+			args = co[co.index(' ') : ].strip().split()
+			eval('%s(%s)' %(cmd, ','.join(args)), scope, scope)
+		else:
+			jit[ co ]()
+	elif co.startswith('cd '):
+		os.chdir(co[len('cd '):])
 	else:
 		try:
 			#__runsource(co)
@@ -116,5 +129,12 @@ def run(co, filename=None, symbol=None):
 sys.ps1 = 'holysh>>>'
 sys.ps2 = '... '
 
+#os.system('clear')
+#print('\033]11;#ff00ff',end='\n')
+#print('\033]10;#0000ff',end='')
+
 console.runsource = run
 console.interact(banner="holysh: press Ctrl+D to exit, type help for examples")
+
+#print('\033]11;#000000',end='')
+#print('\033]10;#ffffff',end='')
