@@ -119,12 +119,23 @@ def holyc_to_c(hc):
 	c = gen.visit(ast)
 	return c
 
-def c_to_holyc(c, defines=None):
+def c_to_holyc(c, pass_includes=True, pass_defines=True, use_cpreproc=False, defines=None):
 	tmp = '/tmp/c2hc.c'
 	if type(c) is list:
 		c = '\n'.join(c)
+
+	if pass_includes or pass_defines:
+		a = []
+		for ln in c.splitlines():
+			if ln.strip().startswith('#include') and pass_includes:
+				ln = '#pragma __macro__' + ln
+			if pass_defines and ln.strip().startswith(('#if ', '#ifdef', '#else', '#endif', '#define')):
+				ln = '#pragma __macro__' + ln
+			a.append(ln)
+		c = '\n'.join(a)
+
 	open(tmp,'wb').write(c.encode('utf-8'))
-	if '#ifdef' in c or defines:
+	if defines or use_cpreproc:
 		cmd = ['gcc', '-E']
 		if defines:
 			for d in defines:
@@ -140,8 +151,12 @@ def c_to_holyc(c, defines=None):
 	return hc
 
 TEST = '''
+#include "some.h"
 #ifdef FOO
-void main(unsigned char c){printf("foo", c);}
+void main(unsigned char c){
+	printf("foo", c);
+	printf("bar");
+	}
 #endif
 '''
 
@@ -172,7 +187,7 @@ def main():
 
 if __name__=='__main__':
 	if '--test-c' in sys.argv:
-		hc = c_to_holyc(TEST, defines=['FOO'])
+		hc = c_to_holyc(TEST)
 		print(hc)
 		print('✝'*80)
 		c = holyc_to_c(hc)
