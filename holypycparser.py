@@ -9,20 +9,6 @@ def parse(hc):
 	ast = pycparser.parse_file( hc )
 	return ast
 
-HW = r'''
-U0 Hello(){
-    "Hello World\n";
-}
-Hello;
-Hello();
-I32 add(U8 *x="foooo", I32 y, I32 z){
-    return y+z;
-}
-I32 X;
-X = add(1,2);
-X = add("bar", 3,4);
-'''
-
 HOLYCTYPES = '''
 #define U0 void
 #define U8 unsigned char
@@ -110,6 +96,8 @@ def holyjit( h, output='/tmp/holyjit.so', debug=False ):
 	return scope
 
 def holyc_to_c(hc):
+	if hc.endswith( ('.HC', '.hc') ):
+		hc = open(hc,'rb').read().decode('utf-8')
 	tmp = '/tmp/hc2c.HC'
 	if type(hc) is list:
 		hc = '\n'.join(hc)
@@ -120,9 +108,22 @@ def holyc_to_c(hc):
 	return c
 
 def c_to_holyc(c, pass_includes=True, pass_defines=True, use_cpreproc=False, defines=None):
+	if c.endswith('.c'):
+		c = open(c,'rb').read().decode('utf-8')
 	tmp = '/tmp/c2hc.c'
 	if type(c) is list:
 		c = '\n'.join(c)
+
+	if '//' in c:
+		a = []
+		for ln in c.splitlines():
+			if ln.strip().startswith('//'):
+				if ln.startswith('//JSON//'):
+					ln = '#pragma __json__' + ln[len('//JSON//'):]
+				else:
+					continue
+			a.append(ln)
+		c = '\n'.join(a)
 
 	if pass_includes or pass_defines:
 		a = []
@@ -150,15 +151,7 @@ def c_to_holyc(c, pass_includes=True, pass_defines=True, use_cpreproc=False, def
 	hc = gen.visit(ast)
 	return hc
 
-TEST = '''
-#include "some.h"
-#ifdef FOO
-void main(unsigned char c){
-	printf("foo", c);
-	printf("bar");
-	}
-#endif
-'''
+
 
 def main():
 	hc = None
@@ -187,24 +180,20 @@ def main():
 
 if __name__=='__main__':
 	if '--test-c' in sys.argv:
-		hc = c_to_holyc(TEST)
+		hc = c_to_holyc('./examples/c_files/macros.c')
 		print(hc)
 		print('✝'*80)
 		c = holyc_to_c(hc)
 		print(c)
 	elif '--test-holyc' in sys.argv:
-		test = None
-		for arg in sys.argv:
-			if arg.endswith( ('.HC', '.hc') ):
-				test = arg
+		c = holyc_to_c('./examples/c_files/add.HC')
+		print(c)
+		if '--test-jit' in sys.argv:
+			s = holyjit(c)
+			print(s)
+		print('✝'*80)
+		hc = c_to_holyc(c)
+		print(hc)
 
-		if not test:
-			test = '/tmp/hw.HC'
-			open(test,'wb').write(HW.encode('utf-8'))
-
-		ast = parse(test)
-		gen = c_generator.CGenerator()
-		c = gen.visit(ast)
-		holyjit(c)
 	else:
 		main()
