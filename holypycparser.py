@@ -186,14 +186,18 @@ if __name__=='__main__':
 		c = holyc_to_c(hc)
 		print(c)
 	elif '--test-holyc' in sys.argv:
-		c = holyc_to_c('./examples/c_files/add.HC')
-		print(c)
-		if '--test-jit' in sys.argv:
-			s = holyjit(c)
-			print(s)
-		print('✝'*80)
-		hc = c_to_holyc(c)
-		print(hc)
+		for file in os.listdir('./examples/c_files/'):
+			if file.endswith('.HC'):
+				path = os.path.join('./examples/c_files/', file)
+				print(path)
+				c = holyc_to_c(path)
+				print(c)
+				if '--test-jit' in sys.argv:
+					s = holyjit(c)
+					print(s)
+				print('✝'*80)
+				hc = c_to_holyc(c)
+				print(hc)
 
 	else:
 		main()
