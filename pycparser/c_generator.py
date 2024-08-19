@@ -360,6 +360,24 @@ class CGenerator(object):
         return s
 
     def visit_Case(self, n):
+        print(n)
+        if n.range_to:
+            assert type(n.expr) is c_ast.Constant and n.expr.type=='int'
+            assert type(n.range_to) is c_ast.Constant and n.range_to.type=='int'
+            range_from = int(n.expr.value)
+            range_to   = int(n.range_to.value) + 1
+            if not self.holy:
+                s = []
+                for i in range(range_from, range_to):
+                    print(i)
+                    s.append('case %s:\n' % i)
+                    for stmt in n.stmts:
+                        s.append( self._generate_stmt(stmt, add_indent=True) )
+                return '\n'.join(s)
+            else:
+                s = 'case %s ... %s:\n' % (range_from, range_to)
+                for stmt in n.stmts: s += self._generate_stmt(stmt, add_indent=True)
+                return s
         s = 'case ' + self.visit(n.expr) + ':\n'
         for stmt in n.stmts:
             s += self._generate_stmt(stmt, add_indent=True)
