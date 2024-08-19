@@ -1999,3 +1999,7 @@ class CParser(PLYParser):
         print(type(p[1]))
         p[1].jit = True
         p[0] = c_ast.HolyJit(p[1])
+
+    def p_labeled_statement_holy(self, p):
+        """ labeled_statement : CASE constant ELLIPSIS constant COLON pragmacomp_or_statement """
+        p[0] = c_ast.Case(p[2], [p[6]], self._token_coord(p, 1), range_to=p[4])
