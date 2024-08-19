@@ -60,6 +60,8 @@ class CGenerator(object):
         ret = '#pragma'
         if n.string:
             ret += ' ' + n.string
+            if not self.holy and n.string.startswith('__macro__'):
+                return n.string[len('__macro__'):]
         return ret
 
     def visit_ArrayRef(self, n):
@@ -455,9 +457,12 @@ class CGenerator(object):
                 c_ast.BinaryOp, c_ast.TernaryOp, c_ast.FuncCall, c_ast.ArrayRef,
                 c_ast.StructRef, c_ast.Constant, c_ast.ID, c_ast.Typedef,
                 c_ast.ExprList):
+            if not self.holy and type(n) is c_ast.ExprList and type(n.exprs[0]) is c_ast.Constant and n.exprs[0].type=='string':
+                return '%sprintf(%s);\n' % (indent, self.visit(n))
+            if not self.holy and type(n) is c_ast.Constant and n.type=='string':
+                return '%sprintf(%s);\n' % (indent, self.visit(n))
             # These can also appear in an expression context so no semicolon
             # is added to them automatically
-            #
             return indent + self.visit(n) + ';\n'
         elif typ in (c_ast.Compound,):
             # No extra indentation required before the opening brace of a
