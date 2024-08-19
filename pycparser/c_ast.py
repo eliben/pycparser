@@ -284,11 +284,12 @@ class Break(Node):
     attr_names = ()
 
 class Case(Node):
-    __slots__ = ('expr', 'stmts', 'coord', '__weakref__')
-    def __init__(self, expr, stmts, coord=None):
+    __slots__ = ('expr', 'stmts', 'coord', 'range_to', '__weakref__')
+    def __init__(self, expr, stmts, coord=None, range_to=None):
         self.expr = expr
         self.stmts = stmts
         self.coord = coord
+        self.range_to = range_to
 
     def children(self):
         nodelist = []
