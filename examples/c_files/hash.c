@@ -24,7 +24,7 @@ typedef struct tagHash
 {
     unsigned int table_size;
 
-    Node** heads; 
+    Node** heads;
 
 } Hash;
 
@@ -137,7 +137,7 @@ ReturnCode HashRemove(Hash* hash, const char* key)
 
             return SUCCESS;
         }
-        
+
         temp2 = temp1;
         temp1 = temp1->next;
     }
@@ -187,10 +187,10 @@ void HashDestroy(Hash* hash)
             free(temp->entry);
 
             temp = temp->next;
-            
+
             free(temp2);
         }
-    }    
+    }
 
     free(hash->heads);
     hash->heads = NULL;
