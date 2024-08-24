@@ -116,6 +116,8 @@ def to_dict(node):
     for child_attr in child_attrs_of(klass):
         if child_attr not in result:
             result[child_attr] = None
+            if result['_nodetype'] == "Case" :
+                result[child_attr] = []
 
     return result
 
