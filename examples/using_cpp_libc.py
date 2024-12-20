@@ -1,8 +1,7 @@
 #-----------------------------------------------------------------
 # pycparser: using_cpp_libc.py
 #
-# Shows how to use the provided 'cpp' (on Windows, substitute for
-# the 'real' cpp if you're on Linux/Unix) and "fake" libc includes
+# Shows how to use 'cpp' (the C pre-processor binary) and "fake" libc includes
 # to parse a file that includes standard C headers.
 #
 # Eli Bendersky [https://eli.thegreenplace.net/]
@@ -12,7 +11,6 @@ import sys
 
 # This is not required if you've installed pycparser into
 # your site-packages/ with setup.py
-#
 sys.path.extend(['.', '..'])
 
 from pycparser import parse_file

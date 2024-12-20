@@ -12,7 +12,6 @@ import sys
 
 # This is not required if you've installed pycparser into
 # your site-packages/ with setup.py
-#
 sys.path.extend(['.', '..'])
 
 from pycparser import parse_file
