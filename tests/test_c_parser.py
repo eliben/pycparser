@@ -2489,6 +2489,29 @@ class TestCParser_typenames(TestCParser_base):
             '''
         self.assertRaises(ParseError, self.parse, s2)
 
+class TestCParser_labels(TestCParser_base):
+    """ Test issues related to the labels.
+    """
+    def test_label_empty_statement(self):
+        # Parse the statements
+        s1 = r'''
+            int main() {
+                label:
+            }
+            '''
+        s2 = r'''
+            int main() {
+                label:;
+            }
+            '''
+        ast1 = self.parse(s1)
+        ast2 = self.parse(s2)
+
+        buf1 = io.StringIO()
+        buf2 = io.StringIO()
+        ast1.show(buf=buf1)
+        ast2.show(buf=buf2)
+        self.assertEqual(buf1.getvalue(), buf2.getvalue())
 
 if __name__ == '__main__':
     #~ suite = unittest.TestLoader().loadTestsFromNames(

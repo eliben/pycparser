@@ -1581,6 +1581,10 @@ class CParser(PLYParser):
         p[0] = c_ast.Default([p[3]], self._token_coord(p, 1))
 
     def p_labeled_statement_4(self, p):
+        """ labeled_statement : ID COLON SEMI"""
+        p[0] = c_ast.Label(p[1], c_ast.EmptyStatement(self._token_coord(p, 1)), self._token_coord(p, 1))
+
+    def p_labeled_statement_5(self, p):
         """ labeled_statement : ID COLON """
         p[0] = c_ast.Label(p[1], c_ast.EmptyStatement(self._token_coord(p, 1)), self._token_coord(p, 1))
 
