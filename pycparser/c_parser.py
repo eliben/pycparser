@@ -1580,6 +1580,10 @@ class CParser(PLYParser):
         """ labeled_statement : DEFAULT COLON pragmacomp_or_statement """
         p[0] = c_ast.Default([p[3]], self._token_coord(p, 1))
 
+    def p_labeled_statement_4(self, p):
+        """ labeled_statement : ID COLON """
+        p[0] = c_ast.Label(p[1], c_ast.EmptyStatement(self._token_coord(p, 1)), self._token_coord(p, 1))
+
     def p_selection_statement_1(self, p):
         """ selection_statement : IF LPAREN expression RPAREN pragmacomp_or_statement """
         p[0] = c_ast.If(p[3], p[5], None, self._token_coord(p, 1))

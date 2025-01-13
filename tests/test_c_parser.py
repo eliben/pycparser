@@ -2489,6 +2489,20 @@ class TestCParser_typenames(TestCParser_base):
             '''
         self.assertRaises(ParseError, self.parse, s2)
 
+    def test_label_empty_statement(self):
+        # Labels with empty statements and no semicolon should be parsed correctly
+        s1 = r'''
+            int main() {
+                int i = 0;
+                label0: i++;
+                label1:
+            }
+            '''
+        s1_ast : FileAST = self.parse(s1)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[1], Label)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[1].stmt, UnaryOp)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[2], Label)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[2].stmt, EmptyStatement)
 
 if __name__ == '__main__':
     #~ suite = unittest.TestLoader().loadTestsFromNames(
