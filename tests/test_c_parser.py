@@ -2504,6 +2504,40 @@ class TestCParser_typenames(TestCParser_base):
         self.assertIsInstance(s1_ast.ext[0].body.block_items[2], Label)
         self.assertIsInstance(s1_ast.ext[0].body.block_items[2].stmt, EmptyStatement)
 
+    def test_case_empty_statement(self):
+        # Labels with empty statements and no semicolon should be parsed correctly
+        s1 = r'''
+            int main() {
+                int i = 0;
+                switch (i) {
+                    case 0:
+                        i = 1;
+                    case 1:
+                }
+                return i;
+            }
+            '''
+        s2 = r'''
+            int main() {
+                int i = 0;
+                switch (i) {
+                    case 0:
+                        i = 1;
+                    default:
+                }
+                return i;
+            }
+            '''
+        s1_ast : FileAST = self.parse(s1)
+        s2_ast : FileAST = self.parse(s2)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[1], Switch)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[1].stmt, Compound)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[1].stmt.block_items[0], Case)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[1].stmt.block_items[0].stmts[0], Assignment)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[1].stmt.block_items[1], Case)
+        self.assertIsInstance(s1_ast.ext[0].body.block_items[1].stmt.block_items[1].stmts[0], EmptyStatement)
+        self.assertIsInstance(s2_ast.ext[0].body.block_items[1].stmt.block_items[1].stmts[0], EmptyStatement)
+
 if __name__ == '__main__':
     #~ suite = unittest.TestLoader().loadTestsFromNames(
         #~ ['test_c_parser.TestCParser_fundamentals.test_typedef'])

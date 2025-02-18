@@ -1584,6 +1584,14 @@ class CParser(PLYParser):
         """ labeled_statement : ID COLON """
         p[0] = c_ast.Label(p[1], c_ast.EmptyStatement(self._token_coord(p, 1)), self._token_coord(p, 1))
 
+    def p_labeled_statement_5(self, p):
+        """ labeled_statement : CASE constant_expression COLON """
+        p[0] = c_ast.Case(p[2], [c_ast.EmptyStatement(self._token_coord(p, 2))], self._token_coord(p, 1))
+
+    def p_labeled_statement_6(self, p):
+        """ labeled_statement : DEFAULT COLON """
+        p[0] = c_ast.Default([c_ast.EmptyStatement(self._token_coord(p, 1))], self._token_coord(p, 1))
+
     def p_selection_statement_1(self, p):
         """ selection_statement : IF LPAREN expression RPAREN pragmacomp_or_statement """
         p[0] = c_ast.If(p[3], p[5], None, self._token_coord(p, 1))
