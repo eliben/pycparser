@@ -22,7 +22,7 @@ def cpp_path():
     """Path to cpp command."""
     if platform.system() == 'Darwin':
         return 'gcc'
-    return 'cpp'
+    return ''
 
 
 def cpp_args(args=[]):
