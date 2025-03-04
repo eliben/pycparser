@@ -11,11 +11,12 @@ __all__ = ['c_lexer', 'c_parser', 'c_ast']
 __version__ = '2.22'
 
 import io
+import os
 from subprocess import check_output
 from .c_parser import CParser
 
 
-def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
+def preprocess_file(filename, cpp_path='', cpp_args=''):
     """ Preprocess a file using cpp.
 
         filename:
@@ -29,7 +30,12 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
         When successful, returns the preprocessed file's contents.
         Errors from cpp will be printed out.
     """
-    path_list = [cpp_path]
+
+    if cpp_path:
+        path_list = [cpp_path]
+    else:
+        path_list = os.environ.get("CPP", "cpp").split()
+
     if isinstance(cpp_args, list):
         path_list += cpp_args
     elif cpp_args != '':
@@ -48,7 +54,7 @@ def preprocess_file(filename, cpp_path='cpp', cpp_args=''):
     return text
 
 
-def parse_file(filename, use_cpp=False, cpp_path='cpp', cpp_args='',
+def parse_file(filename, use_cpp=False, cpp_path='', cpp_args='',
                parser=None, encoding=None):
     """ Parse a C file using pycparser.
 
