@@ -306,6 +306,13 @@ class TestCtoC(unittest.TestCase):
             }
         ''')
 
+    def test_exprlist_with_compound(self):
+        self._assert_ctoc_correct(r'''
+            void test(){
+                (sizeof (0), ({ if (0) ; else ; }));
+            }
+        ''')
+
     def test_exprlist_with_subexprlist(self):
         self._assert_ctoc_correct(r'''
             void x() {
