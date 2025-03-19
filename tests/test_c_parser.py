@@ -1464,7 +1464,7 @@ class TestCParser_fundamentals(TestCParser_base):
 
         d1_1 = 'float f = 0xEF.56p1;'
         self.assertEqual(self.get_decl_init(d1_1),
-            ['Constant', 'float', '0xEF.56p1'])
+            ['Constant', 'double', '0xEF.56p1'])
 
         d1_2 = 'int bitmask = 0b1001010;'
         self.assertEqual(self.get_decl_init(d1_2),
@@ -1529,7 +1529,23 @@ class TestCParser_fundamentals(TestCParser_base):
 
         d55 = 'float ld = 0xDE.38p0;'
         self.assertEqual(self.get_decl_init(d55),
-            ['Constant', 'float', '0xDE.38p0'])
+            ['Constant', 'double', '0xDE.38p0'])
+
+        d56 = 'float ld = 0xDE.38p0f;'
+        self.assertEqual(self.get_decl_init(d56),
+            ['Constant', 'float', '0xDE.38p0f'])
+
+        d57 = 'float ld = 0xDE.38p0F;'
+        self.assertEqual(self.get_decl_init(d57),
+            ['Constant', 'float', '0xDE.38p0F'])
+
+        d58 = 'float ld = 0xDE.38p0l;'
+        self.assertEqual(self.get_decl_init(d58),
+            ['Constant', 'long double', '0xDE.38p0l'])
+
+        d59 = 'float ld = 0xDE.38p0L;'
+        self.assertEqual(self.get_decl_init(d59),
+            ['Constant', 'long double', '0xDE.38p0L'])
 
         d6 = 'int i = 1;'
         self.assertEqual(self.get_decl_init(d6),
