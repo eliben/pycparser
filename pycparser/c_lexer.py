@@ -209,6 +209,10 @@ class CLexer(object):
 
     bad_octal_constant = '0[0-7]*[89]'
 
+    # comments are not supported
+    unsupported_c89_comment = r'\/\/'
+    unsupported_c99_comment = r'\/\*'
+
     # character constants (K&R2: A.2.5.2)
     # Note: a-zA-Z and '.-~^_!=&;,' are allowed as escape chars to support #line
     # directives with Windows paths as filenames (..\..\dir\file)
@@ -473,6 +477,16 @@ class CLexer(object):
     @TOKEN(bad_octal_constant)
     def t_BAD_CONST_OCT(self, t):
         msg = "Invalid octal constant"
+        self._error(msg, t)
+
+    @TOKEN(unsupported_c89_comment)
+    def t_UNSUPPORTED_C89_COMMENT(self, t):
+        msg = "Comments are not supported (note: GCC's cpp removes comments, Clang's cpp does not)."
+        self._error(msg, t)
+
+    @TOKEN(unsupported_c99_comment)
+    def t_UNSUPPORTED_C99_COMMENT(self, t):
+        msg = "Comments are not supported (note: GCC's cpp removes comments, Clang's cpp does not)."
         self._error(msg, t)
 
     @TOKEN(octal_constant)
