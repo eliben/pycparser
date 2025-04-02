@@ -110,9 +110,9 @@ Interaction with the C preprocessor
 -----------------------------------
 
 In order to be compilable, C code must be preprocessed by the C preprocessor -
-``cpp``. ``cpp`` handles preprocessing directives like ``#include`` and
+``cpp``. A compatible ``cpp`` handles preprocessing directives like ``#include`` and
 ``#define``, removes comments, and performs other minor tasks that prepare the C
-code for compilation.
+code for compilation. Note that clang's cpp does not remove comments.
 
 For all but the most trivial snippets of C code **pycparser**, like a C
 compiler, must receive preprocessed C code in order to function correctly. If

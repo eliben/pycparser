@@ -210,8 +210,8 @@ class CLexer(object):
     bad_octal_constant = '0[0-7]*[89]'
 
     # comments are not supported
-    unsupported_c89_comment = r'\/\/'
-    unsupported_c99_comment = r'\/\*'
+    unsupported_c_style_comment = r'\/\*'
+    unsupported_cxx_style_comment = r'\/\/'
 
     # character constants (K&R2: A.2.5.2)
     # Note: a-zA-Z and '.-~^_!=&;,' are allowed as escape chars to support #line
@@ -479,14 +479,14 @@ class CLexer(object):
         msg = "Invalid octal constant"
         self._error(msg, t)
 
-    @TOKEN(unsupported_c89_comment)
-    def t_UNSUPPORTED_C89_COMMENT(self, t):
-        msg = "Comments are not supported (note: GCC's cpp removes comments, Clang's cpp does not)."
+    @TOKEN(unsupported_c_style_comment)
+    def t_UNSUPPORTED_C_STYLE_COMMENT(self, t):
+        msg = "Comments are not supported, see https://github.com/eliben/pycparser#3using."
         self._error(msg, t)
 
-    @TOKEN(unsupported_c99_comment)
-    def t_UNSUPPORTED_C99_COMMENT(self, t):
-        msg = "Comments are not supported (note: GCC's cpp removes comments, Clang's cpp does not)."
+    @TOKEN(unsupported_cxx_style_comment)
+    def t_UNSUPPORTED_CXX_STYLE_COMMENT(self, t):
+        msg = "Comments are not supported, see https://github.com/eliben/pycparser#3using."
         self._error(msg, t)
 
     @TOKEN(octal_constant)
