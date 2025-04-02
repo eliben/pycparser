@@ -418,11 +418,12 @@ ERR_STRING_ESCAPE   = 'String contains invalid escape'
 ERR_FILENAME_BEFORE_LINE    = 'filename before line'
 ERR_LINENUM_MISSING         = 'line number missing'
 ERR_INVALID_LINE_DIRECTIVE  = 'invalid #line directive'
+ERR_COMMENT                 = 'Comments are not supported'
 
 
 class TestCLexerErrors(unittest.TestCase):
     """ Test lexing of erroneous strings.
-        Works by passing an error functions that saves the error
+        Works by passing an error function that saves the error
         in an attribute for later perusal.
     """
     def error_func(self, msg, line, column):
@@ -496,6 +497,9 @@ class TestCLexerErrors(unittest.TestCase):
         self.assertLexerError('#line "ka"', ERR_FILENAME_BEFORE_LINE)
         self.assertLexerError('#line df', ERR_INVALID_LINE_DIRECTIVE)
         self.assertLexerError('#line \n', ERR_LINENUM_MISSING)
+        # a compatible preprocessor must remove comments.
+        self.assertLexerError('//', ERR_COMMENT)
+        self.assertLexerError('/*', ERR_COMMENT)
 
 
 if __name__ == '__main__':
