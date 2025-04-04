@@ -55,7 +55,7 @@ class Node(object):
         """
         pass
 
-    def show(self, buf=sys.stdout, offset=0, attrnames=False, nodenames=False, showcoord=False, _my_node_name=None):
+    def show(self, buf=sys.stdout, offset=0, attrnames=False, hideemptyattrs=False, nodenames=False, showcoord=False, _my_node_name=None):
         """ Pretty print the Node and all its attributes and
             children (recursively) to a buffer.
 
@@ -68,6 +68,9 @@ class Node(object):
             attrnames:
                 True if you want to see the attribute names in
                 name=value pairs. False to only see the values.
+
+            hideemptyattrs:
+                True if you want to suppress printing empty attributes.
 
             nodenames:
                 True if you want to see the actual node names
@@ -84,11 +87,15 @@ class Node(object):
             buf.write(lead + self.__class__.__name__+ ': ')
 
         if self.attr_names:
+            nvlist = []
+            for n, v in [(n, getattr(self,n)) for n in self.attr_names]:
+                if hideemptyattrs and (v is None or (hasattr(v, '__len__') and len(v) == 0)):
+                    continue
+                nvlist.append((n,v))
             if attrnames:
-                nvlist = [(n, getattr(self,n)) for n in self.attr_names]
                 attrstr = ', '.join('%s=%s' % nv for nv in nvlist)
             else:
-                vlist = [getattr(self, n) for n in self.attr_names]
+                vlist = [v for (n,v) in nvlist]
                 attrstr = ', '.join('%s' % v for v in vlist)
             buf.write(attrstr)
 
@@ -101,6 +108,7 @@ class Node(object):
                 buf,
                 offset=offset + 2,
                 attrnames=attrnames,
+                hideemptyattrs=hideemptyattrs,
                 nodenames=nodenames,
                 showcoord=showcoord,
                 _my_node_name=child_name)
