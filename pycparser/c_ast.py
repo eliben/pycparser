@@ -95,8 +95,7 @@ class Node(object):
             if attrnames:
                 attrstr = ', '.join('%s=%s' % nv for nv in nvlist)
             else:
-                vlist = [v for (n,v) in nvlist]
-                attrstr = ', '.join('%s' % v for v in vlist)
+                attrstr = ', '.join('%s' % v for (_,v) in nvlist)
             buf.write(attrstr)
 
         if showcoord:
