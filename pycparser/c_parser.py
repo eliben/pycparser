@@ -306,6 +306,10 @@ class CParser(PLYParser):
             type = type.type
 
         decl.name = type.declname
+
+        if type.quals is None:
+            type.quals = list()
+
         type.quals += decl.quals[:]
         decl.quals = []
 
