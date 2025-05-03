@@ -306,8 +306,8 @@ class CParser(PLYParser):
             type = type.type
 
         decl.name = type.declname
-        type.quals = decl.quals[:]
-        decl.quals = list()
+        type.quals += decl.quals[:]
+        decl.quals = []
 
         # The typename is a list of types. If any type in this
         # list isn't an IdentifierType, it must be the only
