@@ -551,5 +551,19 @@ class TestCasttoC(unittest.TestCase):
         self.assertEqual(generator.visit(test_ast4),
                          'if ()\n{\n}\nelse\n  if ()\n{\n}\nelse\n  if ()\n{\n}\n')
 
+    def test_issue573(self):
+        self._assert_ctoc_correct('''
+            struct a {
+                int m;
+            };
+            
+            struct a test() {
+                int x = 1;
+                return ({
+                    (struct a){x};
+                });
+            }
+        ''')
+
 if __name__ == "__main__":
     unittest.main()
