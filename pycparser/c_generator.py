@@ -400,7 +400,7 @@ class CGenerator(object):
                 c_ast.Decl, c_ast.Assignment, c_ast.Cast, c_ast.UnaryOp,
                 c_ast.BinaryOp, c_ast.TernaryOp, c_ast.FuncCall, c_ast.ArrayRef,
                 c_ast.StructRef, c_ast.Constant, c_ast.ID, c_ast.Typedef,
-                c_ast.ExprList):
+                c_ast.ExprList, c_ast.CompoundLiteral):
             # These can also appear in an expression context so no semicolon
             # is added to them automatically
             #
