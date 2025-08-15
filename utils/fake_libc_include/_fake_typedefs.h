@@ -183,6 +183,7 @@ typedef void* DIR;
 /* socket typedefs */
 typedef	__uint32_t  __socklen_t;
 typedef __socklen_t socklen_t;
+typedef unsigned short __kernel_sa_family_t;
 
 /* C11 stdatomic.h types */
 typedef _Atomic(_Bool)              atomic_bool;
