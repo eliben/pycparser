@@ -21,11 +21,13 @@ about `bdist_wheel`.
 See that pycparser is importable in the Python interpreter of this virtualenv;
 run pycparser tests from this virtualenv.
 
-After this it's OK to rerun `python3.6 -m twine upload dist/*` to push to PyPI
-(older Pythons use a deprecated API for PyPI uploading).
+To upload to PyPI, get a virtualenv with twine installed (e.g.
+~/bin/venv/py3-twine) and run from it:
+
+  $ python -m twine upload dist/*
 
 - Tag in git. When pushing to GitHub, git push --tags
-- Create new GitHub release (?)
+- Create new GitHub release
 
 Misc
 ----
