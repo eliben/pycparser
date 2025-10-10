@@ -1835,6 +1835,30 @@ class CParser(PLYParser):
         p[0] = c_ast.FuncCall(c_ast.ID(p[1], coord),
                               c_ast.ExprList([p[3], p[5]], coord),
                               coord)
+        
+    def p_primary_expression_6(self, p):
+        """ primary_expression  : generic_selection """
+        p[0] = p[1]
+
+    def p_generic_selection(self, p):
+        """ generic_selection : _GENERIC LPAREN assignment_expression COMMA generic_assoc_list RPAREN """
+        p[0] = c_ast.GenericSelection(p[3], p[5], self._token_coord(p, 1))
+
+    def p_generic_assoc_list_1(self, p):
+        """ generic_assoc_list : generic_association """
+        p[0] = [p[1]]
+
+    def p_generic_assoc_list_2(self, p):
+        """ generic_assoc_list : generic_assoc_list COMMA generic_association """
+        p[0] = p[1] + [p[3]]
+
+    def p_generic_association_1(self, p):
+        """ generic_association : type_name COLON assignment_expression """
+        p[0] = c_ast.GenericAssociation(p[1], p[3], p[1].coord)
+
+    def p_generic_association_2(self, p):
+        """ generic_association : DEFAULT COLON assignment_expression """
+        p[0] = c_ast.GenericAssociation(None, p[3], self._token_coord(p, 1))
 
     def p_offsetof_member_designator(self, p):
         """ offsetof_member_designator : identifier

@@ -1128,3 +1128,33 @@ class Pragma(Node):
 
     attr_names = ('string', )
 
+class GenericAssociation(Node):
+    __slots__ = ('type', 'expr', 'coord', '__weakref__')
+    def __init__(self, type, expr, coord=None):
+        self.type = type
+        self.expr = expr
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.type is not None: nodelist.append(("type", self.type))
+        if self.expr is not None: nodelist.append(("expr", self.expr))
+        return tuple(nodelist)
+
+    attr_names = ()
+
+class GenericSelection(Node):
+    __slots__ = ('expr', 'assoc_list', 'coord', '__weakref__')
+    def __init__(self, expr, assoc_list, coord=None):
+        self.expr = expr
+        self.assoc_list = assoc_list
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.expr is not None: nodelist.append(("expr", self.expr))
+        for i, child in enumerate(self.assoc_list or []):
+            nodelist.append(("assoc_list[%d]" % i, child))
+        return tuple(nodelist)
+
+    attr_names = ()

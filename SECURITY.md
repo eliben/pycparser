@@ -8,6 +8,8 @@ the `master` branch.
 
 ## Reporting a Vulnerability
 
-To report a security issue, please disclose it at [security advisory](https://github.com/eliben/pycparser/security/advisories/new).
+We don't consider pycparser to be a project suitable to be used at a security
+boundary. Please don't use it as such.
 
-We will respond within 14 working days of your submission. If the issue is confirmed as a vulnerability, we will open a Security Advisory and acknowledge your contributions as part of it. This project follows a 90 day disclosure timeline.
+If you found what you believe to be a security issue with pycparser, feel free
+to open a public GitHub issue or email the project's maintainer.
