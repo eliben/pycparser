@@ -2139,6 +2139,25 @@ class TestCParser_whole_code(TestCParser_base):
 
         self.assertEqual(switch.stmt.block_items, [])
 
+        s4 = r'''
+        int foo(void) {
+            int x = 0;
+            switch (x) {
+            default:
+            }
+            return 0;
+        }
+        '''
+        ps4 = self.parse(s4)
+        switch4 = ps4.ext[0].body.block_items[1]
+
+        block4 = switch4.stmt.block_items
+        self.assertEqual(len(block4), 1)
+        assert_default_node(block4[0])
+        # An empty default label should still contain a single EmptyStatement
+        self.assertEqual(len(block4[0].stmts), 1)
+        self.assertIsInstance(block4[0].stmts[0], EmptyStatement)
+
     def test_for_statement(self):
         s2 = r'''
         void x(void)
