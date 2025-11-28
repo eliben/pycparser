@@ -2229,6 +2229,54 @@ class TestCParser_whole_code(TestCParser_base):
         self.assertIsInstance(p.ext[-8].type, TypeDecl)
         self.assertEqual(p.ext[-8].name, 'cookie_io_functions_t')
 
+    def test_statement_expression_in_binary_operation(self):
+        # Test that statement expressions (GNU C extension) work in binary operations
+        # Statement expressions are compound statements wrapped in parentheses: ({ ... })
+        
+        # This should work - statement expression in assignment
+        s1 = r'''
+            float f1(float __K1, float __K2) {
+                float __left_0 = ({
+                    float __x1_1 = __K1;
+                    float __x2_1 = __K2;
+                    (__x1_1 < __x2_1) ? __x1_1 : __x2_1;
+                });
+                return __left_0;
+            }
+        '''
+        
+        # This should also work - statement expression in binary operation (division)
+        s2 = r'''
+            float f2(float __iz_3, float __T1, float __T2) {
+                float __df_3 = __iz_3 / ({
+                    float __x1_4 = __T1;
+                    float __x2_4 = __T2;
+                    (__x1_4 > __x2_4) ? __x1_4 : __x2_4;
+                });
+                return __df_3;
+            }
+        '''
+        
+        # Test with other binary operators
+        s3 = r'''
+            int test_ops(int a, int b, int c) {
+                int x = a + ({ int tmp = b; tmp * 2; });
+                int y = a - ({ int tmp = c; tmp / 2; });
+                int z = a * ({ int tmp = b + c; tmp; });
+                return x + y + z;
+            }
+        '''
+        
+        # Parse all test cases - they should all succeed
+        s1_ast = self.parse(s1)
+        s2_ast = self.parse(s2)
+        s3_ast = self.parse(s3)
+        
+        # Verify basic structure
+        self.assertIsInstance(s1_ast.ext[0], FuncDef)
+        self.assertIsInstance(s2_ast.ext[0], FuncDef)
+        self.assertIsInstance(s3_ast.ext[0], FuncDef)
+
 
 class TestCParser_typenames(TestCParser_base):
     """ Test issues related to the typedef-name problem.

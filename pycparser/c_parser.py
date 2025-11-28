@@ -1744,6 +1744,10 @@ class CParser(PLYParser):
         """ cast_expression : LPAREN type_name RPAREN cast_expression """
         p[0] = c_ast.Cast(p[2], p[4], self._token_coord(p, 1))
 
+    def p_cast_expression_3(self, p):
+        """ cast_expression : LPAREN compound_statement RPAREN """
+        p[0] = p[2]
+
     def p_unary_expression_1(self, p):
         """ unary_expression    : postfix_expression """
         p[0] = p[1]
