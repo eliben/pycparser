@@ -106,13 +106,21 @@ class CParser(PLYParser):
         for rule in rules_with_opt:
             self._create_opt_rule(rule)
 
-        self.cparser = yacc.yacc(
-            module=self,
-            start='translation_unit_or_empty',
-            debug=yacc_debug,
-            optimize=yacc_optimize,
-            tabmodule=yacctab,
-            outputdir=taboutputdir)
+        # ply removed tabmodule/outputdir after 3.11
+        if 'tabmodule' in yacc.yacc.__code__.co_varnames:
+            self.cparser = yacc.yacc(
+                module=self,
+                start='translation_unit_or_empty',
+                debug=yacc_debug,
+                optimize=yacc_optimize,
+                tabmodule=yacctab,
+                outputdir=taboutputdir)
+        else:
+            self.cparser = yacc.yacc(
+                module=self,
+                start='translation_unit_or_empty',
+                debug=yacc_debug,
+                optimize=yacc_optimize)
 
         # Stack of scopes for keeping track of symbols. _scope_stack[-1] is
         # the current (topmost) scope. Each scope is a dictionary that

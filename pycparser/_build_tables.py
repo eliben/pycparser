@@ -35,6 +35,10 @@ c_parser.CParser(
 #
 importlib.invalidate_caches()
 
-import lextab
-import yacctab
+try:
+    import lextab
+    import yacctab
+except ImportError:
+    # ply post-3.11 doesn't generate table modules
+    pass
 import c_ast

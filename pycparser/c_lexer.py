@@ -62,6 +62,12 @@ class CLexer(object):
             manual warns against calling lex.lex inside
             __init__
         """
+        # ply removed optimize/lextab/nowarn/outputdir after 3.11
+        if 'lextab' not in lex.lex.__code__.co_varnames:
+            kwargs.pop('optimize', None)
+            kwargs.pop('lextab', None)
+            kwargs.pop('nowarn', None)
+            kwargs.pop('outputdir', None)
         self.lexer = lex.lex(object=self, **kwargs)
 
     def reset_lineno(self):
