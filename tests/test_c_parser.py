@@ -2554,6 +2554,18 @@ class TestCParser_typenames(TestCParser_base):
         self.assertIsInstance(s1_ast.ext[0].body.block_items[1].stmt.block_items[1].stmts[0], EmptyStatement)
         self.assertIsInstance(s2_ast.ext[0].body.block_items[1].stmt.block_items[1].stmts[0], EmptyStatement)
 
+    def test_alignas_with_typedef_in_struct(self):
+        s = """
+            typedef int test_int;
+            typedef struct {
+                _Alignas(int) test_int a1;
+            } test_struct;
+        """
+        ast = self.parse(s) 
+        field = ast.ext[1].type.type.decls[0]
+        self.assertEqual(field.name, 'a1')
+        self.assertTrue(hasattr(field, 'align') and field.align is not None)
+
 if __name__ == '__main__':
     #~ suite = unittest.TestLoader().loadTestsFromNames(
         #~ ['test_c_parser.TestCParser_fundamentals.test_typedef'])
