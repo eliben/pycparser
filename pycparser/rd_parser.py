@@ -1,0 +1,1946 @@
+#------------------------------------------------------------------------------
+# pycparser: rd_parser.py
+#
+# Recursive-descent parser for the C language, intended as a drop-in
+# alternative to the PLY-based parser in c_parser.py.
+#
+# Eli Bendersky [https://eli.thegreenplace.net/]
+# License: BSD
+#------------------------------------------------------------------------------
+from . import c_ast
+from .c_lexer import CLexer
+from .plyparser import Coord, ParseError
+from .ast_transforms import fix_switch_cases, fix_atomic_specifiers
+
+
+class _TokenStream(object):
+    def __init__(self, lexer):
+        self._lexer = lexer
+        self._buffer = []
+        self._index = 0
+
+    def _fill(self, n):
+        while len(self._buffer) < self._index + n:
+            tok = self._lexer.token()
+            self._buffer.append(tok)
+            if tok is None:
+                break
+
+    def peek(self, k=1):
+        if k <= 0:
+            return None
+        self._fill(k)
+        return self._buffer[self._index + k - 1]
+
+    def next(self):
+        self._fill(1)
+        tok = self._buffer[self._index]
+        self._index += 1
+        return tok
+
+    def mark(self):
+        return self._index
+
+    def reset(self, mark):
+        self._index = mark
+
+
+class RDParser(object):
+    _ASSIGNMENT_OPS = {
+        'EQUALS', 'XOREQUAL', 'TIMESEQUAL', 'DIVEQUAL', 'MODEQUAL',
+        'PLUSEQUAL', 'MINUSEQUAL', 'LSHIFTEQUAL', 'RSHIFTEQUAL',
+        'ANDEQUAL', 'OREQUAL'
+    }
+
+    _BINARY_PRECEDENCE = {
+        'LOR': 1,
+        'LAND': 2,
+        'OR': 3,
+        'XOR': 4,
+        'AND': 5,
+        'EQ': 6, 'NE': 6,
+        'GT': 7, 'GE': 7, 'LT': 7, 'LE': 7,
+        'RSHIFT': 8, 'LSHIFT': 8,
+        'PLUS': 9, 'MINUS': 9,
+        'TIMES': 10, 'DIVIDE': 10, 'MOD': 10,
+    }
+
+    _STORAGE_CLASS = {
+        'AUTO', 'REGISTER', 'STATIC', 'EXTERN', 'TYPEDEF', '_THREAD_LOCAL'
+    }
+
+    _FUNCTION_SPEC = {'INLINE', '_NORETURN'}
+
+    _TYPE_QUALIFIER = {'CONST', 'RESTRICT', 'VOLATILE', '_ATOMIC'}
+
+    _TYPE_SPEC_SIMPLE = {
+        'VOID', '_BOOL', 'CHAR', 'SHORT', 'INT', 'LONG', 'FLOAT', 'DOUBLE',
+        '_COMPLEX', 'SIGNED', 'UNSIGNED', '__INT128'
+    }
+
+    _DECL_START = (
+        _STORAGE_CLASS |
+        _FUNCTION_SPEC |
+        _TYPE_QUALIFIER |
+        _TYPE_SPEC_SIMPLE |
+        {'TYPEID', 'STRUCT', 'UNION', 'ENUM', '_ALIGNAS', '_ATOMIC'}
+    )
+
+    _EXPR_START = {
+        'ID', 'LPAREN', 'PLUSPLUS', 'MINUSMINUS', 'PLUS', 'MINUS', 'TIMES',
+        'AND', 'NOT', 'LNOT', 'SIZEOF', '_ALIGNOF', 'OFFSETOF'
+    }
+
+    _INT_CONST = {
+        'INT_CONST_DEC', 'INT_CONST_OCT', 'INT_CONST_HEX', 'INT_CONST_BIN',
+        'INT_CONST_CHAR'
+    }
+
+    _FLOAT_CONST = {'FLOAT_CONST', 'HEX_FLOAT_CONST'}
+
+    _CHAR_CONST = {
+        'CHAR_CONST', 'WCHAR_CONST', 'U8CHAR_CONST', 'U16CHAR_CONST',
+        'U32CHAR_CONST'
+    }
+
+    _STRING_LITERAL = {'STRING_LITERAL'}
+
+    _WSTR_LITERAL = {
+        'WSTRING_LITERAL', 'U8STRING_LITERAL', 'U16STRING_LITERAL',
+        'U32STRING_LITERAL'
+    }
+
+    def __init__(
+            self,
+            lex_optimize=True,
+            lexer=CLexer,
+            lextab='pycparser.lextab',
+            yacc_optimize=True,
+            yacctab='pycparser.yacctab',
+            yacc_debug=False,
+            taboutputdir=''):
+        self.clex = lexer(
+            error_func=self._lex_error_func,
+            on_lbrace_func=self._lex_on_lbrace_func,
+            on_rbrace_func=self._lex_on_rbrace_func,
+            type_lookup_func=self._lex_type_lookup_func)
+
+        self.clex.build(
+            optimize=lex_optimize,
+            lextab=lextab,
+            outputdir=taboutputdir)
+        self.tokens = self.clex.tokens
+
+        # Stack of scopes for keeping track of symbols.
+        self._scope_stack = [dict()]
+
+        # Keeps track of the last token yielded by the token stream.
+        self._last_yielded_token = None
+
+    def parse(self, text, filename='', debug=False):
+        self.clex.filename = filename
+        self.clex.reset_lineno()
+        self._scope_stack = [dict()]
+        self._last_yielded_token = None
+        self.clex.input(text)
+        self._tokens = _TokenStream(self.clex)
+
+        ast = self._parse_translation_unit_or_empty()
+        tok = self._peek()
+        if tok is not None:
+            self._parse_error(
+                'before: %s' % tok.value,
+                self._tok_coord(tok))
+        return ast
+
+    # ------------------------------------------------------------------
+    # Scope and declaration helpers
+    # ------------------------------------------------------------------
+    def _coord(self, lineno, column=None):
+        return Coord(
+            file=self.clex.filename,
+            line=lineno,
+            column=column)
+
+    def _parse_error(self, msg, coord):
+        raise ParseError("%s: %s" % (coord, msg))
+
+    def _push_scope(self):
+        self._scope_stack.append(dict())
+
+    def _pop_scope(self):
+        assert len(self._scope_stack) > 1
+        self._scope_stack.pop()
+
+    def _add_typedef_name(self, name, coord):
+        if not self._scope_stack[-1].get(name, True):
+            self._parse_error(
+                "Typedef %r previously declared as non-typedef "
+                "in this scope" % name, coord)
+        self._scope_stack[-1][name] = True
+
+    def _add_identifier(self, name, coord):
+        if self._scope_stack[-1].get(name, False):
+            self._parse_error(
+                "Non-typedef %r previously declared as typedef "
+                "in this scope" % name, coord)
+        self._scope_stack[-1][name] = False
+
+    def _is_type_in_scope(self, name):
+        for scope in reversed(self._scope_stack):
+            in_scope = scope.get(name)
+            if in_scope is not None:
+                return in_scope
+        return False
+
+    def _lex_error_func(self, msg, line, column):
+        self._parse_error(msg, self._coord(line, column))
+
+    def _lex_on_lbrace_func(self):
+        self._push_scope()
+
+    def _lex_on_rbrace_func(self):
+        self._pop_scope()
+
+    def _lex_type_lookup_func(self, name):
+        return self._is_type_in_scope(name)
+
+    def _type_modify_decl(self, decl, modifier):
+        modifier_head = modifier
+        modifier_tail = modifier
+
+        while modifier_tail.type:
+            modifier_tail = modifier_tail.type
+
+        if isinstance(decl, c_ast.TypeDecl):
+            modifier_tail.type = decl
+            return modifier
+        else:
+            decl_tail = decl
+            while not isinstance(decl_tail.type, c_ast.TypeDecl):
+                decl_tail = decl_tail.type
+
+            modifier_tail.type = decl_tail.type
+            decl_tail.type = modifier_head
+            return decl
+
+    def _fix_decl_name_type(self, decl, typename):
+        typ = decl
+        while not isinstance(typ, c_ast.TypeDecl):
+            typ = typ.type
+
+        decl.name = typ.declname
+        typ.quals = decl.quals[:]
+
+        for tn in typename:
+            if not isinstance(tn, c_ast.IdentifierType):
+                if len(typename) > 1:
+                    self._parse_error(
+                        "Invalid multiple types specified", tn.coord)
+                else:
+                    typ.type = tn
+                    return decl
+
+        if not typename:
+            if not isinstance(decl.type, c_ast.FuncDecl):
+                self._parse_error(
+                    "Missing type in declaration", decl.coord)
+            typ.type = c_ast.IdentifierType(
+                ['int'],
+                coord=decl.coord)
+        else:
+            typ.type = c_ast.IdentifierType(
+                [name for id in typename for name in id.names],
+                coord=typename[0].coord)
+        return decl
+
+    def _add_declaration_specifier(self, declspec, newspec, kind, append=False):
+        spec = declspec or dict(
+            qual=[], storage=[], type=[], function=[], alignment=[])
+
+        if append:
+            spec[kind].append(newspec)
+        else:
+            spec[kind].insert(0, newspec)
+
+        return spec
+
+    def _build_declarations(self, spec, decls, typedef_namespace=False):
+        is_typedef = 'typedef' in spec['storage']
+        declarations = []
+
+        if decls[0].get('bitsize') is not None:
+            pass
+        elif decls[0]['decl'] is None:
+            if len(spec['type']) < 2 or len(spec['type'][-1].names) != 1 or \
+                    not self._is_type_in_scope(spec['type'][-1].names[0]):
+                coord = '?'
+                for t in spec['type']:
+                    if hasattr(t, 'coord'):
+                        coord = t.coord
+                        break
+                self._parse_error('Invalid declaration', coord)
+
+            decls[0]['decl'] = c_ast.TypeDecl(
+                declname=spec['type'][-1].names[0],
+                type=None,
+                quals=None,
+                align=spec['alignment'],
+                coord=spec['type'][-1].coord)
+            del spec['type'][-1]
+        elif not isinstance(decls[0]['decl'], (
+                c_ast.Enum, c_ast.Struct, c_ast.Union, c_ast.IdentifierType)):
+            decls_0_tail = decls[0]['decl']
+            while not isinstance(decls_0_tail, c_ast.TypeDecl):
+                decls_0_tail = decls_0_tail.type
+            if decls_0_tail.declname is None:
+                decls_0_tail.declname = spec['type'][-1].names[0]
+                del spec['type'][-1]
+
+        for decl in decls:
+            assert decl['decl'] is not None
+            if is_typedef:
+                declaration = c_ast.Typedef(
+                    name=None,
+                    quals=spec['qual'],
+                    storage=spec['storage'],
+                    type=decl['decl'],
+                    coord=decl['decl'].coord)
+            else:
+                declaration = c_ast.Decl(
+                    name=None,
+                    quals=spec['qual'],
+                    align=spec['alignment'],
+                    storage=spec['storage'],
+                    funcspec=spec['function'],
+                    type=decl['decl'],
+                    init=decl.get('init'),
+                    bitsize=decl.get('bitsize'),
+                    coord=decl['decl'].coord)
+
+            if isinstance(declaration.type, (
+                    c_ast.Enum, c_ast.Struct, c_ast.Union,
+                    c_ast.IdentifierType)):
+                fixed_decl = declaration
+            else:
+                fixed_decl = self._fix_decl_name_type(declaration, spec['type'])
+
+            if typedef_namespace:
+                if is_typedef:
+                    self._add_typedef_name(fixed_decl.name, fixed_decl.coord)
+                else:
+                    self._add_identifier(fixed_decl.name, fixed_decl.coord)
+
+            fixed_decl = fix_atomic_specifiers(fixed_decl)
+            declarations.append(fixed_decl)
+
+        return declarations
+
+    def _build_function_definition(self, spec, decl, param_decls, body):
+        if 'typedef' in spec['storage']:
+            self._parse_error("Invalid typedef", decl.coord)
+
+        declaration = self._build_declarations(
+            spec=spec,
+            decls=[dict(decl=decl, init=None)],
+            typedef_namespace=True)[0]
+
+        return c_ast.FuncDef(
+            decl=declaration,
+            param_decls=param_decls,
+            body=body,
+            coord=decl.coord)
+
+    def _select_struct_union_class(self, token):
+        if token == 'struct':
+            return c_ast.Struct
+        else:
+            return c_ast.Union
+
+    # ------------------------------------------------------------------
+    # Token helpers
+    # ------------------------------------------------------------------
+    def _peek(self, k=1):
+        return self._tokens.peek(k)
+
+    def _peek_type(self, k=1):
+        tok = self._peek(k)
+        return tok.type if tok is not None else None
+
+    def _advance(self):
+        tok = self._tokens.next()
+        self._last_yielded_token = tok
+        return tok
+
+    def _accept(self, token_type):
+        tok = self._peek()
+        if tok is not None and tok.type == token_type:
+            return self._advance()
+        return None
+
+    def _expect(self, token_type):
+        tok = self._advance()
+        if tok is None:
+            self._parse_error('At end of input', self.clex.filename)
+        if tok.type != token_type:
+            self._parse_error('before: %s' % tok.value, self._tok_coord(tok))
+        return tok
+
+    def _mark(self):
+        return self._tokens.mark()
+
+    def _reset(self, mark):
+        self._tokens.reset(mark)
+
+    def _tok_coord(self, tok):
+        return self._coord(tok.lineno, self.clex.find_tok_column(tok))
+
+    def _starts_declaration(self, tok=None):
+        tok = tok or self._peek()
+        if tok is None:
+            return False
+        return tok.type in self._DECL_START
+
+    def _starts_expression(self, tok=None):
+        tok = tok or self._peek()
+        if tok is None:
+            return False
+        if tok.type in self._EXPR_START:
+            return True
+        if tok.type in self._INT_CONST:
+            return True
+        if tok.type in self._FLOAT_CONST:
+            return True
+        if tok.type in self._CHAR_CONST:
+            return True
+        if tok.type in self._STRING_LITERAL:
+            return True
+        if tok.type in self._WSTR_LITERAL:
+            return True
+        return False
+
+    def _starts_statement(self):
+        tok_type = self._peek_type()
+        if tok_type is None:
+            return False
+        if tok_type in {'LBRACE', 'IF', 'SWITCH', 'WHILE', 'DO', 'FOR',
+                        'GOTO', 'BREAK', 'CONTINUE', 'RETURN', 'CASE',
+                        'DEFAULT', 'PPPRAGMA', '_PRAGMA', '_STATIC_ASSERT',
+                        'SEMI'}:
+            return True
+        return self._starts_expression()
+
+    def _starts_declarator(self, id_only=False):
+        tok_type = self._peek_type()
+        if tok_type is None:
+            return False
+        if tok_type in {'TIMES', 'LPAREN'}:
+            return True
+        if id_only:
+            return tok_type == 'ID'
+        return tok_type in {'ID', 'TYPEID'}
+
+    def _starts_direct_abstract_declarator(self):
+        return self._peek_type() in {'LPAREN', 'LBRACKET'}
+
+    def _is_assignment_op(self):
+        tok = self._peek()
+        return tok is not None and tok.type in self._ASSIGNMENT_OPS
+
+    def _is_type_name_in_parens(self, allow_lbrace=False):
+        mark = self._mark()
+        if not self._accept('LPAREN'):
+            self._reset(mark)
+            return False
+        try:
+            self._parse_type_name()
+            if not self._accept('RPAREN'):
+                self._reset(mark)
+                return False
+            if not allow_lbrace and self._peek_type() == 'LBRACE':
+                self._reset(mark)
+                return False
+            self._reset(mark)
+            return True
+        except ParseError:
+            self._reset(mark)
+            return False
+
+    def _starts_compound_literal(self):
+        mark = self._mark()
+        if not self._accept('LPAREN'):
+            self._reset(mark)
+            return False
+        try:
+            self._parse_type_name()
+            if not self._accept('RPAREN'):
+                self._reset(mark)
+                return False
+            if self._peek_type() != 'LBRACE':
+                self._reset(mark)
+                return False
+            self._reset(mark)
+            return True
+        except ParseError:
+            self._reset(mark)
+            return False
+
+    # ------------------------------------------------------------------
+    # Top-level
+    # ------------------------------------------------------------------
+    def _parse_translation_unit_or_empty(self):
+        if self._peek() is None:
+            return c_ast.FileAST([])
+        return c_ast.FileAST(self._parse_translation_unit())
+
+    def _parse_translation_unit(self):
+        ext = []
+        while self._peek() is not None:
+            ext.extend(self._parse_external_declaration())
+        return ext
+
+    def _parse_external_declaration(self):
+        tok = self._peek()
+        if tok is None:
+            return []
+        if tok.type == 'PPHASH':
+            self._parse_pp_directive()
+            return []
+        if tok.type in {'PPPRAGMA', '_PRAGMA'}:
+            return [self._parse_pppragma_directive()]
+        if tok.type == 'SEMI':
+            self._advance()
+            return []
+        if tok.type == '_STATIC_ASSERT':
+            return self._parse_static_assert()
+
+        if not self._starts_declaration(tok):
+            decl = self._parse_id_declarator()
+            param_decls = None
+            if self._starts_declaration():
+                param_decls = self._parse_declaration_list()
+            if self._peek_type() != 'LBRACE':
+                self._parse_error('Invalid function definition', decl.coord)
+            spec = dict(
+                qual=[],
+                alignment=[],
+                storage=[],
+                type=[c_ast.IdentifierType(['int'], coord=decl.coord)],
+                function=[])
+            func = self._build_function_definition(
+                spec=spec,
+                decl=decl,
+                param_decls=param_decls,
+                body=self._parse_compound_statement())
+            return [func]
+
+        spec, saw_type, spec_coord = self._parse_declaration_specifiers(
+            allow_no_type=True)
+
+        mark = self._mark()
+        try:
+            decl = self._parse_id_declarator()
+        except ParseError:
+            self._reset(mark)
+            decls = self._parse_decl_body_with_spec(spec, saw_type)
+            self._expect('SEMI')
+            return decls
+
+        if self._peek_type() == 'LBRACE' or self._starts_declaration():
+            param_decls = None
+            if self._starts_declaration():
+                param_decls = self._parse_declaration_list()
+            if self._peek_type() != 'LBRACE':
+                self._parse_error('Invalid function definition', decl.coord)
+            if not spec['type']:
+                spec['type'] = [c_ast.IdentifierType(['int'], coord=spec_coord)]
+            func = self._build_function_definition(
+                spec=spec,
+                decl=decl,
+                param_decls=param_decls,
+                body=self._parse_compound_statement())
+            return [func]
+
+        decl_dict = dict(decl=decl, init=None)
+        if self._accept('EQUALS'):
+            decl_dict['init'] = self._parse_initializer()
+        decls = self._parse_init_declarator_list(first=decl_dict)
+        decls = self._build_declarations(
+            spec=spec,
+            decls=decls,
+            typedef_namespace=True)
+        self._expect('SEMI')
+        return decls
+
+    # ------------------------------------------------------------------
+    # Declarations
+    # ------------------------------------------------------------------
+    def _parse_declaration(self):
+        decls = self._parse_decl_body()
+        self._expect('SEMI')
+        return decls
+
+    def _parse_decl_body(self):
+        spec, saw_type, _ = self._parse_declaration_specifiers(
+            allow_no_type=True)
+        return self._parse_decl_body_with_spec(spec, saw_type)
+
+    def _parse_decl_body_with_spec(self, spec, saw_type):
+        decls = None
+        if saw_type:
+            if self._starts_declarator():
+                decls = self._parse_init_declarator_list()
+        else:
+            if self._starts_declarator(id_only=True):
+                decls = self._parse_init_declarator_list(id_only=True)
+
+        if decls is None:
+            ty = spec['type']
+            s_u_or_e = (c_ast.Struct, c_ast.Union, c_ast.Enum)
+            if len(ty) == 1 and isinstance(ty[0], s_u_or_e):
+                decls = [c_ast.Decl(
+                    name=None,
+                    quals=spec['qual'],
+                    align=spec['alignment'],
+                    storage=spec['storage'],
+                    funcspec=spec['function'],
+                    type=ty[0],
+                    init=None,
+                    bitsize=None,
+                    coord=ty[0].coord)]
+            else:
+                decls = self._build_declarations(
+                    spec=spec,
+                    decls=[dict(decl=None, init=None)],
+                    typedef_namespace=True)
+        else:
+            decls = self._build_declarations(
+                spec=spec,
+                decls=decls,
+                typedef_namespace=True)
+
+        return decls
+
+    def _parse_declaration_list(self):
+        decls = []
+        while self._starts_declaration():
+            decls.extend(self._parse_declaration())
+        return decls
+
+    def _parse_declaration_specifiers(self, allow_no_type=False):
+        spec = None
+        saw_type = False
+        first_coord = None
+
+        while True:
+            tok = self._peek()
+            if tok is None:
+                break
+
+            if tok.type == '_ALIGNAS':
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_alignment_specifier(), 'alignment',
+                    append=True)
+                continue
+
+            if tok.type == '_ATOMIC' and self._peek_type(2) == 'LPAREN':
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_atomic_specifier(), 'type', append=True)
+                saw_type = True
+                continue
+
+            if tok.type in self._TYPE_QUALIFIER:
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._advance().value, 'qual', append=True)
+                continue
+
+            if tok.type in self._STORAGE_CLASS:
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._advance().value, 'storage', append=True)
+                continue
+
+            if tok.type in self._FUNCTION_SPEC:
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._advance().value, 'function', append=True)
+                continue
+
+            if tok.type in self._TYPE_SPEC_SIMPLE:
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                tok = self._advance()
+                spec = self._add_declaration_specifier(
+                    spec,
+                    c_ast.IdentifierType([tok.value], coord=self._tok_coord(tok)),
+                    'type',
+                    append=True)
+                saw_type = True
+                continue
+
+            if tok.type == 'TYPEID':
+                if saw_type:
+                    break
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                tok = self._advance()
+                spec = self._add_declaration_specifier(
+                    spec,
+                    c_ast.IdentifierType([tok.value], coord=self._tok_coord(tok)),
+                    'type',
+                    append=True)
+                saw_type = True
+                continue
+
+            if tok.type in {'STRUCT', 'UNION'}:
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_struct_or_union_specifier(), 'type',
+                    append=True)
+                saw_type = True
+                continue
+
+            if tok.type == 'ENUM':
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_enum_specifier(), 'type', append=True)
+                saw_type = True
+                continue
+
+            break
+
+        if spec is None:
+            self._parse_error('Invalid declaration', self.clex.filename)
+
+        if not saw_type and not allow_no_type:
+            self._parse_error('Missing type in declaration', first_coord)
+
+        return spec, saw_type, first_coord
+
+    def _parse_specifier_qualifier_list(self):
+        spec = None
+        saw_type = False
+        saw_alignment = False
+        first_coord = None
+
+        while True:
+            tok = self._peek()
+            if tok is None:
+                break
+
+            if tok.type == '_ALIGNAS':
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_alignment_specifier(), 'alignment',
+                    append=True)
+                saw_alignment = True
+                continue
+
+            if tok.type == '_ATOMIC' and self._peek_type(2) == 'LPAREN':
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_atomic_specifier(), 'type', append=True)
+                saw_type = True
+                continue
+
+            if tok.type in self._TYPE_QUALIFIER:
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._advance().value, 'qual', append=True)
+                continue
+
+            if tok.type in self._TYPE_SPEC_SIMPLE:
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                tok = self._advance()
+                spec = self._add_declaration_specifier(
+                    spec,
+                    c_ast.IdentifierType([tok.value], coord=self._tok_coord(tok)),
+                    'type',
+                    append=True)
+                saw_type = True
+                continue
+
+            if tok.type == 'TYPEID':
+                if saw_type:
+                    break
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                tok = self._advance()
+                spec = self._add_declaration_specifier(
+                    spec,
+                    c_ast.IdentifierType([tok.value], coord=self._tok_coord(tok)),
+                    'type',
+                    append=True)
+                saw_type = True
+                continue
+
+            if tok.type in {'STRUCT', 'UNION'}:
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_struct_or_union_specifier(), 'type',
+                    append=True)
+                saw_type = True
+                continue
+
+            if tok.type == 'ENUM':
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_enum_specifier(), 'type', append=True)
+                saw_type = True
+                continue
+
+            break
+
+        if spec is None:
+            self._parse_error('Invalid specifier list', self.clex.filename)
+
+        if not saw_type and not saw_alignment:
+            self._parse_error('Missing type in declaration', first_coord)
+
+        if spec.get('storage') is None:
+            spec['storage'] = []
+        if spec.get('function') is None:
+            spec['function'] = []
+
+        return spec
+
+    def _parse_type_qualifier_list(self):
+        quals = []
+        while self._peek_type() in self._TYPE_QUALIFIER:
+            quals.append(self._advance().value)
+        return quals
+
+    def _parse_alignment_specifier(self):
+        tok = self._expect('_ALIGNAS')
+        self._expect('LPAREN')
+
+        if self._starts_declaration():
+            typ = self._parse_type_name()
+            self._expect('RPAREN')
+            return c_ast.Alignas(typ, self._tok_coord(tok))
+
+        expr = self._parse_constant_expression()
+        self._expect('RPAREN')
+        return c_ast.Alignas(expr, self._tok_coord(tok))
+
+    def _parse_atomic_specifier(self):
+        tok = self._expect('_ATOMIC')
+        self._expect('LPAREN')
+        typ = self._parse_type_name()
+        self._expect('RPAREN')
+        typ.quals.append('_Atomic')
+        return typ
+
+    def _parse_init_declarator_list(self, first=None, id_only=False):
+        decls = []
+        if first is not None:
+            decls.append(first)
+        else:
+            decls.append(self._parse_init_declarator(id_only=id_only))
+
+        while self._accept('COMMA'):
+            decls.append(self._parse_init_declarator(id_only=id_only))
+        return decls
+
+    def _parse_init_declarator(self, id_only=False):
+        decl = self._parse_id_declarator() if id_only else self._parse_declarator()
+        init = None
+        if self._accept('EQUALS'):
+            init = self._parse_initializer()
+        return dict(decl=decl, init=init)
+
+    # ------------------------------------------------------------------
+    # Structs/unions/enums
+    # ------------------------------------------------------------------
+    def _parse_struct_or_union_specifier(self):
+        tok = self._advance()
+        klass = self._select_struct_union_class(tok.value)
+
+        if self._peek_type() in {'ID', 'TYPEID'}:
+            name_tok = self._advance()
+            if self._peek_type() == 'LBRACE':
+                self._advance()
+                if self._peek_type() == 'RBRACE':
+                    self._advance()
+                    return klass(
+                        name=name_tok.value,
+                        decls=[],
+                        coord=self._tok_coord(name_tok))
+                decls = self._parse_struct_declaration_list()
+                self._expect('RBRACE')
+                return klass(
+                    name=name_tok.value,
+                    decls=decls,
+                    coord=self._tok_coord(name_tok))
+
+            return klass(
+                name=name_tok.value,
+                decls=None,
+                coord=self._tok_coord(name_tok))
+
+        if self._peek_type() == 'LBRACE':
+            brace_tok = self._advance()
+            if self._peek_type() == 'RBRACE':
+                self._advance()
+                return klass(
+                    name=None,
+                    decls=[],
+                    coord=self._tok_coord(brace_tok))
+            decls = self._parse_struct_declaration_list()
+            self._expect('RBRACE')
+            return klass(
+                name=None,
+                decls=decls,
+                coord=self._tok_coord(brace_tok))
+
+        self._parse_error('Invalid struct/union declaration', self._tok_coord(tok))
+
+    def _parse_struct_declaration_list(self):
+        decls = []
+        while self._peek_type() not in {None, 'RBRACE'}:
+            items = self._parse_struct_declaration()
+            if items is None:
+                continue
+            decls.extend(items)
+        return decls
+
+    def _parse_struct_declaration(self):
+        if self._peek_type() == 'SEMI':
+            self._advance()
+            return None
+        if self._peek_type() in {'PPPRAGMA', '_PRAGMA'}:
+            return [self._parse_pppragma_directive()]
+
+        spec = self._parse_specifier_qualifier_list()
+        assert 'typedef' not in spec.get('storage', [])
+
+        decls = None
+        if self._starts_declarator() or self._peek_type() == 'COLON':
+            decls = self._parse_struct_declarator_list()
+        if decls is not None:
+            self._expect('SEMI')
+            return self._build_declarations(spec=spec, decls=decls)
+
+        if len(spec['type']) == 1:
+            node = spec['type'][0]
+            if isinstance(node, c_ast.Node):
+                decl_type = node
+            else:
+                decl_type = c_ast.IdentifierType(node)
+            self._expect('SEMI')
+            return self._build_declarations(
+                spec=spec,
+                decls=[dict(decl=decl_type)])
+
+        self._expect('SEMI')
+        return self._build_declarations(
+            spec=spec,
+            decls=[dict(decl=None, init=None)])
+
+    def _parse_struct_declarator_list(self):
+        decls = [self._parse_struct_declarator()]
+        while self._accept('COMMA'):
+            decls.append(self._parse_struct_declarator())
+        return decls
+
+    def _parse_struct_declarator(self):
+        if self._accept('COLON'):
+            bitsize = self._parse_constant_expression()
+            return {'decl': c_ast.TypeDecl(None, None, None, None),
+                    'bitsize': bitsize}
+
+        decl = self._parse_declarator()
+        if self._accept('COLON'):
+            bitsize = self._parse_constant_expression()
+            return {'decl': decl, 'bitsize': bitsize}
+
+        return {'decl': decl, 'bitsize': None}
+
+    def _parse_enum_specifier(self):
+        tok = self._expect('ENUM')
+        if self._peek_type() in {'ID', 'TYPEID'}:
+            name_tok = self._advance()
+            if self._peek_type() == 'LBRACE':
+                self._advance()
+                enums = self._parse_enumerator_list()
+                self._expect('RBRACE')
+                return c_ast.Enum(name_tok.value, enums, self._tok_coord(tok))
+            return c_ast.Enum(name_tok.value, None, self._tok_coord(tok))
+
+        self._expect('LBRACE')
+        enums = self._parse_enumerator_list()
+        self._expect('RBRACE')
+        return c_ast.Enum(None, enums, self._tok_coord(tok))
+
+    def _parse_enumerator_list(self):
+        enum = self._parse_enumerator()
+        enum_list = c_ast.EnumeratorList([enum], enum.coord)
+        while self._accept('COMMA'):
+            if self._peek_type() == 'RBRACE':
+                break
+            enum = self._parse_enumerator()
+            enum_list.enumerators.append(enum)
+        return enum_list
+
+    def _parse_enumerator(self):
+        name_tok = self._expect('ID')
+        if self._accept('EQUALS'):
+            value = self._parse_constant_expression()
+        else:
+            value = None
+        enum = c_ast.Enumerator(
+            name_tok.value,
+            value,
+            self._tok_coord(name_tok))
+        self._add_identifier(enum.name, enum.coord)
+        return enum
+
+    # ------------------------------------------------------------------
+    # Declarators
+    # ------------------------------------------------------------------
+    def _parse_declarator(self):
+        mark = self._mark()
+        try:
+            return self._parse_id_declarator()
+        except ParseError:
+            self._reset(mark)
+            return self._parse_typeid_declarator()
+
+    def _parse_id_declarator(self):
+        return self._parse_declarator_kind(kind='id', allow_paren=True)
+
+    def _parse_typeid_declarator(self):
+        return self._parse_declarator_kind(kind='typeid', allow_paren=True)
+
+    def _parse_typeid_noparen_declarator(self):
+        return self._parse_declarator_kind(kind='typeid', allow_paren=False)
+
+    def _parse_declarator_kind(self, kind, allow_paren):
+        ptr = None
+        if self._peek_type() == 'TIMES':
+            ptr = self._parse_pointer()
+        direct = self._parse_direct_declarator(kind, allow_paren=allow_paren)
+        if ptr is not None:
+            return self._type_modify_decl(direct, ptr)
+        return direct
+
+    def _parse_direct_declarator(self, kind, allow_paren=True):
+        if allow_paren and self._accept('LPAREN'):
+            decl = self._parse_declarator_kind(kind, allow_paren=True)
+            self._expect('RPAREN')
+        else:
+            if kind == 'id':
+                name_tok = self._expect('ID')
+            else:
+                name_tok = self._expect('TYPEID')
+            decl = c_ast.TypeDecl(
+                declname=name_tok.value,
+                type=None,
+                quals=None,
+                align=None,
+                coord=self._tok_coord(name_tok))
+
+        while True:
+            if self._peek_type() == 'LBRACKET':
+                decl = self._type_modify_decl(decl, self._parse_array_decl(decl))
+                continue
+            if self._peek_type() == 'LPAREN':
+                func = self._parse_function_decl(decl)
+                decl = self._type_modify_decl(decl, func)
+                continue
+            break
+
+        return decl
+
+    def _parse_array_decl(self, base_decl):
+        self._expect('LBRACKET')
+        dim_quals = []
+
+        if self._accept('STATIC'):
+            dim_quals = ['static'] + (self._parse_type_qualifier_list() or [])
+            dim = self._parse_assignment_expression()
+            self._expect('RBRACKET')
+            return c_ast.ArrayDecl(
+                type=None,
+                dim=dim,
+                dim_quals=dim_quals,
+                coord=base_decl.coord)
+
+        if self._peek_type() in self._TYPE_QUALIFIER:
+            dim_quals = self._parse_type_qualifier_list() or []
+            if self._accept('STATIC'):
+                dim_quals = dim_quals + ['static']
+                dim = self._parse_assignment_expression()
+                self._expect('RBRACKET')
+                return c_ast.ArrayDecl(
+                    type=None,
+                    dim=dim,
+                    dim_quals=dim_quals,
+                    coord=base_decl.coord)
+            times_tok = self._accept('TIMES')
+            if times_tok:
+                self._expect('RBRACKET')
+                return c_ast.ArrayDecl(
+                    type=None,
+                    dim=c_ast.ID(times_tok.value, self._tok_coord(times_tok)),
+                    dim_quals=dim_quals,
+                    coord=base_decl.coord)
+            dim = None
+            if self._starts_expression():
+                dim = self._parse_assignment_expression()
+            self._expect('RBRACKET')
+            return c_ast.ArrayDecl(
+                type=None,
+                dim=dim,
+                dim_quals=dim_quals,
+                coord=base_decl.coord)
+
+        times_tok = self._accept('TIMES')
+        if times_tok:
+            self._expect('RBRACKET')
+            return c_ast.ArrayDecl(
+                type=None,
+                dim=c_ast.ID(times_tok.value, self._tok_coord(times_tok)),
+                dim_quals=[],
+                coord=base_decl.coord)
+
+        dim = None
+        if self._starts_expression():
+            dim = self._parse_assignment_expression()
+        self._expect('RBRACKET')
+        return c_ast.ArrayDecl(
+            type=None,
+            dim=dim,
+            dim_quals=[],
+            coord=base_decl.coord)
+
+    def _parse_function_decl(self, base_decl):
+        self._expect('LPAREN')
+        if self._peek_type() == 'RPAREN':
+            args = None
+            self._advance()
+        else:
+            if self._starts_declaration():
+                args = self._parse_parameter_type_list()
+            else:
+                args = self._parse_identifier_list_opt()
+            self._expect('RPAREN')
+
+        func = c_ast.FuncDecl(
+            args=args,
+            type=None,
+            coord=base_decl.coord)
+
+        if self._peek_type() == 'LBRACE':
+            if func.args is not None:
+                for param in func.args.params:
+                    if isinstance(param, c_ast.EllipsisParam):
+                        break
+                    name = getattr(param, 'name', None)
+                    if name:
+                        self._add_identifier(name, param.coord)
+
+        return func
+
+    def _parse_pointer(self):
+        stars = []
+        times_tok = self._accept('TIMES')
+        while times_tok:
+            quals = self._parse_type_qualifier_list() or []
+            stars.append((quals, self._tok_coord(times_tok)))
+            times_tok = self._accept('TIMES')
+
+        if not stars:
+            return None
+
+        ptr = None
+        for quals, coord in stars:
+            ptr = c_ast.PtrDecl(quals=quals, type=ptr, coord=coord)
+        return ptr
+
+    def _parse_parameter_type_list(self):
+        params = self._parse_parameter_list()
+        if self._peek_type() == 'COMMA' and self._peek_type(2) == 'ELLIPSIS':
+            self._advance()
+            ell_tok = self._advance()
+            params.params.append(c_ast.EllipsisParam(self._tok_coord(ell_tok)))
+        return params
+
+    def _parse_parameter_list(self):
+        first = self._parse_parameter_declaration()
+        params = c_ast.ParamList([first], first.coord)
+        while self._peek_type() == 'COMMA' and self._peek_type(2) != 'ELLIPSIS':
+            self._advance()
+            params.params.append(self._parse_parameter_declaration())
+        return params
+
+    def _parse_parameter_declaration(self):
+        spec, _, spec_coord = self._parse_declaration_specifiers(
+            allow_no_type=True)
+
+        if not spec['type']:
+            spec['type'] = [c_ast.IdentifierType(['int'], coord=spec_coord)]
+
+        if self._peek_type() == 'LPAREN' and self._peek_type(2) == 'TYPEID':
+            decl = self._parse_abstract_declarator_opt()
+            return self._build_parameter_declaration(spec, decl, spec_coord)
+
+        if self._starts_declarator():
+            mark = self._mark()
+            try:
+                decl = self._parse_id_declarator()
+                return self._build_declarations(
+                    spec=spec,
+                    decls=[dict(decl=decl)])[0]
+            except ParseError:
+                self._reset(mark)
+                try:
+                    decl = self._parse_typeid_noparen_declarator()
+                    return self._build_declarations(
+                        spec=spec,
+                        decls=[dict(decl=decl)])[0]
+                except ParseError:
+                    self._reset(mark)
+
+        decl = self._parse_abstract_declarator_opt()
+        return self._build_parameter_declaration(spec, decl, spec_coord)
+
+    def _build_parameter_declaration(self, spec, decl, spec_coord):
+        if len(spec['type']) > 1 and len(spec['type'][-1].names) == 1 and \
+                self._is_type_in_scope(spec['type'][-1].names[0]):
+            return self._build_declarations(
+                spec=spec,
+                decls=[dict(decl=decl, init=None)])[0]
+
+        decl = c_ast.Typename(
+            name='',
+            quals=spec['qual'],
+            align=None,
+            type=decl or c_ast.TypeDecl(None, None, None, None),
+            coord=spec_coord)
+        return self._fix_decl_name_type(decl, spec['type'])
+
+    def _parse_identifier_list_opt(self):
+        if self._peek_type() == 'RPAREN':
+            return None
+        return self._parse_identifier_list()
+
+    def _parse_identifier_list(self):
+        first = self._parse_identifier()
+        params = c_ast.ParamList([first], first.coord)
+        while self._accept('COMMA'):
+            params.params.append(self._parse_identifier())
+        return params
+
+    # ------------------------------------------------------------------
+    # Abstract declarators
+    # ------------------------------------------------------------------
+    def _parse_type_name(self):
+        spec = self._parse_specifier_qualifier_list()
+        decl = self._parse_abstract_declarator_opt()
+
+        coord = None
+        if decl is not None:
+            coord = decl.coord
+        elif spec['type']:
+            coord = spec['type'][0].coord
+
+        typename = c_ast.Typename(
+            name='',
+            quals=spec['qual'][:],
+            align=None,
+            type=decl or c_ast.TypeDecl(None, None, None, None),
+            coord=coord)
+        return self._fix_decl_name_type(typename, spec['type'])
+
+    def _parse_abstract_declarator_opt(self):
+        if self._peek_type() == 'TIMES':
+            ptr = self._parse_pointer()
+            if self._starts_direct_abstract_declarator():
+                decl = self._parse_direct_abstract_declarator()
+            else:
+                decl = c_ast.TypeDecl(None, None, None, None)
+            return self._type_modify_decl(decl, ptr)
+
+        if self._starts_direct_abstract_declarator():
+            return self._parse_direct_abstract_declarator()
+
+        return None
+
+    def _parse_direct_abstract_declarator(self):
+        lparen_tok = self._accept('LPAREN')
+        if lparen_tok:
+            if self._starts_declaration() or self._peek_type() == 'RPAREN':
+                params = self._parse_parameter_type_list_opt()
+                self._expect('RPAREN')
+                decl = c_ast.FuncDecl(
+                    args=params,
+                    type=c_ast.TypeDecl(None, None, None, None),
+                    coord=self._tok_coord(lparen_tok))
+            else:
+                decl = self._parse_abstract_declarator_opt()
+                self._expect('RPAREN')
+        elif self._peek_type() == 'LBRACKET':
+            decl = self._parse_abstract_array_base()
+        else:
+            self._parse_error('Invalid abstract declarator', self.clex.filename)
+
+        while True:
+            if self._peek_type() == 'LBRACKET':
+                decl = self._type_modify_decl(decl, self._parse_array_decl(decl))
+                continue
+            if self._peek_type() == 'LPAREN':
+                func = self._parse_function_decl(decl)
+                decl = self._type_modify_decl(decl, func)
+                continue
+            break
+
+        return decl
+
+    def _parse_parameter_type_list_opt(self):
+        if self._peek_type() == 'RPAREN':
+            return None
+        return self._parse_parameter_type_list()
+
+    def _parse_abstract_array_base(self):
+        lbrack_tok = self._expect('LBRACKET')
+        dim_quals = []
+
+        if self._accept('STATIC'):
+            dim_quals = ['static'] + (self._parse_type_qualifier_list() or [])
+            dim = self._parse_assignment_expression()
+            self._expect('RBRACKET')
+            return c_ast.ArrayDecl(
+                type=c_ast.TypeDecl(None, None, None, None),
+                dim=dim,
+                dim_quals=dim_quals,
+                coord=self._tok_coord(lbrack_tok))
+
+        if self._peek_type() in self._TYPE_QUALIFIER:
+            dim_quals = self._parse_type_qualifier_list() or []
+            if self._accept('STATIC'):
+                dim_quals = dim_quals + ['static']
+                dim = self._parse_assignment_expression()
+                self._expect('RBRACKET')
+                return c_ast.ArrayDecl(
+                    type=c_ast.TypeDecl(None, None, None, None),
+                    dim=dim,
+                    dim_quals=dim_quals,
+                    coord=self._tok_coord(lbrack_tok))
+            times_tok = self._accept('TIMES')
+            if times_tok:
+                self._expect('RBRACKET')
+                return c_ast.ArrayDecl(
+                    type=c_ast.TypeDecl(None, None, None, None),
+                    dim=c_ast.ID(times_tok.value, self._tok_coord(times_tok)),
+                    dim_quals=dim_quals,
+                    coord=self._tok_coord(lbrack_tok))
+            dim = None
+            if self._starts_expression():
+                dim = self._parse_assignment_expression()
+            self._expect('RBRACKET')
+            return c_ast.ArrayDecl(
+                type=c_ast.TypeDecl(None, None, None, None),
+                dim=dim,
+                dim_quals=dim_quals,
+                coord=self._tok_coord(lbrack_tok))
+
+        times_tok = self._accept('TIMES')
+        if times_tok:
+            self._expect('RBRACKET')
+            return c_ast.ArrayDecl(
+                type=c_ast.TypeDecl(None, None, None, None),
+                dim=c_ast.ID(times_tok.value, self._tok_coord(times_tok)),
+                dim_quals=[],
+                coord=self._tok_coord(lbrack_tok))
+
+        dim = None
+        if self._starts_expression():
+            dim = self._parse_assignment_expression()
+        self._expect('RBRACKET')
+        return c_ast.ArrayDecl(
+            type=c_ast.TypeDecl(None, None, None, None),
+            dim=dim,
+            dim_quals=[],
+            coord=self._tok_coord(lbrack_tok))
+
+    # ------------------------------------------------------------------
+    # Statements
+    # ------------------------------------------------------------------
+    def _parse_statement(self):
+        tok_type = self._peek_type()
+        if tok_type in {'CASE', 'DEFAULT'}:
+            return self._parse_labeled_statement()
+        if tok_type == 'ID' and self._peek_type(2) == 'COLON':
+            return self._parse_labeled_statement()
+        if tok_type == 'LBRACE':
+            return self._parse_compound_statement()
+        if tok_type in {'IF', 'SWITCH'}:
+            return self._parse_selection_statement()
+        if tok_type in {'WHILE', 'DO', 'FOR'}:
+            return self._parse_iteration_statement()
+        if tok_type in {'GOTO', 'BREAK', 'CONTINUE', 'RETURN'}:
+            return self._parse_jump_statement()
+        if tok_type in {'PPPRAGMA', '_PRAGMA'}:
+            return self._parse_pppragma_directive()
+        if tok_type == '_STATIC_ASSERT':
+            return self._parse_static_assert()
+        return self._parse_expression_statement()
+
+    def _parse_pragmacomp_or_statement(self):
+        if self._peek_type() in {'PPPRAGMA', '_PRAGMA'}:
+            pragmas = self._parse_pppragma_directive_list()
+            stmt = self._parse_statement()
+            return c_ast.Compound(
+                block_items=pragmas + [stmt],
+                coord=pragmas[0].coord)
+        return self._parse_statement()
+
+    def _parse_block_item(self):
+        if self._starts_declaration():
+            return self._parse_declaration()
+        return self._parse_statement()
+
+    def _parse_block_item_list(self):
+        items = []
+        while self._peek_type() not in {'RBRACE', None}:
+            item = self._parse_block_item()
+            if isinstance(item, list):
+                if item == [None]:
+                    continue
+                items.extend(item)
+            else:
+                items.append(item)
+        return items
+
+    def _parse_compound_statement(self):
+        lbrace_tok = self._expect('LBRACE')
+        if self._peek_type() == 'RBRACE':
+            self._advance()
+            return c_ast.Compound(block_items=None, coord=self._tok_coord(lbrace_tok))
+        block_items = self._parse_block_item_list()
+        self._expect('RBRACE')
+        return c_ast.Compound(block_items=block_items, coord=self._tok_coord(lbrace_tok))
+
+    def _parse_labeled_statement(self):
+        tok_type = self._peek_type()
+        if tok_type == 'ID':
+            name_tok = self._advance()
+            self._expect('COLON')
+            if self._starts_statement():
+                stmt = self._parse_pragmacomp_or_statement()
+            else:
+                stmt = c_ast.EmptyStatement(self._tok_coord(name_tok))
+            return c_ast.Label(name_tok.value, stmt, self._tok_coord(name_tok))
+
+        if tok_type == 'CASE':
+            case_tok = self._advance()
+            expr = self._parse_constant_expression()
+            self._expect('COLON')
+            if self._starts_statement():
+                stmt = self._parse_pragmacomp_or_statement()
+            else:
+                stmt = c_ast.EmptyStatement(self._tok_coord(case_tok))
+            return c_ast.Case(expr, [stmt], self._tok_coord(case_tok))
+
+        if tok_type == 'DEFAULT':
+            def_tok = self._advance()
+            self._expect('COLON')
+            if self._starts_statement():
+                stmt = self._parse_pragmacomp_or_statement()
+            else:
+                stmt = c_ast.EmptyStatement(self._tok_coord(def_tok))
+            return c_ast.Default([stmt], self._tok_coord(def_tok))
+
+        self._parse_error('Invalid labeled statement', self.clex.filename)
+
+    def _parse_selection_statement(self):
+        tok = self._peek()
+        if tok.type == 'IF':
+            tok = self._advance()
+            self._expect('LPAREN')
+            cond = self._parse_expression()
+            self._expect('RPAREN')
+            then_stmt = self._parse_pragmacomp_or_statement()
+            if self._accept('ELSE'):
+                else_stmt = self._parse_pragmacomp_or_statement()
+                return c_ast.If(cond, then_stmt, else_stmt, self._tok_coord(tok))
+            return c_ast.If(cond, then_stmt, None, self._tok_coord(tok))
+
+        if tok.type == 'SWITCH':
+            tok = self._advance()
+            self._expect('LPAREN')
+            expr = self._parse_expression()
+            self._expect('RPAREN')
+            stmt = self._parse_pragmacomp_or_statement()
+            return fix_switch_cases(c_ast.Switch(expr, stmt, self._tok_coord(tok)))
+
+        self._parse_error('Invalid selection statement', self._tok_coord(tok))
+
+    def _parse_iteration_statement(self):
+        tok = self._peek()
+        if tok.type == 'WHILE':
+            self._advance()
+            self._expect('LPAREN')
+            cond = self._parse_expression()
+            self._expect('RPAREN')
+            stmt = self._parse_pragmacomp_or_statement()
+            return c_ast.While(cond, stmt, self._tok_coord(tok))
+
+        if tok.type == 'DO':
+            self._advance()
+            stmt = self._parse_pragmacomp_or_statement()
+            self._expect('WHILE')
+            self._expect('LPAREN')
+            cond = self._parse_expression()
+            self._expect('RPAREN')
+            self._expect('SEMI')
+            return c_ast.DoWhile(cond, stmt, self._tok_coord(tok))
+
+        if tok.type == 'FOR':
+            self._advance()
+            self._expect('LPAREN')
+            if self._starts_declaration():
+                decls = self._parse_declaration()
+                init = c_ast.DeclList(decls, self._tok_coord(tok))
+                cond = self._parse_expression_opt()
+                self._expect('SEMI')
+                next_expr = self._parse_expression_opt()
+                self._expect('RPAREN')
+                stmt = self._parse_pragmacomp_or_statement()
+                return c_ast.For(init, cond, next_expr, stmt, self._tok_coord(tok))
+
+            init = self._parse_expression_opt()
+            self._expect('SEMI')
+            cond = self._parse_expression_opt()
+            self._expect('SEMI')
+            next_expr = self._parse_expression_opt()
+            self._expect('RPAREN')
+            stmt = self._parse_pragmacomp_or_statement()
+            return c_ast.For(init, cond, next_expr, stmt, self._tok_coord(tok))
+
+        self._parse_error('Invalid iteration statement', self._tok_coord(tok))
+
+    def _parse_jump_statement(self):
+        tok = self._peek()
+        if tok.type == 'GOTO':
+            self._advance()
+            name_tok = self._expect('ID')
+            self._expect('SEMI')
+            return c_ast.Goto(name_tok.value, self._tok_coord(tok))
+        if tok.type == 'BREAK':
+            self._advance()
+            self._expect('SEMI')
+            return c_ast.Break(self._tok_coord(tok))
+        if tok.type == 'CONTINUE':
+            self._advance()
+            self._expect('SEMI')
+            return c_ast.Continue(self._tok_coord(tok))
+        if tok.type == 'RETURN':
+            self._advance()
+            if self._peek_type() == 'SEMI':
+                self._advance()
+                return c_ast.Return(None, self._tok_coord(tok))
+            expr = self._parse_expression()
+            self._expect('SEMI')
+            return c_ast.Return(expr, self._tok_coord(tok))
+
+        self._parse_error('Invalid jump statement', self._tok_coord(tok))
+
+    def _parse_expression_statement(self):
+        expr = self._parse_expression_opt()
+        semi_tok = self._expect('SEMI')
+        if expr is None:
+            return c_ast.EmptyStatement(self._tok_coord(semi_tok))
+        return expr
+
+    # ------------------------------------------------------------------
+    # Expressions
+    # ------------------------------------------------------------------
+    def _parse_expression_opt(self):
+        if self._starts_expression():
+            return self._parse_expression()
+        return None
+
+    def _parse_expression(self):
+        expr = self._parse_assignment_expression()
+        if self._accept('COMMA'):
+            if not isinstance(expr, c_ast.ExprList):
+                expr = c_ast.ExprList([expr], expr.coord)
+            expr.exprs.append(self._parse_assignment_expression())
+            while self._accept('COMMA'):
+                expr.exprs.append(self._parse_assignment_expression())
+        return expr
+
+    def _parse_assignment_expression(self):
+        if self._peek_type() == 'LPAREN' and self._peek_type(2) == 'LBRACE':
+            self._advance()
+            comp = self._parse_compound_statement()
+            self._expect('RPAREN')
+            return comp
+
+        expr = self._parse_conditional_expression()
+        if self._is_assignment_op():
+            op = self._advance().value
+            rhs = self._parse_assignment_expression()
+            return c_ast.Assignment(op, expr, rhs, expr.coord)
+        return expr
+
+    def _parse_conditional_expression(self):
+        expr = self._parse_binary_expression()
+        if self._accept('CONDOP'):
+            iftrue = self._parse_expression()
+            self._expect('COLON')
+            iffalse = self._parse_conditional_expression()
+            return c_ast.TernaryOp(expr, iftrue, iffalse, expr.coord)
+        return expr
+
+    def _parse_binary_expression(self, min_prec=1, lhs=None):
+        if lhs is None:
+            lhs = self._parse_cast_expression()
+
+        while True:
+            tok = self._peek()
+            if tok is None or tok.type not in self._BINARY_PRECEDENCE:
+                break
+            prec = self._BINARY_PRECEDENCE[tok.type]
+            if prec < min_prec:
+                break
+
+            op = tok.value
+            self._advance()
+            rhs = self._parse_cast_expression()
+
+            while True:
+                next_tok = self._peek()
+                if next_tok is None or next_tok.type not in self._BINARY_PRECEDENCE:
+                    break
+                next_prec = self._BINARY_PRECEDENCE[next_tok.type]
+                if next_prec > prec:
+                    rhs = self._parse_binary_expression(next_prec, rhs)
+                else:
+                    break
+
+            lhs = c_ast.BinaryOp(op, lhs, rhs, lhs.coord)
+
+        return lhs
+
+    def _parse_cast_expression(self):
+        if self._peek_type() == 'LPAREN' and self._is_type_name_in_parens():
+            lparen_tok = self._advance()
+            typ = self._parse_type_name()
+            self._expect('RPAREN')
+            expr = self._parse_cast_expression()
+            return c_ast.Cast(typ, expr, self._tok_coord(lparen_tok))
+        return self._parse_unary_expression()
+
+    def _parse_unary_expression(self):
+        tok_type = self._peek_type()
+        if tok_type in {'PLUSPLUS', 'MINUSMINUS'}:
+            tok = self._advance()
+            expr = self._parse_unary_expression()
+            return c_ast.UnaryOp(tok.value, expr, expr.coord)
+
+        if tok_type in {'AND', 'TIMES', 'PLUS', 'MINUS', 'NOT', 'LNOT'}:
+            tok = self._advance()
+            expr = self._parse_cast_expression()
+            return c_ast.UnaryOp(tok.value, expr, expr.coord)
+
+        if tok_type == 'SIZEOF':
+            tok = self._advance()
+            if self._peek_type() == 'LPAREN' and self._is_type_name_in_parens():
+                self._expect('LPAREN')
+                typ = self._parse_type_name()
+                self._expect('RPAREN')
+                return c_ast.UnaryOp(tok.value, typ, self._tok_coord(tok))
+            expr = self._parse_unary_expression()
+            return c_ast.UnaryOp(tok.value, expr, self._tok_coord(tok))
+
+        if tok_type == '_ALIGNOF':
+            tok = self._advance()
+            self._expect('LPAREN')
+            typ = self._parse_type_name()
+            self._expect('RPAREN')
+            return c_ast.UnaryOp(tok.value, typ, self._tok_coord(tok))
+
+        return self._parse_postfix_expression()
+
+    def _parse_postfix_expression(self):
+        if self._starts_compound_literal():
+            self._expect('LPAREN')
+            typ = self._parse_type_name()
+            self._expect('RPAREN')
+            self._expect('LBRACE')
+            init = self._parse_initializer_list()
+            if self._accept('COMMA'):
+                pass
+            self._expect('RBRACE')
+            return c_ast.CompoundLiteral(typ, init)
+
+        expr = self._parse_primary_expression()
+        while True:
+            if self._accept('LBRACKET'):
+                sub = self._parse_expression()
+                self._expect('RBRACKET')
+                expr = c_ast.ArrayRef(expr, sub, expr.coord)
+                continue
+            if self._accept('LPAREN'):
+                if self._peek_type() == 'RPAREN':
+                    self._advance()
+                    args = None
+                else:
+                    args = self._parse_argument_expression_list()
+                    self._expect('RPAREN')
+                expr = c_ast.FuncCall(expr, args, expr.coord)
+                continue
+            if self._peek_type() in {'PERIOD', 'ARROW'}:
+                op_tok = self._advance()
+                name_tok = self._advance()
+                if name_tok.type not in {'ID', 'TYPEID'}:
+                    self._parse_error('Invalid struct reference', self._tok_coord(name_tok))
+                field = c_ast.ID(name_tok.value, self._tok_coord(name_tok))
+                expr = c_ast.StructRef(expr, op_tok.value, field, expr.coord)
+                continue
+            if self._peek_type() in {'PLUSPLUS', 'MINUSMINUS'}:
+                tok = self._advance()
+                expr = c_ast.UnaryOp('p' + tok.value, expr, expr.coord)
+                continue
+            break
+        return expr
+
+    def _parse_primary_expression(self):
+        tok_type = self._peek_type()
+        if tok_type == 'ID':
+            return self._parse_identifier()
+        if tok_type in self._INT_CONST or tok_type in self._FLOAT_CONST or \
+                tok_type in self._CHAR_CONST:
+            return self._parse_constant()
+        if tok_type in self._STRING_LITERAL:
+            return self._parse_unified_string_literal()
+        if tok_type in self._WSTR_LITERAL:
+            return self._parse_unified_wstring_literal()
+        if tok_type == 'LPAREN':
+            self._advance()
+            expr = self._parse_expression()
+            self._expect('RPAREN')
+            return expr
+        if tok_type == 'OFFSETOF':
+            off_tok = self._advance()
+            self._expect('LPAREN')
+            typ = self._parse_type_name()
+            self._expect('COMMA')
+            designator = self._parse_offsetof_member_designator()
+            self._expect('RPAREN')
+            coord = self._tok_coord(off_tok)
+            return c_ast.FuncCall(
+                c_ast.ID(off_tok.value, coord),
+                c_ast.ExprList([typ, designator], coord),
+                coord)
+
+        self._parse_error('Invalid expression', self.clex.filename)
+
+    def _parse_offsetof_member_designator(self):
+        node = self._parse_identifier_or_typeid()
+        while True:
+            if self._accept('PERIOD'):
+                field = self._parse_identifier_or_typeid()
+                node = c_ast.StructRef(node, '.', field, node.coord)
+                continue
+            if self._accept('LBRACKET'):
+                expr = self._parse_expression()
+                self._expect('RBRACKET')
+                node = c_ast.ArrayRef(node, expr, node.coord)
+                continue
+            break
+        return node
+
+    def _parse_argument_expression_list(self):
+        expr = self._parse_assignment_expression()
+        exprs = c_ast.ExprList([expr], expr.coord)
+        while self._accept('COMMA'):
+            exprs.exprs.append(self._parse_assignment_expression())
+        return exprs
+
+    def _parse_constant_expression(self):
+        return self._parse_conditional_expression()
+
+    # ------------------------------------------------------------------
+    # Terminals
+    # ------------------------------------------------------------------
+    def _parse_identifier(self):
+        tok = self._expect('ID')
+        return c_ast.ID(tok.value, self._tok_coord(tok))
+
+    def _parse_identifier_or_typeid(self):
+        tok = self._advance()
+        if tok is None:
+            self._parse_error('At end of input', self.clex.filename)
+        if tok.type not in {'ID', 'TYPEID'}:
+            self._parse_error('Expected identifier', self._tok_coord(tok))
+        return c_ast.ID(tok.value, self._tok_coord(tok))
+
+    def _parse_constant(self):
+        tok = self._advance()
+        if tok.type in self._INT_CONST:
+            u_count = 0
+            l_count = 0
+            for ch in tok.value[-3:]:
+                if ch in ('l', 'L'):
+                    l_count += 1
+                elif ch in ('u', 'U'):
+                    u_count += 1
+            if u_count > 1:
+                raise ValueError('Constant cannot have more than one u/U suffix.')
+            if l_count > 2:
+                raise ValueError('Constant cannot have more than two l/L suffix.')
+            prefix = 'unsigned ' * u_count + 'long ' * l_count
+            return c_ast.Constant(prefix + 'int', tok.value, self._tok_coord(tok))
+
+        if tok.type in self._FLOAT_CONST:
+            if tok.value[-1] in ('f', 'F'):
+                t = 'float'
+            elif tok.value[-1] in ('l', 'L'):
+                t = 'long double'
+            else:
+                t = 'double'
+            return c_ast.Constant(t, tok.value, self._tok_coord(tok))
+
+        if tok.type in self._CHAR_CONST:
+            return c_ast.Constant('char', tok.value, self._tok_coord(tok))
+
+        self._parse_error('Invalid constant', self._tok_coord(tok))
+
+    def _parse_unified_string_literal(self):
+        tok = self._expect('STRING_LITERAL')
+        node = c_ast.Constant('string', tok.value, self._tok_coord(tok))
+        while self._peek_type() == 'STRING_LITERAL':
+            tok2 = self._advance()
+            node.value = node.value[:-1] + tok2.value[1:]
+        return node
+
+    def _parse_unified_wstring_literal(self):
+        tok = self._advance()
+        if tok.type not in self._WSTR_LITERAL:
+            self._parse_error('Invalid string literal', self._tok_coord(tok))
+        node = c_ast.Constant('string', tok.value, self._tok_coord(tok))
+        while self._peek_type() in self._WSTR_LITERAL:
+            tok2 = self._advance()
+            node.value = node.value.rstrip()[:-1] + tok2.value[2:]
+        return node
+
+    # ------------------------------------------------------------------
+    # Initializers
+    # ------------------------------------------------------------------
+    def _parse_initializer(self):
+        lbrace_tok = self._accept('LBRACE')
+        if lbrace_tok:
+            if self._peek_type() == 'RBRACE':
+                self._advance()
+                return c_ast.InitList([], self._tok_coord(lbrace_tok))
+            init_list = self._parse_initializer_list()
+            if self._accept('COMMA'):
+                pass
+            self._expect('RBRACE')
+            return init_list
+
+        return self._parse_assignment_expression()
+
+    def _parse_initializer_list(self):
+        items = [self._parse_initializer_item()]
+        while self._accept('COMMA'):
+            if self._peek_type() == 'RBRACE':
+                break
+            items.append(self._parse_initializer_item())
+        return c_ast.InitList(items, items[0].coord)
+
+    def _parse_initializer_item(self):
+        designation = None
+        if self._peek_type() in {'LBRACKET', 'PERIOD'}:
+            designation = self._parse_designation()
+        init = self._parse_initializer()
+        if designation is not None:
+            return c_ast.NamedInitializer(designation, init)
+        return init
+
+    def _parse_designation(self):
+        designators = self._parse_designator_list()
+        self._expect('EQUALS')
+        return designators
+
+    def _parse_designator_list(self):
+        designators = []
+        while self._peek_type() in {'LBRACKET', 'PERIOD'}:
+            designators.append(self._parse_designator())
+        return designators
+
+    def _parse_designator(self):
+        if self._accept('LBRACKET'):
+            expr = self._parse_constant_expression()
+            self._expect('RBRACKET')
+            return expr
+        if self._accept('PERIOD'):
+            return self._parse_identifier_or_typeid()
+        self._parse_error('Invalid designator', self.clex.filename)
+
+    # ------------------------------------------------------------------
+    # Preprocessor-like directives
+    # ------------------------------------------------------------------
+    def _parse_pp_directive(self):
+        tok = self._expect('PPHASH')
+        self._parse_error('Directives not supported yet', self._tok_coord(tok))
+
+    def _parse_pppragma_directive(self):
+        if self._peek_type() == 'PPPRAGMA':
+            tok = self._advance()
+            if self._peek_type() == 'PPPRAGMASTR':
+                str_tok = self._advance()
+                return c_ast.Pragma(str_tok.value, self._tok_coord(str_tok))
+            return c_ast.Pragma('', self._tok_coord(tok))
+
+        if self._peek_type() == '_PRAGMA':
+            tok = self._advance()
+            lparen = self._expect('LPAREN')
+            literal = self._parse_unified_string_literal()
+            self._expect('RPAREN')
+            return c_ast.Pragma(literal, self._tok_coord(lparen))
+
+        self._parse_error('Invalid pragma', self.clex.filename)
+
+    def _parse_pppragma_directive_list(self):
+        pragmas = [self._parse_pppragma_directive()]
+        while self._peek_type() in {'PPPRAGMA', '_PRAGMA'}:
+            pragmas.append(self._parse_pppragma_directive())
+        return pragmas
+
+    # ------------------------------------------------------------------
+    # Static assert
+    # ------------------------------------------------------------------
+    def _parse_static_assert(self):
+        tok = self._expect('_STATIC_ASSERT')
+        self._expect('LPAREN')
+        cond = self._parse_constant_expression()
+        if self._accept('COMMA'):
+            msg = self._parse_unified_string_literal()
+            self._expect('RPAREN')
+            return [c_ast.StaticAssert(cond, msg, self._tok_coord(tok))]
+        self._expect('RPAREN')
+        return [c_ast.StaticAssert(cond, None, self._tok_coord(tok))]
+
+
+CParser = RDParser
