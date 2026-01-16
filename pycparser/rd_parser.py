@@ -591,38 +591,18 @@ class RDParser(object):
             return tok_type == 'ID'
         return tok_type in {'ID', 'TYPEID'}
 
-    def _peek_declarator_name_token(self):
-        mark = self._mark()
-        tok_type = self._scan_declarator_name_token()
-        self._reset(mark)
-        return tok_type
-
     def _peek_declarator_name_info(self):
         mark = self._mark()
         tok_type, saw_paren = self._scan_declarator_name_info()
         self._reset(mark)
         return tok_type, saw_paren
 
-    def _scan_declarator_name_token(self):
-        """Return the token type of the declarator's name.
-
-        This is a shallow scan that consumes pointer qualifiers and nested
-        parenthesized declarators to locate the ID/TYPEID token, returning
-        None if the sequence doesn't look like a declarator name.
-        """
-        tok_type, _ = self._scan_declarator_name_info()
-        return tok_type
-
     def _parse_any_declarator(
             self, allow_abstract=False, typeid_paren_as_abstract=False):
-        # C declarators are ambiguous without lookahead. For example, in
-        # parameter lists:
+        # C declarators are ambiguous without lookahead. For example:
         #   int foo(int (aa));   -> aa is a name (ID)
         #   typedef char TT;
-        #   int bar(int (TT));   -> TT is a type (TYPEID) in parens, so treat
-        #                            it as an abstract declarator.
-        # We use a shallow scan to choose the correct branch without
-        # exception-driven backtracking.
+        #   int bar(int (TT));   -> TT is a type (TYPEID) in parens
         name_type, saw_paren = self._peek_declarator_name_info()
         if name_type is None or (
                 typeid_paren_as_abstract and name_type == 'TYPEID' and saw_paren):
@@ -689,19 +669,19 @@ class RDParser(object):
         if not self._accept('LPAREN'):
             self._reset(mark)
             return False
-        try:
-            self._parse_type_name()
-            if not self._accept('RPAREN'):
-                self._reset(mark)
-                return False
-            if not allow_lbrace and self._peek_type() == 'LBRACE':
-                self._reset(mark)
-                return False
-            self._reset(mark)
-            return True
-        except ParseError:
+        if not self._starts_declaration():
             self._reset(mark)
             return False
+        self._parse_specifier_qualifier_list()
+        self._parse_abstract_declarator_opt()
+        if not self._accept('RPAREN'):
+            self._reset(mark)
+            return False
+        if not allow_lbrace and self._peek_type() == 'LBRACE':
+            self._reset(mark)
+            return False
+        self._reset(mark)
+        return True
 
     def _starts_compound_literal(self):
         mark = self._mark()
@@ -789,7 +769,8 @@ class RDParser(object):
         spec, saw_type, spec_coord = self._parse_declaration_specifiers(
             allow_no_type=True)
 
-        if self._peek_declarator_name_token() != 'ID':
+        name_type, _ = self._peek_declarator_name_info()
+        if name_type != 'ID':
             decls = self._parse_decl_body_with_spec(spec, saw_type)
             self._expect('SEMI')
             return decls
