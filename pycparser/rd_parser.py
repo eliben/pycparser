@@ -612,6 +612,7 @@ class RDParser(object):
         if tok is None:
             return None
         if tok.type in {'ID', 'TYPEID'}:
+            self._advance()
             return tok.type
         if tok.type == 'LPAREN':
             self._advance()
@@ -1255,12 +1256,9 @@ class RDParser(object):
     # ------------------------------------------------------------------
     # BNF: declarator : pointer? direct_declarator
     def _parse_declarator(self):
-        mark = self._mark()
-        try:
-            return self._parse_id_declarator()
-        except ParseError:
-            self._reset(mark)
+        if self._peek_declarator_name_token() == 'TYPEID':
             return self._parse_typeid_declarator()
+        return self._parse_id_declarator()
 
     # BNF: id_declarator : declarator with ID name
     def _parse_id_declarator(self):
