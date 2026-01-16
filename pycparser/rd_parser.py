@@ -591,6 +591,36 @@ class RDParser(object):
             return tok_type == 'ID'
         return tok_type in {'ID', 'TYPEID'}
 
+    def _peek_declarator_name_token(self):
+        mark = self._mark()
+        tok_type = self._scan_declarator_name_token()
+        self._reset(mark)
+        return tok_type
+
+    def _scan_declarator_name_token(self):
+        """Return the token type of the declarator's name.
+
+        This is a shallow scan that consumes pointer qualifiers and nested
+        parenthesized declarators to locate the ID/TYPEID token, returning
+        None if the sequence doesn't look like a declarator name.
+        """
+        while self._accept('TIMES'):
+            while self._peek_type() in self._TYPE_QUALIFIER:
+                self._advance()
+
+        tok = self._peek()
+        if tok is None:
+            return None
+        if tok.type in {'ID', 'TYPEID'}:
+            return tok.type
+        if tok.type == 'LPAREN':
+            self._advance()
+            tok_type = self._scan_declarator_name_token()
+            if not self._accept('RPAREN'):
+                return None
+            return tok_type
+        return None
+
     def _starts_direct_abstract_declarator(self):
         return self._peek_type() in {'LPAREN', 'LBRACKET'}
 
@@ -672,6 +702,8 @@ class RDParser(object):
             #   foo() {
             #    return 5;
             #   }
+            #
+            # These get an implicit 'int' return type.
             decl = self._parse_id_declarator()
             param_decls = None
             if self._peek_type() != 'LBRACE':
@@ -689,17 +721,16 @@ class RDParser(object):
                 body=self._parse_compound_statement())
             return [func]
 
+        # From here on, parsing a standard declatation/definition.
         spec, saw_type, spec_coord = self._parse_declaration_specifiers(
             allow_no_type=True)
 
-        mark = self._mark()
-        try:
-            decl = self._parse_id_declarator()
-        except ParseError:
-            self._reset(mark)
+        if self._peek_declarator_name_token() != 'ID':
             decls = self._parse_decl_body_with_spec(spec, saw_type)
             self._expect('SEMI')
             return decls
+
+        decl = self._parse_id_declarator()
 
         if self._peek_type() == 'LBRACE' or self._starts_declaration():
             param_decls = None
@@ -783,6 +814,17 @@ class RDParser(object):
         return decls
 
     def _parse_declaration_specifiers(self, allow_no_type=False):
+        """Parse declaration-specifier sequence.
+
+        allow_no_type:
+            If True, allow a missing type specifier without error.
+
+        Returns:
+            (spec, saw_type, first_coord) where spec is a dict with
+            qual/storage/type/function/alignment entries, saw_type is True
+            if a type specifier was consumed, and first_coord is the coord
+            of the first specifier token (used for diagnostics).
+        """
         spec = None
         saw_type = False
         first_coord = None
