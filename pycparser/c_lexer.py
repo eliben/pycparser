@@ -113,6 +113,7 @@ class CLexer(object):
         '_NORETURN', '_THREAD_LOCAL', '_STATIC_ASSERT',
         '_ATOMIC', '_ALIGNOF', '_ALIGNAS',
         '_PRAGMA',
+        '_GENERIC',
         )
 
     keyword_map = {}
