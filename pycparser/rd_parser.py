@@ -52,6 +52,9 @@ class RDParser(object):
         'ANDEQUAL', 'OREQUAL'
     }
 
+    # Precedence of operators (lower number = lower precedence)
+    # If this changes, c_generator.CGenerator.precedence_map needs to change as
+    # well
     _BINARY_PRECEDENCE = {
         'LOR': 1,
         'LAND': 2,
@@ -131,17 +134,20 @@ class RDParser(object):
             outputdir=taboutputdir)
         self.tokens = self.clex.tokens
 
-        # Stack of scopes for keeping track of symbols.
+        # Stack of scopes for keeping track of symbols. _scope_stack[-1] is
+        # the current (topmost) scope. Each scope is a dictionary that
+        # specifies whether a name is a type. If _scope_stack[n][name] is
+        # True, 'name' is currently a type in the scope. If it's False,
+        # 'name' is used in the scope but not as a type (for instance, if we
+        # saw: int name;
+        # If 'name' is not a key in _scope_stack[n] then 'name' was not defined
+        # in this scope at all.
         self._scope_stack = [dict()]
-
-        # Keeps track of the last token yielded by the token stream.
-        self._last_yielded_token = None
 
     def parse(self, text, filename='', debug=False):
         self.clex.filename = filename
         self.clex.reset_lineno()
         self._scope_stack = [dict()]
-        self._last_yielded_token = None
         self.clex.input(text)
         self._tokens = _TokenStream(self.clex)
 
@@ -369,7 +375,6 @@ class RDParser(object):
 
     def _advance(self):
         tok = self._tokens.next()
-        self._last_yielded_token = tok
         return tok
 
     def _accept(self, token_type):
