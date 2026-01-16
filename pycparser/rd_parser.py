@@ -14,25 +14,25 @@ from .ast_transforms import fix_switch_cases, fix_atomic_specifiers
 
 
 class _TokenStream(object):
+    """ Wraps a lexer to provide convenient, buffered access to the underlying
+        token stream. The lexer is expected to be initialized with the input
+        string already.
+    """
     def __init__(self, lexer):
         self._lexer = lexer
         self._buffer = []
         self._index = 0
 
-    def _fill(self, n):
-        while len(self._buffer) < self._index + n:
-            tok = self._lexer.token()
-            self._buffer.append(tok)
-            if tok is None:
-                break
-
     def peek(self, k=1):
+        """ Peek at the next k tokens in the stream, without consuming them.
+        """
         if k <= 0:
             return None
         self._fill(k)
         return self._buffer[self._index + k - 1]
 
     def next(self):
+        """ Consume a single token and return it. """
         self._fill(1)
         tok = self._buffer[self._index]
         self._index += 1
@@ -43,6 +43,13 @@ class _TokenStream(object):
 
     def reset(self, mark):
         self._index = mark
+
+    def _fill(self, n):
+        while len(self._buffer) < self._index + n:
+            tok = self._lexer.token()
+            self._buffer.append(tok)
+            if tok is None:
+                break
 
 
 class RDParser(object):
