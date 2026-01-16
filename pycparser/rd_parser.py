@@ -38,6 +38,11 @@ class _TokenStream(object):
         self._index += 1
         return tok
 
+    # The 'mark' and 'reset' methods are useful for speculative parsing with
+    # backtracking; when the parser needs to examine a sequence of tokens
+    # and potentially decide to try a different path on the same sequence, it
+    # can call 'mark' to obtain the current token position, and if the first
+    # path fails restore the position with `reset(pos)`.
     def mark(self):
         return self._index
 
@@ -513,10 +518,12 @@ class RDParser(object):
         return tok.type if tok is not None else None
 
     def _advance(self):
-        tok = self._tokens.next()
-        return tok
+        return self._tokens.next()
 
     def _accept(self, token_type):
+        """If the next token is the stream is of token_type, consume it.
+
+        Otherwise, leaves the token intact and returns None."""
         tok = self._peek()
         if tok is not None and tok.type == token_type:
             return self._advance()
@@ -659,10 +666,14 @@ class RDParser(object):
             return self._parse_static_assert()
 
         if not self._starts_declaration(tok):
+            # Special handling for old-style function definitions that have an
+            # implicit return type, e.g.
+            #
+            #   foo() {
+            #    return 5;
+            #   }
             decl = self._parse_id_declarator()
             param_decls = None
-            if self._starts_declaration():
-                param_decls = self._parse_declaration_list()
             if self._peek_type() != 'LBRACE':
                 self._parse_error('Invalid function definition', decl.coord)
             spec = dict(
