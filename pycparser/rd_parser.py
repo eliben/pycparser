@@ -597,6 +597,12 @@ class RDParser(object):
         self._reset(mark)
         return tok_type
 
+    def _peek_declarator_name_info(self):
+        mark = self._mark()
+        tok_type, saw_paren = self._scan_declarator_name_info()
+        self._reset(mark)
+        return tok_type, saw_paren
+
     def _scan_declarator_name_token(self):
         """Return the token type of the declarator's name.
 
@@ -604,23 +610,72 @@ class RDParser(object):
         parenthesized declarators to locate the ID/TYPEID token, returning
         None if the sequence doesn't look like a declarator name.
         """
+        tok_type, _ = self._scan_declarator_name_info()
+        return tok_type
+
+    def _parse_any_declarator(
+            self, allow_abstract=False, typeid_paren_as_abstract=False):
+        # C declarators are ambiguous without lookahead. For example, in
+        # parameter lists:
+        #   int foo(int (aa));   -> aa is a name (ID)
+        #   typedef char TT;
+        #   int bar(int (TT));   -> TT is a type (TYPEID) in parens, so treat
+        #                            it as an abstract declarator.
+        # We use a shallow scan to choose the correct branch without
+        # exception-driven backtracking.
+        name_type, saw_paren = self._peek_declarator_name_info()
+        if name_type is None or (
+                typeid_paren_as_abstract and name_type == 'TYPEID' and saw_paren):
+            if not allow_abstract:
+                tok = self._peek()
+                coord = self._tok_coord(tok) if tok is not None else self.clex.filename
+                self._parse_error('Invalid declarator', coord)
+            decl = self._parse_abstract_declarator_opt()
+            return decl, False
+
+        if name_type == 'TYPEID':
+            if typeid_paren_as_abstract:
+                decl = self._parse_typeid_noparen_declarator()
+            else:
+                decl = self._parse_typeid_declarator()
+        else:
+            decl = self._parse_id_declarator()
+        return decl, True
+
+    def _scan_declarator_name_info(self):
+        saw_paren = False
         while self._accept('TIMES'):
             while self._peek_type() in self._TYPE_QUALIFIER:
                 self._advance()
 
         tok = self._peek()
         if tok is None:
-            return None
+            return None, saw_paren
         if tok.type in {'ID', 'TYPEID'}:
             self._advance()
-            return tok.type
+            return tok.type, saw_paren
         if tok.type == 'LPAREN':
+            saw_paren = True
             self._advance()
-            tok_type = self._scan_declarator_name_token()
-            if not self._accept('RPAREN'):
-                return None
-            return tok_type
-        return None
+            tok_type, nested_paren = self._scan_declarator_name_info()
+            if nested_paren:
+                saw_paren = True
+            depth = 1
+            while True:
+                tok = self._peek()
+                if tok is None:
+                    return None, saw_paren
+                if tok.type == 'LPAREN':
+                    depth += 1
+                elif tok.type == 'RPAREN':
+                    depth -= 1
+                    self._advance()
+                    if depth == 0:
+                        break
+                    continue
+                self._advance()
+            return tok_type, saw_paren
+        return None, saw_paren
 
     def _starts_direct_abstract_declarator(self):
         return self._peek_type() in {'LPAREN', 'LBRACKET'}
@@ -1256,9 +1311,10 @@ class RDParser(object):
     # ------------------------------------------------------------------
     # BNF: declarator : pointer? direct_declarator
     def _parse_declarator(self):
-        if self._peek_declarator_name_token() == 'TYPEID':
-            return self._parse_typeid_declarator()
-        return self._parse_id_declarator()
+        decl, _ = self._parse_any_declarator(
+            allow_abstract=False,
+            typeid_paren_as_abstract=False)
+        return decl
 
     # BNF: id_declarator : declarator with ID name
     def _parse_id_declarator(self):
@@ -1449,26 +1505,15 @@ class RDParser(object):
         if not spec['type']:
             spec['type'] = [c_ast.IdentifierType(['int'], coord=spec_coord)]
 
-        if self._peek_type() == 'LPAREN' and self._peek_type(2) == 'TYPEID':
-            decl = self._parse_abstract_declarator_opt()
-            return self._build_parameter_declaration(spec, decl, spec_coord)
-
         if self._starts_declarator():
-            mark = self._mark()
-            try:
-                decl = self._parse_id_declarator()
+            decl, is_named = self._parse_any_declarator(
+                allow_abstract=True,
+                typeid_paren_as_abstract=True)
+            if is_named:
                 return self._build_declarations(
                     spec=spec,
                     decls=[dict(decl=decl)])[0]
-            except ParseError:
-                self._reset(mark)
-                try:
-                    decl = self._parse_typeid_noparen_declarator()
-                    return self._build_declarations(
-                        spec=spec,
-                        decls=[dict(decl=decl)])[0]
-                except ParseError:
-                    self._reset(mark)
+            return self._build_parameter_declaration(spec, decl, spec_coord)
 
         decl = self._parse_abstract_declarator_opt()
         return self._build_parameter_declaration(spec, decl, spec_coord)
