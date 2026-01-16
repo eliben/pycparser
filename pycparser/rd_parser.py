@@ -669,17 +669,25 @@ class RDParser(object):
     # ------------------------------------------------------------------
     # Top-level
     # ------------------------------------------------------------------
+    # BNF: translation_unit_or_empty : translation_unit | empty
     def _parse_translation_unit_or_empty(self):
         if self._peek() is None:
             return c_ast.FileAST([])
         return c_ast.FileAST(self._parse_translation_unit())
 
+    # BNF: translation_unit : external_declaration+
     def _parse_translation_unit(self):
         ext = []
         while self._peek() is not None:
             ext.extend(self._parse_external_declaration())
         return ext
 
+    # BNF: external_declaration : function_definition
+    #                           | declaration
+    #                           | pp_directive
+    #                           | pppragma_directive
+    #                           | static_assert
+    #                           | ';'
     def _parse_external_declaration(self):
         tok = self._peek()
         if tok is None:
@@ -760,17 +768,24 @@ class RDParser(object):
 
     # ------------------------------------------------------------------
     # Declarations
+    #
+    # Declarations always come as lists (because they can be several in one
+    # line). When returning parsed declarations, a list is always returned -
+    # even if it contains a single element.
     # ------------------------------------------------------------------
     def _parse_declaration(self):
         decls = self._parse_decl_body()
         self._expect('SEMI')
         return decls
 
+    # BNF: decl_body : declaration_specifiers decl_body_with_spec
     def _parse_decl_body(self):
         spec, saw_type, _ = self._parse_declaration_specifiers(
             allow_no_type=True)
         return self._parse_decl_body_with_spec(spec, saw_type)
 
+    # BNF: decl_body_with_spec : init_declarator_list
+    #                          | struct_or_union_or_enum_only
     def _parse_decl_body_with_spec(self, spec, saw_type):
         decls = None
         if saw_type:
@@ -807,12 +822,18 @@ class RDParser(object):
 
         return decls
 
+    # BNF: declaration_list : declaration+
     def _parse_declaration_list(self):
         decls = []
         while self._starts_declaration():
             decls.extend(self._parse_declaration())
         return decls
 
+    # BNF: declaration_specifiers   : (storage_class_specifier
+    #                               | type_specifier
+    #                               | type_qualifier
+    #                               | function_specifier
+    #                               | alignment_specifier)+
     def _parse_declaration_specifiers(self, allow_no_type=False):
         """Parse declaration-specifier sequence.
 
@@ -924,6 +945,9 @@ class RDParser(object):
 
         return spec, saw_type, first_coord
 
+    # BNF: specifier_qualifier_list : (type_specifier
+    #                               | type_qualifier
+    #                               | alignment_specifier)+
     def _parse_specifier_qualifier_list(self):
         spec = None
         saw_type = False
@@ -1017,12 +1041,14 @@ class RDParser(object):
 
         return spec
 
+    # BNF: type_qualifier_list : type_qualifier+
     def _parse_type_qualifier_list(self):
         quals = []
         while self._peek_type() in self._TYPE_QUALIFIER:
             quals.append(self._advance().value)
         return quals
 
+    # BNF: alignment_specifier : _ALIGNAS '(' type_name | constant_expression ')'
     def _parse_alignment_specifier(self):
         tok = self._expect('_ALIGNAS')
         self._expect('LPAREN')
@@ -1036,6 +1062,7 @@ class RDParser(object):
         self._expect('RPAREN')
         return c_ast.Alignas(expr, self._tok_coord(tok))
 
+    # BNF: atomic_specifier : _ATOMIC '(' type_name ')'
     def _parse_atomic_specifier(self):
         tok = self._expect('_ATOMIC')
         self._expect('LPAREN')
@@ -1044,6 +1071,7 @@ class RDParser(object):
         typ.quals.append('_Atomic')
         return typ
 
+    # BNF: init_declarator_list : init_declarator (',' init_declarator)*
     def _parse_init_declarator_list(self, first=None, id_only=False):
         decls = []
         if first is not None:
@@ -1055,6 +1083,7 @@ class RDParser(object):
             decls.append(self._parse_init_declarator(id_only=id_only))
         return decls
 
+    # BNF: init_declarator : declarator ('=' initializer)?
     def _parse_init_declarator(self, id_only=False):
         decl = self._parse_id_declarator() if id_only else self._parse_declarator()
         init = None
@@ -1065,6 +1094,8 @@ class RDParser(object):
     # ------------------------------------------------------------------
     # Structs/unions/enums
     # ------------------------------------------------------------------
+    # BNF: struct_or_union_specifier : struct_or_union ID? '{' struct_declaration_list? '}'
+    #                                | struct_or_union ID
     def _parse_struct_or_union_specifier(self):
         tok = self._advance()
         klass = self._select_struct_union_class(tok.value)
@@ -1108,6 +1139,7 @@ class RDParser(object):
 
         self._parse_error('Invalid struct/union declaration', self._tok_coord(tok))
 
+    # BNF: struct_declaration_list : struct_declaration+
     def _parse_struct_declaration_list(self):
         decls = []
         while self._peek_type() not in {None, 'RBRACE'}:
@@ -1117,6 +1149,9 @@ class RDParser(object):
             decls.extend(items)
         return decls
 
+    # BNF: struct_declaration   : specifier_qualifier_list struct_declarator_list? ';'
+    #                           | static_assert
+    #                           | pppragma_directive
     def _parse_struct_declaration(self):
         if self._peek_type() == 'SEMI':
             self._advance()
@@ -1150,12 +1185,15 @@ class RDParser(object):
             spec=spec,
             decls=[dict(decl=None, init=None)])
 
+    # BNF: struct_declarator_list : struct_declarator (',' struct_declarator)*
     def _parse_struct_declarator_list(self):
         decls = [self._parse_struct_declarator()]
         while self._accept('COMMA'):
             decls.append(self._parse_struct_declarator())
         return decls
 
+    # BNF: struct_declarator : declarator? ':' constant_expression
+    #                        | declarator (':' constant_expression)?
     def _parse_struct_declarator(self):
         if self._accept('COLON'):
             bitsize = self._parse_constant_expression()
@@ -1169,6 +1207,8 @@ class RDParser(object):
 
         return {'decl': decl, 'bitsize': None}
 
+    # BNF: enum_specifier : ENUM ID? '{' enumerator_list? '}'
+    #                     | ENUM ID
     def _parse_enum_specifier(self):
         tok = self._expect('ENUM')
         if self._peek_type() in {'ID', 'TYPEID'}:
@@ -1185,6 +1225,7 @@ class RDParser(object):
         self._expect('RBRACE')
         return c_ast.Enum(None, enums, self._tok_coord(tok))
 
+    # BNF: enumerator_list : enumerator (',' enumerator)* ','?
     def _parse_enumerator_list(self):
         enum = self._parse_enumerator()
         enum_list = c_ast.EnumeratorList([enum], enum.coord)
@@ -1195,6 +1236,7 @@ class RDParser(object):
             enum_list.enumerators.append(enum)
         return enum_list
 
+    # BNF: enumerator : ID ('=' constant_expression)?
     def _parse_enumerator(self):
         name_tok = self._expect('ID')
         if self._accept('EQUALS'):
@@ -1211,6 +1253,7 @@ class RDParser(object):
     # ------------------------------------------------------------------
     # Declarators
     # ------------------------------------------------------------------
+    # BNF: declarator : pointer? direct_declarator
     def _parse_declarator(self):
         mark = self._mark()
         try:
@@ -1219,15 +1262,19 @@ class RDParser(object):
             self._reset(mark)
             return self._parse_typeid_declarator()
 
+    # BNF: id_declarator : declarator with ID name
     def _parse_id_declarator(self):
         return self._parse_declarator_kind(kind='id', allow_paren=True)
 
+    # BNF: typeid_declarator : declarator with TYPEID name
     def _parse_typeid_declarator(self):
         return self._parse_declarator_kind(kind='typeid', allow_paren=True)
 
+    # BNF: typeid_noparen_declarator : declarator without parenthesized name
     def _parse_typeid_noparen_declarator(self):
         return self._parse_declarator_kind(kind='typeid', allow_paren=False)
 
+    # BNF: declarator_kind : pointer? direct_declarator(kind)
     def _parse_declarator_kind(self, kind, allow_paren):
         ptr = None
         if self._peek_type() == 'TIMES':
@@ -1237,6 +1284,9 @@ class RDParser(object):
             return self._type_modify_decl(direct, ptr)
         return direct
 
+    # BNF: direct_declarator : ID | TYPEID | '(' declarator ')'
+    #                        | direct_declarator '[' ... ']'
+    #                        | direct_declarator '(' ... ')'
     def _parse_direct_declarator(self, kind, allow_paren=True):
         if allow_paren and self._accept('LPAREN'):
             decl = self._parse_declarator_kind(kind, allow_paren=True)
@@ -1265,6 +1315,7 @@ class RDParser(object):
 
         return decl
 
+    # BNF: array_decl : '[' array_specifiers? assignment_expression? ']'
     def _parse_array_decl(self, base_decl):
         self._expect('LBRACKET')
         dim_quals = []
@@ -1327,6 +1378,7 @@ class RDParser(object):
             dim_quals=[],
             coord=base_decl.coord)
 
+    # BNF: function_decl : '(' parameter_type_list_opt | identifier_list_opt ')'
     def _parse_function_decl(self, base_decl):
         self._expect('LPAREN')
         if self._peek_type() == 'RPAREN':
@@ -1355,6 +1407,7 @@ class RDParser(object):
 
         return func
 
+    # BNF: pointer : '*' type_qualifier_list? pointer?
     def _parse_pointer(self):
         stars = []
         times_tok = self._accept('TIMES')
@@ -1371,6 +1424,7 @@ class RDParser(object):
             ptr = c_ast.PtrDecl(quals=quals, type=ptr, coord=coord)
         return ptr
 
+    # BNF: parameter_type_list : parameter_list (',' ELLIPSIS)?
     def _parse_parameter_type_list(self):
         params = self._parse_parameter_list()
         if self._peek_type() == 'COMMA' and self._peek_type(2) == 'ELLIPSIS':
@@ -1379,6 +1433,7 @@ class RDParser(object):
             params.params.append(c_ast.EllipsisParam(self._tok_coord(ell_tok)))
         return params
 
+    # BNF: parameter_list : parameter_declaration (',' parameter_declaration)*
     def _parse_parameter_list(self):
         first = self._parse_parameter_declaration()
         params = c_ast.ParamList([first], first.coord)
@@ -1387,6 +1442,8 @@ class RDParser(object):
             params.params.append(self._parse_parameter_declaration())
         return params
 
+    # BNF: parameter_declaration : declaration_specifiers declarator?
+    #                            | declaration_specifiers abstract_declarator_opt
     def _parse_parameter_declaration(self):
         spec, _, spec_coord = self._parse_declaration_specifiers(
             allow_no_type=True)
@@ -1433,11 +1490,13 @@ class RDParser(object):
             coord=spec_coord)
         return self._fix_decl_name_type(decl, spec['type'])
 
+    # BNF: identifier_list_opt : identifier_list | empty
     def _parse_identifier_list_opt(self):
         if self._peek_type() == 'RPAREN':
             return None
         return self._parse_identifier_list()
 
+    # BNF: identifier_list : identifier (',' identifier)*
     def _parse_identifier_list(self):
         first = self._parse_identifier()
         params = c_ast.ParamList([first], first.coord)
@@ -1448,6 +1507,7 @@ class RDParser(object):
     # ------------------------------------------------------------------
     # Abstract declarators
     # ------------------------------------------------------------------
+    # BNF: type_name : specifier_qualifier_list abstract_declarator_opt
     def _parse_type_name(self):
         spec = self._parse_specifier_qualifier_list()
         decl = self._parse_abstract_declarator_opt()
@@ -1466,6 +1526,7 @@ class RDParser(object):
             coord=coord)
         return self._fix_decl_name_type(typename, spec['type'])
 
+    # BNF: abstract_declarator_opt : pointer? direct_abstract_declarator?
     def _parse_abstract_declarator_opt(self):
         if self._peek_type() == 'TIMES':
             ptr = self._parse_pointer()
@@ -1480,6 +1541,9 @@ class RDParser(object):
 
         return None
 
+    # BNF: direct_abstract_declarator : '(' parameter_type_list_opt ')'
+    #                                 | '(' abstract_declarator ')'
+    #                                 | '[' ... ']'
     def _parse_direct_abstract_declarator(self):
         lparen_tok = self._accept('LPAREN')
         if lparen_tok:
@@ -1510,11 +1574,13 @@ class RDParser(object):
 
         return decl
 
+    # BNF: parameter_type_list_opt : parameter_type_list | empty
     def _parse_parameter_type_list_opt(self):
         if self._peek_type() == 'RPAREN':
             return None
         return self._parse_parameter_type_list()
 
+    # BNF: abstract_array_base : '[' array_specifiers? assignment_expression? ']'
     def _parse_abstract_array_base(self):
         lbrack_tok = self._expect('LBRACKET')
         dim_quals = []
@@ -1580,6 +1646,10 @@ class RDParser(object):
     # ------------------------------------------------------------------
     # Statements
     # ------------------------------------------------------------------
+    # BNF: statement : labeled_statement | compound_statement
+    #                | selection_statement | iteration_statement
+    #                | jump_statement | expression_statement
+    #                | static_assert | pppragma_directive
     def _parse_statement(self):
         tok_type = self._peek_type()
         if tok_type in {'CASE', 'DEFAULT'}:
@@ -1600,6 +1670,7 @@ class RDParser(object):
             return self._parse_static_assert()
         return self._parse_expression_statement()
 
+    # BNF: pragmacomp_or_statement : pppragma_directive* statement
     def _parse_pragmacomp_or_statement(self):
         if self._peek_type() in {'PPPRAGMA', '_PRAGMA'}:
             pragmas = self._parse_pppragma_directive_list()
@@ -1609,11 +1680,13 @@ class RDParser(object):
                 coord=pragmas[0].coord)
         return self._parse_statement()
 
+    # BNF: block_item : declaration | statement
     def _parse_block_item(self):
         if self._starts_declaration():
             return self._parse_declaration()
         return self._parse_statement()
 
+    # BNF: block_item_list : block_item+
     def _parse_block_item_list(self):
         items = []
         while self._peek_type() not in {'RBRACE', None}:
@@ -1626,6 +1699,7 @@ class RDParser(object):
                 items.append(item)
         return items
 
+    # BNF: compound_statement : '{' block_item_list? '}'
     def _parse_compound_statement(self):
         lbrace_tok = self._expect('LBRACE')
         if self._peek_type() == 'RBRACE':
@@ -1635,6 +1709,9 @@ class RDParser(object):
         self._expect('RBRACE')
         return c_ast.Compound(block_items=block_items, coord=self._tok_coord(lbrace_tok))
 
+    # BNF: labeled_statement : ID ':' statement
+    #                        | CASE constant_expression ':' statement
+    #                        | DEFAULT ':' statement
     def _parse_labeled_statement(self):
         tok_type = self._peek_type()
         if tok_type == 'ID':
@@ -1667,6 +1744,8 @@ class RDParser(object):
 
         self._parse_error('Invalid labeled statement', self.clex.filename)
 
+    # BNF: selection_statement : IF '(' expression ')' statement (ELSE statement)?
+    #                          | SWITCH '(' expression ')' statement
     def _parse_selection_statement(self):
         tok = self._peek()
         if tok.type == 'IF':
@@ -1690,6 +1769,10 @@ class RDParser(object):
 
         self._parse_error('Invalid selection statement', self._tok_coord(tok))
 
+    # BNF: iteration_statement : WHILE '(' expression ')' statement
+    #                          | DO statement WHILE '(' expression ')' ';'
+    #                          | FOR '(' (declaration | expression_opt) ';'
+    #                                 expression_opt ';' expression_opt ')' statement
     def _parse_iteration_statement(self):
         tok = self._peek()
         if tok.type == 'WHILE':
@@ -1734,6 +1817,8 @@ class RDParser(object):
 
         self._parse_error('Invalid iteration statement', self._tok_coord(tok))
 
+    # BNF: jump_statement : GOTO ID ';' | BREAK ';' | CONTINUE ';'
+    #                     | RETURN expression? ';'
     def _parse_jump_statement(self):
         tok = self._peek()
         if tok.type == 'GOTO':
@@ -1760,6 +1845,7 @@ class RDParser(object):
 
         self._parse_error('Invalid jump statement', self._tok_coord(tok))
 
+    # BNF: expression_statement : expression_opt ';'
     def _parse_expression_statement(self):
         expr = self._parse_expression_opt()
         semi_tok = self._expect('SEMI')
@@ -1770,11 +1856,13 @@ class RDParser(object):
     # ------------------------------------------------------------------
     # Expressions
     # ------------------------------------------------------------------
+    # BNF: expression_opt : expression | empty
     def _parse_expression_opt(self):
         if self._starts_expression():
             return self._parse_expression()
         return None
 
+    # BNF: expression : assignment_expression (',' assignment_expression)*
     def _parse_expression(self):
         expr = self._parse_assignment_expression()
         if self._accept('COMMA'):
@@ -1785,6 +1873,8 @@ class RDParser(object):
                 expr.exprs.append(self._parse_assignment_expression())
         return expr
 
+    # BNF: assignment_expression : conditional_expression
+    #                            | unary_expression assignment_op assignment_expression
     def _parse_assignment_expression(self):
         if self._peek_type() == 'LPAREN' and self._peek_type(2) == 'LBRACE':
             self._advance()
@@ -1799,6 +1889,8 @@ class RDParser(object):
             return c_ast.Assignment(op, expr, rhs, expr.coord)
         return expr
 
+    # BNF: conditional_expression : binary_expression
+    #                            | binary_expression '?' expression ':' conditional_expression
     def _parse_conditional_expression(self):
         expr = self._parse_binary_expression()
         if self._accept('CONDOP'):
@@ -1808,6 +1900,7 @@ class RDParser(object):
             return c_ast.TernaryOp(expr, iftrue, iffalse, expr.coord)
         return expr
 
+    # BNF: binary_expression : cast_expression (binary_op cast_expression)*
     def _parse_binary_expression(self, min_prec=1, lhs=None):
         if lhs is None:
             lhs = self._parse_cast_expression()
@@ -1838,6 +1931,8 @@ class RDParser(object):
 
         return lhs
 
+    # BNF: cast_expression : '(' type_name ')' cast_expression
+    #                     | unary_expression
     def _parse_cast_expression(self):
         if self._peek_type() == 'LPAREN' and self._is_type_name_in_parens():
             lparen_tok = self._advance()
@@ -1847,6 +1942,12 @@ class RDParser(object):
             return c_ast.Cast(typ, expr, self._tok_coord(lparen_tok))
         return self._parse_unary_expression()
 
+    # BNF: unary_expression : postfix_expression
+    #                      | '++' unary_expression | '--' unary_expression
+    #                      | unary_op cast_expression
+    #                      | 'sizeof' unary_expression
+    #                      | 'sizeof' '(' type_name ')'
+    #                      | '_Alignof' '(' type_name ')'
     def _parse_unary_expression(self):
         tok_type = self._peek_type()
         if tok_type in {'PLUSPLUS', 'MINUSMINUS'}:
@@ -1878,6 +1979,8 @@ class RDParser(object):
 
         return self._parse_postfix_expression()
 
+    # BNF: postfix_expression : primary_expression postfix_suffix*
+    #                         | '(' type_name ')' '{' initializer_list ','? '}'
     def _parse_postfix_expression(self):
         if self._starts_compound_literal():
             self._expect('LPAREN')
@@ -1921,6 +2024,8 @@ class RDParser(object):
             break
         return expr
 
+    # BNF: primary_expression : ID | constant | string_literal
+    #                        | '(' expression ')' | offsetof
     def _parse_primary_expression(self):
         tok_type = self._peek_type()
         if tok_type == 'ID':
@@ -1952,6 +2057,8 @@ class RDParser(object):
 
         self._parse_error('Invalid expression', self.clex.filename)
 
+    # BNF: offsetof_member_designator : identifier_or_typeid
+    #                                ('.' identifier_or_typeid | '[' expression ']')*
     def _parse_offsetof_member_designator(self):
         node = self._parse_identifier_or_typeid()
         while True:
@@ -1967,6 +2074,7 @@ class RDParser(object):
             break
         return node
 
+    # BNF: argument_expression_list : assignment_expression (',' assignment_expression)*
     def _parse_argument_expression_list(self):
         expr = self._parse_assignment_expression()
         exprs = c_ast.ExprList([expr], expr.coord)
@@ -1974,16 +2082,19 @@ class RDParser(object):
             exprs.exprs.append(self._parse_assignment_expression())
         return exprs
 
+    # BNF: constant_expression : conditional_expression
     def _parse_constant_expression(self):
         return self._parse_conditional_expression()
 
     # ------------------------------------------------------------------
     # Terminals
     # ------------------------------------------------------------------
+    # BNF: identifier : ID
     def _parse_identifier(self):
         tok = self._expect('ID')
         return c_ast.ID(tok.value, self._tok_coord(tok))
 
+    # BNF: identifier_or_typeid : ID | TYPEID
     def _parse_identifier_or_typeid(self):
         tok = self._advance()
         if tok is None:
@@ -1992,6 +2103,7 @@ class RDParser(object):
             self._parse_error('Expected identifier', self._tok_coord(tok))
         return c_ast.ID(tok.value, self._tok_coord(tok))
 
+    # BNF: constant : INT_CONST | FLOAT_CONST | CHAR_CONST
     def _parse_constant(self):
         tok = self._advance()
         if tok.type in self._INT_CONST:
@@ -2023,6 +2135,7 @@ class RDParser(object):
 
         self._parse_error('Invalid constant', self._tok_coord(tok))
 
+    # BNF: unified_string_literal : STRING_LITERAL+
     def _parse_unified_string_literal(self):
         tok = self._expect('STRING_LITERAL')
         node = c_ast.Constant('string', tok.value, self._tok_coord(tok))
@@ -2031,6 +2144,7 @@ class RDParser(object):
             node.value = node.value[:-1] + tok2.value[1:]
         return node
 
+    # BNF: unified_wstring_literal : WSTRING_LITERAL+
     def _parse_unified_wstring_literal(self):
         tok = self._advance()
         if tok.type not in self._WSTR_LITERAL:
@@ -2044,6 +2158,9 @@ class RDParser(object):
     # ------------------------------------------------------------------
     # Initializers
     # ------------------------------------------------------------------
+    # BNF: initializer : assignment_expression
+    #                 | '{' initializer_list ','? '}'
+    #                 | '{' '}'
     def _parse_initializer(self):
         lbrace_tok = self._accept('LBRACE')
         if lbrace_tok:
@@ -2058,6 +2175,7 @@ class RDParser(object):
 
         return self._parse_assignment_expression()
 
+    # BNF: initializer_list : initializer_item (',' initializer_item)* ','?
     def _parse_initializer_list(self):
         items = [self._parse_initializer_item()]
         while self._accept('COMMA'):
@@ -2066,6 +2184,7 @@ class RDParser(object):
             items.append(self._parse_initializer_item())
         return c_ast.InitList(items, items[0].coord)
 
+    # BNF: initializer_item : designation? initializer
     def _parse_initializer_item(self):
         designation = None
         if self._peek_type() in {'LBRACKET', 'PERIOD'}:
@@ -2075,17 +2194,21 @@ class RDParser(object):
             return c_ast.NamedInitializer(designation, init)
         return init
 
+    # BNF: designation : designator_list '='
     def _parse_designation(self):
         designators = self._parse_designator_list()
         self._expect('EQUALS')
         return designators
 
+    # BNF: designator_list : designator+
     def _parse_designator_list(self):
         designators = []
         while self._peek_type() in {'LBRACKET', 'PERIOD'}:
             designators.append(self._parse_designator())
         return designators
 
+    # BNF: designator : '[' constant_expression ']'
+    #                | '.' identifier_or_typeid
     def _parse_designator(self):
         if self._accept('LBRACKET'):
             expr = self._parse_constant_expression()
@@ -2098,10 +2221,13 @@ class RDParser(object):
     # ------------------------------------------------------------------
     # Preprocessor-like directives
     # ------------------------------------------------------------------
+    # BNF: pp_directive : '#' ... (unsupported)
     def _parse_pp_directive(self):
         tok = self._expect('PPHASH')
         self._parse_error('Directives not supported yet', self._tok_coord(tok))
 
+    # BNF: pppragma_directive : PPPRAGMA PPPRAGMASTR?
+    #                        | _PRAGMA '(' string_literal ')'
     def _parse_pppragma_directive(self):
         if self._peek_type() == 'PPPRAGMA':
             tok = self._advance()
@@ -2119,6 +2245,7 @@ class RDParser(object):
 
         self._parse_error('Invalid pragma', self.clex.filename)
 
+    # BNF: pppragma_directive_list : pppragma_directive+
     def _parse_pppragma_directive_list(self):
         pragmas = [self._parse_pppragma_directive()]
         while self._peek_type() in {'PPPRAGMA', '_PRAGMA'}:
@@ -2128,6 +2255,8 @@ class RDParser(object):
     # ------------------------------------------------------------------
     # Static assert
     # ------------------------------------------------------------------
+    # BNF: static_assert : _STATIC_ASSERT '(' constant_expression
+    #                    (',' string_literal)? ')'
     def _parse_static_assert(self):
         tok = self._expect('_STATIC_ASSERT')
         self._expect('LPAREN')
