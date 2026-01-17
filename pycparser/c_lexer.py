@@ -33,6 +33,7 @@ _keyword_map = {}
 for keyword in _keywords:
     _keyword_map[keyword.lower()] = keyword
 
+# New C standards keywords are mixed-case, like _Bool, _Alignas, etc.
 for keyword in _keywords_new:
     _keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
 
@@ -103,7 +104,6 @@ _tokens = _keywords + _keywords_new + (
 ##
 ## Regexes for use in tokens
 ##
-##
 
 # valid C identifiers (K&R2: A.2.3), plus '$' (supported by some compilers)
 identifier = r'[a-zA-Z_$][0-9a-zA-Z_$]*'
@@ -141,16 +141,21 @@ unsupported_cxx_style_comment = r'\/\/'
 #   hex_escape = r"""(x[0-9a-fA-F]+)"""
 #   bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-7])"""
 #
-# The following modifications were made to avoid the ambiguity that allowed backtracking:
-# (https://github.com/eliben/pycparser/issues/61)
+# The following modifications were made to avoid the ambiguity that allowed
+# backtracking: (https://github.com/eliben/pycparser/issues/61)
 #
-# - \x was removed from simple_escape, unless it was not followed by a hex digit, to avoid ambiguity with hex_escape.
-# - hex_escape allows one or more hex characters, but requires that the next character(if any) is not hex
-# - decimal_escape allows one or more decimal characters, but requires that the next character(if any) is not a decimal
-# - bad_escape does not allow any decimals (8-9), to avoid conflicting with the permissive decimal_escape.
+# - \x was removed from simple_escape, unless it was not followed by a hex
+#   digit, to avoid ambiguity with hex_escape.
+# - hex_escape allows one or more hex characters, but requires that the next
+#   character(if any) is not hex
+# - decimal_escape allows one or more decimal characters, but requires that the
+#   next character(if any) is not a decimal
+# - bad_escape does not allow any decimals (8-9), to avoid conflicting with the
+#   permissive decimal_escape.
 #
-# Without this change, python's `re` module would recursively try parsing each ambiguous escape sequence in multiple ways.
-# e.g. `\123` could be parsed as `\1`+`23`, `\12`+`3`, and `\123`.
+# Without this change, python's `re` module would recursively try parsing each
+# ambiguous escape sequence in multiple ways. e.g. `\123` could be parsed as
+# `\1`+`23`, `\12`+`3`, and `\123`.
 
 simple_escape = r"""([a-wyzA-Z._~!=&\^\-\\?'"]|x(?![0-9a-fA-F]))"""
 decimal_escape = r"""(\d+)(?!\d)"""
@@ -159,8 +164,10 @@ bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-9])"""
 
 escape_sequence = r"""(\\("""+simple_escape+'|'+decimal_escape+'|'+hex_escape+'))'
 
-# This complicated regex with lookahead might be slow for strings, so because all of the valid escapes (including \x) allowed
-# 0 or more non-escaped characters after the first character, simple_escape+decimal_escape+hex_escape got simplified to
+# This complicated regex with lookahead might be slow for strings, so because
+# all of the valid escapes (including \x) allowed
+# 0 or more non-escaped characters after the first character,
+# simple_escape+decimal_escape+hex_escape got simplified to
 
 escape_sequence_start_in_string = r"""(\\[0-9a-zA-Z._~!=&\^\-\\?'"])"""
 
@@ -193,20 +200,30 @@ hex_floating_constant = '('+hex_prefix+'('+hex_digits+'|'+hex_fractional_constan
 
 
 class _Token(object):
-    __slots__ = ('type', 'value', 'lineno', 'lexpos', 'lexer')
+    __slots__ = ('type', 'value', 'lineno', 'lexpos')
 
     def __init__(self, typ, value, lineno, lexpos):
         self.type = typ
         self.value = value
         self.lineno = lineno
         self.lexpos = lexpos
-        self.lexer = None
 
 
 class CLexer(object):
-    """A standalone lexer for C that doesn't rely on PLY."""
-    def __init__(self, error_func, on_lbrace_func, on_rbrace_func,
-                 type_lookup_func):
+    """A standalone lexer for C.
+
+    Parameters for construction:
+        error_func:
+            Called with (msg, line, column) on lexing errors.
+        on_lbrace_func:
+            Called when an LBRACE token is produced (used for scope tracking).
+        on_rbrace_func:
+            Called when an RBRACE token is produced (used for scope tracking).
+        type_lookup_func:
+            Called with an identifier name; expected to return True if it is
+            a typedef name and should be tokenized as TYPEID.
+    """
+    def __init__(self, error_func, on_lbrace_func, on_rbrace_func, type_lookup_func):
         self.error_func = error_func
         self.on_lbrace_func = on_lbrace_func
         self.on_rbrace_func = on_rbrace_func
@@ -214,7 +231,6 @@ class CLexer(object):
         self.filename = ''
         self.last_token = None
         self.lineno = 1
-        self.lexer = self
         self._lexdata = ''
         self._pos = 0
         self._state = 'INITIAL'
@@ -456,7 +472,6 @@ class CLexer(object):
 
     def _make_token(self, tok_type, value, pos):
         tok = _Token(tok_type, value, self.lineno, pos)
-        tok.lexer = self
         return tok
 
     def _error(self, msg, pos):
