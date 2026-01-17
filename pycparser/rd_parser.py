@@ -521,9 +521,11 @@ class RDParser(object):
         return self._tokens.next()
 
     def _accept(self, token_type):
-        """If the next token is the stream is of token_type, consume it.
+        """Conditionally consume next token, only if it's of token_type.
 
-        Otherwise, leaves the token intact and returns None."""
+        If it is of the expected type, consume and return it.
+        Otherwise, leaves the token intact and returns None.
+        """
         tok = self._peek()
         if tok is not None and tok.type == token_type:
             return self._advance()
@@ -672,7 +674,7 @@ class RDParser(object):
         """
         mark = self._mark()
         try:
-            if not self._accept('LPAREN'):
+            if self._accept('LPAREN') is None:
                 return False
             if not self._starts_declaration():
                 return False
@@ -2266,21 +2268,16 @@ class RDParser(object):
             pragmas.append(self._parse_pppragma_directive())
         return pragmas
 
-    # ------------------------------------------------------------------
-    # Static assert
-    # ------------------------------------------------------------------
-    # BNF: static_assert : _STATIC_ASSERT '(' constant_expression
-    #                    (',' string_literal)? ')'
+    # BNF: static_assert : _STATIC_ASSERT '(' constant_expression (',' string_literal)? ')'
     def _parse_static_assert(self):
         tok = self._expect('_STATIC_ASSERT')
         self._expect('LPAREN')
         cond = self._parse_constant_expression()
+        msg = None
         if self._accept('COMMA'):
             msg = self._parse_unified_string_literal()
-            self._expect('RPAREN')
-            return [c_ast.StaticAssert(cond, msg, self._tok_coord(tok))]
         self._expect('RPAREN')
-        return [c_ast.StaticAssert(cond, None, self._tok_coord(tok))]
+        return [c_ast.StaticAssert(cond, msg, self._tok_coord(tok))]
 
 
 CParser = RDParser
