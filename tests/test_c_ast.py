@@ -4,7 +4,7 @@ import weakref
 
 sys.path.insert(0, '..')
 import pycparser.c_ast as c_ast
-import pycparser.plyparser as plyparser
+from pycparser.c_parser import Coord
 
 
 class Test_c_ast(unittest.TestCase):
@@ -29,7 +29,7 @@ class Test_c_ast(unittest.TestCase):
         self.assertEqual(weakref.getweakrefcount(c1), 1)
 
     def test_weakref_works_on_coord(self):
-        coord = plyparser.Coord(file='a', line=2)
+        coord = Coord(file='a', line=2)
         wr = weakref.ref(coord)
         cref = wr()
         self.assertEqual(cref.line, 2)

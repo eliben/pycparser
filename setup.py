@@ -22,14 +22,14 @@ class install(_install):
     def run(self):
         _install.run(self)
         self.execute(_run_build_tables, (self.install_lib,),
-                     msg="Build the lexing/parsing tables")
+                     msg="Generate AST code")
 
 
 class sdist(_sdist):
     def make_release_tree(self, basedir, files):
         _sdist.make_release_tree(self, basedir, files)
         self.execute(_run_build_tables, (basedir,),
-                     msg="Build the lexing/parsing tables")
+                     msg="Generate AST code")
 
 
 setup(
@@ -38,7 +38,7 @@ setup(
     description='C parser in Python',
     long_description="""
         pycparser is a complete parser of the C language, written in
-        pure Python using the PLY parsing library.
+        pure Python with a standalone recursive-descent parser.
         It parses C code into an AST and can serve as a front-end for
         C compilers or analysis tools.
     """,

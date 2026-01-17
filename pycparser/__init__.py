@@ -11,20 +11,10 @@ __all__ = ['c_lexer', 'c_parser', 'c_ast']
 __version__ = '2.23'
 
 import io
-import os
 from subprocess import check_output
 
+from . import c_parser
 
-def _select_parser_module():
-    parser_name = os.environ.get('PYCPARSER_PARSER', '').lower()
-    if parser_name in ('rd', 'recursive', 'recursive-descent', 'recursive_descent'):
-        from . import rd_parser as parser_mod
-    else:
-        from . import c_parser as parser_mod
-    return parser_mod
-
-
-c_parser = _select_parser_module()
 CParser = c_parser.CParser
 
 

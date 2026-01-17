@@ -85,16 +85,9 @@ Prerequisites
 
 * **pycparser** was tested with Python 3.8+ on Linux, macOS and Windows.
 
-* **pycparser** has no external dependencies. The only non-stdlib library it
-  uses is PLY, which is bundled in ``pycparser/ply``. The current PLY version is
-  3.10, retrieved from `<http://www.dabeaz.com/ply/>`_
-
-Note that **pycparser** (and PLY) uses docstrings for grammar specifications.
-Python installations that strip docstrings (such as when using the Python
-``-OO`` option) will fail to instantiate and use **pycparser**. You can try to
-work around this problem by making sure the PLY parsing tables are pre-generated
-in normal mode; this isn't an officially supported/tested mode of operation,
-though.
+* **pycparser** has no external dependencies. The repository still bundles PLY
+  in ``pycparser/ply`` for optional utilities, but the core lexer and parser
+  are standalone and do not rely on PLY.
 
 Installation process
 --------------------
@@ -228,5 +221,4 @@ found and/or submitting patches. The list of contributors is in the CONTRIBUTORS
 file in the source distribution. After **pycparser** moved to Github I stopped
 updating this list because Github does a much better job at tracking
 contributions.
-
 

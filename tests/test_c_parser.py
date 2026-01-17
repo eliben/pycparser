@@ -11,11 +11,7 @@ from pycparser.c_ast import *
 
 ParseError = c_parser.ParseError
 
-_c_parser = c_parser.CParser(
-                lex_optimize=False,
-                yacc_debug=True,
-                yacc_optimize=False,
-                yacctab='yacctab')
+_c_parser = c_parser.CParser()
 
 
 def expand_decl(decl):
