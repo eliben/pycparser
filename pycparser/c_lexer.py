@@ -7,6 +7,7 @@
 # License: BSD
 #------------------------------------------------------------------------------
 import re
+from dataclasses import dataclass
 from enum import Enum
 
 
@@ -155,11 +156,14 @@ class CLexer(object):
             action, msg = _regex_actions[tok_type]
             best = (length, tok_type, value, action, msg)
 
-        for tok_type, literal in _fixed_tokens:
-            if text.startswith(literal, pos):
-                length = len(literal)
-                if best is None or length > best[0]:
-                    best = (length, tok_type, literal, 'token', None)
+        bucket = _fixed_tokens_by_first.get(text[pos])
+        if bucket:
+            for entry in bucket:
+                if text.startswith(entry.literal, pos):
+                    length = len(entry.literal)
+                    if best is None or length > best[0]:
+                        best = (length, entry.tok_type, entry.literal, 'token', None)
+                    break
 
         if best is None:
             return None
@@ -452,54 +456,71 @@ for _tok_type, _pattern, _action, _msg in _regex_rules:
 # regexes on every character while keeping the same token-level semantics.
 _regex_master = re.compile('|'.join(_regex_pattern_parts))
 
+@dataclass(frozen=True)
+class _FixedToken(object):
+    tok_type: str
+    literal: str
+
+
 _fixed_tokens = [
-    ('ELLIPSIS', '...'),
-    ('LSHIFTEQUAL', '<<='),
-    ('RSHIFTEQUAL', '>>='),
-    ('PLUSPLUS', '++'),
-    ('MINUSMINUS', '--'),
-    ('ARROW', '->'),
-    ('LAND', '&&'),
-    ('LOR', '||'),
-    ('LSHIFT', '<<'),
-    ('RSHIFT', '>>'),
-    ('LE', '<='),
-    ('GE', '>='),
-    ('EQ', '=='),
-    ('NE', '!='),
-    ('TIMESEQUAL', '*='),
-    ('DIVEQUAL', '/='),
-    ('MODEQUAL', '%='),
-    ('PLUSEQUAL', '+='),
-    ('MINUSEQUAL', '-='),
-    ('ANDEQUAL', '&='),
-    ('OREQUAL', '|='),
-    ('XOREQUAL', '^='),
-    ('EQUALS', '='),
-    ('PLUS', '+'),
-    ('MINUS', '-'),
-    ('TIMES', '*'),
-    ('DIVIDE', '/'),
-    ('MOD', '%'),
-    ('OR', '|'),
-    ('AND', '&'),
-    ('NOT', '~'),
-    ('XOR', '^'),
-    ('LNOT', '!'),
-    ('LT', '<'),
-    ('GT', '>'),
-    ('CONDOP', '?'),
-    ('LPAREN', '('),
-    ('RPAREN', ')'),
-    ('LBRACKET', '['),
-    ('RBRACKET', ']'),
-    ('LBRACE', '{'),
-    ('RBRACE', '}'),
-    ('COMMA', ','),
-    ('PERIOD', '.'),
-    ('SEMI', ';'),
-    ('COLON', ':'),
+    _FixedToken('ELLIPSIS', '...'),
+    _FixedToken('LSHIFTEQUAL', '<<='),
+    _FixedToken('RSHIFTEQUAL', '>>='),
+    _FixedToken('PLUSPLUS', '++'),
+    _FixedToken('MINUSMINUS', '--'),
+    _FixedToken('ARROW', '->'),
+    _FixedToken('LAND', '&&'),
+    _FixedToken('LOR', '||'),
+    _FixedToken('LSHIFT', '<<'),
+    _FixedToken('RSHIFT', '>>'),
+    _FixedToken('LE', '<='),
+    _FixedToken('GE', '>='),
+    _FixedToken('EQ', '=='),
+    _FixedToken('NE', '!='),
+    _FixedToken('TIMESEQUAL', '*='),
+    _FixedToken('DIVEQUAL', '/='),
+    _FixedToken('MODEQUAL', '%='),
+    _FixedToken('PLUSEQUAL', '+='),
+    _FixedToken('MINUSEQUAL', '-='),
+    _FixedToken('ANDEQUAL', '&='),
+    _FixedToken('OREQUAL', '|='),
+    _FixedToken('XOREQUAL', '^='),
+    _FixedToken('EQUALS', '='),
+    _FixedToken('PLUS', '+'),
+    _FixedToken('MINUS', '-'),
+    _FixedToken('TIMES', '*'),
+    _FixedToken('DIVIDE', '/'),
+    _FixedToken('MOD', '%'),
+    _FixedToken('OR', '|'),
+    _FixedToken('AND', '&'),
+    _FixedToken('NOT', '~'),
+    _FixedToken('XOR', '^'),
+    _FixedToken('LNOT', '!'),
+    _FixedToken('LT', '<'),
+    _FixedToken('GT', '>'),
+    _FixedToken('CONDOP', '?'),
+    _FixedToken('LPAREN', '('),
+    _FixedToken('RPAREN', ')'),
+    _FixedToken('LBRACKET', '['),
+    _FixedToken('RBRACKET', ']'),
+    _FixedToken('LBRACE', '{'),
+    _FixedToken('RBRACE', '}'),
+    _FixedToken('COMMA', ','),
+    _FixedToken('PERIOD', '.'),
+    _FixedToken('SEMI', ';'),
+    _FixedToken('COLON', ':'),
 ]
+
+# To avoid scanning all fixed tokens on every character, we bucket them by the
+# first character. When matching at position i, we only look at the bucket for
+# text[i], and we pre-sort that bucket by token length so the first match is
+# also the longest. This preserves longest-match semantics (e.g. '>>=' before
+# '>>' before '>') while reducing the number of comparisons.
+_fixed_tokens_by_first = {}
+for _entry in _fixed_tokens:
+    _fixed_tokens_by_first.setdefault(_entry.literal[0], []).append(_entry)
+for _bucket in _fixed_tokens_by_first.values():
+    _bucket.sort(key=lambda item: len(item.literal), reverse=True)
 
 _line_pattern = re.compile(r'([ \t]*line\W)|([ \t]*\d+)')
 _pragma_pattern = re.compile(r'[ \t]*pragma\W')
