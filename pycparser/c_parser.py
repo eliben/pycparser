@@ -185,7 +185,6 @@ class CParser(object):
                 Deprecated debug flag (unused); for backwards compatibility.
         """
         self.clex.filename = filename
-        self.clex.reset_lineno()
         self._scope_stack = [dict()]
         self.clex.input(text)
         self._tokens = _TokenStream(self.clex)

@@ -8,196 +8,6 @@
 #------------------------------------------------------------------------------
 import re
 
-##
-## Reserved keywords
-##
-_keywords = (
-    'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
-    'CONTINUE', 'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
-    'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG',
-    'REGISTER', 'OFFSETOF',
-    'RESTRICT', 'RETURN', 'SHORT', 'SIGNED', 'SIZEOF', 'STATIC', 'STRUCT',
-    'SWITCH', 'TYPEDEF', 'UNION', 'UNSIGNED', 'VOID',
-    'VOLATILE', 'WHILE', '__INT128',
-)
-
-_keywords_new = (
-    '_BOOL', '_COMPLEX',
-    '_NORETURN', '_THREAD_LOCAL', '_STATIC_ASSERT',
-    '_ATOMIC', '_ALIGNOF', '_ALIGNAS',
-    '_PRAGMA',
-)
-
-_keyword_map = {}
-
-for keyword in _keywords:
-    _keyword_map[keyword.lower()] = keyword
-
-# New C standards keywords are mixed-case, like _Bool, _Alignas, etc.
-for keyword in _keywords_new:
-    _keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
-
-##
-## All the tokens recognized by the lexer
-##
-_tokens = _keywords + _keywords_new + (
-    # Identifiers
-    'ID',
-
-    # Type identifiers (identifiers previously defined as
-    # types with typedef)
-    'TYPEID',
-
-    # constants
-    'INT_CONST_DEC', 'INT_CONST_OCT', 'INT_CONST_HEX', 'INT_CONST_BIN', 'INT_CONST_CHAR',
-    'FLOAT_CONST', 'HEX_FLOAT_CONST',
-    'CHAR_CONST',
-    'WCHAR_CONST',
-    'U8CHAR_CONST',
-    'U16CHAR_CONST',
-    'U32CHAR_CONST',
-
-    # String literals
-    'STRING_LITERAL',
-    'WSTRING_LITERAL',
-    'U8STRING_LITERAL',
-    'U16STRING_LITERAL',
-    'U32STRING_LITERAL',
-
-    # Operators
-    'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD',
-    'OR', 'AND', 'NOT', 'XOR', 'LSHIFT', 'RSHIFT',
-    'LOR', 'LAND', 'LNOT',
-    'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
-
-    # Assignment
-    'EQUALS', 'TIMESEQUAL', 'DIVEQUAL', 'MODEQUAL',
-    'PLUSEQUAL', 'MINUSEQUAL',
-    'LSHIFTEQUAL','RSHIFTEQUAL', 'ANDEQUAL', 'XOREQUAL',
-    'OREQUAL',
-
-    # Increment/decrement
-    'PLUSPLUS', 'MINUSMINUS',
-
-    # Structure dereference (->)
-    'ARROW',
-
-    # Conditional operator (?)
-    'CONDOP',
-
-    # Delimiters
-    'LPAREN', 'RPAREN',         # ( )
-    'LBRACKET', 'RBRACKET',     # [ ]
-    'LBRACE', 'RBRACE',         # { }
-    'COMMA', 'PERIOD',          # . ,
-    'SEMI', 'COLON',            # ; :
-
-    # Ellipsis (...)
-    'ELLIPSIS',
-
-    # pre-processor
-    'PPHASH',       # '#'
-    'PPPRAGMA',     # 'pragma'
-    'PPPRAGMASTR',
-)
-
-##
-## Regexes for use in tokens
-##
-
-# valid C identifiers (K&R2: A.2.3), plus '$' (supported by some compilers)
-identifier = r'[a-zA-Z_$][0-9a-zA-Z_$]*'
-
-hex_prefix = '0[xX]'
-hex_digits = '[0-9a-fA-F]+'
-bin_prefix = '0[bB]'
-bin_digits = '[01]+'
-
-# integer constants (K&R2: A.2.5.1)
-integer_suffix_opt = r'(([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?'
-decimal_constant = '(0'+integer_suffix_opt+')|([1-9][0-9]*'+integer_suffix_opt+')'
-octal_constant = '0[0-7]*'+integer_suffix_opt
-hex_constant = hex_prefix+hex_digits+integer_suffix_opt
-bin_constant = bin_prefix+bin_digits+integer_suffix_opt
-
-bad_octal_constant = '0[0-7]*[89]'
-
-# comments are not supported
-unsupported_c_style_comment = r'\/\*'
-unsupported_cxx_style_comment = r'\/\/'
-
-# character constants (K&R2: A.2.5.2)
-# Note: a-zA-Z and '.-~^_!=&;,' are allowed as escape chars to support #line
-# directives with Windows paths as filenames (..\..\dir\file)
-# For the same reason, decimal_escape allows all digit sequences. We want to
-# parse all correct code, even if it means to sometimes parse incorrect
-# code.
-#
-# The original regexes were taken verbatim from the C syntax definition,
-# and were later modified to avoid worst-case exponential running time.
-#
-#   simple_escape = r"""([a-zA-Z._~!=&\^\-\\?'"])"""
-#   decimal_escape = r"""(\d+)"""
-#   hex_escape = r"""(x[0-9a-fA-F]+)"""
-#   bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-7])"""
-#
-# The following modifications were made to avoid the ambiguity that allowed
-# backtracking: (https://github.com/eliben/pycparser/issues/61)
-#
-# - \x was removed from simple_escape, unless it was not followed by a hex
-#   digit, to avoid ambiguity with hex_escape.
-# - hex_escape allows one or more hex characters, but requires that the next
-#   character(if any) is not hex
-# - decimal_escape allows one or more decimal characters, but requires that the
-#   next character(if any) is not a decimal
-# - bad_escape does not allow any decimals (8-9), to avoid conflicting with the
-#   permissive decimal_escape.
-#
-# Without this change, python's `re` module would recursively try parsing each
-# ambiguous escape sequence in multiple ways. e.g. `\123` could be parsed as
-# `\1`+`23`, `\12`+`3`, and `\123`.
-
-simple_escape = r"""([a-wyzA-Z._~!=&\^\-\\?'"]|x(?![0-9a-fA-F]))"""
-decimal_escape = r"""(\d+)(?!\d)"""
-hex_escape = r"""(x[0-9a-fA-F]+)(?![0-9a-fA-F])"""
-bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-9])"""
-
-escape_sequence = r"""(\\("""+simple_escape+'|'+decimal_escape+'|'+hex_escape+'))'
-
-# This complicated regex with lookahead might be slow for strings, so because
-# all of the valid escapes (including \x) allowed
-# 0 or more non-escaped characters after the first character,
-# simple_escape+decimal_escape+hex_escape got simplified to
-
-escape_sequence_start_in_string = r"""(\\[0-9a-zA-Z._~!=&\^\-\\?'"])"""
-
-cconst_char = r"""([^'\\\n]|"""+escape_sequence+')'
-char_const = "'"+cconst_char+"'"
-wchar_const = 'L'+char_const
-u8char_const = 'u8'+char_const
-u16char_const = 'u'+char_const
-u32char_const = 'U'+char_const
-multicharacter_constant = "'"+cconst_char+"{2,4}'"
-unmatched_quote = "('"+cconst_char+"*\\n)|('"+cconst_char+"*$)"
-bad_char_const = r"""('"""+cconst_char+"""[^'\n]+')|('')|('"""+bad_escape+r"""[^'\n]*')"""
-
-# string literals (K&R2: A.2.6)
-string_char = r"""([^"\\\n]|"""+escape_sequence_start_in_string+')'
-string_literal = '"'+string_char+'*"'
-wstring_literal = 'L'+string_literal
-u8string_literal = 'u8'+string_literal
-u16string_literal = 'u'+string_literal
-u32string_literal = 'U'+string_literal
-bad_string_literal = '"'+string_char+'*'+bad_escape+string_char+'*"'
-
-# floating constants (K&R2: A.2.5.3)
-exponent_part = r"""([eE][-+]?[0-9]+)"""
-fractional_constant = r"""([0-9]*\.[0-9]+)|([0-9]+\.)"""
-floating_constant = '(((('+fractional_constant+')'+exponent_part+'?)|([0-9]+'+exponent_part+'))[FfLl]?)'
-binary_exponent_part = r'''([pP][+-]?[0-9]+)'''
-hex_fractional_constant = '((('+hex_digits+r""")?\."""+hex_digits+')|('+hex_digits+r"""\.))"""
-hex_floating_constant = '('+hex_prefix+'('+hex_digits+'|'+hex_fractional_constant+')'+binary_exponent_part+'[FfLl]?)'
-
 
 class _Token(object):
     __slots__ = ('type', 'value', 'lineno', 'lexpos')
@@ -229,7 +39,6 @@ class CLexer(object):
         self.on_rbrace_func = on_rbrace_func
         self.type_lookup_func = type_lookup_func
         self.filename = ''
-        self.last_token = None
         self.lineno = 1
         self._lexdata = ''
         self._pos = 0
@@ -238,16 +47,6 @@ class CLexer(object):
         self._pp_filename = None
         self._pppragma_seen = False
 
-        self.line_pattern = re.compile(r'([ \t]*line\W)|([ \t]*\d+)')
-        self.pragma_pattern = re.compile(r'[ \t]*pragma\W')
-
-        self._regex_rules = []
-        self._fixed_tokens = []
-        self._compile_rules()
-
-    def reset_lineno(self):
-        self.lineno = 1
-
     def input(self, text):
         self._lexdata = text
         self._pos = 0
@@ -255,7 +54,7 @@ class CLexer(object):
         self._pp_line = None
         self._pp_filename = None
         self._pppragma_seen = False
-        self.last_token = None
+        self.lineno = 1
 
     def token(self):
         text = self._lexdata
@@ -269,7 +68,6 @@ class CLexer(object):
                 tok = self._handle_pppragma()
                 if tok is None:
                     continue
-                self.last_token = tok
                 return tok
 
             if self._pos >= n:
@@ -284,20 +82,19 @@ class CLexer(object):
                 self._pos += 1
                 continue
             if ch == '#':
-                if self.line_pattern.match(text, self._pos + 1):
+                if _line_pattern.match(text, self._pos + 1):
                     self._state = 'ppline'
                     self._pp_line = None
                     self._pp_filename = None
                     self._pos += 1
                     continue
-                if self.pragma_pattern.match(text, self._pos + 1):
+                if _pragma_pattern.match(text, self._pos + 1):
                     self._state = 'pppragma'
                     self._pppragma_seen = False
                     self._pos += 1
                     continue
                 tok = self._make_token('PPHASH', '#', self._pos)
                 self._pos += 1
-                self.last_token = tok
                 return tok
 
             tok = self._match_token()
@@ -309,108 +106,20 @@ class CLexer(object):
             if tok is False:
                 continue
 
-            self.last_token = tok
             return tok
 
-        self.last_token = None
         return None
 
     def find_tok_column(self, token):
         last_cr = self._lexdata.rfind('\n', 0, token.lexpos)
         return token.lexpos - last_cr
 
-    def _compile_rules(self):
-        def rx(pattern):
-            return re.compile(pattern)
-
-        self._regex_rules = [
-            ('UNSUPPORTED_C_STYLE_COMMENT', rx(unsupported_c_style_comment),
-             'error', "Comments are not supported, see https://github.com/eliben/pycparser#3using."),
-            ('UNSUPPORTED_CXX_STYLE_COMMENT', rx(unsupported_cxx_style_comment),
-             'error', "Comments are not supported, see https://github.com/eliben/pycparser#3using."),
-            ('BAD_STRING_LITERAL', rx(bad_string_literal),
-             'error', "String contains invalid escape code"),
-            ('WSTRING_LITERAL', rx(wstring_literal), 'token', None),
-            ('U8STRING_LITERAL', rx(u8string_literal), 'token', None),
-            ('U16STRING_LITERAL', rx(u16string_literal), 'token', None),
-            ('U32STRING_LITERAL', rx(u32string_literal), 'token', None),
-            ('STRING_LITERAL', rx(string_literal), 'token', None),
-            ('HEX_FLOAT_CONST', rx(hex_floating_constant), 'token', None),
-            ('FLOAT_CONST', rx(floating_constant), 'token', None),
-            ('INT_CONST_HEX', rx(hex_constant), 'token', None),
-            ('INT_CONST_BIN', rx(bin_constant), 'token', None),
-            ('BAD_CONST_OCT', rx(bad_octal_constant),
-             'error', "Invalid octal constant"),
-            ('INT_CONST_OCT', rx(octal_constant), 'token', None),
-            ('INT_CONST_DEC', rx(decimal_constant), 'token', None),
-            ('INT_CONST_CHAR', rx(multicharacter_constant), 'token', None),
-            ('CHAR_CONST', rx(char_const), 'token', None),
-            ('WCHAR_CONST', rx(wchar_const), 'token', None),
-            ('U8CHAR_CONST', rx(u8char_const), 'token', None),
-            ('U16CHAR_CONST', rx(u16char_const), 'token', None),
-            ('U32CHAR_CONST', rx(u32char_const), 'token', None),
-            ('UNMATCHED_QUOTE', rx(unmatched_quote),
-             'error', "Unmatched '"),
-            ('BAD_CHAR_CONST', rx(bad_char_const),
-             'error', None),
-            ('ID', rx(identifier), 'id', None),
-        ]
-
-        self._fixed_tokens = [
-            ('ELLIPSIS', '...'),
-            ('LSHIFTEQUAL', '<<='),
-            ('RSHIFTEQUAL', '>>='),
-            ('PLUSPLUS', '++'),
-            ('MINUSMINUS', '--'),
-            ('ARROW', '->'),
-            ('LAND', '&&'),
-            ('LOR', '||'),
-            ('LSHIFT', '<<'),
-            ('RSHIFT', '>>'),
-            ('LE', '<='),
-            ('GE', '>='),
-            ('EQ', '=='),
-            ('NE', '!='),
-            ('TIMESEQUAL', '*='),
-            ('DIVEQUAL', '/='),
-            ('MODEQUAL', '%='),
-            ('PLUSEQUAL', '+='),
-            ('MINUSEQUAL', '-='),
-            ('ANDEQUAL', '&='),
-            ('OREQUAL', '|='),
-            ('XOREQUAL', '^='),
-            ('EQUALS', '='),
-            ('PLUS', '+'),
-            ('MINUS', '-'),
-            ('TIMES', '*'),
-            ('DIVIDE', '/'),
-            ('MOD', '%'),
-            ('OR', '|'),
-            ('AND', '&'),
-            ('NOT', '~'),
-            ('XOR', '^'),
-            ('LNOT', '!'),
-            ('LT', '<'),
-            ('GT', '>'),
-            ('CONDOP', '?'),
-            ('LPAREN', '('),
-            ('RPAREN', ')'),
-            ('LBRACKET', '['),
-            ('RBRACKET', ']'),
-            ('LBRACE', '{'),
-            ('RBRACE', '}'),
-            ('COMMA', ','),
-            ('PERIOD', '.'),
-            ('SEMI', ';'),
-            ('COLON', ':'),
-        ]
-
     def _match_token(self):
         text = self._lexdata
         pos = self._pos
         best = None
 
-        for tok_type, regex, action, msg in self._regex_rules:
+        for tok_type, regex, action, msg in _regex_rules:
             m = regex.match(text, pos)
             if not m:
                 continue
@@ -419,7 +128,7 @@ class CLexer(object):
             if best is None or length > best[0]:
                 best = (length, tok_type, value, action, msg)
 
-        for tok_type, literal in self._fixed_tokens:
+        for tok_type, literal in _fixed_tokens:
             if text.startswith(literal, pos):
                 length = len(literal)
                 if best is None or length > best[0]:
@@ -486,14 +195,14 @@ class CLexer(object):
             self._pos += 4
             return True
 
-        m = re.match(decimal_constant, text[self._pos:])
+        m = re.match(_decimal_constant, text[self._pos:])
         if m:
             if self._pp_line is None:
                 self._pp_line = m.group(0)
             self._pos += len(m.group(0))
             return True
 
-        m = re.match(string_literal, text[self._pos:])
+        m = re.match(_string_literal, text[self._pos:])
         if m:
             if self._pp_line is None:
                 self._error('filename before line number in #line', self._pos)
@@ -539,3 +248,214 @@ class CLexer(object):
         if self._pos == start:
             return None
         return self._make_token('PPPRAGMASTR', text[start:self._pos], start)
+
+
+##
+## Reserved keywords
+##
+_keywords = (
+    'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
+    'CONTINUE', 'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
+    'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG',
+    'REGISTER', 'OFFSETOF',
+    'RESTRICT', 'RETURN', 'SHORT', 'SIGNED', 'SIZEOF', 'STATIC', 'STRUCT',
+    'SWITCH', 'TYPEDEF', 'UNION', 'UNSIGNED', 'VOID',
+    'VOLATILE', 'WHILE', '__INT128',
+    '_BOOL', '_COMPLEX',
+    '_NORETURN', '_THREAD_LOCAL', '_STATIC_ASSERT',
+    '_ATOMIC', '_ALIGNOF', '_ALIGNAS',
+    '_PRAGMA',
+)
+
+_keyword_map = {}
+
+for keyword in _keywords:
+    # New C standards keywords are mixed-case, like _Bool, _Alignas, etc.
+    if keyword.startswith('_') and len(keyword) > 1 and keyword[1].isalpha():
+        _keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
+    else:
+        _keyword_map[keyword.lower()] = keyword
+
+##
+## Regexes for use in tokens
+##
+
+# valid C identifiers (K&R2: A.2.3), plus '$' (supported by some compilers)
+_identifier = r'[a-zA-Z_$][0-9a-zA-Z_$]*'
+
+_hex_prefix = '0[xX]'
+_hex_digits = '[0-9a-fA-F]+'
+_bin_prefix = '0[bB]'
+_bin_digits = '[01]+'
+
+# integer constants (K&R2: A.2.5.1)
+_integer_suffix_opt = r'(([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?'
+_decimal_constant = '(0'+_integer_suffix_opt+')|([1-9][0-9]*'+_integer_suffix_opt+')'
+_octal_constant = '0[0-7]*'+_integer_suffix_opt
+_hex_constant = _hex_prefix+_hex_digits+_integer_suffix_opt
+_bin_constant = _bin_prefix+_bin_digits+_integer_suffix_opt
+
+_bad_octal_constant = '0[0-7]*[89]'
+
+# comments are not supported
+_unsupported_c_style_comment = r'\/\*'
+_unsupported_cxx_style_comment = r'\/\/'
+
+# character constants (K&R2: A.2.5.2)
+# Note: a-zA-Z and '.-~^_!=&;,' are allowed as escape chars to support #line
+# directives with Windows paths as filenames (..\..\dir\file)
+# For the same reason, decimal_escape allows all digit sequences. We want to
+# parse all correct code, even if it means to sometimes parse incorrect
+# code.
+#
+# The original regexes were taken verbatim from the C syntax definition,
+# and were later modified to avoid worst-case exponential running time.
+#
+#   simple_escape = r"""([a-zA-Z._~!=&\^\-\\?'"])"""
+#   decimal_escape = r"""(\d+)"""
+#   hex_escape = r"""(x[0-9a-fA-F]+)"""
+#   bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-7])"""
+#
+# The following modifications were made to avoid the ambiguity that allowed
+# backtracking: (https://github.com/eliben/pycparser/issues/61)
+#
+# - \x was removed from simple_escape, unless it was not followed by a hex
+#   digit, to avoid ambiguity with hex_escape.
+# - hex_escape allows one or more hex characters, but requires that the next
+#   character(if any) is not hex
+# - decimal_escape allows one or more decimal characters, but requires that the
+#   next character(if any) is not a decimal
+# - bad_escape does not allow any decimals (8-9), to avoid conflicting with the
+#   permissive decimal_escape.
+#
+# Without this change, python's `re` module would recursively try parsing each
+# ambiguous escape sequence in multiple ways. e.g. `\123` could be parsed as
+# `\1`+`23`, `\12`+`3`, and `\123`.
+
+_simple_escape = r"""([a-wyzA-Z._~!=&\^\-\\?'"]|x(?![0-9a-fA-F]))"""
+_decimal_escape = r"""(\d+)(?!\d)"""
+_hex_escape = r"""(x[0-9a-fA-F]+)(?![0-9a-fA-F])"""
+_bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-9])"""
+
+_escape_sequence = r"""(\\("""+_simple_escape+'|'+_decimal_escape+'|'+_hex_escape+'))'
+
+# This complicated regex with lookahead might be slow for strings, so because
+# all of the valid escapes (including \x) allowed
+# 0 or more non-escaped characters after the first character,
+# simple_escape+decimal_escape+hex_escape got simplified to
+
+_escape_sequence_start_in_string = r"""(\\[0-9a-zA-Z._~!=&\^\-\\?'"])"""
+
+_cconst_char = r"""([^'\\\n]|"""+_escape_sequence+')'
+_char_const = "'"+_cconst_char+"'"
+_wchar_const = 'L'+_char_const
+_u8char_const = 'u8'+_char_const
+_u16char_const = 'u'+_char_const
+_u32char_const = 'U'+_char_const
+_multicharacter_constant = "'"+_cconst_char+"{2,4}'"
+_unmatched_quote = "('"+_cconst_char+"*\\n)|('"+_cconst_char+"*$)"
+_bad_char_const = r"""('"""+_cconst_char+"""[^'\n]+')|('')|('"""+_bad_escape+r"""[^'\n]*')"""
+
+# string literals (K&R2: A.2.6)
+_string_char = r"""([^"\\\n]|"""+_escape_sequence_start_in_string+')'
+_string_literal = '"'+_string_char+'*"'
+_wstring_literal = 'L'+_string_literal
+_u8string_literal = 'u8'+_string_literal
+_u16string_literal = 'u'+_string_literal
+_u32string_literal = 'U'+_string_literal
+_bad_string_literal = '"'+_string_char+'*'+_bad_escape+_string_char+'*"'
+
+# floating constants (K&R2: A.2.5.3)
+_exponent_part = r"""([eE][-+]?[0-9]+)"""
+_fractional_constant = r"""([0-9]*\.[0-9]+)|([0-9]+\.)"""
+_floating_constant = '(((('+_fractional_constant+')'+_exponent_part+'?)|([0-9]+'+_exponent_part+'))[FfLl]?)'
+_binary_exponent_part = r'''([pP][+-]?[0-9]+)'''
+_hex_fractional_constant = '((('+_hex_digits+r""")?\."""+_hex_digits+')|('+_hex_digits+r"""\.))"""
+_hex_floating_constant = '('+_hex_prefix+'('+_hex_digits+'|'+_hex_fractional_constant+')'+_binary_exponent_part+'[FfLl]?)'
+
+_regex_rules = [
+    ('UNSUPPORTED_C_STYLE_COMMENT', re.compile(_unsupported_c_style_comment),
+     'error', "Comments are not supported, see https://github.com/eliben/pycparser#3using."),
+    ('UNSUPPORTED_CXX_STYLE_COMMENT', re.compile(_unsupported_cxx_style_comment),
+     'error', "Comments are not supported, see https://github.com/eliben/pycparser#3using."),
+    ('BAD_STRING_LITERAL', re.compile(_bad_string_literal),
+     'error', "String contains invalid escape code"),
+    ('WSTRING_LITERAL', re.compile(_wstring_literal), 'token', None),
+    ('U8STRING_LITERAL', re.compile(_u8string_literal), 'token', None),
+    ('U16STRING_LITERAL', re.compile(_u16string_literal), 'token', None),
+    ('U32STRING_LITERAL', re.compile(_u32string_literal), 'token', None),
+    ('STRING_LITERAL', re.compile(_string_literal), 'token', None),
+    ('HEX_FLOAT_CONST', re.compile(_hex_floating_constant), 'token', None),
+    ('FLOAT_CONST', re.compile(_floating_constant), 'token', None),
+    ('INT_CONST_HEX', re.compile(_hex_constant), 'token', None),
+    ('INT_CONST_BIN', re.compile(_bin_constant), 'token', None),
+    ('BAD_CONST_OCT', re.compile(_bad_octal_constant),
+     'error', "Invalid octal constant"),
+    ('INT_CONST_OCT', re.compile(_octal_constant), 'token', None),
+    ('INT_CONST_DEC', re.compile(_decimal_constant), 'token', None),
+    ('INT_CONST_CHAR', re.compile(_multicharacter_constant), 'token', None),
+    ('CHAR_CONST', re.compile(_char_const), 'token', None),
+    ('WCHAR_CONST', re.compile(_wchar_const), 'token', None),
+    ('U8CHAR_CONST', re.compile(_u8char_const), 'token', None),
+    ('U16CHAR_CONST', re.compile(_u16char_const), 'token', None),
+    ('U32CHAR_CONST', re.compile(_u32char_const), 'token', None),
+    ('UNMATCHED_QUOTE', re.compile(_unmatched_quote),
+     'error', "Unmatched '"),
+    ('BAD_CHAR_CONST', re.compile(_bad_char_const),
+     'error', None),
+    ('ID', re.compile(_identifier), 'id', None),
+]
+
+_fixed_tokens = [
+    ('ELLIPSIS', '...'),
+    ('LSHIFTEQUAL', '<<='),
+    ('RSHIFTEQUAL', '>>='),
+    ('PLUSPLUS', '++'),
+    ('MINUSMINUS', '--'),
+    ('ARROW', '->'),
+    ('LAND', '&&'),
+    ('LOR', '||'),
+    ('LSHIFT', '<<'),
+    ('RSHIFT', '>>'),
+    ('LE', '<='),
+    ('GE', '>='),
+    ('EQ', '=='),
+    ('NE', '!='),
+    ('TIMESEQUAL', '*='),
+    ('DIVEQUAL', '/='),
+    ('MODEQUAL', '%='),
+    ('PLUSEQUAL', '+='),
+    ('MINUSEQUAL', '-='),
+    ('ANDEQUAL', '&='),
+    ('OREQUAL', '|='),
+    ('XOREQUAL', '^='),
+    ('EQUALS', '='),
+    ('PLUS', '+'),
+    ('MINUS', '-'),
+    ('TIMES', '*'),
+    ('DIVIDE', '/'),
+    ('MOD', '%'),
+    ('OR', '|'),
+    ('AND', '&'),
+    ('NOT', '~'),
+    ('XOR', '^'),
+    ('LNOT', '!'),
+    ('LT', '<'),
+    ('GT', '>'),
+    ('CONDOP', '?'),
+    ('LPAREN', '('),
+    ('RPAREN', ')'),
+    ('LBRACKET', '['),
+    ('RBRACKET', ']'),
+    ('LBRACE', '{'),
+    ('RBRACE', '}'),
+    ('COMMA', ','),
+    ('PERIOD', '.'),
+    ('SEMI', ';'),
+    ('COLON', ':'),
+]
+
+_line_pattern = re.compile(r'([ \t]*line\W)|([ \t]*\d+)')
+_pragma_pattern = re.compile(r'[ \t]*pragma\W')
+
+

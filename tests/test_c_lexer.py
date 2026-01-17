@@ -297,7 +297,6 @@ class TestCLexerNoErrors(unittest.TestCase):
 
         #~ self.clex.filename
         self.clex.input(str)
-        self.clex.reset_lineno()
 
         t1 = self.clex.token()
         self.assertEqual(t1.type, 'INT_CONST_DEC')
@@ -335,7 +334,6 @@ class TestCLexerNoErrors(unittest.TestCase):
         10
         '''
         self.clex.input(str)
-        self.clex.reset_lineno()
 
         t1 = self.clex.token()
         self.assertEqual(t1.type, 'INT_CONST_DEC')
@@ -360,7 +358,6 @@ class TestCLexerNoErrors(unittest.TestCase):
         '''
         # Check that pragmas are tokenized, including trailing string
         self.clex.input(str)
-        self.clex.reset_lineno()
 
         t1 = self.clex.token()
         self.assertEqual(t1.type, 'INT_CONST_DEC')
