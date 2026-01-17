@@ -8,6 +8,8 @@
 #------------------------------------------------------------------------------
 import re
 from dataclasses import dataclass
+from enum import Enum
+from typing import Optional
 
 
 
@@ -101,44 +103,39 @@ class CLexer(object):
             return tok
 
         while self._pos < n:
-            ch = text[self._pos]
-            if ch == ' ' or ch == '\t':
-                self._pos += 1
-                continue
-            if ch == '\n':
-                self.lineno += 1
-                self._pos += 1
-                self._line_start = self._pos
-                continue
-            if ch == '#':
-                if _line_pattern.match(text, self._pos + 1):
+            match text[self._pos]:
+                case ' ' | '\t':
                     self._pos += 1
-                    self._handle_ppline()
-                    continue
-                if _pragma_pattern.match(text, self._pos + 1):
+                case '\n':
+                    self.lineno += 1
                     self._pos += 1
-                    tok, pending = self._handle_pppragma()
-                    if pending is not None:
-                        self._pending_tok = pending
-                    if tok is not None:
-                        return tok
-                    continue
-                tok = self._make_token('PPHASH', '#', self._pos)
-                self._pos += 1
-                return tok
-
-            tok = self._match_token()
-            if tok is None:
-                msg = 'Illegal character %s' % repr(text[self._pos])
-                self._error(msg, self._pos)
-                self._pos += 1
-                continue
-            if tok is False:
-                continue
-
-            return tok
-
-        return None
+                    self._line_start = self._pos
+                case '#':
+                    if _line_pattern.match(text, self._pos + 1):
+                        self._pos += 1
+                        self._handle_ppline()
+                        continue
+                    if _pragma_pattern.match(text, self._pos + 1):
+                        self._pos += 1
+                        tok, pending = self._handle_pppragma()
+                        if pending is not None:
+                            self._pending_tok = pending
+                        if tok is not None:
+                            return tok
+                        continue
+                    tok = self._make_token('PPHASH', '#', self._pos)
+                    self._pos += 1
+                    return tok
+                case _:
+                    tok = self._match_token()
+                    if tok is None:
+                        msg = 'Illegal character %s' % repr(text[self._pos])
+                        self._error(msg, self._pos)
+                        self._pos += 1
+                        continue
+                    if tok is False:
+                        continue
+                    return tok
 
     def _match_token(self):
         text = self._lexdata
@@ -174,14 +171,14 @@ class CLexer(object):
             return None
 
         length, tok_type, value, action, msg = best
-        if action == 'error':
+        if action == _RegexAction.ERROR:
             if tok_type == 'BAD_CHAR_CONST':
                 msg = "Invalid char constant %s" % value
             self._error(msg, pos)
             self._pos += max(1, length)
             return False
 
-        if action == 'id':
+        if action == _RegexAction.ID:
             tok_type = _keyword_map.get(value, 'ID')
             if tok_type == 'ID' and self.type_lookup_func(value):
                 tok_type = 'TYPEID'
@@ -251,7 +248,6 @@ class CLexer(object):
 
             self._error('invalid #line directive', self._pos)
             self._pos += 1
-        return
 
     def _handle_pppragma(self):
         text = self._lexdata
@@ -306,7 +302,7 @@ _keywords = (
 _keyword_map = {}
 
 for keyword in _keywords:
-    # New C standards keywords are mixed-case, like _Bool, _Alignas, etc.
+    # Keywords from new C standard are mixed-case, like _Bool, _Alignas, etc.
     if keyword.startswith('_') and len(keyword) > 1 and keyword[1].isalpha():
         _keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
     else:
@@ -409,44 +405,65 @@ _binary_exponent_part = r'''([pP][+-]?[0-9]+)'''
 _hex_fractional_constant = '((('+_hex_digits+r""")?\."""+_hex_digits+')|('+_hex_digits+r"""\.))"""
 _hex_floating_constant = '('+_hex_prefix+'('+_hex_digits+'|'+_hex_fractional_constant+')'+_binary_exponent_part+'[FfLl]?)'
 
+
+class _RegexAction(Enum):
+    TOKEN = 0
+    ID = 1
+    ERROR = 2
+
+
+@dataclass(frozen=True)
+class _RegexRule(object):
+    # tok_type: name of the token emitted for a match
+    # regex_pattern: the raw regex (no anchors) to match at the current position
+    # action: an action
+    # error_message: message used for ERROR entries
+    tok_type: str
+    regex_pattern: str
+    action: _RegexAction
+    error_message: Optional[str]
+
+
 _regex_rules = [
-    ('UNSUPPORTED_C_STYLE_COMMENT', _unsupported_c_style_comment,
-     'error', "Comments are not supported, see https://github.com/eliben/pycparser#3using."),
-    ('UNSUPPORTED_CXX_STYLE_COMMENT', _unsupported_cxx_style_comment,
-     'error', "Comments are not supported, see https://github.com/eliben/pycparser#3using."),
-    ('BAD_STRING_LITERAL', _bad_string_literal,
-     'error', "String contains invalid escape code"),
-    ('WSTRING_LITERAL', _wstring_literal, 'token', None),
-    ('U8STRING_LITERAL', _u8string_literal, 'token', None),
-    ('U16STRING_LITERAL', _u16string_literal, 'token', None),
-    ('U32STRING_LITERAL', _u32string_literal, 'token', None),
-    ('STRING_LITERAL', _string_literal, 'token', None),
-    ('HEX_FLOAT_CONST', _hex_floating_constant, 'token', None),
-    ('FLOAT_CONST', _floating_constant, 'token', None),
-    ('INT_CONST_HEX', _hex_constant, 'token', None),
-    ('INT_CONST_BIN', _bin_constant, 'token', None),
-    ('BAD_CONST_OCT', _bad_octal_constant,
-     'error', "Invalid octal constant"),
-    ('INT_CONST_OCT', _octal_constant, 'token', None),
-    ('INT_CONST_DEC', _decimal_constant, 'token', None),
-    ('INT_CONST_CHAR', _multicharacter_constant, 'token', None),
-    ('CHAR_CONST', _char_const, 'token', None),
-    ('WCHAR_CONST', _wchar_const, 'token', None),
-    ('U8CHAR_CONST', _u8char_const, 'token', None),
-    ('U16CHAR_CONST', _u16char_const, 'token', None),
-    ('U32CHAR_CONST', _u32char_const, 'token', None),
-    ('UNMATCHED_QUOTE', _unmatched_quote,
-     'error', "Unmatched '"),
-    ('BAD_CHAR_CONST', _bad_char_const,
-     'error', None),
-    ('ID', _identifier, 'id', None),
+    _RegexRule('UNSUPPORTED_C_STYLE_COMMENT', _unsupported_c_style_comment,
+               _RegexAction.ERROR,
+               "Comments are not supported, see https://github.com/eliben/pycparser#3using."),
+    _RegexRule('UNSUPPORTED_CXX_STYLE_COMMENT', _unsupported_cxx_style_comment,
+               _RegexAction.ERROR,
+               "Comments are not supported, see https://github.com/eliben/pycparser#3using."),
+    _RegexRule('BAD_STRING_LITERAL', _bad_string_literal,
+               _RegexAction.ERROR, "String contains invalid escape code"),
+    _RegexRule('WSTRING_LITERAL', _wstring_literal, _RegexAction.TOKEN, None),
+    _RegexRule('U8STRING_LITERAL', _u8string_literal, _RegexAction.TOKEN, None),
+    _RegexRule('U16STRING_LITERAL', _u16string_literal, _RegexAction.TOKEN, None),
+    _RegexRule('U32STRING_LITERAL', _u32string_literal, _RegexAction.TOKEN, None),
+    _RegexRule('STRING_LITERAL', _string_literal, _RegexAction.TOKEN, None),
+    _RegexRule('HEX_FLOAT_CONST', _hex_floating_constant, _RegexAction.TOKEN, None),
+    _RegexRule('FLOAT_CONST', _floating_constant, _RegexAction.TOKEN, None),
+    _RegexRule('INT_CONST_HEX', _hex_constant, _RegexAction.TOKEN, None),
+    _RegexRule('INT_CONST_BIN', _bin_constant, _RegexAction.TOKEN, None),
+    _RegexRule('BAD_CONST_OCT', _bad_octal_constant,
+               _RegexAction.ERROR, "Invalid octal constant"),
+    _RegexRule('INT_CONST_OCT', _octal_constant, _RegexAction.TOKEN, None),
+    _RegexRule('INT_CONST_DEC', _decimal_constant, _RegexAction.TOKEN, None),
+    _RegexRule('INT_CONST_CHAR', _multicharacter_constant, _RegexAction.TOKEN, None),
+    _RegexRule('CHAR_CONST', _char_const, _RegexAction.TOKEN, None),
+    _RegexRule('WCHAR_CONST', _wchar_const, _RegexAction.TOKEN, None),
+    _RegexRule('U8CHAR_CONST', _u8char_const, _RegexAction.TOKEN, None),
+    _RegexRule('U16CHAR_CONST', _u16char_const, _RegexAction.TOKEN, None),
+    _RegexRule('U32CHAR_CONST', _u32char_const, _RegexAction.TOKEN, None),
+    _RegexRule('UNMATCHED_QUOTE', _unmatched_quote,
+               _RegexAction.ERROR, "Unmatched '"),
+    _RegexRule('BAD_CHAR_CONST', _bad_char_const,
+               _RegexAction.ERROR, None),
+    _RegexRule('ID', _identifier, _RegexAction.ID, None),
 ]
 
 _regex_actions = {}
 _regex_pattern_parts = []
-for _tok_type, _pattern, _action, _msg in _regex_rules:
-    _regex_actions[_tok_type] = (_action, _msg)
-    _regex_pattern_parts.append('(?P<%s>%s)' % (_tok_type, _pattern))
+for _rule in _regex_rules:
+    _regex_actions[_rule.tok_type] = (_rule.action, _rule.error_message)
+    _regex_pattern_parts.append('(?P<%s>%s)' % (_rule.tok_type, _rule.regex_pattern))
 # The master regex is a single alternation of all token patterns, each wrapped
 # in a named group. We match once at the current position and then use
 # `lastgroup` to recover which token kind fired; this avoids iterating over all
