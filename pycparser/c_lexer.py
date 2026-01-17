@@ -74,10 +74,13 @@ class CLexer(object):
         #     sub-state; otherwise we return a PPHASH token.
         #   * Newlines update lineno/line-start tracking so tokens can record
         #     accurate columns.
-        # - The bulk of tokens are recognized via two tables:
+        #
+        # - The bulk of tokens are recognized in _match_token:
+        #
         #   * _regex_rules: regex patterns for identifiers, literals, and other
         #     complex tokens (including error-producing patterns). The lexer
-        #     tries all rules and picks the longest match.
+        #     uses a combined _regex_master to scan options at the same time.
+        #
         #   * _fixed_tokens: exact string matches for operators and punctuators,
         #     also resolved by longest match.
         # - After a match, we build a token with type/value/lineno/column,
@@ -146,6 +149,14 @@ class CLexer(object):
     def _match_token(self):
         text = self._lexdata
         pos = self._pos
+        # We pick the longest match between:
+        # - the master regex (identifiers, literals, error patterns, etc.)
+        # - fixed operator/punctuator literals from the bucket for text[pos]
+        #
+        # The fixed-literal buckets are already length-sorted, so within that
+        # bucket we can take the first match. However, we still compare its
+        # length to the regex match because the regex may have matched a longer
+        # token that should take precedence.
         best = None
 
         m = _regex_master.match(text, pos)
@@ -175,6 +186,7 @@ class CLexer(object):
             self._error(msg, pos)
             self._pos += max(1, length)
             return False
+
         if action == 'id':
             tok_type = _keyword_map.get(value, 'ID')
             if tok_type == 'ID' and self.type_lookup_func(value):
