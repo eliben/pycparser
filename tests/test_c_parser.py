@@ -663,6 +663,23 @@ class TestCParser_fundamentals(TestCParser_base):
                 ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]],
                 'a', ['TypeDecl', ['IdentifierType', ['char']]]])
 
+    def test_alignas_with_typedef_in_struct(self):
+        # Issue #472
+        s = """
+            typedef int test_int;
+            typedef struct {
+                _Alignas(int) test_int a1;
+            } test_struct;
+        """
+        ast = self.parse(s)
+        field = ast.ext[1].type.type.decls[0]
+        self.assertEqual(field.name, 'a1')
+        self.assertTrue(hasattr(field, 'align') and field.align is not None)
+        self.assertEqual(expand_decl(field),
+            ['Decl', ['Alignas',
+                ['Typename', ['TypeDecl', ['IdentifierType', ['int']]]]],
+                'a1', ['TypeDecl', ['IdentifierType', ['test_int']]]])
+
     def test_offsetof(self):
         def expand_ref(n):
             if isinstance(n, StructRef):
