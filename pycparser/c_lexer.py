@@ -11,7 +11,7 @@ import re
 ##
 ## Reserved keywords
 ##
-keywords = (
+_keywords = (
     'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
     'CONTINUE', 'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
     'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG',
@@ -21,25 +21,25 @@ keywords = (
     'VOLATILE', 'WHILE', '__INT128',
 )
 
-keywords_new = (
+_keywords_new = (
     '_BOOL', '_COMPLEX',
     '_NORETURN', '_THREAD_LOCAL', '_STATIC_ASSERT',
     '_ATOMIC', '_ALIGNOF', '_ALIGNAS',
     '_PRAGMA',
 )
 
-keyword_map = {}
+_keyword_map = {}
 
-for keyword in keywords:
-    keyword_map[keyword.lower()] = keyword
+for keyword in _keywords:
+    _keyword_map[keyword.lower()] = keyword
 
-for keyword in keywords_new:
-    keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
+for keyword in _keywords_new:
+    _keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
 
 ##
 ## All the tokens recognized by the lexer
 ##
-tokens = keywords + keywords_new + (
+_tokens = _keywords + _keywords_new + (
     # Identifiers
     'ID',
 
@@ -205,11 +205,6 @@ class _Token(object):
 
 class CLexer(object):
     """A standalone lexer for C that doesn't rely on PLY."""
-    keywords = keywords
-    keywords_new = keywords_new
-    keyword_map = keyword_map
-    tokens = tokens
-
     def __init__(self, error_func, on_lbrace_func, on_rbrace_func,
                  type_lookup_func):
         self.error_func = error_func
@@ -445,7 +440,7 @@ class CLexer(object):
             self._pos += max(1, length)
             return False
         if action == 'id':
-            tok_type = self.keyword_map.get(value, 'ID')
+            tok_type = _keyword_map.get(value, 'ID')
             if tok_type == 'ID' and self.type_lookup_func(value):
                 tok_type = 'TYPEID'
 

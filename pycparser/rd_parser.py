@@ -144,7 +144,6 @@ class RDParser(object):
             optimize=lex_optimize,
             lextab=lextab,
             outputdir=taboutputdir)
-        self.tokens = self.clex.tokens
 
         # Stack of scopes for keeping track of symbols. _scope_stack[-1] is
         # the current (topmost) scope. Each scope is a dictionary that
