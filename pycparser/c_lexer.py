@@ -13,13 +13,12 @@ from enum import Enum
 
 
 class _Token(object):
-    __slots__ = ('type', 'value', 'lineno', 'lexpos', 'column')
+    __slots__ = ('type', 'value', 'lineno', 'column')
 
-    def __init__(self, typ, value, lineno, lexpos, column):
+    def __init__(self, typ, value, lineno, column):
         self.type = typ
         self.value = value
         self.lineno = lineno
-        self.lexpos = lexpos
         self.column = column
 
 
@@ -204,7 +203,7 @@ class CLexer(object):
 
     def _make_token(self, tok_type, value, pos):
         column = pos - self._line_start + 1
-        tok = _Token(tok_type, value, self.lineno, pos, column)
+        tok = _Token(tok_type, value, self.lineno, column)
         return tok
 
     def _error(self, msg, pos):
