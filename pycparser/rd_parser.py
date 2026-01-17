@@ -664,43 +664,25 @@ class RDParser(object):
         tok = self._peek()
         return tok is not None and tok.type in self._ASSIGNMENT_OPS
 
-    def _is_type_name_in_parens(self, allow_lbrace=False):
-        mark = self._mark()
-        if not self._accept('LPAREN'):
-            self._reset(mark)
-            return False
-        if not self._starts_declaration():
-            self._reset(mark)
-            return False
-        self._parse_specifier_qualifier_list()
-        self._parse_abstract_declarator_opt()
-        if not self._accept('RPAREN'):
-            self._reset(mark)
-            return False
-        if not allow_lbrace and self._peek_type() == 'LBRACE':
-            self._reset(mark)
-            return False
-        self._reset(mark)
-        return True
+    def _is_type_name_in_parens(self):
+        """Return True if the next tokens look like '(' type_name ')'.
 
-    def _starts_compound_literal(self):
+        Example:
+            (int) x   -> True
+        """
         mark = self._mark()
-        if not self._accept('LPAREN'):
-            self._reset(mark)
-            return False
         try:
-            self._parse_type_name()
-            if not self._accept('RPAREN'):
-                self._reset(mark)
+            if not self._accept('LPAREN'):
                 return False
-            if self._peek_type() != 'LBRACE':
-                self._reset(mark)
+            if not self._starts_declaration():
                 return False
-            self._reset(mark)
+            self._parse_specifier_qualifier_list()
+            self._parse_abstract_declarator_opt()
+            if self._accept('RPAREN') is None:
+                return False
             return True
-        except ParseError:
+        finally:
             self._reset(mark)
-            return False
 
     # ------------------------------------------------------------------
     # Top-level
@@ -1958,10 +1940,14 @@ class RDParser(object):
     # BNF: cast_expression : '(' type_name ')' cast_expression
     #                     | unary_expression
     def _parse_cast_expression(self):
-        if self._peek_type() == 'LPAREN' and self._is_type_name_in_parens():
+        if self._is_type_name_in_parens():
+            mark = self._mark()
             lparen_tok = self._advance()
             typ = self._parse_type_name()
             self._expect('RPAREN')
+            if self._peek_type() == 'LBRACE':
+                self._reset(mark)
+                return self._parse_unary_expression()
             expr = self._parse_cast_expression()
             return c_ast.Cast(typ, expr, self._tok_coord(lparen_tok))
         return self._parse_unary_expression()
@@ -1986,7 +1972,7 @@ class RDParser(object):
 
         if tok_type == 'SIZEOF':
             tok = self._advance()
-            if self._peek_type() == 'LPAREN' and self._is_type_name_in_parens():
+            if self._is_type_name_in_parens():
                 self._expect('LPAREN')
                 typ = self._parse_type_name()
                 self._expect('RPAREN')
@@ -2006,16 +1992,20 @@ class RDParser(object):
     # BNF: postfix_expression : primary_expression postfix_suffix*
     #                         | '(' type_name ')' '{' initializer_list ','? '}'
     def _parse_postfix_expression(self):
-        if self._starts_compound_literal():
-            self._expect('LPAREN')
+        if self._is_type_name_in_parens():
+            # Disambiguate between casts and compound literals:
+            #   (int) x   -> cast
+            #   (int) {1} -> compound literal
+            mark = self._mark()
+            self._advance()
             typ = self._parse_type_name()
             self._expect('RPAREN')
-            self._expect('LBRACE')
-            init = self._parse_initializer_list()
-            if self._accept('COMMA'):
-                pass
-            self._expect('RBRACE')
-            return c_ast.CompoundLiteral(typ, init)
+            if self._accept('LBRACE'):
+                init = self._parse_initializer_list()
+                self._accept('COMMA')
+                self._expect('RBRACE')
+                return c_ast.CompoundLiteral(typ, init)
+            self._reset(mark)
 
         expr = self._parse_primary_expression()
         while True:
