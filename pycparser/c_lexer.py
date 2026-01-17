@@ -8,7 +8,6 @@
 #------------------------------------------------------------------------------
 import re
 from dataclasses import dataclass
-from enum import Enum
 
 
 
@@ -61,10 +60,7 @@ class CLexer(object):
         self._filename = ''
         self._pos = 0
         self._line_start = 0
-        self._state = _LexState.INITIAL
-        self._pp_line = None
-        self._pp_filename = None
-        self._pppragma_seen = False
+        self._pending_tok = None
         self.lineno = 1
 
     @property
@@ -79,8 +75,10 @@ class CLexer(object):
         #   that skips whitespace/newlines and emits one token per call.
         # - A small amount of logic is handled manually before regex matching:
         #   * Preprocessor-style directives: if we see '#', we check whether
-        #     it's a #line or #pragma directive and switch to a dedicated
-        #     sub-state; otherwise we return a PPHASH token.
+        #     it's a #line or #pragma directive and consume it inline. #pragma
+        #     can yield both PPPRAGMA and PPPRAGMASTR, but token() returns a
+        #     single token, so we stash the PPPRAGMASTR as _pending_tok to
+        #     return on the next token() call. Otherwise we return PPHASH.
         #   * Newlines update lineno/line-start tracking so tokens can record
         #     accurate columns.
         #
@@ -89,34 +87,20 @@ class CLexer(object):
         #   * _regex_rules: regex patterns for identifiers, literals, and other
         #     complex tokens (including error-producing patterns). The lexer
         #     uses a combined _regex_master to scan options at the same time.
+        #   * _fixed_tokens: exact string matches for operators and punctuation,
+        #     resolved by longest match.
         #
-        #   * _fixed_tokens: exact string matches for operators and punctuators,
-        #     also resolved by longest match.
-        # - After a match, we build a token with type/value/lineno/column,
-        #   and run brace callbacks to keep the parser's typedef scope in sync.
         # - Error patterns call the error callback and advance minimally, which
         #   keeps lexing resilient while reporting useful diagnostics.
-        # State transitions:
-        # - INITIAL -> PPLINE: when '#' starts a #line directive
-        # - INITIAL -> PPPRAGMA: when '#' starts a #pragma directive
-        # - PPLINE -> INITIAL: at newline or end of input
-        # - PPPRAGMA -> INITIAL: at newline or end of input
         text = self._lexdata
         n = len(text)
 
+        if self._pending_tok is not None:
+            tok = self._pending_tok
+            self._pending_tok = None
+            return tok
+
         while self._pos < n:
-            if self._state == _LexState.PPLINE:
-                if self._handle_ppline():
-                    continue
-            elif self._state == _LexState.PPPRAGMA:
-                tok = self._handle_pppragma()
-                if tok is None:
-                    continue
-                return tok
-
-            if self._pos >= n:
-                break
-
             ch = text[self._pos]
             if ch == ' ' or ch == '\t':
                 self._pos += 1
@@ -128,15 +112,16 @@ class CLexer(object):
                 continue
             if ch == '#':
                 if _line_pattern.match(text, self._pos + 1):
-                    self._state = _LexState.PPLINE
-                    self._pp_line = None
-                    self._pp_filename = None
                     self._pos += 1
+                    self._handle_ppline()
                     continue
                 if _pragma_pattern.match(text, self._pos + 1):
-                    self._state = _LexState.PPPRAGMA
-                    self._pppragma_seen = False
                     self._pos += 1
+                    tok, pending = self._handle_pppragma()
+                    if pending is not None:
+                        self._pending_tok = pending
+                    if tok is not None:
+                        return tok
                     continue
                 tok = self._make_token('PPHASH', '#', self._pos)
                 self._pos += 1
@@ -227,87 +212,78 @@ class CLexer(object):
     def _handle_ppline(self):
         text = self._lexdata
         n = len(text)
-        if self._pos >= n:
-            return True
-        ch = text[self._pos]
-        if ch == '\n':
-            if self._pp_line is None:
-                self._error('line number missing in #line', self._pos)
-            else:
-                self.lineno = int(self._pp_line)
-                if self._pp_filename is not None:
-                    self._filename = self._pp_filename
+        pp_line = None
+        pp_filename = None
+        while self._pos < n:
+            ch = text[self._pos]
+            if ch == '\n':
+                if pp_line is None:
+                    self._error('line number missing in #line', self._pos)
+                else:
+                    self.lineno = int(pp_line)
+                    if pp_filename is not None:
+                        self._filename = pp_filename
+                self._pos += 1
+                self._line_start = self._pos
+                return
+            if ch == ' ' or ch == '\t':
+                self._pos += 1
+                continue
+            if text.startswith('line', self._pos):
+                self._pos += 4
+                continue
+
+            m = re.match(_decimal_constant, text[self._pos:])
+            if m:
+                if pp_line is None:
+                    pp_line = m.group(0)
+                self._pos += len(m.group(0))
+                continue
+
+            m = re.match(_string_literal, text[self._pos:])
+            if m:
+                if pp_line is None:
+                    self._error('filename before line number in #line', self._pos)
+                else:
+                    pp_filename = m.group(0).lstrip('"').rstrip('"')
+                self._pos += len(m.group(0))
+                continue
+
+            self._error('invalid #line directive', self._pos)
             self._pos += 1
-            self._line_start = self._pos
-            self._state = _LexState.INITIAL
-            return True
-        if ch == ' ' or ch == '\t':
-            self._pos += 1
-            return True
-        if text.startswith('line', self._pos):
-            self._pos += 4
-            return True
-
-        m = re.match(_decimal_constant, text[self._pos:])
-        if m:
-            if self._pp_line is None:
-                self._pp_line = m.group(0)
-            self._pos += len(m.group(0))
-            return True
-
-        m = re.match(_string_literal, text[self._pos:])
-        if m:
-            if self._pp_line is None:
-                self._error('filename before line number in #line', self._pos)
-            else:
-                self._pp_filename = m.group(0).lstrip('"').rstrip('"')
-            self._pos += len(m.group(0))
-            return True
-
-        self._error('invalid #line directive', self._pos)
-        self._pos += 1
-        return True
+        return
 
     def _handle_pppragma(self):
         text = self._lexdata
         n = len(text)
+        while self._pos < n and text[self._pos] in ' \t':
+            self._pos += 1
         if self._pos >= n:
-            self._state = _LexState.INITIAL
-            return None
+            return (None, None)
 
-        ch = text[self._pos]
-        if ch == '\n':
-            self.lineno += 1
-            self._pos += 1
-            self._line_start = self._pos
-            self._state = _LexState.INITIAL
-            return None
-        if ch == ' ' or ch == '\t':
-            self._pos += 1
-            return None
-
-        if not self._pppragma_seen:
-            if text.startswith('pragma', self._pos):
-                tok = self._make_token('PPPRAGMA', 'pragma', self._pos)
-                self._pos += len('pragma')
-                self._pppragma_seen = True
-                return tok
+        if not text.startswith('pragma', self._pos):
             self._error('invalid #pragma directive', self._pos)
             self._pos += 1
-            return None
+            return (None, None)
+
+        pragma_pos = self._pos
+        self._pos += len('pragma')
+        tok = self._make_token('PPPRAGMA', 'pragma', pragma_pos)
+
+        while self._pos < n and text[self._pos] in ' \t':
+            self._pos += 1
 
         start = self._pos
         while self._pos < n and text[self._pos] != '\n':
             self._pos += 1
-        if self._pos == start:
-            return None
-        return self._make_token('PPPRAGMASTR', text[start:self._pos], start)
-
-
-class _LexState(Enum):
-    INITIAL = 0
-    PPLINE = 1
-    PPPRAGMA = 2
+        pending = None
+        if self._pos > start:
+            pending = self._make_token('PPPRAGMASTR', text[start:self._pos], start)
+        if self._pos < n and text[self._pos] == '\n':
+            self.lineno += 1
+            self._pos += 1
+            self._line_start = self._pos
+        return (tok, pending)
 
 
 ##
