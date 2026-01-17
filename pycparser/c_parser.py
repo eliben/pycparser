@@ -561,7 +561,7 @@ class CParser(object):
         self._tokens.reset(mark)
 
     def _tok_coord(self, tok):
-        return self._coord(tok.lineno, self.clex.find_tok_column(tok))
+        return self._coord(tok.lineno, tok.column)
 
     def _starts_declaration(self, tok=None):
         tok = tok or self._peek()

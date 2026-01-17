@@ -10,13 +10,14 @@ import re
 
 
 class _Token(object):
-    __slots__ = ('type', 'value', 'lineno', 'lexpos')
+    __slots__ = ('type', 'value', 'lineno', 'lexpos', 'column')
 
-    def __init__(self, typ, value, lineno, lexpos):
+    def __init__(self, typ, value, lineno, lexpos, column):
         self.type = typ
         self.value = value
         self.lineno = lineno
         self.lexpos = lexpos
+        self.column = column
 
 
 class CLexer(object):
@@ -51,6 +52,7 @@ class CLexer(object):
     def _init_state(self):
         self._lexdata = ''
         self._pos = 0
+        self._line_start = 0
         self._state = 'INITIAL'
         self._pp_line = None
         self._pp_filename = None
@@ -81,6 +83,7 @@ class CLexer(object):
             if ch == '\n':
                 self.lineno += 1
                 self._pos += 1
+                self._line_start = self._pos
                 continue
             if ch == '#':
                 if _line_pattern.match(text, self._pos + 1):
@@ -110,10 +113,6 @@ class CLexer(object):
             return tok
 
         return None
-
-    def find_tok_column(self, token):
-        last_cr = self._lexdata.rfind('\n', 0, token.lexpos)
-        return token.lexpos - last_cr
 
     def _match_token(self):
         text = self._lexdata
@@ -161,7 +160,8 @@ class CLexer(object):
         return tok
 
     def _make_token(self, tok_type, value, pos):
-        tok = _Token(tok_type, value, self.lineno, pos)
+        column = pos - self._line_start + 1
+        tok = _Token(tok_type, value, self.lineno, pos, column)
         return tok
 
     def _error(self, msg, pos):
@@ -169,8 +169,7 @@ class CLexer(object):
         self.error_func(msg, line, column)
 
     def _make_tok_location(self, pos):
-        last_cr = self._lexdata.rfind('\n', 0, pos)
-        column = pos - last_cr
+        column = pos - self._line_start + 1
         return (self.lineno, column)
 
     def _handle_ppline(self):
@@ -187,6 +186,7 @@ class CLexer(object):
                 if self._pp_filename is not None:
                     self.filename = self._pp_filename
             self._pos += 1
+            self._line_start = self._pos
             self._state = 'INITIAL'
             return True
         if ch == ' ' or ch == '\t':
@@ -227,6 +227,7 @@ class CLexer(object):
         if ch == '\n':
             self.lineno += 1
             self._pos += 1
+            self._line_start = self._pos
             self._state = 'INITIAL'
             return None
         if ch == ' ' or ch == '\t':
@@ -458,5 +459,4 @@ _fixed_tokens = [
 
 _line_pattern = re.compile(r'([ \t]*line\W)|([ \t]*\d+)')
 _pragma_pattern = re.compile(r'[ \t]*pragma\W')
-
 
