@@ -37,22 +37,28 @@ class CLexer(object):
             a typedef name and should be tokenized as TYPEID.
 
     Call input(text) to initialize lexing, and then keep calling token() to
-    get the next token.
+    get the next token, until it returns None (at end of input).
     """
     def __init__(self, error_func, on_lbrace_func, on_rbrace_func, type_lookup_func):
         self.error_func = error_func
         self.on_lbrace_func = on_lbrace_func
         self.on_rbrace_func = on_rbrace_func
         self.type_lookup_func = type_lookup_func
-        self.filename = ''
         self._init_state()
 
-    def input(self, text):
+    def input(self, text, filename=''):
+        """Initialize the lexer to the given input text.
+
+        filename is an optional name identifying the file from which the input
+        comes. The lexer can modify it if #line directives are encountered.
+        """
         self._init_state()
         self._lexdata = text
+        self._filename = filename
 
     def _init_state(self):
         self._lexdata = ''
+        self._filename = ''
         self._pos = 0
         self._line_start = 0
         self._state = _LexState.INITIAL
@@ -60,6 +66,10 @@ class CLexer(object):
         self._pp_filename = None
         self._pppragma_seen = False
         self.lineno = 1
+
+    @property
+    def filename(self):
+        return self._filename
 
     def token(self):
         # Lexing strategy overview:
@@ -226,7 +236,7 @@ class CLexer(object):
             else:
                 self.lineno = int(self._pp_line)
                 if self._pp_filename is not None:
-                    self.filename = self._pp_filename
+                    self._filename = self._pp_filename
             self._pos += 1
             self._line_start = self._pos
             self._state = _LexState.INITIAL

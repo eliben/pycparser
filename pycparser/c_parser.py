@@ -184,9 +184,8 @@ class CParser(object):
             debug:
                 Deprecated debug flag (unused); for backwards compatibility.
         """
-        self.clex.filename = filename
         self._scope_stack = [dict()]
-        self.clex.input(text)
+        self.clex.input(text, filename)
         self._tokens = _TokenStream(self.clex)
 
         ast = self._parse_translation_unit_or_empty()
