@@ -404,41 +404,42 @@ class RDParser(object):
         declarations = []
 
         # Bit-fields are allowed to be unnamed.
-        if decls[0].get('bitsize') is not None:
-            pass
-        # When redeclaring typedef names as identifiers in inner scopes, a
-        # problem can occur where the identifier gets grouped into
-        # spec['type'], leaving decl as None.  This can only occur for the
-        # first declarator.
-        elif decls[0]['decl'] is None:
-            if len(spec['type']) < 2 or len(spec['type'][-1].names) != 1 or \
-                    not self._is_type_in_scope(spec['type'][-1].names[0]):
-                coord = '?'
-                for t in spec['type']:
-                    if hasattr(t, 'coord'):
-                        coord = t.coord
-                        break
-                self._parse_error('Invalid declaration', coord)
+        if decls[0].get('bitsize') is None:
+            # When redeclaring typedef names as identifiers in inner scopes, a
+            # problem can occur where the identifier gets grouped into
+            # spec['type'], leaving decl as None.  This can only occur for the
+            # first declarator.
+            if decls[0]['decl'] is None:
+                if len(spec['type']) < 2 or len(spec['type'][-1].names) != 1 or \
+                        not self._is_type_in_scope(spec['type'][-1].names[0]):
+                    coord = '?'
+                    for t in spec['type']:
+                        if hasattr(t, 'coord'):
+                            coord = t.coord
+                            break
+                    self._parse_error('Invalid declaration', coord)
 
-            # Make this look as if it came from "direct_declarator:ID"
-            decls[0]['decl'] = c_ast.TypeDecl(
-                declname=spec['type'][-1].names[0],
-                type=None,
-                quals=None,
-                align=spec['alignment'],
-                coord=spec['type'][-1].coord)
-            # Remove the "new" type's name from the end of spec['type']
-            del spec['type'][-1]
-        # A similar problem can occur where the declaration ends up looking
-        # like an abstract declarator.  Give it a name if this is the case.
-        elif not isinstance(decls[0]['decl'], (
-                c_ast.Enum, c_ast.Struct, c_ast.Union, c_ast.IdentifierType)):
-            decls_0_tail = decls[0]['decl']
-            while not isinstance(decls_0_tail, c_ast.TypeDecl):
-                decls_0_tail = decls_0_tail.type
-            if decls_0_tail.declname is None:
-                decls_0_tail.declname = spec['type'][-1].names[0]
+                # Make this look as if it came from "direct_declarator:ID"
+                decls[0]['decl'] = c_ast.TypeDecl(
+                    declname=spec['type'][-1].names[0],
+                    type=None,
+                    quals=None,
+                    align=spec['alignment'],
+                    coord=spec['type'][-1].coord)
+                # Remove the "new" type's name from the end of spec['type']
                 del spec['type'][-1]
+            # A similar problem can occur where the declaration ends up
+            # looking like an abstract declarator.  Give it a name if this is
+            # the case.
+            elif not isinstance(decls[0]['decl'], (
+                    c_ast.Enum, c_ast.Struct, c_ast.Union,
+                    c_ast.IdentifierType)):
+                decls_0_tail = decls[0]['decl']
+                while not isinstance(decls_0_tail, c_ast.TypeDecl):
+                    decls_0_tail = decls_0_tail.type
+                if decls_0_tail.declname is None:
+                    decls_0_tail.declname = spec['type'][-1].names[0]
+                    del spec['type'][-1]
 
         for decl in decls:
             assert decl['decl'] is not None
@@ -1094,11 +1095,9 @@ class RDParser(object):
 
     # BNF: init_declarator_list : init_declarator (',' init_declarator)*
     def _parse_init_declarator_list(self, first=None, id_only=False):
-        decls = []
-        if first is not None:
-            decls.append(first)
-        else:
-            decls.append(self._parse_init_declarator(id_only=id_only))
+        decls = [first] if first is not None else [
+            self._parse_init_declarator(id_only=id_only)
+        ]
 
         while self._accept('COMMA'):
             decls.append(self._parse_init_declarator(id_only=id_only))
@@ -1322,6 +1321,10 @@ class RDParser(object):
                 align=None,
                 coord=self._tok_coord(name_tok))
 
+        return self._parse_decl_suffixes(decl)
+
+    def _parse_decl_suffixes(self, decl):
+        """Parse a chain of array/function suffixes and attach them to decl."""
         while True:
             if self._peek_type() == 'LBRACKET':
                 decl = self._type_modify_decl(decl, self._parse_array_decl(decl))
@@ -1331,7 +1334,6 @@ class RDParser(object):
                 decl = self._type_modify_decl(decl, func)
                 continue
             break
-
         return decl
 
     # BNF: array_decl : '[' array_specifiers? assignment_expression? ']'
@@ -1398,14 +1400,12 @@ class RDParser(object):
     # BNF: function_decl : '(' parameter_type_list_opt | identifier_list_opt ')'
     def _parse_function_decl(self, base_decl):
         self._expect('LPAREN')
-        if self._peek_type() == 'RPAREN':
+        if self._accept('RPAREN'):
             args = None
-            self._advance()
         else:
-            if self._starts_declaration():
-                args = self._parse_parameter_type_list()
-            else:
-                args = self._parse_identifier_list_opt()
+            args = (self._parse_parameter_type_list()
+                    if self._starts_declaration()
+                    else self._parse_identifier_list_opt())
             self._expect('RPAREN')
 
         func = c_ast.FuncDecl(
@@ -1568,17 +1568,7 @@ class RDParser(object):
         else:
             self._parse_error('Invalid abstract declarator', self.clex.filename)
 
-        while True:
-            if self._peek_type() == 'LBRACKET':
-                decl = self._type_modify_decl(decl, self._parse_array_decl(decl))
-                continue
-            if self._peek_type() == 'LPAREN':
-                func = self._parse_function_decl(decl)
-                decl = self._type_modify_decl(decl, func)
-                continue
-            break
-
-        return decl
+        return self._parse_decl_suffixes(decl)
 
     # BNF: parameter_type_list_opt : parameter_type_list | empty
     def _parse_parameter_type_list_opt(self):
@@ -1814,13 +1804,12 @@ class RDParser(object):
     # BNF: expression : assignment_expression (',' assignment_expression)*
     def _parse_expression(self):
         expr = self._parse_assignment_expression()
-        if self._accept('COMMA'):
-            if not isinstance(expr, c_ast.ExprList):
-                expr = c_ast.ExprList([expr], expr.coord)
-            expr.exprs.append(self._parse_assignment_expression())
-            while self._accept('COMMA'):
-                expr.exprs.append(self._parse_assignment_expression())
-        return expr
+        if not self._accept('COMMA'):
+            return expr
+        exprs = [expr, self._parse_assignment_expression()]
+        while self._accept('COMMA'):
+            exprs.append(self._parse_assignment_expression())
+        return c_ast.ExprList(exprs, expr.coord)
 
     # BNF: assignment_expression : conditional_expression
     #                            | unary_expression assignment_op assignment_expression
@@ -2034,10 +2023,10 @@ class RDParser(object):
     # BNF: argument_expression_list : assignment_expression (',' assignment_expression)*
     def _parse_argument_expression_list(self):
         expr = self._parse_assignment_expression()
-        exprs = c_ast.ExprList([expr], expr.coord)
+        exprs = [expr]
         while self._accept('COMMA'):
-            exprs.exprs.append(self._parse_assignment_expression())
-        return exprs
+            exprs.append(self._parse_assignment_expression())
+        return c_ast.ExprList(exprs, expr.coord)
 
     # BNF: constant_expression : conditional_expression
     def _parse_constant_expression(self):
@@ -2125,8 +2114,7 @@ class RDParser(object):
                 self._advance()
                 return c_ast.InitList([], self._tok_coord(lbrace_tok))
             init_list = self._parse_initializer_list()
-            if self._accept('COMMA'):
-                pass
+            self._accept('COMMA')
             self._expect('RBRACE')
             return init_list
 
