@@ -147,14 +147,13 @@ class CLexer(object):
         pos = self._pos
         best = None
 
-        for tok_type, regex, action, msg in _regex_rules:
-            m = regex.match(text, pos)
-            if not m:
-                continue
-            value = m.group(0)
+        m = _regex_master.match(text, pos)
+        if m:
+            tok_type = m.lastgroup
+            value = m.group(tok_type)
             length = len(value)
-            if best is None or length > best[0]:
-                best = (length, tok_type, value, action, msg)
+            action, msg = _regex_actions[tok_type]
+            best = (length, tok_type, value, action, msg)
 
         for tok_type, literal in _fixed_tokens:
             if text.startswith(literal, pos):
@@ -410,37 +409,48 @@ _hex_fractional_constant = '((('+_hex_digits+r""")?\."""+_hex_digits+')|('+_hex_
 _hex_floating_constant = '('+_hex_prefix+'('+_hex_digits+'|'+_hex_fractional_constant+')'+_binary_exponent_part+'[FfLl]?)'
 
 _regex_rules = [
-    ('UNSUPPORTED_C_STYLE_COMMENT', re.compile(_unsupported_c_style_comment),
+    ('UNSUPPORTED_C_STYLE_COMMENT', _unsupported_c_style_comment,
      'error', "Comments are not supported, see https://github.com/eliben/pycparser#3using."),
-    ('UNSUPPORTED_CXX_STYLE_COMMENT', re.compile(_unsupported_cxx_style_comment),
+    ('UNSUPPORTED_CXX_STYLE_COMMENT', _unsupported_cxx_style_comment,
      'error', "Comments are not supported, see https://github.com/eliben/pycparser#3using."),
-    ('BAD_STRING_LITERAL', re.compile(_bad_string_literal),
+    ('BAD_STRING_LITERAL', _bad_string_literal,
      'error', "String contains invalid escape code"),
-    ('WSTRING_LITERAL', re.compile(_wstring_literal), 'token', None),
-    ('U8STRING_LITERAL', re.compile(_u8string_literal), 'token', None),
-    ('U16STRING_LITERAL', re.compile(_u16string_literal), 'token', None),
-    ('U32STRING_LITERAL', re.compile(_u32string_literal), 'token', None),
-    ('STRING_LITERAL', re.compile(_string_literal), 'token', None),
-    ('HEX_FLOAT_CONST', re.compile(_hex_floating_constant), 'token', None),
-    ('FLOAT_CONST', re.compile(_floating_constant), 'token', None),
-    ('INT_CONST_HEX', re.compile(_hex_constant), 'token', None),
-    ('INT_CONST_BIN', re.compile(_bin_constant), 'token', None),
-    ('BAD_CONST_OCT', re.compile(_bad_octal_constant),
+    ('WSTRING_LITERAL', _wstring_literal, 'token', None),
+    ('U8STRING_LITERAL', _u8string_literal, 'token', None),
+    ('U16STRING_LITERAL', _u16string_literal, 'token', None),
+    ('U32STRING_LITERAL', _u32string_literal, 'token', None),
+    ('STRING_LITERAL', _string_literal, 'token', None),
+    ('HEX_FLOAT_CONST', _hex_floating_constant, 'token', None),
+    ('FLOAT_CONST', _floating_constant, 'token', None),
+    ('INT_CONST_HEX', _hex_constant, 'token', None),
+    ('INT_CONST_BIN', _bin_constant, 'token', None),
+    ('BAD_CONST_OCT', _bad_octal_constant,
      'error', "Invalid octal constant"),
-    ('INT_CONST_OCT', re.compile(_octal_constant), 'token', None),
-    ('INT_CONST_DEC', re.compile(_decimal_constant), 'token', None),
-    ('INT_CONST_CHAR', re.compile(_multicharacter_constant), 'token', None),
-    ('CHAR_CONST', re.compile(_char_const), 'token', None),
-    ('WCHAR_CONST', re.compile(_wchar_const), 'token', None),
-    ('U8CHAR_CONST', re.compile(_u8char_const), 'token', None),
-    ('U16CHAR_CONST', re.compile(_u16char_const), 'token', None),
-    ('U32CHAR_CONST', re.compile(_u32char_const), 'token', None),
-    ('UNMATCHED_QUOTE', re.compile(_unmatched_quote),
+    ('INT_CONST_OCT', _octal_constant, 'token', None),
+    ('INT_CONST_DEC', _decimal_constant, 'token', None),
+    ('INT_CONST_CHAR', _multicharacter_constant, 'token', None),
+    ('CHAR_CONST', _char_const, 'token', None),
+    ('WCHAR_CONST', _wchar_const, 'token', None),
+    ('U8CHAR_CONST', _u8char_const, 'token', None),
+    ('U16CHAR_CONST', _u16char_const, 'token', None),
+    ('U32CHAR_CONST', _u32char_const, 'token', None),
+    ('UNMATCHED_QUOTE', _unmatched_quote,
      'error', "Unmatched '"),
-    ('BAD_CHAR_CONST', re.compile(_bad_char_const),
+    ('BAD_CHAR_CONST', _bad_char_const,
      'error', None),
-    ('ID', re.compile(_identifier), 'id', None),
+    ('ID', _identifier, 'id', None),
 ]
+
+_regex_actions = {}
+_regex_pattern_parts = []
+for _tok_type, _pattern, _action, _msg in _regex_rules:
+    _regex_actions[_tok_type] = (_action, _msg)
+    _regex_pattern_parts.append('(?P<%s>%s)' % (_tok_type, _pattern))
+# The master regex is a single alternation of all token patterns, each wrapped
+# in a named group. We match once at the current position and then use
+# `lastgroup` to recover which token kind fired; this avoids iterating over all
+# regexes on every character while keeping the same token-level semantics.
+_regex_master = re.compile('|'.join(_regex_pattern_parts))
 
 _fixed_tokens = [
     ('ELLIPSIS', '...'),
