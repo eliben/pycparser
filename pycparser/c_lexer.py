@@ -243,10 +243,6 @@ class CLexer(object):
 
         self._regex_rules = []
         self._fixed_tokens = []
-
-    def build(self, **kwargs):
-        if self._regex_rules:
-            return
         self._compile_rules()
 
     def reset_lineno(self):
@@ -322,22 +318,6 @@ class CLexer(object):
     def find_tok_column(self, token):
         last_cr = self._lexdata.rfind('\n', 0, token.lexpos)
         return token.lexpos - last_cr
-
-    @property
-    def lexpos(self):
-        return self._pos
-
-    @lexpos.setter
-    def lexpos(self, value):
-        self._pos = value
-
-    @property
-    def lexdata(self):
-        return self._lexdata
-
-    @lexdata.setter
-    def lexdata(self, value):
-        self._lexdata = value
 
     def _compile_rules(self):
         def rx(pattern):

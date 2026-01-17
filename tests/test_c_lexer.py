@@ -37,7 +37,6 @@ class TestCLexerNoErrors(unittest.TestCase):
     def setUp(self):
         self.clex = CLexer(self.error_func, lambda: None, lambda: None,
                            self.type_lookup_func)
-        self.clex.build(optimize=False)
 
     def assertTokensTypes(self, str, types):
         self.clex.input(str)
@@ -142,7 +141,6 @@ class TestCLexerNoErrors(unittest.TestCase):
             braces.append('}')
         clex = CLexer(self.error_func, on_lbrace, on_rbrace,
                       self.type_lookup_func)
-        clex.build(optimize=False)
         clex.input('hello { there } } and again }}{')
         token_list(clex)
         self.assertEqual(braces, ['{', '}', '}', '}', '}', '{'])
@@ -441,7 +439,6 @@ class TestCLexerErrors(unittest.TestCase):
     def setUp(self):
         self.clex = CLexer(self.error_func, self.on_lbrace_func,
                 self.on_rbrace_func, self.type_lookup_func)
-        self.clex.build(optimize=False)
         self.error = ""
 
     def assertLexerError(self, str, error_like):

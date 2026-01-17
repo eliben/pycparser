@@ -161,8 +161,6 @@ class CParser(object):
             on_rbrace_func=self._lex_on_rbrace_func,
             type_lookup_func=self._lex_type_lookup_func)
 
-        self.clex.build()
-
         # Stack of scopes for keeping track of symbols. _scope_stack[-1] is
         # the current (topmost) scope. Each scope is a dictionary that
         # specifies whether a name is a type. If _scope_stack[n][name] is
