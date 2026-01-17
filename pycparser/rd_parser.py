@@ -1336,18 +1336,34 @@ class RDParser(object):
 
     # BNF: array_decl : '[' array_specifiers? assignment_expression? ']'
     def _parse_array_decl(self, base_decl):
-        self._expect('LBRACKET')
-        dim_quals = []
+        return self._parse_array_decl_common(base_type=None, coord=base_decl.coord)
+
+    def _parse_array_decl_common(self, base_type, coord=None):
+        """Parse an array declarator suffix and return an ArrayDecl node.
+
+        base_type:
+            Base declarator node to attach (None for direct-declarator parsing,
+            TypeDecl for abstract declarators).
+
+        coord:
+            Coordinate to use for the ArrayDecl. If None, uses the '[' token.
+        """
+        lbrack_tok = self._expect('LBRACKET')
+        if coord is None:
+            coord = self._tok_coord(lbrack_tok)
+
+        def make_array_decl(dim, dim_quals):
+            return c_ast.ArrayDecl(
+                type=base_type,
+                dim=dim,
+                dim_quals=dim_quals,
+                coord=coord)
 
         if self._accept('STATIC'):
             dim_quals = ['static'] + (self._parse_type_qualifier_list() or [])
             dim = self._parse_assignment_expression()
             self._expect('RBRACKET')
-            return c_ast.ArrayDecl(
-                type=None,
-                dim=dim,
-                dim_quals=dim_quals,
-                coord=base_decl.coord)
+            return make_array_decl(dim, dim_quals)
 
         if self._peek_type() in self._TYPE_QUALIFIER:
             dim_quals = self._parse_type_qualifier_list() or []
@@ -1355,47 +1371,29 @@ class RDParser(object):
                 dim_quals = dim_quals + ['static']
                 dim = self._parse_assignment_expression()
                 self._expect('RBRACKET')
-                return c_ast.ArrayDecl(
-                    type=None,
-                    dim=dim,
-                    dim_quals=dim_quals,
-                    coord=base_decl.coord)
+                return make_array_decl(dim, dim_quals)
             times_tok = self._accept('TIMES')
             if times_tok:
                 self._expect('RBRACKET')
-                return c_ast.ArrayDecl(
-                    type=None,
-                    dim=c_ast.ID(times_tok.value, self._tok_coord(times_tok)),
-                    dim_quals=dim_quals,
-                    coord=base_decl.coord)
+                dim = c_ast.ID(times_tok.value, self._tok_coord(times_tok))
+                return make_array_decl(dim, dim_quals)
             dim = None
             if self._starts_expression():
                 dim = self._parse_assignment_expression()
             self._expect('RBRACKET')
-            return c_ast.ArrayDecl(
-                type=None,
-                dim=dim,
-                dim_quals=dim_quals,
-                coord=base_decl.coord)
+            return make_array_decl(dim, dim_quals)
 
         times_tok = self._accept('TIMES')
         if times_tok:
             self._expect('RBRACKET')
-            return c_ast.ArrayDecl(
-                type=None,
-                dim=c_ast.ID(times_tok.value, self._tok_coord(times_tok)),
-                dim_quals=[],
-                coord=base_decl.coord)
+            dim = c_ast.ID(times_tok.value, self._tok_coord(times_tok))
+            return make_array_decl(dim, [])
 
         dim = None
         if self._starts_expression():
             dim = self._parse_assignment_expression()
         self._expect('RBRACKET')
-        return c_ast.ArrayDecl(
-            type=None,
-            dim=dim,
-            dim_quals=[],
-            coord=base_decl.coord)
+        return make_array_decl(dim, [])
 
     # BNF: function_decl : '(' parameter_type_list_opt | identifier_list_opt ')'
     def _parse_function_decl(self, base_decl):
@@ -1590,66 +1588,9 @@ class RDParser(object):
 
     # BNF: abstract_array_base : '[' array_specifiers? assignment_expression? ']'
     def _parse_abstract_array_base(self):
-        lbrack_tok = self._expect('LBRACKET')
-        dim_quals = []
-
-        if self._accept('STATIC'):
-            dim_quals = ['static'] + (self._parse_type_qualifier_list() or [])
-            dim = self._parse_assignment_expression()
-            self._expect('RBRACKET')
-            return c_ast.ArrayDecl(
-                type=c_ast.TypeDecl(None, None, None, None),
-                dim=dim,
-                dim_quals=dim_quals,
-                coord=self._tok_coord(lbrack_tok))
-
-        if self._peek_type() in self._TYPE_QUALIFIER:
-            dim_quals = self._parse_type_qualifier_list() or []
-            if self._accept('STATIC'):
-                dim_quals = dim_quals + ['static']
-                dim = self._parse_assignment_expression()
-                self._expect('RBRACKET')
-                return c_ast.ArrayDecl(
-                    type=c_ast.TypeDecl(None, None, None, None),
-                    dim=dim,
-                    dim_quals=dim_quals,
-                    coord=self._tok_coord(lbrack_tok))
-            times_tok = self._accept('TIMES')
-            if times_tok:
-                self._expect('RBRACKET')
-                return c_ast.ArrayDecl(
-                    type=c_ast.TypeDecl(None, None, None, None),
-                    dim=c_ast.ID(times_tok.value, self._tok_coord(times_tok)),
-                    dim_quals=dim_quals,
-                    coord=self._tok_coord(lbrack_tok))
-            dim = None
-            if self._starts_expression():
-                dim = self._parse_assignment_expression()
-            self._expect('RBRACKET')
-            return c_ast.ArrayDecl(
-                type=c_ast.TypeDecl(None, None, None, None),
-                dim=dim,
-                dim_quals=dim_quals,
-                coord=self._tok_coord(lbrack_tok))
-
-        times_tok = self._accept('TIMES')
-        if times_tok:
-            self._expect('RBRACKET')
-            return c_ast.ArrayDecl(
-                type=c_ast.TypeDecl(None, None, None, None),
-                dim=c_ast.ID(times_tok.value, self._tok_coord(times_tok)),
-                dim_quals=[],
-                coord=self._tok_coord(lbrack_tok))
-
-        dim = None
-        if self._starts_expression():
-            dim = self._parse_assignment_expression()
-        self._expect('RBRACKET')
-        return c_ast.ArrayDecl(
-            type=c_ast.TypeDecl(None, None, None, None),
-            dim=dim,
-            dim_quals=[],
-            coord=self._tok_coord(lbrack_tok))
+        return self._parse_array_decl_common(
+            base_type=c_ast.TypeDecl(None, None, None, None),
+            coord=None)
 
     # ------------------------------------------------------------------
     # Statements
@@ -2263,7 +2204,7 @@ class RDParser(object):
 
     # BNF: pppragma_directive_list : pppragma_directive+
     def _parse_pppragma_directive_list(self):
-        pragmas = [self._parse_pppragma_directive()]
+        pragmas = []
         while self._peek_type() in {'PPPRAGMA', '_PRAGMA'}:
             pragmas.append(self._parse_pppragma_directive())
         return pragmas
