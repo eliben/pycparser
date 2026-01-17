@@ -667,25 +667,27 @@ class RDParser(object):
         tok = self._peek()
         return tok is not None and tok.type in self._ASSIGNMENT_OPS
 
-    def _is_type_name_in_parens(self):
-        """Return True if the next tokens look like '(' type_name ')'.
+    def _try_parse_paren_type_name(self):
+        """Parse and return a parenthesized type name if present.
 
-        Example:
-            (int) x   -> True
+        Returns (typ, mark, lparen_tok) when the next tokens look like
+        '(' type_name ')', where typ is the parsed type name, mark is the
+        token-stream position before parsing, and lparen_tok is the LPAREN
+        token. Returns (None, None, None) if no parenthesized type name is
+        present.
         """
         mark = self._mark()
-        try:
-            if self._accept('LPAREN') is None:
-                return False
-            if not self._starts_declaration():
-                return False
-            self._parse_specifier_qualifier_list()
-            self._parse_abstract_declarator_opt()
-            if self._accept('RPAREN') is None:
-                return False
-            return True
-        finally:
+        lparen_tok = self._accept('LPAREN')
+        if lparen_tok is None:
+            return None, None, None
+        if not self._starts_declaration():
             self._reset(mark)
+            return None, None, None
+        typ = self._parse_type_name()
+        if self._accept('RPAREN') is None:
+            self._reset(mark)
+            return None, None, None
+        return typ, mark, lparen_tok
 
     # ------------------------------------------------------------------
     # Top-level
@@ -1864,27 +1866,28 @@ class RDParser(object):
 
         return lhs
 
-    # BNF: cast_expression : '(' type_name ')' cast_expression
-    #                     | unary_expression
+    # BNF: cast_expression  : '(' type_name ')' cast_expression
+    #                       | unary_expression
     def _parse_cast_expression(self):
-        if self._is_type_name_in_parens():
-            mark = self._mark()
-            lparen_tok = self._advance()
-            typ = self._parse_type_name()
-            self._expect('RPAREN')
+        typ, mark, lparen_tok = self._try_parse_paren_type_name()
+        if typ is not None:
             if self._peek_type() == 'LBRACE':
+                # (type){...} is a compound literal, not a cast. Examples:
+                #   (int){1}      -> compound literal, handled in postfix
+                #   (int) x       -> cast, handled below
                 self._reset(mark)
-                return self._parse_unary_expression()
-            expr = self._parse_cast_expression()
-            return c_ast.Cast(typ, expr, self._tok_coord(lparen_tok))
+            else:
+                expr = self._parse_cast_expression()
+                return c_ast.Cast(typ, expr, self._tok_coord(lparen_tok))
         return self._parse_unary_expression()
 
     # BNF: unary_expression : postfix_expression
-    #                      | '++' unary_expression | '--' unary_expression
-    #                      | unary_op cast_expression
-    #                      | 'sizeof' unary_expression
-    #                      | 'sizeof' '(' type_name ')'
-    #                      | '_Alignof' '(' type_name ')'
+    #                       | '++' unary_expression
+    #                       | '--' unary_expression
+    #                       | unary_op cast_expression
+    #                       | 'sizeof' unary_expression
+    #                       | 'sizeof' '(' type_name ')'
+    #                       | '_Alignof' '(' type_name ')'
     def _parse_unary_expression(self):
         tok_type = self._peek_type()
         if tok_type in {'PLUSPLUS', 'MINUSMINUS'}:
@@ -1899,10 +1902,8 @@ class RDParser(object):
 
         if tok_type == 'SIZEOF':
             tok = self._advance()
-            if self._is_type_name_in_parens():
-                self._expect('LPAREN')
-                typ = self._parse_type_name()
-                self._expect('RPAREN')
+            typ, mark, _ = self._try_parse_paren_type_name()
+            if typ is not None:
                 return c_ast.UnaryOp(tok.value, typ, self._tok_coord(tok))
             expr = self._parse_unary_expression()
             return c_ast.UnaryOp(tok.value, expr, self._tok_coord(tok))
@@ -1916,23 +1917,21 @@ class RDParser(object):
 
         return self._parse_postfix_expression()
 
-    # BNF: postfix_expression : primary_expression postfix_suffix*
-    #                         | '(' type_name ')' '{' initializer_list ','? '}'
+    # BNF: postfix_expression   : primary_expression postfix_suffix*
+    #                           | '(' type_name ')' '{' initializer_list ','? '}'
     def _parse_postfix_expression(self):
-        if self._is_type_name_in_parens():
+        typ, mark, _ = self._try_parse_paren_type_name()
+        if typ is not None:
             # Disambiguate between casts and compound literals:
             #   (int) x   -> cast
             #   (int) {1} -> compound literal
-            mark = self._mark()
-            self._advance()
-            typ = self._parse_type_name()
-            self._expect('RPAREN')
             if self._accept('LBRACE'):
                 init = self._parse_initializer_list()
                 self._accept('COMMA')
                 self._expect('RBRACE')
                 return c_ast.CompoundLiteral(typ, init)
-            self._reset(mark)
+            else:
+                self._reset(mark)
 
         expr = self._parse_primary_expression()
         while True:
