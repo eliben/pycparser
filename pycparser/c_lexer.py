@@ -7,6 +7,8 @@
 # License: BSD
 #------------------------------------------------------------------------------
 import re
+from enum import Enum
+
 
 
 class _Token(object):
@@ -53,21 +55,47 @@ class CLexer(object):
         self._lexdata = ''
         self._pos = 0
         self._line_start = 0
-        self._state = 'INITIAL'
+        self._state = _LexState.INITIAL
         self._pp_line = None
         self._pp_filename = None
         self._pppragma_seen = False
         self.lineno = 1
 
     def token(self):
+        # Lexing strategy overview:
+        #
+        # - We maintain a current position (self._pos), line number, and the
+        #   byte offset of the current line start. The lexer is a simple loop
+        #   that skips whitespace/newlines and emits one token per call.
+        # - A small amount of logic is handled manually before regex matching:
+        #   * Preprocessor-style directives: if we see '#', we check whether
+        #     it's a #line or #pragma directive and switch to a dedicated
+        #     sub-state; otherwise we return a PPHASH token.
+        #   * Newlines update lineno/line-start tracking so tokens can record
+        #     accurate columns.
+        # - The bulk of tokens are recognized via two tables:
+        #   * _regex_rules: regex patterns for identifiers, literals, and other
+        #     complex tokens (including error-producing patterns). The lexer
+        #     tries all rules and picks the longest match.
+        #   * _fixed_tokens: exact string matches for operators and punctuators,
+        #     also resolved by longest match.
+        # - After a match, we build a token with type/value/lineno/column,
+        #   and run brace callbacks to keep the parser's typedef scope in sync.
+        # - Error patterns call the error callback and advance minimally, which
+        #   keeps lexing resilient while reporting useful diagnostics.
+        # State transitions:
+        # - INITIAL -> PPLINE: when '#' starts a #line directive
+        # - INITIAL -> PPPRAGMA: when '#' starts a #pragma directive
+        # - PPLINE -> INITIAL: at newline or end of input
+        # - PPPRAGMA -> INITIAL: at newline or end of input
         text = self._lexdata
         n = len(text)
 
         while self._pos < n:
-            if self._state == 'ppline':
+            if self._state == _LexState.PPLINE:
                 if self._handle_ppline():
                     continue
-            elif self._state == 'pppragma':
+            elif self._state == _LexState.PPPRAGMA:
                 tok = self._handle_pppragma()
                 if tok is None:
                     continue
@@ -87,13 +115,13 @@ class CLexer(object):
                 continue
             if ch == '#':
                 if _line_pattern.match(text, self._pos + 1):
-                    self._state = 'ppline'
+                    self._state = _LexState.PPLINE
                     self._pp_line = None
                     self._pp_filename = None
                     self._pos += 1
                     continue
                 if _pragma_pattern.match(text, self._pos + 1):
-                    self._state = 'pppragma'
+                    self._state = _LexState.PPPRAGMA
                     self._pppragma_seen = False
                     self._pos += 1
                     continue
@@ -187,7 +215,7 @@ class CLexer(object):
                     self.filename = self._pp_filename
             self._pos += 1
             self._line_start = self._pos
-            self._state = 'INITIAL'
+            self._state = _LexState.INITIAL
             return True
         if ch == ' ' or ch == '\t':
             self._pos += 1
@@ -220,7 +248,7 @@ class CLexer(object):
         text = self._lexdata
         n = len(text)
         if self._pos >= n:
-            self._state = 'INITIAL'
+            self._state = _LexState.INITIAL
             return None
 
         ch = text[self._pos]
@@ -228,7 +256,7 @@ class CLexer(object):
             self.lineno += 1
             self._pos += 1
             self._line_start = self._pos
-            self._state = 'INITIAL'
+            self._state = _LexState.INITIAL
             return None
         if ch == ' ' or ch == '\t':
             self._pos += 1
@@ -250,6 +278,12 @@ class CLexer(object):
         if self._pos == start:
             return None
         return self._make_token('PPPRAGMASTR', text[start:self._pos], start)
+
+
+class _LexState(Enum):
+    INITIAL = 0
+    PPLINE = 1
+    PPPRAGMA = 2
 
 
 ##
@@ -459,4 +493,3 @@ _fixed_tokens = [
 
 _line_pattern = re.compile(r'([ \t]*line\W)|([ \t]*\d+)')
 _pragma_pattern = re.compile(r'[ \t]*pragma\W')
-
