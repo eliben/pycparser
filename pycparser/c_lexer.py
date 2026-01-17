@@ -32,6 +32,9 @@ class CLexer(object):
         type_lookup_func:
             Called with an identifier name; expected to return True if it is
             a typedef name and should be tokenized as TYPEID.
+
+    Call input(text) to initialize lexing, and then keep calling token() to
+    get the next token.
     """
     def __init__(self, error_func, on_lbrace_func, on_rbrace_func, type_lookup_func):
         self.error_func = error_func
@@ -39,16 +42,14 @@ class CLexer(object):
         self.on_rbrace_func = on_rbrace_func
         self.type_lookup_func = type_lookup_func
         self.filename = ''
-        self.lineno = 1
-        self._lexdata = ''
-        self._pos = 0
-        self._state = 'INITIAL'
-        self._pp_line = None
-        self._pp_filename = None
-        self._pppragma_seen = False
+        self._init_state()
 
     def input(self, text):
+        self._init_state()
         self._lexdata = text
+
+    def _init_state(self):
+        self._lexdata = ''
         self._pos = 0
         self._state = 'INITIAL'
         self._pp_line = None
