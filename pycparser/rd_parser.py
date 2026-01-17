@@ -718,8 +718,7 @@ class RDParser(object):
             return []
         if tok.type in {'PPPRAGMA', '_PRAGMA'}:
             return [self._parse_pppragma_directive()]
-        if tok.type == 'SEMI':
-            self._advance()
+        if self._accept('SEMI'):
             return []
         if tok.type == '_STATIC_ASSERT':
             return self._parse_static_assert()
@@ -1124,8 +1123,7 @@ class RDParser(object):
             name_tok = self._advance()
             if self._peek_type() == 'LBRACE':
                 self._advance()
-                if self._peek_type() == 'RBRACE':
-                    self._advance()
+                if self._accept('RBRACE'):
                     return klass(
                         name=name_tok.value,
                         decls=[],
@@ -1144,8 +1142,7 @@ class RDParser(object):
 
         if self._peek_type() == 'LBRACE':
             brace_tok = self._advance()
-            if self._peek_type() == 'RBRACE':
-                self._advance()
+            if self._accept('RBRACE'):
                 return klass(
                     name=None,
                     decls=[],
@@ -1641,8 +1638,7 @@ class RDParser(object):
     # BNF: compound_statement : '{' block_item_list? '}'
     def _parse_compound_statement(self):
         lbrace_tok = self._expect('LBRACE')
-        if self._peek_type() == 'RBRACE':
-            self._advance()
+        if self._accept('RBRACE'):
             return c_ast.Compound(block_items=None, coord=self._tok_coord(lbrace_tok))
         block_items = self._parse_block_item_list()
         self._expect('RBRACE')
@@ -1775,8 +1771,7 @@ class RDParser(object):
             return c_ast.Continue(self._tok_coord(tok))
         if tok.type == 'RETURN':
             self._advance()
-            if self._peek_type() == 'SEMI':
-                self._advance()
+            if self._accept('SEMI'):
                 return c_ast.Return(None, self._tok_coord(tok))
             expr = self._parse_expression()
             self._expect('SEMI')
@@ -2110,8 +2105,7 @@ class RDParser(object):
     def _parse_initializer(self):
         lbrace_tok = self._accept('LBRACE')
         if lbrace_tok:
-            if self._peek_type() == 'RBRACE':
-                self._advance()
+            if self._accept('RBRACE'):
                 return c_ast.InitList([], self._tok_coord(lbrace_tok))
             init_list = self._parse_initializer_list()
             self._accept('COMMA')
