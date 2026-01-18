@@ -63,7 +63,7 @@ class CLexer(object):
         self._pos = 0
         self._line_start = 0
         self._pending_tok = None
-        self.lineno = 1
+        self._lineno = 1
 
     @property
     def filename(self):
@@ -107,7 +107,7 @@ class CLexer(object):
                 case ' ' | '\t':
                     self._pos += 1
                 case '\n':
-                    self.lineno += 1
+                    self._lineno += 1
                     self._pos += 1
                     self._line_start = self._pos
                 case '#':
@@ -117,11 +117,11 @@ class CLexer(object):
                         continue
                     if _pragma_pattern.match(text, self._pos + 1):
                         self._pos += 1
-                        tok, pending = self._handle_pppragma()
-                        if pending is not None:
-                            self._pending_tok = pending
-                        if tok is not None:
-                            return tok
+                        toks = self._handle_pppragma()
+                        if len(toks) > 1:
+                            self._pending_tok = toks[1]
+                        if len(toks) > 0:
+                            return toks[0]
                         continue
                     tok = self._make_token('PPHASH', '#', self._pos)
                     self._pos += 1
@@ -195,16 +195,21 @@ class CLexer(object):
 
     def _make_token(self, tok_type, value, pos):
         column = pos - self._line_start + 1
-        tok = _Token(tok_type, value, self.lineno, column)
+        tok = _Token(tok_type, value, self._lineno, column)
         return tok
 
     def _error(self, msg, pos):
         column = pos - self._line_start + 1
-        self.error_func(msg, self.lineno, column)
+        self.error_func(msg, self._lineno, column)
 
     def _handle_ppline(self):
-        text = self._lexdata
-        n = len(text)
+        # Since #line directives aren't supposed to return tokens but should
+        # only affect the lexer's state (update line/filename for coords), this
+        # method does a bit of parsing on its own. It doesn't return anything,
+        # but its side effect is to update self._pos past the directive, and
+        # potentially update self._lineno and self._filename, based on the
+        # directive's contents.
+        #
         # Accepted #line forms from preprocessors:
         # - "#line 66 \"kwas\\df.h\""
         # - "# 9"
@@ -217,6 +222,8 @@ class CLexer(object):
         # We scan the directive line once (after an optional 'line' keyword),
         # validating the order: NUMBER, optional STRING, then any NUMBERs.
         # The NUMBERs tail is only accepted if a filename STRING was present.
+        text = self._lexdata
+        n = len(text)
         line_end = text.find('\n', self._pos)
         if line_end == -1:
             line_end = n
@@ -237,10 +244,9 @@ class CLexer(object):
             if pp_line is None:
                 self._error('line number missing in #line', self._pos + line_len)
             else:
-                self.lineno = int(pp_line)
+                self._lineno = int(pp_line)
                 if pp_filename is not None:
                     self._filename = pp_filename
-
             self._pos = line_end + 1
             self._line_start = self._pos
 
@@ -295,6 +301,15 @@ class CLexer(object):
         success(pp_line, pp_filename)
 
     def _handle_pppragma(self):
+        # Parse a full #pragma line; returns a list of tokens with 1 or 2
+        # tokens - PPPRAGMA and an optional PPPRAGMASTR. If an empty list is
+        # returned, it means an error occurred, or we're at the end of input.
+        #
+        # Examples:
+        # - "#pragma" -> PPPRAGMA only
+        # - "#pragma once" -> PPPRAGMA, PPPRAGMASTR("once")
+        # - "# pragma omp parallel private(th_id)" -> PPPRAGMA, PPPRAGMASTR("omp parallel private(th_id)")
+        # - "#\tpragma {pack: 2, smack: 3}" -> PPPRAGMA, PPPRAGMASTR("{pack: 2, smack: 3}")
         text = self._lexdata
         n = len(text)
         pos = self._pos
@@ -303,16 +318,16 @@ class CLexer(object):
             pos += 1
         if pos >= n:
             self._pos = pos
-            return (None, None)
+            return []
 
         if not text.startswith('pragma', pos):
             self._error('invalid #pragma directive', pos)
             self._pos = pos + 1
-            return (None, None)
+            return []
 
         pragma_pos = pos
         pos += len('pragma')
-        tok = self._make_token('PPPRAGMA', 'pragma', pragma_pos)
+        toks = [self._make_token('PPPRAGMA', 'pragma', pragma_pos)]
 
         while pos < n and text[pos] in ' \t':
             pos += 1
@@ -320,15 +335,14 @@ class CLexer(object):
         start = pos
         while pos < n and text[pos] != '\n':
             pos += 1
-        pending = None
         if pos > start:
-            pending = self._make_token('PPPRAGMASTR', text[start:pos], start)
+            toks.append(self._make_token('PPPRAGMASTR', text[start:pos], start))
         if pos < n and text[pos] == '\n':
-            self.lineno += 1
+            self._lineno += 1
             pos += 1
             self._line_start = pos
         self._pos = pos
-        return (tok, pending)
+        return toks
 
 
 ##
