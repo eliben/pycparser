@@ -164,7 +164,7 @@ class CLexer(object):
                 if text.startswith(entry.literal, pos):
                     length = len(entry.literal)
                     if best is None or length > best[0]:
-                        best = (length, entry.tok_type, entry.literal, 'token', None)
+                        best = (length, entry.tok_type, entry.literal, _RegexAction.TOKEN, None)
                     break
 
         if best is None:
@@ -199,86 +199,135 @@ class CLexer(object):
         return tok
 
     def _error(self, msg, pos):
-        line, column = self._make_tok_location(pos)
-        self.error_func(msg, line, column)
-
-    def _make_tok_location(self, pos):
         column = pos - self._line_start + 1
-        return (self.lineno, column)
+        self.error_func(msg, self.lineno, column)
 
     def _handle_ppline(self):
         text = self._lexdata
         n = len(text)
-        pp_line = None
-        pp_filename = None
-        while self._pos < n:
-            ch = text[self._pos]
-            if ch == '\n':
-                if pp_line is None:
-                    self._error('line number missing in #line', self._pos)
-                else:
-                    self.lineno = int(pp_line)
-                    if pp_filename is not None:
-                        self._filename = pp_filename
-                self._pos += 1
-                self._line_start = self._pos
+        # Accepted #line forms from preprocessors:
+        # - "#line 66 \"kwas\\df.h\""
+        # - "# 9"
+        # - "#line 10 \"include/me.h\" 1 2 3" (extra numeric flags)
+        # - "# 1 \"file.h\" 3"
+        # Errors we must report:
+        # - "#line \"file.h\"" (filename before line number)
+        # - "#line df" (garbage instead of number/string)
+        #
+        # We scan the directive line once (after an optional 'line' keyword),
+        # validating the order: NUMBER, optional STRING, then any NUMBERs.
+        # The NUMBERs tail is only accepted if a filename STRING was present.
+        line_end = text.find('\n', self._pos)
+        if line_end == -1:
+            line_end = n
+        line = text[self._pos:line_end]
+        pos = 0
+        line_len = len(line)
+
+        def skip_ws():
+            nonlocal pos
+            while pos < line_len and line[pos] in ' \t':
+                pos += 1
+
+        skip_ws()
+        if line.startswith('line', pos):
+            pos += 4
+
+        def success(pp_line, pp_filename):
+            if pp_line is None:
+                self._error('line number missing in #line', self._pos + line_len)
+            else:
+                self.lineno = int(pp_line)
+                if pp_filename is not None:
+                    self._filename = pp_filename
+
+            self._pos = line_end + 1
+            self._line_start = self._pos
+
+        def fail(msg, offset):
+            self._error(msg, self._pos + offset)
+            self._pos = line_end + 1
+            self._line_start = self._pos
+
+        skip_ws()
+        if pos >= line_len:
+            success(None, None)
+            return
+        if line[pos] == '"':
+            fail('filename before line number in #line', pos)
+            return
+
+        m = re.match(_decimal_constant, line[pos:])
+        if not m:
+            fail('invalid #line directive', pos)
+            return
+
+        pp_line = m.group(0)
+        pos += len(pp_line)
+        skip_ws()
+        if pos >= line_len:
+            success(pp_line, None)
+            return
+
+        if line[pos] != '"':
+            fail('invalid #line directive', pos)
+            return
+
+        m = re.match(_string_literal, line[pos:])
+        if not m:
+            fail('invalid #line directive', pos)
+            return
+
+        pp_filename = m.group(0).lstrip('"').rstrip('"')
+        pos += len(m.group(0))
+
+        # Consume arbitrary sequence of numeric flags after the directive
+        while True:
+            skip_ws()
+            if pos >= line_len:
+                break
+            m = re.match(_decimal_constant, line[pos:])
+            if not m:
+                fail('invalid #line directive', pos)
                 return
-            if ch == ' ' or ch == '\t':
-                self._pos += 1
-                continue
-            if text.startswith('line', self._pos):
-                self._pos += 4
-                continue
+            pos += len(m.group(0))
 
-            m = re.match(_decimal_constant, text[self._pos:])
-            if m:
-                if pp_line is None:
-                    pp_line = m.group(0)
-                self._pos += len(m.group(0))
-                continue
-
-            m = re.match(_string_literal, text[self._pos:])
-            if m:
-                if pp_line is None:
-                    self._error('filename before line number in #line', self._pos)
-                else:
-                    pp_filename = m.group(0).lstrip('"').rstrip('"')
-                self._pos += len(m.group(0))
-                continue
-
-            self._error('invalid #line directive', self._pos)
-            self._pos += 1
+        success(pp_line, pp_filename)
 
     def _handle_pppragma(self):
         text = self._lexdata
         n = len(text)
-        while self._pos < n and text[self._pos] in ' \t':
-            self._pos += 1
-        if self._pos >= n:
+        pos = self._pos
+
+        while pos < n and text[pos] in ' \t':
+            pos += 1
+        if pos >= n:
+            self._pos = pos
             return (None, None)
 
-        if not text.startswith('pragma', self._pos):
-            self._error('invalid #pragma directive', self._pos)
-            self._pos += 1
+        if not text.startswith('pragma', pos):
+            self._error('invalid #pragma directive', pos)
+            self._pos = pos + 1
             return (None, None)
 
-        pragma_pos = self._pos
-        self._pos += len('pragma')
+        pragma_pos = pos
+        pos += len('pragma')
         tok = self._make_token('PPPRAGMA', 'pragma', pragma_pos)
 
-        while self._pos < n and text[self._pos] in ' \t':
-            self._pos += 1
+        while pos < n and text[pos] in ' \t':
+            pos += 1
 
-        start = self._pos
-        while self._pos < n and text[self._pos] != '\n':
-            self._pos += 1
+        start = pos
+        while pos < n and text[pos] != '\n':
+            pos += 1
         pending = None
-        if self._pos > start:
-            pending = self._make_token('PPPRAGMASTR', text[start:self._pos], start)
-        if self._pos < n and text[self._pos] == '\n':
+        if pos > start:
+            pending = self._make_token('PPPRAGMASTR', text[start:pos], start)
+        if pos < n and text[pos] == '\n':
             self.lineno += 1
-            self._pos += 1
-            self._line_start = self._pos
+            pos += 1
+            self._line_start = pos
+        self._pos = pos
         return (tok, pending)
 
 
@@ -416,7 +465,7 @@ class _RegexAction(Enum):
 class _RegexRule(object):
     # tok_type: name of the token emitted for a match
     # regex_pattern: the raw regex (no anchors) to match at the current position
-    # action: an action
+    # action: TOKEN for normal tokens, ID for identifiers, ERROR to report
     # error_message: message used for ERROR entries
     tok_type: str
     regex_pattern: str
