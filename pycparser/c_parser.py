@@ -85,20 +85,20 @@ class CParser:
         'ANDEQUAL', 'OREQUAL'
     }
 
-    # Precedence of operators (lower number = lower precedence)
+    # Precedence of operators (lower number = weather binding)
     # If this changes, c_generator.CGenerator.precedence_map needs to change as
     # well
     _BINARY_PRECEDENCE = {
-        'LOR': 1,
-        'LAND': 2,
-        'OR': 3,
-        'XOR': 4,
-        'AND': 5,
-        'EQ': 6, 'NE': 6,
-        'GT': 7, 'GE': 7, 'LT': 7, 'LE': 7,
-        'RSHIFT': 8, 'LSHIFT': 8,
-        'PLUS': 9, 'MINUS': 9,
-        'TIMES': 10, 'DIVIDE': 10, 'MOD': 10,
+        'LOR': 0,
+        'LAND': 1,
+        'OR': 2,
+        'XOR': 3,
+        'AND': 4,
+        'EQ': 5, 'NE': 5,
+        'GT': 6, 'GE': 6, 'LT': 6, 'LE': 6,
+        'RSHIFT': 7, 'LSHIFT': 7,
+        'PLUS': 8, 'MINUS': 8,
+        'TIMES': 9, 'DIVIDE': 9, 'MOD': 9,
     }
 
     _STORAGE_CLASS = {
@@ -1849,7 +1849,7 @@ class CParser:
         return expr
 
     # BNF: binary_expression : cast_expression (binary_op cast_expression)*
-    def _parse_binary_expression(self, min_prec=1, lhs=None):
+    def _parse_binary_expression(self, min_prec=0, lhs=None):
         if lhs is None:
             lhs = self._parse_cast_expression()
 
