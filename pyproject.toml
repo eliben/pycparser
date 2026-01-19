@@ -1,0 +1,8 @@
+[project]
+version = "0.1.0"
+readme = "README.rst"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.ruff.lint]
+ignore = ["F403", "F405"]

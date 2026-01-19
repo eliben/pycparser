@@ -1,4 +1,4 @@
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 # _ast_gen.py
 #
 # Generates the AST Node classes from a specification given in
@@ -11,59 +11,59 @@
 #
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 from string import Template
 import os
 
 
 class ASTCodeGenerator:
-    def __init__(self, cfg_filename='_c_ast.cfg'):
-        """ Initialize the code generator from a configuration
-            file.
+    def __init__(self, cfg_filename="_c_ast.cfg"):
+        """Initialize the code generator from a configuration
+        file.
         """
         self.cfg_filename = cfg_filename
-        self.node_cfg = [NodeCfg(name, contents)
-            for (name, contents) in self.parse_cfgfile(cfg_filename)]
+        self.node_cfg = [
+            NodeCfg(name, contents)
+            for (name, contents) in self.parse_cfgfile(cfg_filename)
+        ]
 
     def generate(self, file=None):
-        """ Generates the code into file, an open file buffer.
-        """
-        src = Template(_PROLOGUE_COMMENT).substitute(
-            cfg_filename=self.cfg_filename)
+        """Generates the code into file, an open file buffer."""
+        src = Template(_PROLOGUE_COMMENT).substitute(cfg_filename=self.cfg_filename)
 
         src += _PROLOGUE_CODE
         for node_cfg in self.node_cfg:
-            src += node_cfg.generate_source() + '\n\n'
+            src += node_cfg.generate_source() + "\n\n"
 
         file.write(src)
 
     def parse_cfgfile(self, filename):
-        """ Parse the configuration file and yield pairs of
-            (name, contents) for each node.
+        """Parse the configuration file and yield pairs of
+        (name, contents) for each node.
         """
         with open(filename, "r") as f:
             for line in f:
                 line = line.strip()
-                if not line or line.startswith('#'):
+                if not line or line.startswith("#"):
                     continue
-                colon_i = line.find(':')
-                lbracket_i = line.find('[')
-                rbracket_i = line.find(']')
+                colon_i = line.find(":")
+                lbracket_i = line.find("[")
+                rbracket_i = line.find("]")
                 if colon_i < 1 or lbracket_i <= colon_i or rbracket_i <= lbracket_i:
                     raise RuntimeError("Invalid line in %s:\n%s\n" % (filename, line))
 
                 name = line[:colon_i]
-                val = line[lbracket_i + 1:rbracket_i]
-                vallist = [v.strip() for v in val.split(',')] if val else []
+                val = line[lbracket_i + 1 : rbracket_i]
+                vallist = [v.strip() for v in val.split(",")] if val else []
                 yield name, vallist
 
 
 class NodeCfg:
-    """ Node configuration.
+    """Node configuration.
 
-        name: node name
-        contents: a list of contents - attributes and child nodes
-        See comment at the top of the configuration file for details.
+    name: node name
+    contents: a list of contents - attributes and child nodes
+    See comment at the top of the configuration file for details.
     """
 
     def __init__(self, name, contents):
@@ -74,101 +74,98 @@ class NodeCfg:
         self.seq_child = []
 
         for entry in contents:
-            clean_entry = entry.rstrip('*')
+            clean_entry = entry.rstrip("*")
             self.all_entries.append(clean_entry)
 
-            if entry.endswith('**'):
+            if entry.endswith("**"):
                 self.seq_child.append(clean_entry)
-            elif entry.endswith('*'):
+            elif entry.endswith("*"):
                 self.child.append(clean_entry)
             else:
                 self.attr.append(entry)
 
     def generate_source(self):
         src = self._gen_init()
-        src += '\n' + self._gen_children()
-        src += '\n' + self._gen_iter()
-        src += '\n' + self._gen_attr_names()
+        src += "\n" + self._gen_children()
+        src += "\n" + self._gen_iter()
+        src += "\n" + self._gen_attr_names()
         return src
 
     def _gen_init(self):
         src = "class %s(Node):\n" % self.name
 
         if self.all_entries:
-            args = ', '.join(self.all_entries)
-            slots = ', '.join("'{0}'".format(e) for e in self.all_entries)
+            args = ", ".join(self.all_entries)
+            slots = ", ".join("'{0}'".format(e) for e in self.all_entries)
             slots += ", 'coord', '__weakref__'"
-            arglist = '(self, %s, coord=None)' % args
+            arglist = "(self, %s, coord=None)" % args
         else:
             slots = "'coord', '__weakref__'"
-            arglist = '(self, coord=None)'
+            arglist = "(self, coord=None)"
 
         src += "    __slots__ = (%s)\n" % slots
         src += "    def __init__%s:\n" % arglist
 
-        for name in self.all_entries + ['coord']:
+        for name in self.all_entries + ["coord"]:
             src += "        self.%s = %s\n" % (name, name)
 
         return src
 
     def _gen_children(self):
-        src = '    def children(self):\n'
+        src = "    def children(self):\n"
 
         if self.all_entries:
-            src += '        nodelist = []\n'
+            src += "        nodelist = []\n"
 
             for child in self.child:
                 src += (
-                    '        if self.%(child)s is not None:' +
-                    ' nodelist.append(("%(child)s", self.%(child)s))\n') % (
-                        dict(child=child))
+                    "        if self.%(child)s is not None:\n"
+                    + '            nodelist.append(("%(child)s", self.%(child)s))\n'
+                ) % (dict(child=child))
 
             for seq_child in self.seq_child:
                 src += (
-                    '        for i, child in enumerate(self.%(child)s or []):\n'
-                    '            nodelist.append(("%(child)s[%%d]" %% i, child))\n') % (
-                        dict(child=seq_child))
+                    "        for i, child in enumerate(self.%(child)s or []):\n"
+                    '            nodelist.append(("%(child)s[%%d]" %% i, child))\n'
+                ) % (dict(child=seq_child))
 
-            src += '        return tuple(nodelist)\n'
+            src += "        return tuple(nodelist)\n"
         else:
-            src += '        return ()\n'
+            src += "        return ()\n"
 
         return src
 
     def _gen_iter(self):
-        src = '    def __iter__(self):\n'
+        src = "    def __iter__(self):\n"
 
         if self.all_entries:
             for child in self.child:
                 src += (
-                    '        if self.%(child)s is not None:\n' +
-                    '            yield self.%(child)s\n') % (dict(child=child))
+                    "        if self.%(child)s is not None:\n"
+                    + "            yield self.%(child)s\n"
+                ) % (dict(child=child))
 
             for seq_child in self.seq_child:
                 src += (
-                    '        for child in (self.%(child)s or []):\n'
-                    '            yield child\n') % (dict(child=seq_child))
+                    "        for child in (self.%(child)s or []):\n"
+                    "            yield child\n"
+                ) % (dict(child=seq_child))
 
             if not (self.child or self.seq_child):
                 # Empty generator
-                src += (
-                    '        return\n' +
-                    '        yield\n')
+                src += "        return\n" + "        yield\n"
         else:
             # Empty generator
-            src += (
-                '        return\n' +
-                '        yield\n')
+            src += "        return\n" + "        yield\n"
 
         return src
 
     def _gen_attr_names(self):
-        src = "    attr_names = (" + ''.join("%r, " % nm for nm in self.attr) + ')'
+        src = "    attr_names = (" + "".join("%r, " % nm for nm in self.attr) + ")"
         return src
 
 
-_PROLOGUE_COMMENT = \
-r'''#-----------------------------------------------------------------
+_PROLOGUE_COMMENT = r"""#-----------------------------------------------------------------
 # ** ATTENTION **
 # This code was automatically generated from _c_ast.cfg
 #
@@ -184,7 +181,7 @@ r'''#-----------------------------------------------------------------
 # License: BSD
 #-----------------------------------------------------------------
 
-'''
+"""
 _PROLOGUE_CODE = r'''
 import sys
 
@@ -257,7 +254,8 @@ class Node:
             buf.write(lead + self.__class__.__name__+ ': ')
 
         if self.attr_names:
-            is_empty = lambda v: v is None or (hasattr(v, '__len__') and len(v) == 0)
+            def is_empty(v):
+                v is None or (hasattr(v, '__len__') and len(v) == 0)
             nvlist = [(n, getattr(self,n)) for n in self.attr_names \
                         if showemptyattrs or not is_empty(getattr(self,n))]
             if attrnames:
@@ -342,10 +340,10 @@ class NodeVisitor:
 '''
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    cfg_path = os.path.join(base_dir, '_c_ast.cfg')
-    out_path = os.path.join(base_dir, 'c_ast.py')
+    cfg_path = os.path.join(base_dir, "_c_ast.cfg")
+    out_path = os.path.join(base_dir, "c_ast.py")
     ast_gen = ASTCodeGenerator(cfg_path)
-    with open(out_path, 'w') as out:
+    with open(out_path, "w") as out:
         ast_gen.generate(out)

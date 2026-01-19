@@ -1,4 +1,4 @@
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 # pycparser: func_defs.py
 #
 # Using pycparser for printing out all the functions defined in a
@@ -9,12 +9,12 @@
 #
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 import sys
 
 # This is not required if you've installed pycparser into
 # your site-packages/ with setup.py
-sys.path.extend(['.', '..'])
+sys.path.extend([".", ".."])
 
 from pycparser import c_ast, parse_file
 
@@ -23,14 +23,13 @@ from pycparser import c_ast, parse_file
 # locations of function definitions.
 class FuncDefVisitor(c_ast.NodeVisitor):
     def visit_FuncDef(self, node):
-        print('%s at %s' % (node.decl.name, node.decl.coord))
+        print("%s at %s" % (node.decl.name, node.decl.coord))
 
 
 def show_func_defs(filename):
     # Note that cpp is used. Provide a path to your own cpp or
     # make sure one exists in PATH.
-    ast = parse_file(filename, use_cpp=True,
-                     cpp_args=r'-Iutils/fake_libc_include')
+    ast = parse_file(filename, use_cpp=True, cpp_args=r"-Iutils/fake_libc_include")
 
     v = FuncDefVisitor()
     v.visit(ast)
@@ -38,8 +37,8 @@ def show_func_defs(filename):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        filename  = sys.argv[1]
+        filename = sys.argv[1]
     else:
-        filename = 'examples/c_files/memmgr.c'
+        filename = "examples/c_files/memmgr.c"
 
     show_func_defs(filename)

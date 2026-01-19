@@ -1,14 +1,14 @@
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 # pycparser: rewrite_ast.py
 #
 # Tiny example of rewriting a AST node
 #
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 import sys
 
-sys.path.extend(['.', '..'])
+sys.path.extend([".", ".."])
 from pycparser import c_parser
 
 text = r"""
@@ -18,7 +18,7 @@ void func(void)
 }
 """
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = c_parser.CParser()
     ast = parser.parse(text)
     print("Before:")
