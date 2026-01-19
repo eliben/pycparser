@@ -1,13 +1,17 @@
-Todo
-----
-
 Version Update
 --------------
 
-pyproject.toml, pycparser/__init__.py, README, CHANGES
-- Make sure _ast_gen was run in pycparser/
+pyproject.toml, pycparser/__init__.py, README
 
-uv build
+Building
+--------
+
+If the AST was modified `_c_ast.cfg`, make sure that `_ast_gen.py` was run and
+`c_ast.py` is up to date.
+
+Run:
+
+    uv build
 
 Copy the newly created tarball and untar it; check that the permissions of
 Python files in the pycparser/ directory are OK.
@@ -22,5 +26,7 @@ To upload to PyPI:
 
   $ uv publish dist/*
 
-- Tag in git. When pushing to GitHub, git push --tags
-- Create new GitHub release
+Check that `pip` can install and load pycparser from PyPI in this new version.
+
+Tag in git. When pushing to GitHub, git push --tags
+Create new GitHub release to capture changes from the previous one
