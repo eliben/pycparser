@@ -79,73 +79,6 @@ class _TokenStream:
 
 
 class CParser:
-    _ASSIGNMENT_OPS = {
-        'EQUALS', 'XOREQUAL', 'TIMESEQUAL', 'DIVEQUAL', 'MODEQUAL',
-        'PLUSEQUAL', 'MINUSEQUAL', 'LSHIFTEQUAL', 'RSHIFTEQUAL',
-        'ANDEQUAL', 'OREQUAL'
-    }
-
-    # Precedence of operators (lower number = weather binding)
-    # If this changes, c_generator.CGenerator.precedence_map needs to change as
-    # well
-    _BINARY_PRECEDENCE = {
-        'LOR': 0,
-        'LAND': 1,
-        'OR': 2,
-        'XOR': 3,
-        'AND': 4,
-        'EQ': 5, 'NE': 5,
-        'GT': 6, 'GE': 6, 'LT': 6, 'LE': 6,
-        'RSHIFT': 7, 'LSHIFT': 7,
-        'PLUS': 8, 'MINUS': 8,
-        'TIMES': 9, 'DIVIDE': 9, 'MOD': 9,
-    }
-
-    _STORAGE_CLASS = {
-        'AUTO', 'REGISTER', 'STATIC', 'EXTERN', 'TYPEDEF', '_THREAD_LOCAL'
-    }
-
-    _FUNCTION_SPEC = {'INLINE', '_NORETURN'}
-
-    _TYPE_QUALIFIER = {'CONST', 'RESTRICT', 'VOLATILE', '_ATOMIC'}
-
-    _TYPE_SPEC_SIMPLE = {
-        'VOID', '_BOOL', 'CHAR', 'SHORT', 'INT', 'LONG', 'FLOAT', 'DOUBLE',
-        '_COMPLEX', 'SIGNED', 'UNSIGNED', '__INT128'
-    }
-
-    _DECL_START = (
-        _STORAGE_CLASS |
-        _FUNCTION_SPEC |
-        _TYPE_QUALIFIER |
-        _TYPE_SPEC_SIMPLE |
-        {'TYPEID', 'STRUCT', 'UNION', 'ENUM', '_ALIGNAS', '_ATOMIC'}
-    )
-
-    _EXPR_START = {
-        'ID', 'LPAREN', 'PLUSPLUS', 'MINUSMINUS', 'PLUS', 'MINUS', 'TIMES',
-        'AND', 'NOT', 'LNOT', 'SIZEOF', '_ALIGNOF', 'OFFSETOF'
-    }
-
-    _INT_CONST = {
-        'INT_CONST_DEC', 'INT_CONST_OCT', 'INT_CONST_HEX', 'INT_CONST_BIN',
-        'INT_CONST_CHAR'
-    }
-
-    _FLOAT_CONST = {'FLOAT_CONST', 'HEX_FLOAT_CONST'}
-
-    _CHAR_CONST = {
-        'CHAR_CONST', 'WCHAR_CONST', 'U8CHAR_CONST', 'U16CHAR_CONST',
-        'U32CHAR_CONST'
-    }
-
-    _STRING_LITERAL = {'STRING_LITERAL'}
-
-    _WSTR_LITERAL = {
-        'WSTRING_LITERAL', 'U8STRING_LITERAL', 'U16STRING_LITERAL',
-        'U32STRING_LITERAL'
-    }
-
     def __init__(
             self,
             lex_optimize=True,
@@ -566,23 +499,23 @@ class CParser:
         tok = tok or self._peek()
         if tok is None:
             return False
-        return tok.type in self._DECL_START
+        return tok.type in _DECL_START
 
     def _starts_expression(self, tok=None):
         tok = tok or self._peek()
         if tok is None:
             return False
-        if tok.type in self._EXPR_START:
+        if tok.type in _EXPR_START:
             return True
-        if tok.type in self._INT_CONST:
+        if tok.type in _INT_CONST:
             return True
-        if tok.type in self._FLOAT_CONST:
+        if tok.type in _FLOAT_CONST:
             return True
-        if tok.type in self._CHAR_CONST:
+        if tok.type in _CHAR_CONST:
             return True
-        if tok.type in self._STRING_LITERAL:
+        if tok.type in _STRING_LITERAL:
             return True
-        if tok.type in self._WSTR_LITERAL:
+        if tok.type in _WSTR_LITERAL:
             return True
         return False
 
@@ -641,7 +574,7 @@ class CParser:
     def _scan_declarator_name_info(self):
         saw_paren = False
         while self._accept('TIMES'):
-            while self._peek_type() in self._TYPE_QUALIFIER:
+            while self._peek_type() in _TYPE_QUALIFIER:
                 self._advance()
 
         tok = self._peek()
@@ -678,7 +611,7 @@ class CParser:
 
     def _is_assignment_op(self):
         tok = self._peek()
-        return tok is not None and tok.type in self._ASSIGNMENT_OPS
+        return tok is not None and tok.type in _ASSIGNMENT_OPS
 
     def _try_parse_paren_type_name(self):
         """Parse and return a parenthesized type name if present.
@@ -907,28 +840,28 @@ class CParser:
                 saw_type = True
                 continue
 
-            if tok.type in self._TYPE_QUALIFIER:
+            if tok.type in _TYPE_QUALIFIER:
                 if first_coord is None:
                     first_coord = self._tok_coord(tok)
                 spec = self._add_declaration_specifier(
                     spec, self._advance().value, 'qual', append=True)
                 continue
 
-            if tok.type in self._STORAGE_CLASS:
+            if tok.type in _STORAGE_CLASS:
                 if first_coord is None:
                     first_coord = self._tok_coord(tok)
                 spec = self._add_declaration_specifier(
                     spec, self._advance().value, 'storage', append=True)
                 continue
 
-            if tok.type in self._FUNCTION_SPEC:
+            if tok.type in _FUNCTION_SPEC:
                 if first_coord is None:
                     first_coord = self._tok_coord(tok)
                 spec = self._add_declaration_specifier(
                     spec, self._advance().value, 'function', append=True)
                 continue
 
-            if tok.type in self._TYPE_SPEC_SIMPLE:
+            if tok.type in _TYPE_SPEC_SIMPLE:
                 if first_coord is None:
                     first_coord = self._tok_coord(tok)
                 tok = self._advance()
@@ -1012,14 +945,14 @@ class CParser:
                 saw_type = True
                 continue
 
-            if tok.type in self._TYPE_QUALIFIER:
+            if tok.type in _TYPE_QUALIFIER:
                 if first_coord is None:
                     first_coord = self._tok_coord(tok)
                 spec = self._add_declaration_specifier(
                     spec, self._advance().value, 'qual', append=True)
                 continue
 
-            if tok.type in self._TYPE_SPEC_SIMPLE:
+            if tok.type in _TYPE_SPEC_SIMPLE:
                 if first_coord is None:
                     first_coord = self._tok_coord(tok)
                 tok = self._advance()
@@ -1080,7 +1013,7 @@ class CParser:
     # BNF: type_qualifier_list : type_qualifier+
     def _parse_type_qualifier_list(self):
         quals = []
-        while self._peek_type() in self._TYPE_QUALIFIER:
+        while self._peek_type() in _TYPE_QUALIFIER:
             quals.append(self._advance().value)
         return quals
 
@@ -1379,7 +1312,7 @@ class CParser:
             self._expect('RBRACKET')
             return make_array_decl(dim, dim_quals)
 
-        if self._peek_type() in self._TYPE_QUALIFIER:
+        if self._peek_type() in _TYPE_QUALIFIER:
             dim_quals = self._parse_type_qualifier_list() or []
             if self._accept('STATIC'):
                 dim_quals = dim_quals + ['static']
@@ -1855,9 +1788,9 @@ class CParser:
 
         while True:
             tok = self._peek()
-            if tok is None or tok.type not in self._BINARY_PRECEDENCE:
+            if tok is None or tok.type not in _BINARY_PRECEDENCE:
                 break
-            prec = self._BINARY_PRECEDENCE[tok.type]
+            prec = _BINARY_PRECEDENCE[tok.type]
             if prec < min_prec:
                 break
 
@@ -1867,9 +1800,9 @@ class CParser:
 
             while True:
                 next_tok = self._peek()
-                if next_tok is None or next_tok.type not in self._BINARY_PRECEDENCE:
+                if next_tok is None or next_tok.type not in _BINARY_PRECEDENCE:
                     break
-                next_prec = self._BINARY_PRECEDENCE[next_tok.type]
+                next_prec = _BINARY_PRECEDENCE[next_tok.type]
                 if next_prec > prec:
                     rhs = self._parse_binary_expression(next_prec, rhs)
                 else:
@@ -1983,12 +1916,12 @@ class CParser:
         tok_type = self._peek_type()
         if tok_type == 'ID':
             return self._parse_identifier()
-        if tok_type in self._INT_CONST or tok_type in self._FLOAT_CONST or \
-                tok_type in self._CHAR_CONST:
+        if tok_type in _INT_CONST or tok_type in _FLOAT_CONST or \
+                tok_type in _CHAR_CONST:
             return self._parse_constant()
-        if tok_type in self._STRING_LITERAL:
+        if tok_type in _STRING_LITERAL:
             return self._parse_unified_string_literal()
-        if tok_type in self._WSTR_LITERAL:
+        if tok_type in _WSTR_LITERAL:
             return self._parse_unified_wstring_literal()
         if tok_type == 'LPAREN':
             self._advance()
@@ -2059,7 +1992,7 @@ class CParser:
     # BNF: constant : INT_CONST | FLOAT_CONST | CHAR_CONST
     def _parse_constant(self):
         tok = self._advance()
-        if tok.type in self._INT_CONST:
+        if tok.type in _INT_CONST:
             u_count = 0
             l_count = 0
             for ch in tok.value[-3:]:
@@ -2074,7 +2007,7 @@ class CParser:
             prefix = 'unsigned ' * u_count + 'long ' * l_count
             return c_ast.Constant(prefix + 'int', tok.value, self._tok_coord(tok))
 
-        if tok.type in self._FLOAT_CONST:
+        if tok.type in _FLOAT_CONST:
             if tok.value[-1] in ('f', 'F'):
                 t = 'float'
             elif tok.value[-1] in ('l', 'L'):
@@ -2083,7 +2016,7 @@ class CParser:
                 t = 'double'
             return c_ast.Constant(t, tok.value, self._tok_coord(tok))
 
-        if tok.type in self._CHAR_CONST:
+        if tok.type in _CHAR_CONST:
             return c_ast.Constant('char', tok.value, self._tok_coord(tok))
 
         self._parse_error('Invalid constant', self._tok_coord(tok))
@@ -2100,10 +2033,10 @@ class CParser:
     # BNF: unified_wstring_literal : WSTRING_LITERAL+
     def _parse_unified_wstring_literal(self):
         tok = self._advance()
-        if tok.type not in self._WSTR_LITERAL:
+        if tok.type not in _WSTR_LITERAL:
             self._parse_error('Invalid string literal', self._tok_coord(tok))
         node = c_ast.Constant('string', tok.value, self._tok_coord(tok))
-        while self._peek_type() in self._WSTR_LITERAL:
+        while self._peek_type() in _WSTR_LITERAL:
             tok2 = self._advance()
             node.value = node.value.rstrip()[:-1] + tok2.value[2:]
         return node
@@ -2213,3 +2146,71 @@ class CParser:
             msg = self._parse_unified_string_literal()
         self._expect('RPAREN')
         return [c_ast.StaticAssert(cond, msg, self._tok_coord(tok))]
+
+
+_ASSIGNMENT_OPS = {
+    'EQUALS', 'XOREQUAL', 'TIMESEQUAL', 'DIVEQUAL', 'MODEQUAL',
+    'PLUSEQUAL', 'MINUSEQUAL', 'LSHIFTEQUAL', 'RSHIFTEQUAL',
+    'ANDEQUAL', 'OREQUAL'
+}
+
+# Precedence of operators (lower number = weather binding)
+# If this changes, c_generator.CGenerator.precedence_map needs to change as
+# well
+_BINARY_PRECEDENCE = {
+    'LOR': 0,
+    'LAND': 1,
+    'OR': 2,
+    'XOR': 3,
+    'AND': 4,
+    'EQ': 5, 'NE': 5,
+    'GT': 6, 'GE': 6, 'LT': 6, 'LE': 6,
+    'RSHIFT': 7, 'LSHIFT': 7,
+    'PLUS': 8, 'MINUS': 8,
+    'TIMES': 9, 'DIVIDE': 9, 'MOD': 9,
+}
+
+_STORAGE_CLASS = {
+    'AUTO', 'REGISTER', 'STATIC', 'EXTERN', 'TYPEDEF', '_THREAD_LOCAL'
+}
+
+_FUNCTION_SPEC = {'INLINE', '_NORETURN'}
+
+_TYPE_QUALIFIER = {'CONST', 'RESTRICT', 'VOLATILE', '_ATOMIC'}
+
+_TYPE_SPEC_SIMPLE = {
+    'VOID', '_BOOL', 'CHAR', 'SHORT', 'INT', 'LONG', 'FLOAT', 'DOUBLE',
+    '_COMPLEX', 'SIGNED', 'UNSIGNED', '__INT128'
+}
+
+_DECL_START = (
+    _STORAGE_CLASS |
+    _FUNCTION_SPEC |
+    _TYPE_QUALIFIER |
+    _TYPE_SPEC_SIMPLE |
+    {'TYPEID', 'STRUCT', 'UNION', 'ENUM', '_ALIGNAS', '_ATOMIC'}
+)
+
+_EXPR_START = {
+    'ID', 'LPAREN', 'PLUSPLUS', 'MINUSMINUS', 'PLUS', 'MINUS', 'TIMES',
+    'AND', 'NOT', 'LNOT', 'SIZEOF', '_ALIGNOF', 'OFFSETOF'
+}
+
+_INT_CONST = {
+    'INT_CONST_DEC', 'INT_CONST_OCT', 'INT_CONST_HEX', 'INT_CONST_BIN',
+    'INT_CONST_CHAR'
+}
+
+_FLOAT_CONST = {'FLOAT_CONST', 'HEX_FLOAT_CONST'}
+
+_CHAR_CONST = {
+    'CHAR_CONST', 'WCHAR_CONST', 'U8CHAR_CONST', 'U16CHAR_CONST',
+    'U32CHAR_CONST'
+}
+
+_STRING_LITERAL = {'STRING_LITERAL'}
+
+_WSTR_LITERAL = {
+    'WSTRING_LITERAL', 'U8STRING_LITERAL', 'U16STRING_LITERAL',
+    'U32STRING_LITERAL'
+}
