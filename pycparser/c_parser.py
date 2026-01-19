@@ -45,7 +45,11 @@ class _TokenStream:
         self._index = 0
 
     def peek(self, k=1):
-        """ Peek at the next k tokens in the stream, without consuming them.
+        """Peek at the k-th next token in the stream, without consuming it.
+
+        Examples:
+            k=1 returns the immediate next token.
+            k=2 returns the token after that.
         """
         if k <= 0:
             return None
@@ -53,7 +57,7 @@ class _TokenStream:
         return self._buffer[self._index + k - 1]
 
     def next(self):
-        """ Consume a single token and return it. """
+        """Consume a single token and return it."""
         self._fill(1)
         tok = self._buffer[self._index]
         self._index += 1
@@ -79,6 +83,16 @@ class _TokenStream:
 
 
 class CParser:
+    """Recursive-descent C parser.
+
+    Usage:
+        parser = CParser()
+        ast = parser.parse(text, filename)
+
+    The `lexer` parameter lets you inject a lexer class (defaults to CLexer).
+    The parameters after `lexer` are accepted for backward compatibility with
+    the old PLY-based parser and are otherwise unused.
+    """
     def __init__(
             self,
             lex_optimize=True,
@@ -458,9 +472,11 @@ class CParser:
     # Token helpers
     # ------------------------------------------------------------------
     def _peek(self, k=1):
+        """Return the k-th next token without consuming it (1-based)."""
         return self._tokens.peek(k)
 
     def _peek_type(self, k=1):
+        """Return the type of the k-th next token, or None if absent (1-based)."""
         tok = self._peek(k)
         return tok.type if tok is not None else None
 
