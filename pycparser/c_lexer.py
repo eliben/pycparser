@@ -76,11 +76,13 @@ class CLexer(object):
         #   byte offset of the current line start. The lexer is a simple loop
         #   that skips whitespace/newlines and emits one token per call.
         # - A small amount of logic is handled manually before regex matching:
+        #
         #   * Preprocessor-style directives: if we see '#', we check whether
-        #     it's a #line or #pragma directive and consume it inline. #pragma
-        #     can yield both PPPRAGMA and PPPRAGMASTR, but token() returns a
-        #     single token, so we stash the PPPRAGMASTR as _pending_tok to
-        #     return on the next token() call. Otherwise we return PPHASH.
+        #     it's a #line or #pragma directive and consume it inline. #line
+        #     updates lineno/filename and produces no tokens. #pragma can yield
+        #     both PPPRAGMA and PPPRAGMASTR, but token() returns a single token,
+        #     so we stash the PPPRAGMASTR as _pending_tok to return on the next
+        #     token() call. Otherwise we return PPHASH.
         #   * Newlines update lineno/line-start tracking so tokens can record
         #     accurate columns.
         #
