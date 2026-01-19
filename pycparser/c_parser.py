@@ -505,28 +505,13 @@ class CParser:
         tok = tok or self._peek()
         if tok is None:
             return False
-        if tok.type in _EXPR_START:
-            return True
-        if tok.type in _INT_CONST:
-            return True
-        if tok.type in _FLOAT_CONST:
-            return True
-        if tok.type in _CHAR_CONST:
-            return True
-        if tok.type in _STRING_LITERAL:
-            return True
-        if tok.type in _WSTR_LITERAL:
-            return True
-        return False
+        return tok.type in _STARTS_EXPRESSION
 
     def _starts_statement(self):
         tok_type = self._peek_type()
         if tok_type is None:
             return False
-        if tok_type in {'LBRACE', 'IF', 'SWITCH', 'WHILE', 'DO', 'FOR',
-                        'GOTO', 'BREAK', 'CONTINUE', 'RETURN', 'CASE',
-                        'DEFAULT', 'PPPRAGMA', '_PRAGMA', '_STATIC_ASSERT',
-                        'SEMI'}:
+        if tok_type in _STARTS_STATEMENT:
             return True
         return self._starts_expression()
 
@@ -2213,4 +2198,19 @@ _STRING_LITERAL = {'STRING_LITERAL'}
 _WSTR_LITERAL = {
     'WSTRING_LITERAL', 'U8STRING_LITERAL', 'U16STRING_LITERAL',
     'U32STRING_LITERAL'
+}
+
+_STARTS_EXPRESSION = (
+    _EXPR_START |
+    _INT_CONST |
+    _FLOAT_CONST |
+    _CHAR_CONST |
+    _STRING_LITERAL |
+    _WSTR_LITERAL
+)
+
+_STARTS_STATEMENT = {
+    'LBRACE', 'IF', 'SWITCH', 'WHILE', 'DO', 'FOR',
+    'GOTO', 'BREAK', 'CONTINUE', 'RETURN', 'CASE',
+    'DEFAULT', 'PPPRAGMA', '_PRAGMA', '_STATIC_ASSERT', 'SEMI'
 }
