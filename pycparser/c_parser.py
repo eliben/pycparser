@@ -11,11 +11,11 @@ from .c_lexer import CLexer
 from .ast_transforms import fix_switch_cases, fix_atomic_specifiers
 
 
-class Coord(object):
+class Coord:
     """ Coordinates of a syntactic element. Consists of:
             - File name
             - Line number
-            - (optional) column number, for the Lexer
+            - Column number
     """
     __slots__ = ('file', 'line', 'column', '__weakref__')
     def __init__(self, file, line, column=None):
@@ -34,7 +34,7 @@ class ParseError(Exception):
     pass
 
 
-class _TokenStream(object):
+class _TokenStream:
     """ Wraps a lexer to provide convenient, buffered access to the underlying
         token stream. The lexer is expected to be initialized with the input
         string already.
@@ -78,7 +78,7 @@ class _TokenStream(object):
                 break
 
 
-class CParser(object):
+class CParser:
     _ASSIGNMENT_OPS = {
         'EQUALS', 'XOREQUAL', 'TIMESEQUAL', 'DIVEQUAL', 'MODEQUAL',
         'PLUSEQUAL', 'MINUSEQUAL', 'LSHIFTEQUAL', 'RSHIFTEQUAL',

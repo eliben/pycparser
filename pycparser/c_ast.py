@@ -27,7 +27,7 @@ def _repr(obj):
     else:
         return repr(obj)
 
-class Node(object):
+class Node:
     __slots__ = ()
     """ Abstract base class for AST nodes.
     """
@@ -111,7 +111,7 @@ class Node(object):
                 _my_node_name=child_name)
 
 
-class NodeVisitor(object):
+class NodeVisitor:
     """ A base NodeVisitor class for visiting c_ast nodes.
         Subclass it and define your own visit_XXX methods, where
         XXX is the class name you want to visit with these

@@ -45,7 +45,7 @@ def expand_decl(decl):
             return ['FuncDecl', params, nested]
 
 #-----------------------------------------------------------------
-class NodeVisitor(object):
+class NodeVisitor:
     def __init__(self):
         self.current_parent = None
 

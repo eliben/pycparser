@@ -13,7 +13,7 @@ from typing import Optional
 
 
 
-class _Token(object):
+class _Token:
     __slots__ = ('type', 'value', 'lineno', 'column')
 
     def __init__(self, typ, value, lineno, column):
@@ -23,7 +23,7 @@ class _Token(object):
         self.column = column
 
 
-class CLexer(object):
+class CLexer:
     """A standalone lexer for C.
 
     Parameters for construction:
@@ -490,7 +490,7 @@ class _RegexAction(Enum):
 
 
 @dataclass(frozen=True)
-class _RegexRule(object):
+class _RegexRule:
     # tok_type: name of the token emitted for a match
     # regex_pattern: the raw regex (no anchors) to match at the current position
     # action: TOKEN for normal tokens, ID for identifiers, ERROR to report
@@ -548,7 +548,7 @@ for _rule in _regex_rules:
 _regex_master = re.compile('|'.join(_regex_pattern_parts))
 
 @dataclass(frozen=True)
-class _FixedToken(object):
+class _FixedToken:
     tok_type: str
     literal: str
 

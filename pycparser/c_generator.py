@@ -9,7 +9,7 @@
 from . import c_ast
 
 
-class CGenerator(object):
+class CGenerator:
     """ Uses the same visitor pattern as c_ast.NodeVisitor, but modified to
         return a value from each visit method, using string accumulation in
         generic_visit.
