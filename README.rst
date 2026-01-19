@@ -139,7 +139,7 @@ See `this blog post
 for more details.
 
 Note that the fake headers are not included in the ``pip`` package nor installed
-via ``setup.py`` (`#224 <https://github.com/eliben/pycparser/issues/224>`_).
+via the package build (`#224 <https://github.com/eliben/pycparser/issues/224>`_).
 
 Basic usage
 -----------
@@ -192,7 +192,10 @@ LICENSE:
   The pycparser license
 
 setup.py:
-  Installation script
+  Legacy installation script (build metadata lives in ``pyproject.toml``).
+
+pyproject.toml:
+  Package metadata and build configuration.
 
 examples/:
   A directory with some examples of using **pycparser**

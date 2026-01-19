@@ -1,8 +1,35 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-version = "0.1.0"
+name = "pycparser"
+version = "2.23"
+description = "C parser in Python"
 readme = "README.rst"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
-dependencies = []
+authors = [{name = "Eli Bendersky", email = "eliben@gmail.com"}]
+maintainers = [{name = "Eli Bendersky", email = "eliben@gmail.com"}]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+
+[project.urls]
+Homepage = "https://github.com/eliben/pycparser"
+
+[tool.setuptools]
+packages = ["pycparser"]
+
+[tool.setuptools.package-data]
+pycparser = ["*.cfg"]
 
 [tool.ruff.lint]
 ignore = ["F403", "F405"]

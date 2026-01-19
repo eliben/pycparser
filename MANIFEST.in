@@ -6,7 +6,3 @@ include README.*
 include LICENSE
 include CHANGES
 include setup.*
-exclude setup.pyc
-
-recursive-exclude tests yacctab.* lextab.*
-recursive-exclude examples yacctab.* lextab.*

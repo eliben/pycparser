@@ -4,27 +4,23 @@ Todo
 Version Update
 --------------
 
-setup.py, __init__.py, README, CHANGES
+pyproject.toml, pycparser/__init__.py, README, CHANGES
 - Make sure _ast_gen was run in pycparser/
-- If PLY version changes, note it in README and ply/LICENSE
 
-python setup.py sdist bdist_wheel
+uv build
 
 Copy the newly created tarball and untar it; check that the permissions of
-Python files in the pycparser/ directory are OK. Check to see that lextab.py and
-yacctab.py are there.
+Python files in the pycparser/ directory are OK.
 
 Now create a new virtualenv and in it install the tarball with
-`pip install <tarballname>`. May need to install `wheel` first if seeing errors
-about `bdist_wheel`.
+`pip install <tarballname>`.
 
 See that pycparser is importable in the Python interpreter of this virtualenv;
 run pycparser tests from this virtualenv.
 
-To upload to PyPI, get a virtualenv with twine installed (e.g.
-~/bin/venv/py3-twine) and run from it:
+To upload to PyPI:
 
-  $ python -m twine upload dist/*
+  $ uv publish dist/*
 
 - Tag in git. When pushing to GitHub, git push --tags
 - Create new GitHub release
