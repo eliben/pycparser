@@ -5,7 +5,7 @@ Version Update
 --------------
 
 setup.py, __init__.py, README, CHANGES
-- Make sure _build_tables was run in pycparser/
+- Make sure _ast_gen was run in pycparser/
 - If PLY version changes, note it in README and ply/LICENSE
 
 python setup.py sdist bdist_wheel
@@ -28,21 +28,3 @@ To upload to PyPI, get a virtualenv with twine installed (e.g.
 
 - Tag in git. When pushing to GitHub, git push --tags
 - Create new GitHub release
-
-Misc
-----
-
-yacc optimization:
-- If parsetab.py/pyc doesn't exist in the path, the table will be reconstructed
-  anyway, regardless of the optimize parameter
-- If it does exist:
-  - If optimize=True, the table will be loaded unconditionally
-  - If optimize=False, the table will be loaded only if it's older than the
-    grammar
-
-lex optimization:
-- If optimize=False, the lexical table is re-computed and is not saved to a
-  lextab file
-- If optimize=True:
-  - If lextab.py/pyc exists in the path, it will be loaded unconditionally
-  - If lextab.py/pyc doesn't exist, it will be created and loaded

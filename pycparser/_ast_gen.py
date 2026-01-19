@@ -2,7 +2,9 @@
 # _ast_gen.py
 #
 # Generates the AST Node classes from a specification given in
-# a configuration file
+# a configuration file. This module can also be run as a script to
+# regenerate c_ast.py from _c_ast.cfg (from the repo root or the
+# pycparser/ directory).
 #
 # The design of this module was inspired by astgen.py from the
 # Python 2.5 code-base.
@@ -11,6 +13,7 @@
 # License: BSD
 #-----------------------------------------------------------------
 from string import Template
+import os
 
 
 class ASTCodeGenerator:
@@ -167,8 +170,7 @@ class NodeCfg:
 _PROLOGUE_COMMENT = \
 r'''#-----------------------------------------------------------------
 # ** ATTENTION **
-# This code was automatically generated from the file:
-# $cfg_filename
+# This code was automatically generated from _c_ast.cfg
 #
 # Do not modify it directly. Modify the configuration file and
 # run the generator again.
@@ -183,7 +185,6 @@ r'''#-----------------------------------------------------------------
 #-----------------------------------------------------------------
 
 '''
-
 _PROLOGUE_CODE = r'''
 import sys
 
@@ -339,3 +340,12 @@ class NodeVisitor:
             self.visit(c)
 
 '''
+
+
+if __name__ == '__main__':
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    cfg_path = os.path.join(base_dir, '_c_ast.cfg')
+    out_path = os.path.join(base_dir, 'c_ast.py')
+    ast_gen = ASTCodeGenerator(cfg_path)
+    with open(out_path, 'w') as out:
+        ast_gen.generate(out)

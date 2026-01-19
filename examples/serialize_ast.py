@@ -9,6 +9,7 @@
 #-----------------------------------------------------------------
 import pickle
 import sys
+import tempfile
 
 sys.path.extend(['.', '..'])
 from pycparser import c_parser
@@ -23,10 +24,10 @@ void func(void)
 if __name__ == '__main__':
     parser = c_parser.CParser()
     ast = parser.parse(text)
-    dump_filename = 'ast.pickle'
-
-    with open(dump_filename, 'wb') as f:
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.pickle') as f:
+        dump_filename = f.name
         pickle.dump(ast, f, protocol=pickle.HIGHEST_PROTOCOL)
+        print(f'Dumped to {dump_filename}')
 
     # Deserialize.
     with open(dump_filename, 'rb') as f:
