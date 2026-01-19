@@ -129,17 +129,18 @@ class CLexer(object):
                     self._pos += 1
                     return tok
                 case _:
-                    tok = self._match_token()
-                    if tok is None:
-                        msg = 'Illegal character %s' % repr(text[self._pos])
-                        self._error(msg, self._pos)
-                        self._pos += 1
+                    if tok := self._match_token():
+                        return tok
+                    else:
                         continue
-                    if tok is False:
-                        continue
-                    return tok
 
     def _match_token(self):
+        """Match one token at the current position.
+
+        Returns a Token on success, or None if no token could be matched and
+        an error was reported. This method always advances _pos by the matched
+        length, or by 1 on error/no-match.
+        """
         text = self._lexdata
         pos = self._pos
         # We pick the longest match between:
@@ -170,6 +171,9 @@ class CLexer(object):
                     break
 
         if best is None:
+            msg = 'Illegal character %s' % repr(text[pos])
+            self._error(msg, pos)
+            self._pos += 1
             return None
 
         length, tok_type, value, action, msg = best
@@ -178,7 +182,7 @@ class CLexer(object):
                 msg = "Invalid char constant %s" % value
             self._error(msg, pos)
             self._pos += max(1, length)
-            return False
+            return None
 
         if action == _RegexAction.ID:
             tok_type = _keyword_map.get(value, 'ID')
@@ -196,6 +200,12 @@ class CLexer(object):
         return tok
 
     def _make_token(self, tok_type, value, pos):
+        """Create a Token at an absolute input position.
+
+        Expects tok_type/value and the absolute byte offset pos in the current
+        input. Does not advance lexer state; callers manage _pos themselves.
+        Returns a Token with lineno/column computed from current line tracking.
+        """
         column = pos - self._line_start + 1
         tok = _Token(tok_type, value, self._lineno, column)
         return tok
