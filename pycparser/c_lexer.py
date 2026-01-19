@@ -147,22 +147,24 @@ class CLexer(object):
         # - the master regex (identifiers, literals, error patterns, etc.)
         # - fixed operator/punctuator literals from the bucket for text[pos]
         #
+        # The longest match is required to ensure we properly lex something
+        # like ".123" (a floating-point constant) as a single entity (with
+        # FLOAT_CONST), rather than a PERIOD followed by a number.
+        #
         # The fixed-literal buckets are already length-sorted, so within that
         # bucket we can take the first match. However, we still compare its
         # length to the regex match because the regex may have matched a longer
         # token that should take precedence.
         best = None
 
-        m = _regex_master.match(text, pos)
-        if m:
+        if m := _regex_master.match(text, pos):
             tok_type = m.lastgroup
             value = m.group(tok_type)
             length = len(value)
             action, msg = _regex_actions[tok_type]
             best = (length, tok_type, value, action, msg)
 
-        bucket = _fixed_tokens_by_first.get(text[pos])
-        if bucket:
+        if bucket := _fixed_tokens_by_first.get(text[pos]):
             for entry in bucket:
                 if text.startswith(entry.literal, pos):
                     length = len(entry.literal)
