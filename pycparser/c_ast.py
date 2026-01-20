@@ -16,6 +16,7 @@
 
 
 import sys
+from typing import Any, ClassVar, IO, Optional
 
 
 def _repr(obj):
@@ -32,6 +33,8 @@ class Node:
     __slots__ = ()
     """ Abstract base class for AST nodes.
     """
+    attr_names: ClassVar[tuple[str, ...]] = ()
+    coord: Optional[Any]
 
     def __repr__(self):
         """Generates a python representation of the current node"""
@@ -66,13 +69,13 @@ class Node:
 
     def show(
         self,
-        buf=sys.stdout,
-        offset=0,
-        attrnames=False,
-        showemptyattrs=True,
-        nodenames=False,
-        showcoord=False,
-        _my_node_name=None,
+        buf: IO[str] = sys.stdout,
+        offset: int = 0,
+        attrnames: bool = False,
+        showemptyattrs: bool = True,
+        nodenames: bool = False,
+        showcoord: bool = False,
+        _my_node_name: Optional[str] = None,
     ):
         """Pretty print the Node and all its attributes and
         children (recursively) to a buffer.
@@ -172,7 +175,7 @@ class NodeVisitor:
 
     _method_cache = None
 
-    def visit(self, node):
+    def visit(self, node: Node):
         """Visit a node."""
 
         if self._method_cache is None:
@@ -186,11 +189,11 @@ class NodeVisitor:
 
         return visitor(node)
 
-    def generic_visit(self, node):
+    def generic_visit(self, node: Node):
         """Called if no explicit visitor function exists for a
         node. Implements preorder visiting of the node.
         """
-        for c in node:
+        for _, c in node.children():
             self.visit(c)
 
 

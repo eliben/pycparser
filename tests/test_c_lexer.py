@@ -1,9 +1,17 @@
 import re
 import sys
 import unittest
+from typing import Optional
 
 sys.path.insert(0, "..")
-from pycparser.c_lexer import CLexer
+from pycparser.c_lexer import CLexer, _Token
+
+
+def require_token(tok: Optional[_Token]) -> _Token:
+    # In tests we know token() should produce a token here; this helper asserts
+    # that and narrows Optional[_Token] to _Token, avoiding repeated casts/guards.
+    assert tok is not None
+    return tok
 
 
 def token_list(clex):
@@ -355,31 +363,31 @@ class TestCLexerNoErrors(unittest.TestCase):
         # ~ self.clex.filename
         self.clex.input(str)
 
-        t1 = self.clex.token()
+        t1 = require_token(self.clex.token())
         self.assertEqual(t1.type, "INT_CONST_DEC")
         self.assertEqual(t1.lineno, 2)
 
-        t2 = self.clex.token()
+        t2 = require_token(self.clex.token())
         self.assertEqual(t2.type, "ID")
         self.assertEqual(t2.value, "id")
         self.assertEqual(t2.lineno, 66)
         self.assertEqual(self.clex.filename, r"kwas\df.h")
 
         for i in range(3):
-            t = self.clex.token()
+            t = require_token(self.clex.token())
 
         self.assertEqual(t.type, "ID")
         self.assertEqual(t.value, "armo")
         self.assertEqual(t.lineno, 9)
         self.assertEqual(self.clex.filename, r"kwas\df.h")
 
-        t4 = self.clex.token()
+        t4 = require_token(self.clex.token())
         self.assertEqual(t4.type, "ID")
         self.assertEqual(t4.value, "tok1")
         self.assertEqual(t4.lineno, 10)
         self.assertEqual(self.clex.filename, r"..\~..\test.h")
 
-        t5 = self.clex.token()
+        t5 = require_token(self.clex.token())
         self.assertEqual(t5.type, "ID")
         self.assertEqual(t5.value, "tok2")
         self.assertEqual(t5.lineno, 99999)
@@ -392,7 +400,7 @@ class TestCLexerNoErrors(unittest.TestCase):
         """
         self.clex.input(str)
 
-        t1 = self.clex.token()
+        t1 = require_token(self.clex.token())
         self.assertEqual(t1.type, "INT_CONST_DEC")
         self.assertEqual(t1.lineno, 10)
         self.assertEqual(self.clex.filename, r"..\6\joe.h")
@@ -415,43 +423,43 @@ class TestCLexerNoErrors(unittest.TestCase):
         # Check that pragmas are tokenized, including trailing string
         self.clex.input(str)
 
-        t1 = self.clex.token()
+        t1 = require_token(self.clex.token())
         self.assertEqual(t1.type, "INT_CONST_DEC")
 
-        t2 = self.clex.token()
+        t2 = require_token(self.clex.token())
         self.assertEqual(t2.type, "PPPRAGMA")
 
-        t3 = self.clex.token()
+        t3 = require_token(self.clex.token())
         self.assertEqual(t3.type, "PPPRAGMA")
 
-        t4 = self.clex.token()
+        t4 = require_token(self.clex.token())
         self.assertEqual(t4.type, "PPPRAGMASTR")
         self.assertEqual(t4.value, "helo me")
 
         for i in range(3):
             self.clex.token()
 
-        t5 = self.clex.token()
+        t5 = require_token(self.clex.token())
         self.assertEqual(t5.type, "PPPRAGMASTR")
         self.assertEqual(t5.value, "omp parallel private(th_id)")
 
         for i in range(5):
-            ta = self.clex.token()
+            ta = require_token(self.clex.token())
             self.assertEqual(ta.type, "PPPRAGMA")
-            tb = self.clex.token()
+            tb = require_token(self.clex.token())
             self.assertEqual(tb.type, "PPPRAGMASTR")
 
-        t6a = self.clex.token()
-        t6l = self.clex.token()
-        t6b = self.clex.token()
-        t6r = self.clex.token()
+        t6a = require_token(self.clex.token())
+        t6l = require_token(self.clex.token())
+        t6b = require_token(self.clex.token())
+        t6r = require_token(self.clex.token())
         self.assertEqual(t6a.type, "_PRAGMA")
         self.assertEqual(t6l.type, "LPAREN")
         self.assertEqual(t6b.type, "STRING_LITERAL")
         self.assertEqual(t6b.value, '"something else"')
         self.assertEqual(t6r.type, "RPAREN")
 
-        t7 = self.clex.token()
+        t7 = require_token(self.clex.token())
         self.assertEqual(t7.type, "INT_CONST_DEC")
         self.assertEqual(t7.lineno, 13)
 

@@ -9,13 +9,13 @@
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 
 class _Token:
     __slots__ = ("type", "value", "lineno", "column")
 
-    def __init__(self, typ, value, lineno, column):
+    def __init__(self, typ: str, value: str, lineno: int, column: int) -> None:
         self.type = typ
         self.value = value
         self.lineno = lineno
@@ -40,14 +40,20 @@ class CLexer:
     get the next token, until it returns None (at end of input).
     """
 
-    def __init__(self, error_func, on_lbrace_func, on_rbrace_func, type_lookup_func):
+    def __init__(
+        self,
+        error_func: Callable[[str, int, int], None],
+        on_lbrace_func: Callable[[], None],
+        on_rbrace_func: Callable[[], None],
+        type_lookup_func: Callable[[str], bool],
+    ) -> None:
         self.error_func = error_func
         self.on_lbrace_func = on_lbrace_func
         self.on_rbrace_func = on_rbrace_func
         self.type_lookup_func = type_lookup_func
         self._init_state()
 
-    def input(self, text, filename=""):
+    def input(self, text: str, filename: str = "") -> None:
         """Initialize the lexer to the given input text.
 
         filename is an optional name identifying the file from which the input
@@ -57,19 +63,19 @@ class CLexer:
         self._lexdata = text
         self._filename = filename
 
-    def _init_state(self):
+    def _init_state(self) -> None:
         self._lexdata = ""
         self._filename = ""
         self._pos = 0
         self._line_start = 0
-        self._pending_tok = None
+        self._pending_tok: Optional[_Token] = None
         self._lineno = 1
 
     @property
-    def filename(self):
+    def filename(self) -> str:
         return self._filename
 
-    def token(self):
+    def token(self) -> Optional[_Token]:
         # Lexing strategy overview:
         #
         # - We maintain a current position (self._pos), line number, and the
@@ -134,7 +140,7 @@ class CLexer:
                     else:
                         continue
 
-    def _match_token(self):
+    def _match_token(self) -> Optional[_Token]:
         """Match one token at the current position.
 
         Returns a Token on success, or None if no token could be matched and
@@ -159,6 +165,8 @@ class CLexer:
 
         if m := _regex_master.match(text, pos):
             tok_type = m.lastgroup
+            # All master-regex alternatives are named; lastgroup shouldn't be None.
+            assert tok_type is not None
             value = m.group(tok_type)
             length = len(value)
             action, msg = _regex_actions[tok_type]
@@ -188,6 +196,8 @@ class CLexer:
         if action == _RegexAction.ERROR:
             if tok_type == "BAD_CHAR_CONST":
                 msg = "Invalid char constant %s" % value
+            # All other ERROR rules provide a message.
+            assert msg is not None
             self._error(msg, pos)
             self._pos += max(1, length)
             return None
@@ -207,7 +217,7 @@ class CLexer:
 
         return tok
 
-    def _make_token(self, tok_type, value, pos):
+    def _make_token(self, tok_type: str, value: str, pos: int) -> _Token:
         """Create a Token at an absolute input position.
 
         Expects tok_type/value and the absolute byte offset pos in the current
@@ -218,11 +228,11 @@ class CLexer:
         tok = _Token(tok_type, value, self._lineno, column)
         return tok
 
-    def _error(self, msg, pos):
+    def _error(self, msg: str, pos: int) -> None:
         column = pos - self._line_start + 1
         self.error_func(msg, self._lineno, column)
 
-    def _handle_ppline(self):
+    def _handle_ppline(self) -> None:
         # Since #line directives aren't supposed to return tokens but should
         # only affect the lexer's state (update line/filename for coords), this
         # method does a bit of parsing on its own. It doesn't return anything,
@@ -251,7 +261,7 @@ class CLexer:
         pos = 0
         line_len = len(line)
 
-        def skip_ws():
+        def skip_ws() -> None:
             nonlocal pos
             while pos < line_len and line[pos] in " \t":
                 pos += 1
@@ -260,7 +270,7 @@ class CLexer:
         if line.startswith("line", pos):
             pos += 4
 
-        def success(pp_line, pp_filename):
+        def success(pp_line: Optional[str], pp_filename: Optional[str]) -> None:
             if pp_line is None:
                 self._error("line number missing in #line", self._pos + line_len)
             else:
@@ -270,7 +280,7 @@ class CLexer:
             self._pos = line_end + 1
             self._line_start = self._pos
 
-        def fail(msg, offset):
+        def fail(msg: str, offset: int) -> None:
             self._error(msg, self._pos + offset)
             self._pos = line_end + 1
             self._line_start = self._pos
@@ -320,7 +330,7 @@ class CLexer:
 
         success(pp_line, pp_filename)
 
-    def _handle_pppragma(self):
+    def _handle_pppragma(self) -> List[_Token]:
         # Parse a full #pragma line; returns a list of tokens with 1 or 2
         # tokens - PPPRAGMA and an optional PPPRAGMASTR. If an empty list is
         # returned, it means an error occurred, or we're at the end of input.
@@ -368,7 +378,7 @@ class CLexer:
 ##
 ## Reserved keywords
 ##
-_keywords = (
+_keywords: Tuple[str, ...] = (
     "AUTO",
     "BREAK",
     "CASE",
@@ -416,7 +426,7 @@ _keywords = (
     "_PRAGMA",
 )
 
-_keyword_map = {}
+_keyword_map: Dict[str, str] = {}
 
 for keyword in _keywords:
     # Keywords from new C standard are mixed-case, like _Bool, _Alignas, etc.
@@ -569,7 +579,7 @@ class _RegexRule:
     error_message: Optional[str]
 
 
-_regex_rules = [
+_regex_rules: List[_RegexRule] = [
     _RegexRule(
         "UNSUPPORTED_C_STYLE_COMMENT",
         _unsupported_c_style_comment,
@@ -616,8 +626,8 @@ _regex_rules = [
     _RegexRule("ID", _identifier, _RegexAction.ID, None),
 ]
 
-_regex_actions = {}
-_regex_pattern_parts = []
+_regex_actions: Dict[str, Tuple[_RegexAction, Optional[str]]] = {}
+_regex_pattern_parts: List[str] = []
 for _rule in _regex_rules:
     _regex_actions[_rule.tok_type] = (_rule.action, _rule.error_message)
     _regex_pattern_parts.append("(?P<%s>%s)" % (_rule.tok_type, _rule.regex_pattern))
@@ -625,7 +635,7 @@ for _rule in _regex_rules:
 # in a named group. We match once at the current position and then use
 # `lastgroup` to recover which token kind fired; this avoids iterating over all
 # regexes on every character while keeping the same token-level semantics.
-_regex_master = re.compile("|".join(_regex_pattern_parts))
+_regex_master: re.Pattern[str] = re.compile("|".join(_regex_pattern_parts))
 
 
 @dataclass(frozen=True)
@@ -634,7 +644,7 @@ class _FixedToken:
     literal: str
 
 
-_fixed_tokens = [
+_fixed_tokens: List[_FixedToken] = [
     _FixedToken("ELLIPSIS", "..."),
     _FixedToken("LSHIFTEQUAL", "<<="),
     _FixedToken("RSHIFTEQUAL", ">>="),
@@ -688,11 +698,11 @@ _fixed_tokens = [
 # text[i], and we pre-sort that bucket by token length so the first match is
 # also the longest. This preserves longest-match semantics (e.g. '>>=' before
 # '>>' before '>') while reducing the number of comparisons.
-_fixed_tokens_by_first = {}
+_fixed_tokens_by_first: Dict[str, List[_FixedToken]] = {}
 for _entry in _fixed_tokens:
     _fixed_tokens_by_first.setdefault(_entry.literal[0], []).append(_entry)
 for _bucket in _fixed_tokens_by_first.values():
     _bucket.sort(key=lambda item: len(item.literal), reverse=True)
 
-_line_pattern = re.compile(r"([ \t]*line\W)|([ \t]*\d+)")
-_pragma_pattern = re.compile(r"[ \t]*pragma\W")
+_line_pattern: re.Pattern[str] = re.compile(r"([ \t]*line\W)|([ \t]*\d+)")
+_pragma_pattern: re.Pattern[str] = re.compile(r"[ \t]*pragma\W")
