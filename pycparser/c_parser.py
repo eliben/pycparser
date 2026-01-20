@@ -6,7 +6,7 @@
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 # ------------------------------------------------------------------------------
-from typing import Any, Dict, List, NoReturn, Optional, Tuple
+from typing import Any, Dict, List, Literal, NoReturn, Optional, Tuple, TypedDict
 
 from . import c_ast
 from .c_lexer import CLexer, _Token
@@ -40,55 +40,6 @@ class Coord:
 
 class ParseError(Exception):
     pass
-
-
-class _TokenStream:
-    """Wraps a lexer to provide convenient, buffered access to the underlying
-    token stream. The lexer is expected to be initialized with the input
-    string already.
-    """
-
-    def __init__(self, lexer: CLexer) -> None:
-        self._lexer = lexer
-        self._buffer: List[Optional[_Token]] = []
-        self._index = 0
-
-    def peek(self, k: int = 1) -> Optional[_Token]:
-        """Peek at the k-th next token in the stream, without consuming it.
-
-        Examples:
-            k=1 returns the immediate next token.
-            k=2 returns the token after that.
-        """
-        if k <= 0:
-            return None
-        self._fill(k)
-        return self._buffer[self._index + k - 1]
-
-    def next(self) -> Optional[_Token]:
-        """Consume a single token and return it."""
-        self._fill(1)
-        tok = self._buffer[self._index]
-        self._index += 1
-        return tok
-
-    # The 'mark' and 'reset' methods are useful for speculative parsing with
-    # backtracking; when the parser needs to examine a sequence of tokens
-    # and potentially decide to try a different path on the same sequence, it
-    # can call 'mark' to obtain the current token position, and if the first
-    # path fails restore the position with `reset(pos)`.
-    def mark(self) -> int:
-        return self._index
-
-    def reset(self, mark: int) -> None:
-        self._index = mark
-
-    def _fill(self, n: int) -> None:
-        while len(self._buffer) < self._index + n:
-            tok = self._lexer.token()
-            self._buffer.append(tok)
-            if tok is None:
-                break
 
 
 class CParser:
@@ -335,27 +286,18 @@ class CParser:
 
     def _add_declaration_specifier(
         self,
-        declspec: Optional[Dict[str, List[Any]]],
+        declspec: Optional["_DeclSpec"],
         newspec: Any,
-        kind: str,
+        kind: "_DeclSpecKind",
         append: bool = False,
-    ) -> Dict[str, List[Any]]:
-        """Declaration specifiers are represented by a dictionary
-        with the entries:
-        * qual: a list of type qualifiers
-        * storage: a list of storage type qualifiers
-        * type: a list of type specifiers
-        * function: a list of function specifiers
-        * alignment: a list of alignment specifiers
-
-        This method is given a declaration specifier, and a
-        new specifier of a given kind.
-        If `append` is True, the new specifier is added to the end of
-        the specifiers list, otherwise it's added at the beginning.
-        Returns the declaration specifier, with the new
-        specifier incorporated.
-        """
-        spec = declspec or dict(qual=[], storage=[], type=[], function=[], alignment=[])
+    ) -> "_DeclSpec":
+        """See _DeclSpec for the specifier dictionary layout."""
+        if declspec is None:
+            spec: _DeclSpec = dict(
+                qual=[], storage=[], type=[], function=[], alignment=[]
+            )
+        else:
+            spec = declspec
 
         if append:
             spec[kind].append(newspec)
@@ -366,7 +308,7 @@ class CParser:
 
     def _build_declarations(
         self,
-        spec: Dict[str, List[Any]],
+        spec: "_DeclSpec",
         decls: List[Dict[str, Any]],
         typedef_namespace: bool = False,
     ) -> List[Any]:
@@ -467,7 +409,7 @@ class CParser:
 
     def _build_function_definition(
         self,
-        spec: Dict[str, List[Any]],
+        spec: "_DeclSpec",
         decl: Any,
         param_decls: Optional[List[Any]],
         body: Any,
@@ -715,7 +657,7 @@ class CParser:
             param_decls = None
             if self._peek_type() != "LBRACE":
                 self._parse_error("Invalid function definition", decl.coord)
-            spec = dict(
+            spec: _DeclSpec = dict(
                 qual=[],
                 alignment=[],
                 storage=[],
@@ -787,7 +729,7 @@ class CParser:
     # BNF: decl_body_with_spec : init_declarator_list
     #                          | struct_or_union_or_enum_only
     def _parse_decl_body_with_spec(
-        self, spec: Dict[str, List[Any]], saw_type: bool
+        self, spec: "_DeclSpec", saw_type: bool
     ) -> List[Any]:
         decls = None
         if saw_type:
@@ -841,7 +783,7 @@ class CParser:
     #                               | alignment_specifier)+
     def _parse_declaration_specifiers(
         self, allow_no_type: bool = False
-    ) -> Tuple[Dict[str, List[Any]], bool, Optional[Coord]]:
+    ) -> Tuple["_DeclSpec", bool, Optional[Coord]]:
         """Parse declaration-specifier sequence.
 
         allow_no_type:
@@ -962,7 +904,7 @@ class CParser:
     # BNF: specifier_qualifier_list : (type_specifier
     #                               | type_qualifier
     #                               | alignment_specifier)+
-    def _parse_specifier_qualifier_list(self) -> Dict[str, List[Any]]:
+    def _parse_specifier_qualifier_list(self) -> "_DeclSpec":
         spec = None
         saw_type = False
         saw_alignment = False
@@ -1461,7 +1403,7 @@ class CParser:
         return self._build_parameter_declaration(spec, decl, spec_coord)
 
     def _build_parameter_declaration(
-        self, spec: Dict[str, List[Any]], decl: Any, spec_coord: Optional[Coord]
+        self, spec: "_DeclSpec", decl: Any, spec_coord: Optional[Coord]
     ) -> Any:
         if (
             len(spec["type"]) > 1
@@ -2327,3 +2269,69 @@ _STARTS_STATEMENT = {
     "_STATIC_ASSERT",
     "SEMI",
 }
+
+
+class _TokenStream:
+    """Wraps a lexer to provide convenient, buffered access to the underlying
+    token stream. The lexer is expected to be initialized with the input
+    string already.
+    """
+
+    def __init__(self, lexer: CLexer) -> None:
+        self._lexer = lexer
+        self._buffer: List[Optional[_Token]] = []
+        self._index = 0
+
+    def peek(self, k: int = 1) -> Optional[_Token]:
+        """Peek at the k-th next token in the stream, without consuming it.
+
+        Examples:
+            k=1 returns the immediate next token.
+            k=2 returns the token after that.
+        """
+        if k <= 0:
+            return None
+        self._fill(k)
+        return self._buffer[self._index + k - 1]
+
+    def next(self) -> Optional[_Token]:
+        """Consume a single token and return it."""
+        self._fill(1)
+        tok = self._buffer[self._index]
+        self._index += 1
+        return tok
+
+    # The 'mark' and 'reset' methods are useful for speculative parsing with
+    # backtracking; when the parser needs to examine a sequence of tokens
+    # and potentially decide to try a different path on the same sequence, it
+    # can call 'mark' to obtain the current token position, and if the first
+    # path fails restore the position with `reset(pos)`.
+    def mark(self) -> int:
+        return self._index
+
+    def reset(self, mark: int) -> None:
+        self._index = mark
+
+    def _fill(self, n: int) -> None:
+        while len(self._buffer) < self._index + n:
+            tok = self._lexer.token()
+            self._buffer.append(tok)
+            if tok is None:
+                break
+
+
+# Declaration specifiers are represented by a dictionary with entries:
+# - qual: a list of type qualifiers
+# - storage: a list of storage class specifiers
+# - type: a list of type specifiers
+# - function: a list of function specifiers
+# - alignment: a list of alignment specifiers
+class _DeclSpec(TypedDict):
+    qual: List[Any]
+    storage: List[Any]
+    type: List[Any]
+    function: List[Any]
+    alignment: List[Any]
+
+
+_DeclSpecKind = Literal["qual", "storage", "type", "function", "alignment"]
