@@ -258,7 +258,11 @@ class CParser:
     #   and structs.
     #
     # This method fixes these problems.
-    def _fix_decl_name_type(self, decl: Any, typename: List[Any]) -> c_ast.Node:
+    def _fix_decl_name_type(
+        self,
+        decl: c_ast.Decl | c_ast.Typedef | c_ast.Typename,
+        typename: List[Any],
+    ) -> c_ast.Decl | c_ast.Typedef | c_ast.Typename:
         """Fixes a declaration. Modifies decl."""
         # Reach the underlying basic type
         typ = decl
@@ -376,7 +380,7 @@ class CParser:
         for decl in decls:
             assert decl["decl"] is not None
             if is_typedef:
-                declaration = c_ast.Typedef(
+                declaration: c_ast.Typedef | c_ast.Decl = c_ast.Typedef(
                     name=None,
                     quals=spec["qual"],
                     storage=spec["storage"],
@@ -407,15 +411,10 @@ class CParser:
             # Add the type name defined by typedef to a
             # symbol table (for usage in the lexer)
             if typedef_namespace:
-                fixed_decl_any = cast(Any, fixed_decl)
                 if is_typedef:
-                    self._add_typedef_name(
-                        fixed_decl_any.name, fixed_decl_any.coord
-                    )
+                    self._add_typedef_name(fixed_decl.name, fixed_decl.coord)
                 else:
-                    self._add_identifier(
-                        fixed_decl_any.name, fixed_decl_any.coord
-                    )
+                    self._add_identifier(fixed_decl.name, fixed_decl.coord)
 
             fixed_decl = fix_atomic_specifiers(fixed_decl)
             declarations.append(fixed_decl)
