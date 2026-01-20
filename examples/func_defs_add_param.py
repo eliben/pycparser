@@ -23,7 +23,7 @@ void bar() {
 
 
 class ParamAdder(c_ast.NodeVisitor):
-    def visit_FuncDecl(self, node):
+    def visit_FuncDecl(self, node: c_ast.FuncDecl) -> None:
         ty = c_ast.TypeDecl(
             declname="_hidden", quals=[], align=[], type=c_ast.IdentifierType(["int"])
         )
@@ -38,7 +38,7 @@ class ParamAdder(c_ast.NodeVisitor):
             bitsize=None,
             coord=node.coord,
         )
-        if node.args:
+        if node.args is not None:
             node.args.params.append(newdecl)
         else:
             node.args = c_ast.ParamList(params=[newdecl])

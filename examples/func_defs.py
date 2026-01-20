@@ -22,11 +22,11 @@ from pycparser import c_ast, parse_file
 # A simple visitor for FuncDef nodes that prints the names and
 # locations of function definitions.
 class FuncDefVisitor(c_ast.NodeVisitor):
-    def visit_FuncDef(self, node):
+    def visit_FuncDef(self, node: c_ast.FuncDef) -> None:
         print("%s at %s" % (node.decl.name, node.decl.coord))
 
 
-def show_func_defs(filename):
+def show_func_defs(filename: str) -> None:
     # Note that cpp is used. Provide a path to your own cpp or
     # make sure one exists in PATH.
     ast = parse_file(filename, use_cpp=True, cpp_args=r"-Iutils/fake_libc_include")

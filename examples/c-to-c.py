@@ -16,7 +16,7 @@ sys.path.extend([".", ".."])
 from pycparser import parse_file, c_generator
 
 
-def translate_to_c(filename):
+def translate_to_c(filename: str) -> None:
     """Simply use the c_generator module to emit a parsed AST."""
     ast = parse_file(filename, use_cpp=True)
     generator = c_generator.CGenerator()

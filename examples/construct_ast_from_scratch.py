@@ -21,7 +21,7 @@ from pycparser import c_ast, c_generator
 # }
 
 
-def empty_main_function_ast():
+def empty_main_function_ast() -> c_ast.FuncDef:
     constant_zero = c_ast.Constant(type="int", value="0")
     return_node = c_ast.Return(expr=constant_zero)
     compound_node = c_ast.Compound(block_items=[return_node])
@@ -46,7 +46,7 @@ def empty_main_function_ast():
     return main_func_node
 
 
-def generate_c_code(my_ast):
+def generate_c_code(my_ast: c_ast.Node) -> str:
     generator = c_generator.CGenerator()
     return generator.visit(my_ast)
 

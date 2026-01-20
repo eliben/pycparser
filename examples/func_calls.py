@@ -18,18 +18,18 @@ from pycparser import c_ast, parse_file
 
 # A visitor with some state information (the funcname it's looking for)
 class FuncCallVisitor(c_ast.NodeVisitor):
-    def __init__(self, funcname):
+    def __init__(self, funcname: str) -> None:
         self.funcname = funcname
 
-    def visit_FuncCall(self, node):
-        if node.name.name == self.funcname:
+    def visit_FuncCall(self, node: c_ast.FuncCall) -> None:
+        if isinstance(node.name, c_ast.ID) and node.name.name == self.funcname:
             print("%s called at %s" % (self.funcname, node.name.coord))
         # Visit args in case they contain more func calls.
-        if node.args:
+        if node.args is not None:
             self.visit(node.args)
 
 
-def show_func_calls(filename, funcname):
+def show_func_calls(filename: str, funcname: str) -> None:
     ast = parse_file(filename, use_cpp=True)
     v = FuncCallVisitor(funcname)
     v.visit(ast)
