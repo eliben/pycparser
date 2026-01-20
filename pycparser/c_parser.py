@@ -123,7 +123,7 @@ class CParser:
     def _coord(self, lineno: int, column: Optional[int] = None) -> Coord:
         return Coord(file=self.clex.filename, line=lineno, column=column)
 
-    def _parse_error(self, msg: str, coord: Any) -> NoReturn:
+    def _parse_error(self, msg: str, coord: Coord | str | None) -> NoReturn:
         raise ParseError("%s: %s" % (coord, msg))
 
     def _push_scope(self) -> None:
@@ -323,7 +323,7 @@ class CParser:
     def _build_declarations(
         self,
         spec: "_DeclSpec",
-        decls: List[Dict[str, Any]],
+        decls: List["_DeclInfo"],
         typedef_namespace: bool = False,
     ) -> List[c_ast.Node]:
         """Builds a list of declarations all sharing the given specifiers.
@@ -370,7 +370,7 @@ class CParser:
                 decls[0]["decl"],
                 (c_ast.Enum, c_ast.Struct, c_ast.Union, c_ast.IdentifierType),
             ):
-                decls_0_tail = decls[0]["decl"]
+                decls_0_tail = cast(Any, decls[0]["decl"])
                 while not isinstance(decls_0_tail, c_ast.TypeDecl):
                     decls_0_tail = decls_0_tail.type
                 if decls_0_tail.declname is None:
@@ -380,7 +380,7 @@ class CParser:
         for decl in decls:
             assert decl["decl"] is not None
             if is_typedef:
-                declaration: c_ast.Typedef | c_ast.Decl = c_ast.Typedef(
+                declaration = c_ast.Typedef(
                     name=None,
                     quals=spec["qual"],
                     storage=spec["storage"],
@@ -433,7 +433,9 @@ class CParser:
             self._parse_error("Invalid typedef", decl.coord)
 
         declaration = self._build_declarations(
-            spec=spec, decls=[dict(decl=decl, init=None)], typedef_namespace=True
+            spec=spec,
+            decls=[dict(decl=decl, init=None, bitsize=None)],
+            typedef_namespace=True,
         )[0]
 
         return c_ast.FuncDef(
@@ -715,7 +717,7 @@ class CParser:
             )
             return [func]
 
-        decl_dict = dict(decl=decl, init=None)
+        decl_dict: "_DeclInfo" = dict(decl=decl, init=None, bitsize=None)
         if self._accept("EQUALS"):
             decl_dict["init"] = self._parse_initializer()
         decls = self._parse_init_declarator_list(first=decl_dict)
@@ -773,7 +775,7 @@ class CParser:
             else:
                 decls = self._build_declarations(
                     spec=spec,
-                    decls=[dict(decl=None, init=None)],
+                    decls=[dict(decl=None, init=None, bitsize=None)],
                     typedef_namespace=True,
                 )
         else:
@@ -1048,8 +1050,8 @@ class CParser:
 
     # BNF: init_declarator_list : init_declarator (',' init_declarator)*
     def _parse_init_declarator_list(
-        self, first: Optional[Dict[str, Any]] = None, id_only: bool = False
-    ) -> List[Dict[str, Any]]:
+        self, first: Optional["_DeclInfo"] = None, id_only: bool = False
+    ) -> List["_DeclInfo"]:
         decls = (
             [first]
             if first is not None
@@ -1061,12 +1063,12 @@ class CParser:
         return decls
 
     # BNF: init_declarator : declarator ('=' initializer)?
-    def _parse_init_declarator(self, id_only: bool = False) -> Dict[str, Any]:
+    def _parse_init_declarator(self, id_only: bool = False) -> "_DeclInfo":
         decl = self._parse_id_declarator() if id_only else self._parse_declarator()
         init = None
         if self._accept("EQUALS"):
             init = self._parse_initializer()
-        return dict(decl=decl, init=init)
+        return dict(decl=decl, init=init, bitsize=None)
 
     # ------------------------------------------------------------------
     # Structs/unions/enums
@@ -1142,13 +1144,17 @@ class CParser:
             else:
                 decl_type = c_ast.IdentifierType(node)
             self._expect("SEMI")
-            return self._build_declarations(spec=spec, decls=[dict(decl=decl_type)])
+            return self._build_declarations(
+                spec=spec, decls=[dict(decl=decl_type, init=None, bitsize=None)]
+            )
 
         self._expect("SEMI")
-        return self._build_declarations(spec=spec, decls=[dict(decl=None, init=None)])
+        return self._build_declarations(
+            spec=spec, decls=[dict(decl=None, init=None, bitsize=None)]
+        )
 
     # BNF: struct_declarator_list : struct_declarator (',' struct_declarator)*
-    def _parse_struct_declarator_list(self) -> List[Dict[str, Any]]:
+    def _parse_struct_declarator_list(self) -> List["_DeclInfo"]:
         decls = [self._parse_struct_declarator()]
         while self._accept("COMMA"):
             decls.append(self._parse_struct_declarator())
@@ -1156,17 +1162,21 @@ class CParser:
 
     # BNF: struct_declarator : declarator? ':' constant_expression
     #                        | declarator (':' constant_expression)?
-    def _parse_struct_declarator(self) -> Dict[str, Any]:
+    def _parse_struct_declarator(self) -> "_DeclInfo":
         if self._accept("COLON"):
             bitsize = self._parse_constant_expression()
-            return {"decl": c_ast.TypeDecl(None, None, None, None), "bitsize": bitsize}
+            return {
+                "decl": c_ast.TypeDecl(None, None, None, None),
+                "init": None,
+                "bitsize": bitsize,
+            }
 
         decl = self._parse_declarator()
         if self._accept("COLON"):
             bitsize = self._parse_constant_expression()
-            return {"decl": decl, "bitsize": bitsize}
+            return {"decl": decl, "init": None, "bitsize": bitsize}
 
-        return {"decl": decl, "bitsize": None}
+        return {"decl": decl, "init": None, "bitsize": None}
 
     # BNF: enum_specifier : ENUM ID? '{' enumerator_list? '}'
     #                     | ENUM ID
@@ -1413,7 +1423,9 @@ class CParser:
                 allow_abstract=True, typeid_paren_as_abstract=True
             )
             if is_named:
-                return self._build_declarations(spec=spec, decls=[dict(decl=decl)])[0]
+                return self._build_declarations(
+                    spec=spec, decls=[dict(decl=decl, init=None, bitsize=None)]
+                )[0]
             return self._build_parameter_declaration(spec, decl, spec_coord)
 
         decl = self._parse_abstract_declarator_opt()
@@ -1428,7 +1440,7 @@ class CParser:
             and self._is_type_in_scope(spec["type"][-1].names[0])
         ):
             return self._build_declarations(
-                spec=spec, decls=[dict(decl=decl, init=None)]
+                spec=spec, decls=[dict(decl=decl, init=None, bitsize=None)]
             )[0]
 
         decl = c_ast.Typename(
@@ -2354,3 +2366,13 @@ class _DeclSpec(TypedDict):
 
 
 _DeclSpecKind = Literal["qual", "storage", "type", "function", "alignment"]
+
+
+class _DeclInfo(TypedDict):
+    # Declarator payloads used by declaration/initializer parsing:
+    # - decl: the declarator node (may be None for abstract/implicit cases)
+    # - init: optional initializer expression
+    # - bitsize: optional bit-field width expression (for struct declarators)
+    decl: Optional[c_ast.Node]
+    init: Optional[c_ast.Node]
+    bitsize: Optional[c_ast.Node]
