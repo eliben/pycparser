@@ -416,7 +416,9 @@ class CParser:
                 else:
                     self._add_identifier(fixed_decl.name, fixed_decl.coord)
 
-            fixed_decl = fix_atomic_specifiers(fixed_decl)
+            fixed_decl = fix_atomic_specifiers(
+                cast(c_ast.Decl | c_ast.Typedef, fixed_decl)
+            )
             declarations.append(fixed_decl)
 
         return declarations

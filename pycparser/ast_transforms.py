@@ -7,12 +7,12 @@
 # License: BSD
 # ------------------------------------------------------------------------------
 
-from typing import Any, cast
+from typing import Any, List, Tuple, cast
 
 from . import c_ast
 
 
-def fix_switch_cases(switch_node):
+def fix_switch_cases(switch_node: c_ast.Switch) -> c_ast.Switch:
     """The 'case' statements in a 'switch' come out of parsing with one
     child node, so subsequent statements are just tucked to the parent
     Compound. Additionally, consecutive (fall-through) case statements
@@ -72,7 +72,7 @@ def fix_switch_cases(switch_node):
     new_compound = c_ast.Compound([], switch_node.stmt.coord)
 
     # The last Case/Default node
-    last_case = None
+    last_case: c_ast.Case | c_ast.Default | None = None
 
     # Goes over the children of the Compound below the Switch, adding them
     # either directly below new_compound or below the last Case as appropriate
@@ -98,16 +98,21 @@ def fix_switch_cases(switch_node):
     return switch_node
 
 
-def _extract_nested_case(case_node, stmts_list):
+def _extract_nested_case(
+    case_node: c_ast.Case | c_ast.Default, stmts_list: List[c_ast.Node]
+) -> None:
     """Recursively extract consecutive Case statements that are made nested
     by the parser and add them to the stmts_list.
     """
     if isinstance(case_node.stmts[0], (c_ast.Case, c_ast.Default)):
-        stmts_list.append(case_node.stmts.pop())
-        _extract_nested_case(stmts_list[-1], stmts_list)
+        nested = case_node.stmts.pop()
+        stmts_list.append(nested)
+        _extract_nested_case(cast(Any, nested), stmts_list)
 
 
-def fix_atomic_specifiers(decl):
+def fix_atomic_specifiers(
+    decl: c_ast.Decl | c_ast.Typedef,
+) -> c_ast.Decl | c_ast.Typedef:
     """Atomic specifiers like _Atomic(type) are unusually structured,
     conferring a qualifier upon the contained type.
 
@@ -125,7 +130,7 @@ def fix_atomic_specifiers(decl):
     # Make sure to add an _Atomic qual on the topmost decl if needed. Also
     # restore the declname on the innermost TypeDecl (it gets placed in the
     # wrong place during construction).
-    typ = decl
+    typ: Any = decl
     while not isinstance(typ, c_ast.TypeDecl):
         try:
             typ = typ.type
@@ -139,13 +144,15 @@ def fix_atomic_specifiers(decl):
     return decl
 
 
-def _fix_atomic_specifiers_once(decl):
+def _fix_atomic_specifiers_once(
+    decl: c_ast.Decl | c_ast.Typedef,
+) -> Tuple[c_ast.Decl | c_ast.Typedef, bool]:
     """Performs one 'fix' round of atomic specifiers.
     Returns (modified_decl, found) where found is True iff a fix was made.
     """
-    parent = decl
-    grandparent = None
-    node = decl.type
+    parent: Any = decl
+    grandparent: Any = None
+    node: Any = decl.type
     while node is not None:
         if isinstance(node, c_ast.Typename) and "_Atomic" in node.quals:
             break
