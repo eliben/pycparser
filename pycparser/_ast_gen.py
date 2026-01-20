@@ -14,6 +14,7 @@
 # -----------------------------------------------------------------
 from string import Template
 import os
+from typing import IO
 
 
 class ASTCodeGenerator:
@@ -27,7 +28,7 @@ class ASTCodeGenerator:
             for (name, contents) in self.parse_cfgfile(cfg_filename)
         ]
 
-    def generate(self, file=None):
+    def generate(self, file: IO[str]) -> None:
         """Generates the code into file, an open file buffer."""
         src = Template(_PROLOGUE_COMMENT).substitute(cfg_filename=self.cfg_filename)
 

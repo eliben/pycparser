@@ -7,6 +7,8 @@
 # License: BSD
 # ------------------------------------------------------------------------------
 
+from typing import Any, cast
+
 from . import c_ast
 
 
@@ -158,7 +160,8 @@ def _fix_atomic_specifiers_once(decl):
             return decl, False
 
     assert isinstance(parent, c_ast.TypeDecl)
-    grandparent.type = node.type
+    assert grandparent is not None
+    cast(Any, grandparent).type = node.type
     if "_Atomic" not in node.type.quals:
         node.type.quals.append("_Atomic")
     return decl, True

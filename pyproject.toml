@@ -33,3 +33,6 @@ pycparser = ["*.cfg"]
 
 [tool.ruff.lint]
 ignore = ["F403", "F405"]
+
+[tool.ty.src]
+exclude = ["setup.py", "utils/internal/memprofiling.py"]
