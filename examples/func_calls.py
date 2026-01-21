@@ -23,7 +23,7 @@ class FuncCallVisitor(c_ast.NodeVisitor):
 
     def visit_FuncCall(self, node: c_ast.FuncCall) -> None:
         if isinstance(node.name, c_ast.ID) and node.name.name == self.funcname:
-            print("%s called at %s" % (self.funcname, node.name.coord))
+            print(f"{self.funcname} called at {node.name.coord}")
         # Visit args in case they contain more func calls.
         if node.args is not None:
             self.visit(node.args)

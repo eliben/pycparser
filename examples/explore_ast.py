@@ -96,7 +96,7 @@ function_decl = ast.ext[2].decl
 # The following displays the name and type of each argument:
 
 # for param_decl in function_decl.type.args.params:
-# print('Arg name: %s' % param_decl.name)
+# print(f"Arg name: {param_decl.name}")
 # print('Type:')
 # param_decl.type.show(offset=6)
 

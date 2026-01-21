@@ -104,7 +104,7 @@ def _explain_type(decl: c_ast.Node) -> str:
         case c_ast.ArrayDecl():
             arr = "array"
             if decl.dim is not None:
-                arr += "[%s]" % decl.dim.value
+                arr += f"[{decl.dim.value}]"
             return arr + " of " + _explain_type(decl.type)
         case c_ast.FuncDecl():
             if decl.args is not None:
@@ -112,13 +112,13 @@ def _explain_type(decl: c_ast.Node) -> str:
                 args = ", ".join(params)
             else:
                 args = ""
-            return "function(%s) returning " % (args) + _explain_type(decl.type)
+            return f"function({args}) returning " + _explain_type(decl.type)
         case c_ast.Struct():
             decls = [_explain_decl_node(mem_decl) for mem_decl in decl.decls]
             members = ", ".join(decls)
-            return "struct%s " % (" " + decl.name if decl.name else "") + (
-                "containing {%s}" % members if members else ""
-            )
+            struct_name = f" {decl.name}" if decl.name else ""
+            contents = f"containing {{{members}}}" if members else ""
+            return f"struct{struct_name} " + contents
         case _:
             return ""
 
@@ -153,7 +153,7 @@ def _expand_in_place(
             if not decl.decls:
                 struct = _find_struct(decl.name, file_ast)
                 if struct is None:
-                    raise RuntimeError("using undeclared struct %s" % decl.name)
+                    raise RuntimeError(f"using undeclared struct {decl.name}")
                 decl.decls = struct.decls
 
             for i, mem_decl in enumerate(decl.decls):
@@ -165,7 +165,7 @@ def _expand_in_place(
         case c_ast.IdentifierType() if decl.names[0] not in ("int", "char"):
             typedef = _find_typedef(decl.names[0], file_ast)
             if typedef is None:
-                raise RuntimeError("using undeclared type %s" % decl.names[0])
+                raise RuntimeError(f"using undeclared type {decl.names[0]}")
             if expand_typedef:
                 return typedef.type
         case _:

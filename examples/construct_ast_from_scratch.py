@@ -57,4 +57,4 @@ if __name__ == "__main__":
     main_function_ast.show(offset=2)
     print("|----------------------------------------|")
     main_c_code = generate_c_code(main_function_ast)
-    print("C code: \n%s" % main_c_code)
+    print(f"C code: \n{main_c_code}")

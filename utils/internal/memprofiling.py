@@ -92,7 +92,8 @@ def memprofile():
 
     parse_file("/tmp/197.c")
 
-    print("Memory usage: %s (kb)" % resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    print(f"Memory usage: {usage} (kb)")
 
     snapshot = tracemalloc.take_snapshot()
     print("[ tracemalloc stats ]")

@@ -23,7 +23,7 @@ from pycparser import c_ast, parse_file
 # locations of function definitions.
 class FuncDefVisitor(c_ast.NodeVisitor):
     def visit_FuncDef(self, node: c_ast.FuncDef) -> None:
-        print("%s at %s" % (node.decl.name, node.decl.coord))
+        print(f"{node.decl.name} at {node.decl.coord}")
 
 
 def show_func_defs(filename: str) -> None:
