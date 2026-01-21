@@ -1553,23 +1553,25 @@ class CParser:
     #                | static_assert | pppragma_directive
     def _parse_statement(self) -> c_ast.Node | List[c_ast.Node]:
         tok_type = self._peek_type()
-        if tok_type in {"CASE", "DEFAULT"}:
-            return self._parse_labeled_statement()
-        if tok_type == "ID" and self._peek_type(2) == "COLON":
-            return self._parse_labeled_statement()
-        if tok_type == "LBRACE":
-            return self._parse_compound_statement()
-        if tok_type in {"IF", "SWITCH"}:
-            return self._parse_selection_statement()
-        if tok_type in {"WHILE", "DO", "FOR"}:
-            return self._parse_iteration_statement()
-        if tok_type in {"GOTO", "BREAK", "CONTINUE", "RETURN"}:
-            return self._parse_jump_statement()
-        if tok_type in {"PPPRAGMA", "_PRAGMA"}:
-            return self._parse_pppragma_directive()
-        if tok_type == "_STATIC_ASSERT":
-            return self._parse_static_assert()
-        return self._parse_expression_statement()
+        match tok_type:
+            case "CASE" | "DEFAULT":
+                return self._parse_labeled_statement()
+            case "ID" if self._peek_type(2) == "COLON":
+                return self._parse_labeled_statement()
+            case "LBRACE":
+                return self._parse_compound_statement()
+            case "IF" | "SWITCH":
+                return self._parse_selection_statement()
+            case "WHILE" | "DO" | "FOR":
+                return self._parse_iteration_statement()
+            case "GOTO" | "BREAK" | "CONTINUE" | "RETURN":
+                return self._parse_jump_statement()
+            case "PPPRAGMA" | "_PRAGMA":
+                return self._parse_pppragma_directive()
+            case "_STATIC_ASSERT":
+                return self._parse_static_assert()
+            case _:
+                return self._parse_expression_statement()
 
     # BNF: pragmacomp_or_statement : pppragma_directive* statement
     def _parse_pragmacomp_or_statement(self) -> c_ast.Node | List[c_ast.Node]:
@@ -1614,58 +1616,57 @@ class CParser:
     #                        | DEFAULT ':' statement
     def _parse_labeled_statement(self) -> c_ast.Node:
         tok_type = self._peek_type()
-        if tok_type == "ID":
-            name_tok = self._advance()
-            self._expect("COLON")
-            if self._starts_statement():
-                stmt = self._parse_pragmacomp_or_statement()
-            else:
-                stmt = c_ast.EmptyStatement(self._tok_coord(name_tok))
-            return c_ast.Label(name_tok.value, stmt, self._tok_coord(name_tok))
-
-        if tok_type == "CASE":
-            case_tok = self._advance()
-            expr = self._parse_constant_expression()
-            self._expect("COLON")
-            if self._starts_statement():
-                stmt = self._parse_pragmacomp_or_statement()
-            else:
-                stmt = c_ast.EmptyStatement(self._tok_coord(case_tok))
-            return c_ast.Case(expr, [stmt], self._tok_coord(case_tok))
-
-        if tok_type == "DEFAULT":
-            def_tok = self._advance()
-            self._expect("COLON")
-            if self._starts_statement():
-                stmt = self._parse_pragmacomp_or_statement()
-            else:
-                stmt = c_ast.EmptyStatement(self._tok_coord(def_tok))
-            return c_ast.Default([stmt], self._tok_coord(def_tok))
-
-        self._parse_error("Invalid labeled statement", self.clex.filename)
+        match tok_type:
+            case "ID":
+                name_tok = self._advance()
+                self._expect("COLON")
+                if self._starts_statement():
+                    stmt = self._parse_pragmacomp_or_statement()
+                else:
+                    stmt = c_ast.EmptyStatement(self._tok_coord(name_tok))
+                return c_ast.Label(name_tok.value, stmt, self._tok_coord(name_tok))
+            case "CASE":
+                case_tok = self._advance()
+                expr = self._parse_constant_expression()
+                self._expect("COLON")
+                if self._starts_statement():
+                    stmt = self._parse_pragmacomp_or_statement()
+                else:
+                    stmt = c_ast.EmptyStatement(self._tok_coord(case_tok))
+                return c_ast.Case(expr, [stmt], self._tok_coord(case_tok))
+            case "DEFAULT":
+                def_tok = self._advance()
+                self._expect("COLON")
+                if self._starts_statement():
+                    stmt = self._parse_pragmacomp_or_statement()
+                else:
+                    stmt = c_ast.EmptyStatement(self._tok_coord(def_tok))
+                return c_ast.Default([stmt], self._tok_coord(def_tok))
+            case _:
+                self._parse_error("Invalid labeled statement", self.clex.filename)
 
     # BNF: selection_statement : IF '(' expression ')' statement (ELSE statement)?
     #                          | SWITCH '(' expression ')' statement
     def _parse_selection_statement(self) -> c_ast.Node:
         tok = self._advance()
-        if tok.type == "IF":
-            self._expect("LPAREN")
-            cond = self._parse_expression()
-            self._expect("RPAREN")
-            then_stmt = self._parse_pragmacomp_or_statement()
-            if self._accept("ELSE"):
-                else_stmt = self._parse_pragmacomp_or_statement()
-                return c_ast.If(cond, then_stmt, else_stmt, self._tok_coord(tok))
-            return c_ast.If(cond, then_stmt, None, self._tok_coord(tok))
-
-        if tok.type == "SWITCH":
-            self._expect("LPAREN")
-            expr = self._parse_expression()
-            self._expect("RPAREN")
-            stmt = self._parse_pragmacomp_or_statement()
-            return fix_switch_cases(c_ast.Switch(expr, stmt, self._tok_coord(tok)))
-
-        self._parse_error("Invalid selection statement", self._tok_coord(tok))
+        match tok.type:
+            case "IF":
+                self._expect("LPAREN")
+                cond = self._parse_expression()
+                self._expect("RPAREN")
+                then_stmt = self._parse_pragmacomp_or_statement()
+                if self._accept("ELSE"):
+                    else_stmt = self._parse_pragmacomp_or_statement()
+                    return c_ast.If(cond, then_stmt, else_stmt, self._tok_coord(tok))
+                return c_ast.If(cond, then_stmt, None, self._tok_coord(tok))
+            case "SWITCH":
+                self._expect("LPAREN")
+                expr = self._parse_expression()
+                self._expect("RPAREN")
+                stmt = self._parse_pragmacomp_or_statement()
+                return fix_switch_cases(c_ast.Switch(expr, stmt, self._tok_coord(tok)))
+            case _:
+                self._parse_error("Invalid selection statement", self._tok_coord(tok))
 
     # BNF: iteration_statement : WHILE '(' expression ')' statement
     #                          | DO statement WHILE '(' expression ')' ';'
@@ -1673,67 +1674,67 @@ class CParser:
     #                                 expression_opt ';' expression_opt ')' statement
     def _parse_iteration_statement(self) -> c_ast.Node:
         tok = self._advance()
-        if tok.type == "WHILE":
-            self._expect("LPAREN")
-            cond = self._parse_expression()
-            self._expect("RPAREN")
-            stmt = self._parse_pragmacomp_or_statement()
-            return c_ast.While(cond, stmt, self._tok_coord(tok))
+        match tok.type:
+            case "WHILE":
+                self._expect("LPAREN")
+                cond = self._parse_expression()
+                self._expect("RPAREN")
+                stmt = self._parse_pragmacomp_or_statement()
+                return c_ast.While(cond, stmt, self._tok_coord(tok))
+            case "DO":
+                stmt = self._parse_pragmacomp_or_statement()
+                self._expect("WHILE")
+                self._expect("LPAREN")
+                cond = self._parse_expression()
+                self._expect("RPAREN")
+                self._expect("SEMI")
+                return c_ast.DoWhile(cond, stmt, self._tok_coord(tok))
+            case "FOR":
+                self._expect("LPAREN")
+                if self._starts_declaration():
+                    decls = self._parse_declaration()
+                    init = c_ast.DeclList(decls, self._tok_coord(tok))
+                    cond = self._parse_expression_opt()
+                    self._expect("SEMI")
+                    next_expr = self._parse_expression_opt()
+                    self._expect("RPAREN")
+                    stmt = self._parse_pragmacomp_or_statement()
+                    return c_ast.For(init, cond, next_expr, stmt, self._tok_coord(tok))
 
-        if tok.type == "DO":
-            stmt = self._parse_pragmacomp_or_statement()
-            self._expect("WHILE")
-            self._expect("LPAREN")
-            cond = self._parse_expression()
-            self._expect("RPAREN")
-            self._expect("SEMI")
-            return c_ast.DoWhile(cond, stmt, self._tok_coord(tok))
-
-        if tok.type == "FOR":
-            self._expect("LPAREN")
-            if self._starts_declaration():
-                decls = self._parse_declaration()
-                init = c_ast.DeclList(decls, self._tok_coord(tok))
+                init = self._parse_expression_opt()
+                self._expect("SEMI")
                 cond = self._parse_expression_opt()
                 self._expect("SEMI")
                 next_expr = self._parse_expression_opt()
                 self._expect("RPAREN")
                 stmt = self._parse_pragmacomp_or_statement()
                 return c_ast.For(init, cond, next_expr, stmt, self._tok_coord(tok))
-
-            init = self._parse_expression_opt()
-            self._expect("SEMI")
-            cond = self._parse_expression_opt()
-            self._expect("SEMI")
-            next_expr = self._parse_expression_opt()
-            self._expect("RPAREN")
-            stmt = self._parse_pragmacomp_or_statement()
-            return c_ast.For(init, cond, next_expr, stmt, self._tok_coord(tok))
-
-        self._parse_error("Invalid iteration statement", self._tok_coord(tok))
+            case _:
+                self._parse_error("Invalid iteration statement", self._tok_coord(tok))
 
     # BNF: jump_statement : GOTO ID ';' | BREAK ';' | CONTINUE ';'
     #                     | RETURN expression? ';'
     def _parse_jump_statement(self) -> c_ast.Node:
         tok = self._advance()
-        if tok.type == "GOTO":
-            name_tok = self._expect("ID")
-            self._expect("SEMI")
-            return c_ast.Goto(name_tok.value, self._tok_coord(tok))
-        if tok.type == "BREAK":
-            self._expect("SEMI")
-            return c_ast.Break(self._tok_coord(tok))
-        if tok.type == "CONTINUE":
-            self._expect("SEMI")
-            return c_ast.Continue(self._tok_coord(tok))
-        if tok.type == "RETURN":
-            if self._accept("SEMI"):
-                return c_ast.Return(None, self._tok_coord(tok))
-            expr = self._parse_expression()
-            self._expect("SEMI")
-            return c_ast.Return(expr, self._tok_coord(tok))
-
-        self._parse_error("Invalid jump statement", self._tok_coord(tok))
+        match tok.type:
+            case "GOTO":
+                name_tok = self._expect("ID")
+                self._expect("SEMI")
+                return c_ast.Goto(name_tok.value, self._tok_coord(tok))
+            case "BREAK":
+                self._expect("SEMI")
+                return c_ast.Break(self._tok_coord(tok))
+            case "CONTINUE":
+                self._expect("SEMI")
+                return c_ast.Continue(self._tok_coord(tok))
+            case "RETURN":
+                if self._accept("SEMI"):
+                    return c_ast.Return(None, self._tok_coord(tok))
+                expr = self._parse_expression()
+                self._expect("SEMI")
+                return c_ast.Return(expr, self._tok_coord(tok))
+            case _:
+                self._parse_error("Invalid jump statement", self._tok_coord(tok))
 
     # BNF: expression_statement : expression_opt ';'
     def _parse_expression_statement(self) -> c_ast.Node:

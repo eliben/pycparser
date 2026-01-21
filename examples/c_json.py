@@ -168,14 +168,14 @@ def _convert_to_obj(value: Any) -> Any:
     Note: Mutually recursive with from_dict.
 
     """
-    value_type = type(value)
-    if value_type is dict:
-        return from_dict(value)
-    elif value_type is list:
-        return [_convert_to_obj(item) for item in value]
-    else:
-        # String
-        return value
+    match value:
+        case dict():
+            return from_dict(value)
+        case list():
+            return [_convert_to_obj(item) for item in value]
+        case _:
+            # String
+            return value
 
 
 def from_dict(node_dict: Dict[str, Any]) -> c_ast.Node:

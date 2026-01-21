@@ -70,17 +70,19 @@ class CGenerator:
         return fref + "(" + args + ")"
 
     def visit_UnaryOp(self, n: c_ast.UnaryOp) -> str:
-        if n.op == "sizeof":
-            # Always parenthesize the argument of sizeof since it can be
-            # a name.
-            return "sizeof(%s)" % self.visit(n.expr)
-        else:
-            operand = self._parenthesize_unless_simple(n.expr)
-            if n.op == "p++":
+        match n.op:
+            case "sizeof":
+                # Always parenthesize the argument of sizeof since it can be
+                # a name.
+                return "sizeof(%s)" % self.visit(n.expr)
+            case "p++":
+                operand = self._parenthesize_unless_simple(n.expr)
                 return "%s++" % operand
-            elif n.op == "p--":
+            case "p--":
+                operand = self._parenthesize_unless_simple(n.expr)
                 return "%s--" % operand
-            else:
+            case _:
+                operand = self._parenthesize_unless_simple(n.expr)
                 return "%s%s" % (n.op, operand)
 
     # Precedence map of binary operators:
@@ -154,12 +156,13 @@ class CGenerator:
         return " ".join(n.names)
 
     def _visit_expr(self, n: c_ast.Node) -> str:
-        if isinstance(n, c_ast.InitList):
-            return "{" + self.visit(n) + "}"
-        elif isinstance(n, (c_ast.ExprList, c_ast.Compound)):
-            return "(" + self.visit(n) + ")"
-        else:
-            return self.visit(n)
+        match n:
+            case c_ast.InitList():
+                return "{" + self.visit(n) + "}"
+            case c_ast.ExprList() | c_ast.Compound():
+                return "(" + self.visit(n) + ")"
+            case _:
+                return self.visit(n)
 
     def visit_Decl(self, n: c_ast.Decl, no_type: bool = False) -> str:
         # no_type is used when a Decl is part of a DeclList, where the type is
@@ -235,12 +238,13 @@ class CGenerator:
     def visit_FileAST(self, n: c_ast.FileAST) -> str:
         s = ""
         for ext in n.ext:
-            if isinstance(ext, c_ast.FuncDef):
-                s += self.visit(ext)
-            elif isinstance(ext, c_ast.Pragma):
-                s += self.visit(ext) + "\n"
-            else:
-                s += self.visit(ext) + ";\n"
+            match ext:
+                case c_ast.FuncDef():
+                    s += self.visit(ext)
+                case c_ast.Pragma():
+                    s += self.visit(ext) + "\n"
+                case _:
+                    s += self.visit(ext) + ";\n"
         return s
 
     def visit_Compound(self, n: c_ast.Compound) -> str:
@@ -427,42 +431,42 @@ class CGenerator:
         for individual visit_* methods to handle different treatment of
         some statements in this context.
         """
-        typ = type(n)
         if add_indent:
             self.indent_level += 2
         indent = self._make_indent()
         if add_indent:
             self.indent_level -= 2
 
-        if typ in (
-            c_ast.Decl,
-            c_ast.Assignment,
-            c_ast.Cast,
-            c_ast.UnaryOp,
-            c_ast.BinaryOp,
-            c_ast.TernaryOp,
-            c_ast.FuncCall,
-            c_ast.ArrayRef,
-            c_ast.StructRef,
-            c_ast.Constant,
-            c_ast.ID,
-            c_ast.Typedef,
-            c_ast.ExprList,
-        ):
-            # These can also appear in an expression context so no semicolon
-            # is added to them automatically
-            #
-            return indent + self.visit(n) + ";\n"
-        elif typ in (c_ast.Compound,):
-            # No extra indentation required before the opening brace of a
-            # compound - because it consists of multiple lines it has to
-            # compute its own indentation.
-            #
-            return self.visit(n)
-        elif typ in (c_ast.If,):
-            return indent + self.visit(n)
-        else:
-            return indent + self.visit(n) + "\n"
+        match n:
+            case (
+                c_ast.Decl()
+                | c_ast.Assignment()
+                | c_ast.Cast()
+                | c_ast.UnaryOp()
+                | c_ast.BinaryOp()
+                | c_ast.TernaryOp()
+                | c_ast.FuncCall()
+                | c_ast.ArrayRef()
+                | c_ast.StructRef()
+                | c_ast.Constant()
+                | c_ast.ID()
+                | c_ast.Typedef()
+                | c_ast.ExprList()
+            ):
+                # These can also appear in an expression context so no semicolon
+                # is added to them automatically
+                #
+                return indent + self.visit(n) + ";\n"
+            case c_ast.Compound():
+                # No extra indentation required before the opening brace of a
+                # compound - because it consists of multiple lines it has to
+                # compute its own indentation.
+                #
+                return self.visit(n)
+            case c_ast.If():
+                return indent + self.visit(n)
+            case _:
+                return indent + self.visit(n) + "\n"
 
     def _generate_decl(self, n: c_ast.Decl) -> str:
         """Generation from a Decl node."""
@@ -488,57 +492,61 @@ class CGenerator:
         generation from it.
         """
         # ~ print(n, modifiers)
-        if isinstance(n, c_ast.TypeDecl):
-            s = ""
-            if n.quals:
-                s += " ".join(n.quals) + " "
-            s += self.visit(n.type)
+        match n:
+            case c_ast.TypeDecl():
+                s = ""
+                if n.quals:
+                    s += " ".join(n.quals) + " "
+                s += self.visit(n.type)
 
-            nstr = n.declname if n.declname and emit_declname else ""
-            # Resolve modifiers.
-            # Wrap in parens to distinguish pointer to array and pointer to
-            # function syntax.
-            #
-            for i, modifier in enumerate(modifiers):
-                if isinstance(modifier, c_ast.ArrayDecl):
-                    if i != 0 and isinstance(modifiers[i - 1], c_ast.PtrDecl):
-                        nstr = "(" + nstr + ")"
-                    nstr += "["
-                    if modifier.dim_quals:
-                        nstr += " ".join(modifier.dim_quals) + " "
-                    if modifier.dim is not None:
-                        nstr += self.visit(modifier.dim)
-                    nstr += "]"
-                elif isinstance(modifier, c_ast.FuncDecl):
-                    if i != 0 and isinstance(modifiers[i - 1], c_ast.PtrDecl):
-                        nstr = "(" + nstr + ")"
-                    args = (
-                        self.visit(modifier.args) if modifier.args is not None else ""
-                    )
-                    nstr += "(" + args + ")"
-                elif isinstance(modifier, c_ast.PtrDecl):
-                    if modifier.quals:
-                        nstr = "* %s%s" % (
-                            " ".join(modifier.quals),
-                            " " + nstr if nstr else "",
-                        )
-                    else:
-                        nstr = "*" + nstr
-            if nstr:
-                s += " " + nstr
-            return s
-        elif isinstance(n, c_ast.Decl):
-            return self._generate_decl(n.type)
-        elif isinstance(n, c_ast.Typename):
-            return self._generate_type(n.type, emit_declname=emit_declname)
-        elif isinstance(n, c_ast.IdentifierType):
-            return " ".join(n.names) + " "
-        elif isinstance(n, (c_ast.ArrayDecl, c_ast.PtrDecl, c_ast.FuncDecl)):
-            return self._generate_type(
-                n.type, modifiers + [n], emit_declname=emit_declname
-            )
-        else:
-            return self.visit(n)
+                nstr = n.declname if n.declname and emit_declname else ""
+                # Resolve modifiers.
+                # Wrap in parens to distinguish pointer to array and pointer to
+                # function syntax.
+                #
+                for i, modifier in enumerate(modifiers):
+                    match modifier:
+                        case c_ast.ArrayDecl():
+                            if i != 0 and isinstance(modifiers[i - 1], c_ast.PtrDecl):
+                                nstr = "(" + nstr + ")"
+                            nstr += "["
+                            if modifier.dim_quals:
+                                nstr += " ".join(modifier.dim_quals) + " "
+                            if modifier.dim is not None:
+                                nstr += self.visit(modifier.dim)
+                            nstr += "]"
+                        case c_ast.FuncDecl():
+                            if i != 0 and isinstance(modifiers[i - 1], c_ast.PtrDecl):
+                                nstr = "(" + nstr + ")"
+                            args = (
+                                self.visit(modifier.args)
+                                if modifier.args is not None
+                                else ""
+                            )
+                            nstr += "(" + args + ")"
+                        case c_ast.PtrDecl():
+                            if modifier.quals:
+                                nstr = "* %s%s" % (
+                                    " ".join(modifier.quals),
+                                    " " + nstr if nstr else "",
+                                )
+                            else:
+                                nstr = "*" + nstr
+                if nstr:
+                    s += " " + nstr
+                return s
+            case c_ast.Decl():
+                return self._generate_decl(n.type)
+            case c_ast.Typename():
+                return self._generate_type(n.type, emit_declname=emit_declname)
+            case c_ast.IdentifierType():
+                return " ".join(n.names) + " "
+            case c_ast.ArrayDecl() | c_ast.PtrDecl() | c_ast.FuncDecl():
+                return self._generate_type(
+                    n.type, modifiers + [n], emit_declname=emit_declname
+                )
+            case _:
+                return self.visit(n)
 
     def _parenthesize_if(
         self, n: c_ast.Node, condition: Callable[[c_ast.Node], bool]
