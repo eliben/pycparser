@@ -14,7 +14,6 @@ pycparser v2.23
 
 .. sectnum::
 
-
 Introduction
 ============
 
@@ -83,11 +82,11 @@ Installing
 Prerequisites
 -------------
 
-* **pycparser** was tested with Python 3.8+ on Linux, macOS and Windows.
+**pycparser** is being tested with modern versions of Python on
+Linux, macOS and Windows. See `the CI dashboard <https://github.com/eliben/pycparser/actions/workflows/ci.yml>`__
+for details.
 
-* **pycparser** has no external dependencies. The repository still bundles PLY
-  in ``pycparser/ply`` for optional utilities, but the core lexer and parser
-  are standalone and do not rely on PLY.
+**pycparser** has no external dependencies.
 
 Installation process
 --------------------
