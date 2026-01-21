@@ -26,6 +26,8 @@ To upload to PyPI:
 
   $ uv publish dist/*
 
+(can use ``--token``)
+
 Check that `pip` can install and load pycparser from PyPI in this new version.
 
 Tag in git. When pushing to GitHub, git push --tags

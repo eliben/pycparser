@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pycparser"
-version = "2.23"
+version = "3.00"
 description = "C parser in Python"
 readme = "README.rst"
 license = "BSD-3-Clause"
