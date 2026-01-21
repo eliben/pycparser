@@ -12,14 +12,12 @@ from enum import Enum
 from typing import Callable, Dict, List, Optional, Tuple
 
 
+@dataclass(slots=True)
 class _Token:
-    __slots__ = ("type", "value", "lineno", "column")
-
-    def __init__(self, typ: str, value: str, lineno: int, column: int) -> None:
-        self.type = typ
-        self.value = value
-        self.lineno = lineno
-        self.column = column
+    type: str
+    value: str
+    lineno: int
+    column: int
 
 
 class CLexer:

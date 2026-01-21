@@ -6,6 +6,7 @@
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 # ------------------------------------------------------------------------------
+from dataclasses import dataclass
 from typing import (
     Any,
     Dict,
@@ -23,6 +24,7 @@ from .c_lexer import CLexer, _Token
 from .ast_transforms import fix_switch_cases, fix_atomic_specifiers
 
 
+@dataclass
 class Coord:
     """Coordinates of a syntactic element. Consists of:
     - File name
@@ -30,16 +32,9 @@ class Coord:
     - Column number
     """
 
-    __slots__ = ("file", "line", "column", "__weakref__")
-
     file: str
     line: int
-    column: Optional[int]
-
-    def __init__(self, file: str, line: int, column: Optional[int] = None) -> None:
-        self.file = file
-        self.line = line
-        self.column = column
+    column: Optional[int] = None
 
     def __str__(self) -> str:
         text = f"{self.file}:{self.line}"
