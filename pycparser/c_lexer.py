@@ -187,7 +187,7 @@ class CLexer:
                     break
 
         if best is None:
-            msg = "Illegal character %s" % repr(text[pos])
+            msg = f"Illegal character {repr(text[pos])}"
             self._error(msg, pos)
             self._pos += 1
             return None
@@ -195,7 +195,7 @@ class CLexer:
         length, tok_type, value, action, msg = best
         if action == _RegexAction.ERROR:
             if tok_type == "BAD_CHAR_CONST":
-                msg = "Invalid char constant %s" % value
+                msg = f"Invalid char constant {value}"
             # All other ERROR rules provide a message.
             assert msg is not None
             self._error(msg, pos)
@@ -630,7 +630,7 @@ _regex_actions: Dict[str, Tuple[_RegexAction, Optional[str]]] = {}
 _regex_pattern_parts: List[str] = []
 for _rule in _regex_rules:
     _regex_actions[_rule.tok_type] = (_rule.action, _rule.error_message)
-    _regex_pattern_parts.append("(?P<%s>%s)" % (_rule.tok_type, _rule.regex_pattern))
+    _regex_pattern_parts.append(f"(?P<{_rule.tok_type}>{_rule.regex_pattern})")
 # The master regex is a single alternation of all token patterns, each wrapped
 # in a named group. We match once at the current position and then use
 # `lastgroup` to recover which token kind fired; this avoids iterating over all

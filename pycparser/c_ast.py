@@ -118,13 +118,13 @@ class Node:
                 if showemptyattrs or not is_empty(getattr(self, n))
             ]
             if attrnames:
-                attrstr = ", ".join("%s=%s" % nv for nv in nvlist)
+                attrstr = ", ".join(f"{name}={value}" for name, value in nvlist)
             else:
-                attrstr = ", ".join("%s" % v for (_, v) in nvlist)
+                attrstr = ", ".join(f"{value}" for _, value in nvlist)
             buf.write(attrstr)
 
         if showcoord:
-            buf.write(" (at %s)" % self.coord)
+            buf.write(f" (at {self.coord})")
         buf.write("\n")
 
         for child_name, child in self.children():
@@ -349,7 +349,7 @@ class Case(Node):
         if self.expr is not None:
             nodelist.append(("expr", self.expr))
         for i, child in enumerate(self.stmts or []):
-            nodelist.append(("stmts[%d]" % i, child))
+            nodelist.append((f"stmts[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -396,7 +396,7 @@ class Compound(Node):
     def children(self):
         nodelist = []
         for i, child in enumerate(self.block_items or []):
-            nodelist.append(("block_items[%d]" % i, child))
+            nodelist.append((f"block_items[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -533,7 +533,7 @@ class DeclList(Node):
     def children(self):
         nodelist = []
         for i, child in enumerate(self.decls or []):
-            nodelist.append(("decls[%d]" % i, child))
+            nodelist.append((f"decls[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -553,7 +553,7 @@ class Default(Node):
     def children(self):
         nodelist = []
         for i, child in enumerate(self.stmts or []):
-            nodelist.append(("stmts[%d]" % i, child))
+            nodelist.append((f"stmts[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -672,7 +672,7 @@ class EnumeratorList(Node):
     def children(self):
         nodelist = []
         for i, child in enumerate(self.enumerators or []):
-            nodelist.append(("enumerators[%d]" % i, child))
+            nodelist.append((f"enumerators[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -692,7 +692,7 @@ class ExprList(Node):
     def children(self):
         nodelist = []
         for i, child in enumerate(self.exprs or []):
-            nodelist.append(("exprs[%d]" % i, child))
+            nodelist.append((f"exprs[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -712,7 +712,7 @@ class FileAST(Node):
     def children(self):
         nodelist = []
         for i, child in enumerate(self.ext or []):
-            nodelist.append(("ext[%d]" % i, child))
+            nodelist.append((f"ext[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -823,7 +823,7 @@ class FuncDef(Node):
         if self.body is not None:
             nodelist.append(("body", self.body))
         for i, child in enumerate(self.param_decls or []):
-            nodelist.append(("param_decls[%d]" % i, child))
+            nodelist.append((f"param_decls[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -931,7 +931,7 @@ class InitList(Node):
     def children(self):
         nodelist = []
         for i, child in enumerate(self.exprs or []):
-            nodelist.append(("exprs[%d]" % i, child))
+            nodelist.append((f"exprs[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -975,7 +975,7 @@ class NamedInitializer(Node):
         if self.expr is not None:
             nodelist.append(("expr", self.expr))
         for i, child in enumerate(self.name or []):
-            nodelist.append(("name[%d]" % i, child))
+            nodelist.append((f"name[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -997,7 +997,7 @@ class ParamList(Node):
     def children(self):
         nodelist = []
         for i, child in enumerate(self.params or []):
-            nodelist.append(("params[%d]" % i, child))
+            nodelist.append((f"params[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -1084,7 +1084,7 @@ class Struct(Node):
     def children(self):
         nodelist = []
         for i, child in enumerate(self.decls or []):
-            nodelist.append(("decls[%d]" % i, child))
+            nodelist.append((f"decls[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -1288,7 +1288,7 @@ class Union(Node):
     def children(self):
         nodelist = []
         for i, child in enumerate(self.decls or []):
-            nodelist.append(("decls[%d]" % i, child))
+            nodelist.append((f"decls[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):

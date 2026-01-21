@@ -74,16 +74,16 @@ class CGenerator:
             case "sizeof":
                 # Always parenthesize the argument of sizeof since it can be
                 # a name.
-                return "sizeof(%s)" % self.visit(n.expr)
+                return f"sizeof({self.visit(n.expr)})"
             case "p++":
                 operand = self._parenthesize_unless_simple(n.expr)
-                return "%s++" % operand
+                return f"{operand}++"
             case "p--":
                 operand = self._parenthesize_unless_simple(n.expr)
-                return "%s--" % operand
+                return f"{operand}--"
             case _:
                 operand = self._parenthesize_unless_simple(n.expr)
-                return "%s%s" % (n.op, operand)
+                return f"{n.op}{operand}"
 
     # Precedence map of binary operators:
     precedence_map = {
@@ -144,13 +144,13 @@ class CGenerator:
                 and self.precedence_map[d.op] > self.precedence_map[n.op]
             ),
         )
-        return "%s %s %s" % (lval_str, n.op, rval_str)
+        return f"{lval_str} {n.op} {rval_str}"
 
     def visit_Assignment(self, n: c_ast.Assignment) -> str:
         rval_str = self._parenthesize_if(
             n.rvalue, lambda n: isinstance(n, c_ast.Assignment)
         )
-        return "%s %s %s" % (self.visit(n.lvalue), n.op, rval_str)
+        return f"{self.visit(n.lvalue)} {n.op} {rval_str}"
 
     def visit_IdentifierType(self, n: c_ast.IdentifierType) -> str:
         return " ".join(n.names)
@@ -526,10 +526,9 @@ class CGenerator:
                             nstr += "(" + args + ")"
                         case c_ast.PtrDecl():
                             if modifier.quals:
-                                nstr = "* %s%s" % (
-                                    " ".join(modifier.quals),
-                                    " " + nstr if nstr else "",
-                                )
+                                quals = " ".join(modifier.quals)
+                                suffix = f" {nstr}" if nstr else ""
+                                nstr = f"* {quals}{suffix}"
                             else:
                                 nstr = "*" + nstr
                 if nstr:

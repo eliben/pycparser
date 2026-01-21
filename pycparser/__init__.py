@@ -47,7 +47,7 @@ def preprocess_file(filename, cpp_path="cpp", cpp_args=""):
         raise RuntimeError(
             "Unable to invoke 'cpp'.  "
             + "Make sure its path was passed correctly\n"
-            + ("Original error: %s" % e)
+            + f"Original error: {e}"
         )
 
     return text

@@ -31,7 +31,7 @@ class TestParsing(unittest.TestCase):
             memmgr_path,
             use_cpp=True,
             cpp_path=cpp_path(),
-            cpp_args=cpp_args("-I%s" % c_files_path),
+            cpp_args=cpp_args(f"-I{c_files_path}"),
         )
         self.assertIsInstance(ast, c_ast.FileAST)
 
@@ -40,7 +40,7 @@ class TestParsing(unittest.TestCase):
             self._find_file("year.c"),
             use_cpp=True,
             cpp_path=cpp_path(),
-            cpp_args=cpp_args("-I%s" % fake_libc),
+            cpp_args=cpp_args(f"-I{fake_libc}"),
         )
 
         self.assertIsInstance(ast2, c_ast.FileAST)
@@ -56,7 +56,7 @@ class TestParsing(unittest.TestCase):
             self._find_file("simplemain.c"),
             use_cpp=True,
             cpp_path=cpp_path(),
-            cpp_args=cpp_args("-I%s" % c_files_path),
+            cpp_args=cpp_args(f"-I{c_files_path}"),
         )
         self.assertIsInstance(ast, c_ast.FileAST)
 
@@ -78,7 +78,7 @@ class TestParsing(unittest.TestCase):
             self._find_file("c11.c"),
             use_cpp=True,
             cpp_path=cpp_path(),
-            cpp_args=cpp_args("-I%s" % fake_libc),
+            cpp_args=cpp_args(f"-I{fake_libc}"),
         )
         self.assertIsInstance(ast, c_ast.FileAST)
 

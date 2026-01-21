@@ -42,9 +42,9 @@ class Coord:
         self.column = column
 
     def __str__(self) -> str:
-        text = "%s:%s" % (self.file, self.line)
+        text = f"{self.file}:{self.line}"
         if self.column:
-            text += ":%s" % self.column
+            text += f":{self.column}"
         return text
 
 
@@ -114,7 +114,7 @@ class CParser:
         ast = self._parse_translation_unit_or_empty()
         tok = self._peek()
         if tok is not None:
-            self._parse_error("before: %s" % tok.value, self._tok_coord(tok))
+            self._parse_error(f"before: {tok.value}", self._tok_coord(tok))
         return ast
 
     # ------------------------------------------------------------------
@@ -124,7 +124,7 @@ class CParser:
         return Coord(file=self.clex.filename, line=lineno, column=column)
 
     def _parse_error(self, msg: str, coord: Coord | str | None) -> NoReturn:
-        raise ParseError("%s: %s" % (coord, msg))
+        raise ParseError(f"{coord}: {msg}")
 
     def _push_scope(self) -> None:
         self._scope_stack.append(dict())
@@ -137,7 +137,7 @@ class CParser:
         """Add a new typedef name (ie a TYPEID) to the current scope"""
         if not self._scope_stack[-1].get(name, True):
             self._parse_error(
-                "Typedef %r previously declared as non-typedef in this scope" % name,
+                f"Typedef {name!r} previously declared as non-typedef in this scope",
                 coord,
             )
         self._scope_stack[-1][name] = True
@@ -148,7 +148,7 @@ class CParser:
         """
         if self._scope_stack[-1].get(name, False):
             self._parse_error(
-                "Non-typedef %r previously declared as typedef in this scope" % name,
+                f"Non-typedef {name!r} previously declared as typedef in this scope",
                 coord,
             )
         self._scope_stack[-1][name] = False
@@ -486,7 +486,7 @@ class CParser:
     def _expect(self, token_type: str) -> _Token:
         tok = self._advance()
         if tok.type != token_type:
-            self._parse_error("before: %s" % tok.value, self._tok_coord(tok))
+            self._parse_error(f"before: {tok.value}", self._tok_coord(tok))
         return tok
 
     def _mark(self) -> int:

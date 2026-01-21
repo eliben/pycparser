@@ -4,7 +4,8 @@
 # Generates the AST Node classes from a specification given in
 # a configuration file. This module can also be run as a script to
 # regenerate c_ast.py from _c_ast.cfg (from the repo root or the
-# pycparser/ directory).
+# pycparser/ directory). Use 'make check' to reformat the generated
+# file after running this script.
 #
 # The design of this module was inspired by astgen.py from the
 # Python 2.5 code-base.
@@ -51,7 +52,7 @@ class ASTCodeGenerator:
                 lbracket_i = line.find("[")
                 rbracket_i = line.find("]")
                 if colon_i < 1 or lbracket_i <= colon_i or rbracket_i <= lbracket_i:
-                    raise RuntimeError("Invalid line in %s:\n%s\n" % (filename, line))
+                    raise RuntimeError(f"Invalid line in {filename}:\n{line}\n")
 
                 name = line[:colon_i]
                 val = line[lbracket_i + 1 : rbracket_i]
@@ -93,22 +94,22 @@ class NodeCfg:
         return src
 
     def _gen_init(self):
-        src = "class %s(Node):\n" % self.name
+        src = f"class {self.name}(Node):\n"
 
         if self.all_entries:
             args = ", ".join(self.all_entries)
-            slots = ", ".join("'{0}'".format(e) for e in self.all_entries)
+            slots = ", ".join(f"'{e}'" for e in self.all_entries)
             slots += ", 'coord', '__weakref__'"
-            arglist = "(self, %s, coord=None)" % args
+            arglist = f"(self, {args}, coord=None)"
         else:
             slots = "'coord', '__weakref__'"
             arglist = "(self, coord=None)"
 
-        src += "    __slots__ = (%s)\n" % slots
-        src += "    def __init__%s:\n" % arglist
+        src += f"    __slots__ = ({slots})\n"
+        src += f"    def __init__{arglist}:\n"
 
         for name in self.all_entries + ["coord"]:
-            src += "        self.%s = %s\n" % (name, name)
+            src += f"        self.{name} = {name}\n"
 
         return src
 
@@ -119,16 +120,12 @@ class NodeCfg:
             src += "        nodelist = []\n"
 
             for child in self.child:
-                src += (
-                    "        if self.%(child)s is not None:\n"
-                    + '            nodelist.append(("%(child)s", self.%(child)s))\n'
-                ) % (dict(child=child))
+                src += f"        if self.{child} is not None:\n"
+                src += f'            nodelist.append(("{child}", self.{child}))\n'
 
             for seq_child in self.seq_child:
-                src += (
-                    "        for i, child in enumerate(self.%(child)s or []):\n"
-                    '            nodelist.append(("%(child)s[%%d]" %% i, child))\n'
-                ) % (dict(child=seq_child))
+                src += f"        for i, child in enumerate(self.{seq_child} or []):\n"
+                src += f'            nodelist.append((f"{seq_child}[{{i}}]", child))\n'
 
             src += "        return tuple(nodelist)\n"
         else:
@@ -141,16 +138,12 @@ class NodeCfg:
 
         if self.all_entries:
             for child in self.child:
-                src += (
-                    "        if self.%(child)s is not None:\n"
-                    + "            yield self.%(child)s\n"
-                ) % (dict(child=child))
+                src += f"        if self.{child} is not None:\n"
+                src += f"            yield self.{child}\n"
 
             for seq_child in self.seq_child:
-                src += (
-                    "        for child in (self.%(child)s or []):\n"
-                    "            yield child\n"
-                ) % (dict(child=seq_child))
+                src += f"        for child in (self.{seq_child} or []):\n"
+                src += "            yield child\n"
 
             if not (self.child or self.seq_child):
                 # Empty generator
@@ -162,7 +155,7 @@ class NodeCfg:
         return src
 
     def _gen_attr_names(self):
-        src = "    attr_names = (" + "".join("%r, " % nm for nm in self.attr) + ")"
+        src = "    attr_names = (" + "".join(f"{nm!r}, " for nm in self.attr) + ")"
         return src
 
 
@@ -272,13 +265,13 @@ class Node:
             nvlist = [(n, getattr(self,n)) for n in self.attr_names \
                         if showemptyattrs or not is_empty(getattr(self,n))]
             if attrnames:
-                attrstr = ', '.join('%s=%s' % nv for nv in nvlist)
+                attrstr = ', '.join(f'{name}={value}' for name, value in nvlist)
             else:
-                attrstr = ', '.join('%s' % v for (_,v) in nvlist)
+                attrstr = ', '.join(f'{value}' for _, value in nvlist)
             buf.write(attrstr)
 
         if showcoord:
-            buf.write(' (at %s)' % self.coord)
+            buf.write(f' (at {self.coord})')
         buf.write('\n')
 
         for (child_name, child) in self.children():

@@ -519,7 +519,7 @@ class TestCLexerErrors(unittest.TestCase):
         # compare the error to the expected
         self.assertTrue(
             re.search(error_like, self.error),
-            "\nExpected error matching: %s\nGot: %s" % (error_like, self.error),
+            f"\nExpected error matching: {error_like}\nGot: {self.error}",
         )
 
         # clear last error, for the sake of subsequent invocations
