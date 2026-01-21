@@ -28,5 +28,14 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         allow-prereleases: true
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    - name: Install make (Windows)
+      if: runner.os == 'Windows'
+      run: choco install make -y
+    - name: Check
+      run: make check
     - name: Test
-      run: python -m unittest discover
+      run: make test
