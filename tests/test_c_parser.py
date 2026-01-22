@@ -249,6 +249,13 @@ class TestCParser_fundamentals(TestCParser_base):
         }"""
         self.assert_coord(self.parse(t6).ext[0].decl.type.args.params[1], 3, 17)
 
+        # Coord for _Atomic type decls
+        t7 = """
+        typedef _Atomic(char) atomic_char;
+        """
+        self.assert_coord(self.parse(t7).ext[0], 2, 31)
+        self.assert_coord(self.parse(t7).ext[0].type, 2, 31)
+
     def test_forloop_coord(self):
         t = """\
         void foo() {

@@ -168,6 +168,10 @@ def _fix_atomic_specifiers_once(
 
     assert isinstance(parent, c_ast.TypeDecl)
     assert grandparent is not None
+    if node.type.coord is None:
+        # Preserve the declarator coord for _Atomic(T) so TypeDecl doesn't lose
+        # its location when we replace the wrapper Typename.
+        node.type.coord = parent.coord
     cast(Any, grandparent).type = node.type
     if "_Atomic" not in node.type.quals:
         node.type.quals.append("_Atomic")
