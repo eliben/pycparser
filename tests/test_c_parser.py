@@ -1064,6 +1064,12 @@ class TestCParser_fundamentals(TestCParser_base):
             ["Typedef", "atomic_int", ["TypeDecl", ["IdentifierType", ["int"]]]],
         )
 
+        s = "typedef _Atomic(_Bool) atomic_bool;"
+        self.assertEqual(
+            self.get_decl(s, 0),
+            ["Typedef", "atomic_bool", ["TypeDecl", ["IdentifierType", ["_Bool"]]]],
+        )
+
         s = "typedef _Atomic(_Atomic(_Atomic(int (*)(void)) *) *) t;"
         self.assertEqual(
             self.get_decl(s, 0),
