@@ -13,7 +13,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 
 @dataclass(slots=True)
-class _Token:
+class Token:
     type: str
     value: str
     lineno: int
@@ -68,19 +68,20 @@ class CLexer:
         self._filename = ""
         self._pos = 0
         self._line_start = 0
-        self._pending_tok: Optional[_Token] = None
+        self._pending_tok: Optional[Token] = None
         self._lineno = 1
 
     @property
     def filename(self) -> str:
         return self._filename
 
-    def token(self) -> Optional[_Token]:
+    def token(self) -> Optional[Token]:
         # Lexing strategy overview:
         #
         # - We maintain a current position (self._pos), line number, and the
         #   byte offset of the current line start. The lexer is a simple loop
         #   that skips whitespace/newlines and emits one token per call.
+        #
         # - A small amount of logic is handled manually before regex matching:
         #
         #   * Preprocessor-style directives: if we see '#', we check whether
@@ -140,7 +141,7 @@ class CLexer:
                     else:
                         continue
 
-    def _match_token(self) -> Optional[_Token]:
+    def _match_token(self) -> Optional[Token]:
         """Match one token at the current position.
 
         Returns a Token on success, or None if no token could be matched and
@@ -217,7 +218,7 @@ class CLexer:
 
         return tok
 
-    def _make_token(self, tok_type: str, value: str, pos: int) -> _Token:
+    def _make_token(self, tok_type: str, value: str, pos: int) -> Token:
         """Create a Token at an absolute input position.
 
         Expects tok_type/value and the absolute byte offset pos in the current
@@ -225,7 +226,7 @@ class CLexer:
         Returns a Token with lineno/column computed from current line tracking.
         """
         column = pos - self._line_start + 1
-        tok = _Token(tok_type, value, self._lineno, column)
+        tok = Token(tok_type, value, self._lineno, column)
         return tok
 
     def _error(self, msg: str, pos: int) -> None:
@@ -330,7 +331,7 @@ class CLexer:
 
         success(pp_line, pp_filename)
 
-    def _handle_pppragma(self) -> List[_Token]:
+    def _handle_pppragma(self) -> List[Token]:
         # Parse a full #pragma line; returns a list of tokens with 1 or 2
         # tokens - PPPRAGMA and an optional PPPRAGMASTR. If an empty list is
         # returned, it means an error occurred, or we're at the end of input.

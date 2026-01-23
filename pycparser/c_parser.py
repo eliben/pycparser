@@ -20,7 +20,7 @@ from typing import (
 )
 
 from . import c_ast
-from .c_lexer import CLexer, _Token
+from .c_lexer import CLexer, Token
 from .ast_transforms import fix_switch_cases, fix_atomic_specifiers
 
 
@@ -451,7 +451,7 @@ class CParser:
     # ------------------------------------------------------------------
     # Token helpers
     # ------------------------------------------------------------------
-    def _peek(self, k: int = 1) -> Optional[_Token]:
+    def _peek(self, k: int = 1) -> Optional[Token]:
         """Return the k-th next token without consuming it (1-based)."""
         return self._tokens.peek(k)
 
@@ -460,14 +460,14 @@ class CParser:
         tok = self._peek(k)
         return tok.type if tok is not None else None
 
-    def _advance(self) -> _Token:
+    def _advance(self) -> Token:
         tok = self._tokens.next()
         if tok is None:
             self._parse_error("At end of input", self.clex.filename)
         else:
             return tok
 
-    def _accept(self, token_type: str) -> Optional[_Token]:
+    def _accept(self, token_type: str) -> Optional[Token]:
         """Conditionally consume next token, only if it's of token_type.
 
         If it is of the expected type, consume and return it.
@@ -478,7 +478,7 @@ class CParser:
             return self._advance()
         return None
 
-    def _expect(self, token_type: str) -> _Token:
+    def _expect(self, token_type: str) -> Token:
         tok = self._advance()
         if tok.type != token_type:
             self._parse_error(f"before: {tok.value}", self._tok_coord(tok))
@@ -490,16 +490,16 @@ class CParser:
     def _reset(self, mark: int) -> None:
         self._tokens.reset(mark)
 
-    def _tok_coord(self, tok: _Token) -> Coord:
+    def _tok_coord(self, tok: Token) -> Coord:
         return self._coord(tok.lineno, tok.column)
 
-    def _starts_declaration(self, tok: Optional[_Token] = None) -> bool:
+    def _starts_declaration(self, tok: Optional[Token] = None) -> bool:
         tok = tok or self._peek()
         if tok is None:
             return False
         return tok.type in _DECL_START
 
-    def _starts_expression(self, tok: Optional[_Token] = None) -> bool:
+    def _starts_expression(self, tok: Optional[Token] = None) -> bool:
         tok = tok or self._peek()
         if tok is None:
             return False
@@ -600,7 +600,7 @@ class CParser:
 
     def _try_parse_paren_type_name(
         self,
-    ) -> Optional[Tuple[c_ast.Typename, int, _Token]]:
+    ) -> Optional[Tuple[c_ast.Typename, int, Token]]:
         """Parse and return a parenthesized type name if present.
 
         Returns (typ, mark, lparen_tok) when the next tokens look like
@@ -2308,10 +2308,10 @@ class _TokenStream:
 
     def __init__(self, lexer: CLexer) -> None:
         self._lexer = lexer
-        self._buffer: List[Optional[_Token]] = []
+        self._buffer: List[Optional[Token]] = []
         self._index = 0
 
-    def peek(self, k: int = 1) -> Optional[_Token]:
+    def peek(self, k: int = 1) -> Optional[Token]:
         """Peek at the k-th next token in the stream, without consuming it.
 
         Examples:
@@ -2323,7 +2323,7 @@ class _TokenStream:
         self._fill(k)
         return self._buffer[self._index + k - 1]
 
-    def next(self) -> Optional[_Token]:
+    def next(self) -> Optional[Token]:
         """Consume a single token and return it."""
         self._fill(1)
         tok = self._buffer[self._index]
