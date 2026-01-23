@@ -38,7 +38,7 @@ class Coord:
 
     def __str__(self) -> str:
         text = f"{self.file}:{self.line}"
-        if self.column:
+        if self.column is not None:
             text += f":{self.column}"
         return text
 
@@ -80,8 +80,8 @@ class CParser:
         # the current (topmost) scope. Each scope is a dictionary that
         # specifies whether a name is a type. If _scope_stack[n][name] is
         # True, 'name' is currently a type in the scope. If it's False,
-        # 'name' is used in the scope but not as a type (for instance, if we
-        # saw: int name;
+        # 'name' is defined in the scope but not as a type (for instance, if we
+        # saw: int name;)
         # If 'name' is not a key in _scope_stack[n] then 'name' was not defined
         # in this scope at all.
         self._scope_stack: List[Dict[str, bool]] = [dict()]
@@ -96,8 +96,7 @@ class CParser:
             A string containing the C source code
 
         filename:
-            Name of the file being parsed (for meaningful
-            error messages)
+            Name of the file being parsed (for meaningful error messages)
 
         debug:
             Deprecated debug flag (unused); for backwards compatibility.
@@ -153,9 +152,8 @@ class CParser:
         for scope in reversed(self._scope_stack):
             # If name is an identifier in this scope it shadows typedefs in
             # higher scopes.
-            in_scope = scope.get(name)
-            if in_scope is not None:
-                return in_scope
+            if name in scope:
+                return scope[name]
         return False
 
     def _lex_error_func(self, msg: str, line: int, column: int) -> None:
@@ -168,10 +166,9 @@ class CParser:
         self._pop_scope()
 
     def _lex_type_lookup_func(self, name: str) -> bool:
-        """Looks up types that were previously defined with
-        typedef.
-        Passed to the lexer for recognizing identifiers that
-        are types.
+        """Looks up types that were previously defined with typedef.
+
+        Passed to the lexer for recognizing identifiers that are types.
         """
         return self._is_type_in_scope(name)
 
@@ -744,6 +741,8 @@ class CParser:
     def _parse_decl_body_with_spec(
         self, spec: "_DeclSpec", saw_type: bool
     ) -> List[c_ast.Node]:
+        # saw_type is True if the specifiers included an actual type (as
+        # opposed to only storage/function/qualifiers).
         decls = None
         if saw_type:
             if self._starts_declarator():
