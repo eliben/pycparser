@@ -23,7 +23,8 @@ class _Token:
 class CLexer:
     """A standalone lexer for C.
 
-    Parameters for construction:
+    The lexer takes the following callback functions as parameters during
+    construction:
         error_func:
             Called with (msg, line, column) on lexing errors.
         on_lbrace_func:
@@ -54,8 +55,9 @@ class CLexer:
     def input(self, text: str, filename: str = "") -> None:
         """Initialize the lexer to the given input text.
 
-        filename is an optional name identifying the file from which the input
-        comes. The lexer can modify it if #line directives are encountered.
+        filename is an optional name identifying the initial file from which the
+        input comes. The lexer may modify it if #line directives are
+        encountered.
         """
         self._init_state()
         self._lexdata = text
