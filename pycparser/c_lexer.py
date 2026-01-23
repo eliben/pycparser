@@ -188,25 +188,28 @@ class CLexer:
                     break
 
         if best is None:
-            msg = f"Illegal character {repr(text[pos])}"
-            self._error(msg, pos)
+            self._error(f"Illegal character {repr(text[pos])}", pos)
             self._pos += 1
             return None
 
         length, tok_type, value, action, msg = best
-        if action == _RegexAction.ERROR:
-            if tok_type == "BAD_CHAR_CONST":
-                msg = f"Invalid char constant {value}"
-            # All other ERROR rules provide a message.
-            assert msg is not None
-            self._error(msg, pos)
-            self._pos += max(1, length)
-            return None
-
-        if action == _RegexAction.ID:
-            tok_type = _keyword_map.get(value, "ID")
-            if tok_type == "ID" and self.type_lookup_func(value):
-                tok_type = "TYPEID"
+        match action:
+            case _RegexAction.TOKEN:
+                pass
+            case _RegexAction.ERROR:
+                if tok_type == "BAD_CHAR_CONST":
+                    msg = f"Invalid char constant {value}"
+                # All other ERROR rules provide a message.
+                assert msg is not None
+                self._error(msg, pos)
+                self._pos += max(1, length)
+                return None
+            case _RegexAction.ID:
+                tok_type = _keyword_map.get(value, "ID")
+                if tok_type == "ID" and self.type_lookup_func(value):
+                    tok_type = "TYPEID"
+            case _:
+                raise RuntimeError("unreachable")
 
         tok = self._make_token(tok_type, value, pos)
         self._pos += length
