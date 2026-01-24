@@ -167,11 +167,36 @@ class TestCParser_fundamentals(TestCParser_base):
             ["Decl", "foo", ["TypeDecl", ["IdentifierType", ["int"]]]],
         )
 
-    def test_coords(self):
-        """Tests the "coordinates" of parsed elements - file
-        name, line and column numbers, with modification
-        inserted by #line directives.
+    def test_line_directive_update_in_errors(self):
+        s1 = """
+        \t # \t line \t 8 \t "baz.c" \t
+
+        some syntax error here
         """
+        self.assertRaisesRegex(ParseError, "baz.c:9", self.parse, s1)
+
+        s2 = """
+        \t # \t 8 \t "baz.c" \t
+
+
+        some syntax error here
+        """
+        self.assertRaisesRegex(ParseError, "baz.c:10", self.parse, s2)
+
+        s3 = """ #line 5 "foo.c"
+        extern int xx;
+        #line 6 "bar.c"
+        extern int yy;
+        #line 7 "baz.c"
+        some syntax error here
+        #line 8 "yadda.c"
+        extern int zz;
+        """
+        self.assertRaisesRegex(ParseError, "baz.c:7", self.parse, s3)
+
+    def test_coords(self):
+        # Tests the "coordinates" of parsed elements - file name, line and
+        # column numbers, with modification inserted by #line directives.
         self.assert_coord(self.parse("int a;").ext[0], 1, 5)
 
         t1 = """
