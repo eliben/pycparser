@@ -16,10 +16,14 @@
 
 
 import sys
-from typing import Any, ClassVar, IO, Optional
+from collections.abc import Callable, Generator
+from typing import Any, ClassVar, IO, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .c_parser import Coord
 
 
-def _repr(obj):
+def _repr(obj: Any | None) -> str:
     """
     Get the representation of an object, with dedicated pprint-like format for lists.
     """
@@ -30,13 +34,13 @@ def _repr(obj):
 
 
 class Node:
-    __slots__ = ()
+    __slots__: ClassVar[tuple[str, ...]] = ()
     """ Abstract base class for AST nodes.
     """
     attr_names: ClassVar[tuple[str, ...]] = ()
-    coord: Optional[Any]
+    coord: Coord | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Generates a python representation of the current node"""
         result = self.__class__.__name__ + "("
 
@@ -63,7 +67,7 @@ class Node:
 
         return result
 
-    def children(self):
+    def children(self) -> None:
         """A sequence of all children that are Nodes"""
         pass
 
@@ -75,8 +79,8 @@ class Node:
         showemptyattrs: bool = True,
         nodenames: bool = False,
         showcoord: bool = False,
-        _my_node_name: Optional[str] = None,
-    ):
+        _my_node_name: str | None = None,
+    ) -> None:
         """Pretty print the Node and all its attributes and
         children (recursively) to a buffer.
 
@@ -109,7 +113,7 @@ class Node:
 
         if self.attr_names:
 
-            def is_empty(v):
+            def is_empty(v: str | None) -> None:
                 v is None or (hasattr(v, "__len__") and len(v) == 0)
 
             nvlist = [
@@ -173,9 +177,9 @@ class NodeVisitor:
         (the ast module of Python 3.0)
     """
 
-    _method_cache = None
+    _method_cache: dict[str, Callable[[Node], Any | None]] | None = None
 
-    def visit(self, node: Node):
+    def visit(self, node: Node) -> Any | None:
         """Visit a node."""
 
         if self._method_cache is None:
@@ -189,7 +193,7 @@ class NodeVisitor:
 
         return visitor(node)
 
-    def generic_visit(self, node: Node):
+    def generic_visit(self, node: Node) -> None:
         """Called if no explicit visitor function exists for a
         node. Implements preorder visiting of the node.
         """
@@ -200,13 +204,19 @@ class NodeVisitor:
 class ArrayDecl(Node):
     __slots__ = ("type", "dim", "dim_quals", "coord", "__weakref__")
 
-    def __init__(self, type, dim, dim_quals, coord=None):
+    def __init__(
+        self,
+        type: Node | None,
+        dim: Node | None,
+        dim_quals: str | None,
+        coord: Coord | None = None,
+    ) -> None:
         self.type = type
         self.dim = dim
         self.dim_quals = dim_quals
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.type is not None:
             nodelist.append(("type", self.type))
@@ -214,7 +224,7 @@ class ArrayDecl(Node):
             nodelist.append(("dim", self.dim))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.type is not None:
             yield self.type
         if self.dim is not None:
@@ -226,12 +236,14 @@ class ArrayDecl(Node):
 class ArrayRef(Node):
     __slots__ = ("name", "subscript", "coord", "__weakref__")
 
-    def __init__(self, name, subscript, coord=None):
+    def __init__(
+        self, name: Node | None, subscript: Node | None, coord: Coord | None = None
+    ) -> None:
         self.name = name
         self.subscript = subscript
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.name is not None:
             nodelist.append(("name", self.name))
@@ -239,7 +251,7 @@ class ArrayRef(Node):
             nodelist.append(("subscript", self.subscript))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.name is not None:
             yield self.name
         if self.subscript is not None:
@@ -251,13 +263,19 @@ class ArrayRef(Node):
 class Assignment(Node):
     __slots__ = ("op", "lvalue", "rvalue", "coord", "__weakref__")
 
-    def __init__(self, op, lvalue, rvalue, coord=None):
+    def __init__(
+        self,
+        op: str | None,
+        lvalue: Node | None,
+        rvalue: Node | None,
+        coord: Coord | None = None,
+    ) -> None:
         self.op = op
         self.lvalue = lvalue
         self.rvalue = rvalue
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.lvalue is not None:
             nodelist.append(("lvalue", self.lvalue))
@@ -265,7 +283,7 @@ class Assignment(Node):
             nodelist.append(("rvalue", self.rvalue))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.lvalue is not None:
             yield self.lvalue
         if self.rvalue is not None:
@@ -277,17 +295,17 @@ class Assignment(Node):
 class Alignas(Node):
     __slots__ = ("alignment", "coord", "__weakref__")
 
-    def __init__(self, alignment, coord=None):
+    def __init__(self, alignment: Node | None, coord: Coord | None = None) -> None:
         self.alignment = alignment
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.alignment is not None:
             nodelist.append(("alignment", self.alignment))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.alignment is not None:
             yield self.alignment
 
@@ -297,13 +315,19 @@ class Alignas(Node):
 class BinaryOp(Node):
     __slots__ = ("op", "left", "right", "coord", "__weakref__")
 
-    def __init__(self, op, left, right, coord=None):
+    def __init__(
+        self,
+        op: str | None,
+        left: Node | None,
+        right: Node | None,
+        coord: Coord | None = None,
+    ) -> None:
         self.op = op
         self.left = left
         self.right = right
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.left is not None:
             nodelist.append(("left", self.left))
@@ -311,7 +335,7 @@ class BinaryOp(Node):
             nodelist.append(("right", self.right))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.left is not None:
             yield self.left
         if self.right is not None:
@@ -323,13 +347,13 @@ class BinaryOp(Node):
 class Break(Node):
     __slots__ = ("coord", "__weakref__")
 
-    def __init__(self, coord=None):
+    def __init__(self, coord: Coord | None = None) -> None:
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         return ()
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         return
         yield
 
@@ -339,12 +363,14 @@ class Break(Node):
 class Case(Node):
     __slots__ = ("expr", "stmts", "coord", "__weakref__")
 
-    def __init__(self, expr, stmts, coord=None):
+    def __init__(
+        self, expr: Node | None, stmts: list[Node] | None, coord: Coord | None = None
+    ) -> None:
         self.expr = expr
         self.stmts = stmts
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.expr is not None:
             nodelist.append(("expr", self.expr))
@@ -352,7 +378,7 @@ class Case(Node):
             nodelist.append((f"stmts[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.expr is not None:
             yield self.expr
         for child in self.stmts or []:
@@ -364,12 +390,14 @@ class Case(Node):
 class Cast(Node):
     __slots__ = ("to_type", "expr", "coord", "__weakref__")
 
-    def __init__(self, to_type, expr, coord=None):
+    def __init__(
+        self, to_type: Node | None, expr: Node | None, coord: Coord | None = None
+    ) -> None:
         self.to_type = to_type
         self.expr = expr
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.to_type is not None:
             nodelist.append(("to_type", self.to_type))
@@ -377,7 +405,7 @@ class Cast(Node):
             nodelist.append(("expr", self.expr))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.to_type is not None:
             yield self.to_type
         if self.expr is not None:
@@ -389,17 +417,19 @@ class Cast(Node):
 class Compound(Node):
     __slots__ = ("block_items", "coord", "__weakref__")
 
-    def __init__(self, block_items, coord=None):
+    def __init__(
+        self, block_items: list[Node] | None, coord: Coord | None = None
+    ) -> None:
         self.block_items = block_items
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         for i, child in enumerate(self.block_items or []):
             nodelist.append((f"block_items[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         for child in self.block_items or []:
             yield child
 
@@ -409,12 +439,14 @@ class Compound(Node):
 class CompoundLiteral(Node):
     __slots__ = ("type", "init", "coord", "__weakref__")
 
-    def __init__(self, type, init, coord=None):
+    def __init__(
+        self, type: Node | None, init: Node | None, coord: Coord | None = None
+    ) -> None:
         self.type = type
         self.init = init
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.type is not None:
             nodelist.append(("type", self.type))
@@ -422,7 +454,7 @@ class CompoundLiteral(Node):
             nodelist.append(("init", self.init))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.type is not None:
             yield self.type
         if self.init is not None:
@@ -434,16 +466,18 @@ class CompoundLiteral(Node):
 class Constant(Node):
     __slots__ = ("type", "value", "coord", "__weakref__")
 
-    def __init__(self, type, value, coord=None):
+    def __init__(
+        self, type: str | None, value: str | None, coord: Coord | None = None
+    ) -> None:
         self.type = type
         self.value = value
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         return
         yield
 
@@ -456,13 +490,13 @@ class Constant(Node):
 class Continue(Node):
     __slots__ = ("coord", "__weakref__")
 
-    def __init__(self, coord=None):
+    def __init__(self, coord: Coord | None = None) -> None:
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         return ()
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         return
         yield
 
@@ -484,8 +518,17 @@ class Decl(Node):
     )
 
     def __init__(
-        self, name, quals, align, storage, funcspec, type, init, bitsize, coord=None
-    ):
+        self,
+        name: str | None,
+        quals: str | None,
+        align: str | None,
+        storage: str | None,
+        funcspec: str | None,
+        type: Node | None,
+        init: Node | None,
+        bitsize: Node | None,
+        coord: Coord | None = None,
+    ) -> None:
         self.name = name
         self.quals = quals
         self.align = align
@@ -496,7 +539,7 @@ class Decl(Node):
         self.bitsize = bitsize
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.type is not None:
             nodelist.append(("type", self.type))
@@ -506,7 +549,7 @@ class Decl(Node):
             nodelist.append(("bitsize", self.bitsize))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.type is not None:
             yield self.type
         if self.init is not None:
@@ -526,17 +569,17 @@ class Decl(Node):
 class DeclList(Node):
     __slots__ = ("decls", "coord", "__weakref__")
 
-    def __init__(self, decls, coord=None):
+    def __init__(self, decls: list[Node] | None, coord: Coord | None = None) -> None:
         self.decls = decls
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         for i, child in enumerate(self.decls or []):
             nodelist.append((f"decls[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         for child in self.decls or []:
             yield child
 
@@ -546,17 +589,17 @@ class DeclList(Node):
 class Default(Node):
     __slots__ = ("stmts", "coord", "__weakref__")
 
-    def __init__(self, stmts, coord=None):
+    def __init__(self, stmts: list[Node] | None, coord: Coord | None = None) -> None:
         self.stmts = stmts
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         for i, child in enumerate(self.stmts or []):
             nodelist.append((f"stmts[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         for child in self.stmts or []:
             yield child
 
@@ -566,12 +609,14 @@ class Default(Node):
 class DoWhile(Node):
     __slots__ = ("cond", "stmt", "coord", "__weakref__")
 
-    def __init__(self, cond, stmt, coord=None):
+    def __init__(
+        self, cond: Node | None, stmt: Node | None, coord: Coord | None = None
+    ) -> None:
         self.cond = cond
         self.stmt = stmt
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.cond is not None:
             nodelist.append(("cond", self.cond))
@@ -579,7 +624,7 @@ class DoWhile(Node):
             nodelist.append(("stmt", self.stmt))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.cond is not None:
             yield self.cond
         if self.stmt is not None:
@@ -591,13 +636,13 @@ class DoWhile(Node):
 class EllipsisParam(Node):
     __slots__ = ("coord", "__weakref__")
 
-    def __init__(self, coord=None):
+    def __init__(self, coord: Coord | None = None) -> None:
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         return ()
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         return
         yield
 
@@ -607,13 +652,13 @@ class EllipsisParam(Node):
 class EmptyStatement(Node):
     __slots__ = ("coord", "__weakref__")
 
-    def __init__(self, coord=None):
+    def __init__(self, coord: Coord | None = None) -> None:
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         return ()
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         return
         yield
 
@@ -623,18 +668,20 @@ class EmptyStatement(Node):
 class Enum(Node):
     __slots__ = ("name", "values", "coord", "__weakref__")
 
-    def __init__(self, name, values, coord=None):
+    def __init__(
+        self, name: str | None, values: Node | None, coord: Coord | None = None
+    ) -> None:
         self.name = name
         self.values = values
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.values is not None:
             nodelist.append(("values", self.values))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.values is not None:
             yield self.values
 
@@ -644,18 +691,20 @@ class Enum(Node):
 class Enumerator(Node):
     __slots__ = ("name", "value", "coord", "__weakref__")
 
-    def __init__(self, name, value, coord=None):
+    def __init__(
+        self, name: str | None, value: Node | None, coord: Coord | None = None
+    ) -> None:
         self.name = name
         self.value = value
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.value is not None:
             nodelist.append(("value", self.value))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.value is not None:
             yield self.value
 
@@ -665,17 +714,19 @@ class Enumerator(Node):
 class EnumeratorList(Node):
     __slots__ = ("enumerators", "coord", "__weakref__")
 
-    def __init__(self, enumerators, coord=None):
+    def __init__(
+        self, enumerators: list[Node] | None, coord: Coord | None = None
+    ) -> None:
         self.enumerators = enumerators
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         for i, child in enumerate(self.enumerators or []):
             nodelist.append((f"enumerators[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         for child in self.enumerators or []:
             yield child
 
@@ -685,17 +736,17 @@ class EnumeratorList(Node):
 class ExprList(Node):
     __slots__ = ("exprs", "coord", "__weakref__")
 
-    def __init__(self, exprs, coord=None):
+    def __init__(self, exprs: list[Node] | None, coord: Coord | None = None) -> None:
         self.exprs = exprs
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         for i, child in enumerate(self.exprs or []):
             nodelist.append((f"exprs[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         for child in self.exprs or []:
             yield child
 
@@ -705,17 +756,17 @@ class ExprList(Node):
 class FileAST(Node):
     __slots__ = ("ext", "coord", "__weakref__")
 
-    def __init__(self, ext, coord=None):
+    def __init__(self, ext: list[Node] | None, coord: Coord | None = None) -> None:
         self.ext = ext
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         for i, child in enumerate(self.ext or []):
             nodelist.append((f"ext[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         for child in self.ext or []:
             yield child
 
@@ -725,14 +776,21 @@ class FileAST(Node):
 class For(Node):
     __slots__ = ("init", "cond", "next", "stmt", "coord", "__weakref__")
 
-    def __init__(self, init, cond, next, stmt, coord=None):
+    def __init__(
+        self,
+        init: Node | None,
+        cond: Node | None,
+        next: Node | None,
+        stmt: Node | None,
+        coord: Coord | None = None,
+    ) -> None:
         self.init = init
         self.cond = cond
         self.next = next
         self.stmt = stmt
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.init is not None:
             nodelist.append(("init", self.init))
@@ -744,7 +802,7 @@ class For(Node):
             nodelist.append(("stmt", self.stmt))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.init is not None:
             yield self.init
         if self.cond is not None:
@@ -760,12 +818,14 @@ class For(Node):
 class FuncCall(Node):
     __slots__ = ("name", "args", "coord", "__weakref__")
 
-    def __init__(self, name, args, coord=None):
+    def __init__(
+        self, name: Node | None, args: Node | None, coord: Coord | None = None
+    ) -> None:
         self.name = name
         self.args = args
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.name is not None:
             nodelist.append(("name", self.name))
@@ -773,7 +833,7 @@ class FuncCall(Node):
             nodelist.append(("args", self.args))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.name is not None:
             yield self.name
         if self.args is not None:
@@ -785,12 +845,14 @@ class FuncCall(Node):
 class FuncDecl(Node):
     __slots__ = ("args", "type", "coord", "__weakref__")
 
-    def __init__(self, args, type, coord=None):
+    def __init__(
+        self, args: Node | None, type: Node | None, coord: Coord | None = None
+    ) -> None:
         self.args = args
         self.type = type
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.args is not None:
             nodelist.append(("args", self.args))
@@ -798,7 +860,7 @@ class FuncDecl(Node):
             nodelist.append(("type", self.type))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.args is not None:
             yield self.args
         if self.type is not None:
@@ -810,13 +872,19 @@ class FuncDecl(Node):
 class FuncDef(Node):
     __slots__ = ("decl", "param_decls", "body", "coord", "__weakref__")
 
-    def __init__(self, decl, param_decls, body, coord=None):
+    def __init__(
+        self,
+        decl: Node | None,
+        param_decls: list[Node] | None,
+        body: Node | None,
+        coord: Coord | None = None,
+    ) -> None:
         self.decl = decl
         self.param_decls = param_decls
         self.body = body
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.decl is not None:
             nodelist.append(("decl", self.decl))
@@ -826,7 +894,7 @@ class FuncDef(Node):
             nodelist.append((f"param_decls[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.decl is not None:
             yield self.decl
         if self.body is not None:
@@ -840,15 +908,15 @@ class FuncDef(Node):
 class Goto(Node):
     __slots__ = ("name", "coord", "__weakref__")
 
-    def __init__(self, name, coord=None):
+    def __init__(self, name: str | None, coord: Coord | None = None) -> None:
         self.name = name
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         return
         yield
 
@@ -858,15 +926,15 @@ class Goto(Node):
 class ID(Node):
     __slots__ = ("name", "coord", "__weakref__")
 
-    def __init__(self, name, coord=None):
+    def __init__(self, name: str | None, coord: Coord | None = None) -> None:
         self.name = name
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         return
         yield
 
@@ -876,15 +944,15 @@ class ID(Node):
 class IdentifierType(Node):
     __slots__ = ("names", "coord", "__weakref__")
 
-    def __init__(self, names, coord=None):
+    def __init__(self, names: str | None, coord: Coord | None = None) -> None:
         self.names = names
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         return
         yield
 
@@ -894,13 +962,19 @@ class IdentifierType(Node):
 class If(Node):
     __slots__ = ("cond", "iftrue", "iffalse", "coord", "__weakref__")
 
-    def __init__(self, cond, iftrue, iffalse, coord=None):
+    def __init__(
+        self,
+        cond: Node | None,
+        iftrue: Node | None,
+        iffalse: Node | None,
+        coord: Coord | None = None,
+    ) -> None:
         self.cond = cond
         self.iftrue = iftrue
         self.iffalse = iffalse
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.cond is not None:
             nodelist.append(("cond", self.cond))
@@ -910,7 +984,7 @@ class If(Node):
             nodelist.append(("iffalse", self.iffalse))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.cond is not None:
             yield self.cond
         if self.iftrue is not None:
@@ -924,17 +998,17 @@ class If(Node):
 class InitList(Node):
     __slots__ = ("exprs", "coord", "__weakref__")
 
-    def __init__(self, exprs, coord=None):
+    def __init__(self, exprs: list[Node] | None, coord: Coord | None = None) -> None:
         self.exprs = exprs
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         for i, child in enumerate(self.exprs or []):
             nodelist.append((f"exprs[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         for child in self.exprs or []:
             yield child
 
@@ -944,18 +1018,20 @@ class InitList(Node):
 class Label(Node):
     __slots__ = ("name", "stmt", "coord", "__weakref__")
 
-    def __init__(self, name, stmt, coord=None):
+    def __init__(
+        self, name: str | None, stmt: Node | None, coord: Coord | None = None
+    ) -> None:
         self.name = name
         self.stmt = stmt
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.stmt is not None:
             nodelist.append(("stmt", self.stmt))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.stmt is not None:
             yield self.stmt
 
@@ -965,12 +1041,14 @@ class Label(Node):
 class NamedInitializer(Node):
     __slots__ = ("name", "expr", "coord", "__weakref__")
 
-    def __init__(self, name, expr, coord=None):
+    def __init__(
+        self, name: list[Node] | None, expr: Node | None, coord: Coord | None = None
+    ) -> None:
         self.name = name
         self.expr = expr
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.expr is not None:
             nodelist.append(("expr", self.expr))
@@ -978,7 +1056,7 @@ class NamedInitializer(Node):
             nodelist.append((f"name[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.expr is not None:
             yield self.expr
         for child in self.name or []:
@@ -990,17 +1068,17 @@ class NamedInitializer(Node):
 class ParamList(Node):
     __slots__ = ("params", "coord", "__weakref__")
 
-    def __init__(self, params, coord=None):
+    def __init__(self, params: list[Node] | None, coord: Coord | None = None) -> None:
         self.params = params
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         for i, child in enumerate(self.params or []):
             nodelist.append((f"params[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         for child in self.params or []:
             yield child
 
@@ -1010,18 +1088,20 @@ class ParamList(Node):
 class PtrDecl(Node):
     __slots__ = ("quals", "type", "coord", "__weakref__")
 
-    def __init__(self, quals, type, coord=None):
+    def __init__(
+        self, quals: str | None, type: Node | None, coord: Coord | None = None
+    ) -> None:
         self.quals = quals
         self.type = type
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.type is not None:
             nodelist.append(("type", self.type))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.type is not None:
             yield self.type
 
@@ -1031,17 +1111,17 @@ class PtrDecl(Node):
 class Return(Node):
     __slots__ = ("expr", "coord", "__weakref__")
 
-    def __init__(self, expr, coord=None):
+    def __init__(self, expr: Node | None, coord: Coord | None = None) -> None:
         self.expr = expr
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.expr is not None:
             nodelist.append(("expr", self.expr))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.expr is not None:
             yield self.expr
 
@@ -1051,12 +1131,14 @@ class Return(Node):
 class StaticAssert(Node):
     __slots__ = ("cond", "message", "coord", "__weakref__")
 
-    def __init__(self, cond, message, coord=None):
+    def __init__(
+        self, cond: Node | None, message: Node | None, coord: Coord | None = None
+    ) -> None:
         self.cond = cond
         self.message = message
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.cond is not None:
             nodelist.append(("cond", self.cond))
@@ -1064,7 +1146,7 @@ class StaticAssert(Node):
             nodelist.append(("message", self.message))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.cond is not None:
             yield self.cond
         if self.message is not None:
@@ -1076,18 +1158,20 @@ class StaticAssert(Node):
 class Struct(Node):
     __slots__ = ("name", "decls", "coord", "__weakref__")
 
-    def __init__(self, name, decls, coord=None):
+    def __init__(
+        self, name: str | None, decls: list[Node] | None, coord: Coord | None = None
+    ) -> None:
         self.name = name
         self.decls = decls
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         for i, child in enumerate(self.decls or []):
             nodelist.append((f"decls[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         for child in self.decls or []:
             yield child
 
@@ -1097,13 +1181,19 @@ class Struct(Node):
 class StructRef(Node):
     __slots__ = ("name", "type", "field", "coord", "__weakref__")
 
-    def __init__(self, name, type, field, coord=None):
+    def __init__(
+        self,
+        name: Node | None,
+        type: str | None,
+        field: Node | None,
+        coord: Coord | None = None,
+    ) -> None:
         self.name = name
         self.type = type
         self.field = field
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.name is not None:
             nodelist.append(("name", self.name))
@@ -1111,7 +1201,7 @@ class StructRef(Node):
             nodelist.append(("field", self.field))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.name is not None:
             yield self.name
         if self.field is not None:
@@ -1123,12 +1213,14 @@ class StructRef(Node):
 class Switch(Node):
     __slots__ = ("cond", "stmt", "coord", "__weakref__")
 
-    def __init__(self, cond, stmt, coord=None):
+    def __init__(
+        self, cond: Node | None, stmt: Node | None, coord: Coord | None = None
+    ) -> None:
         self.cond = cond
         self.stmt = stmt
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.cond is not None:
             nodelist.append(("cond", self.cond))
@@ -1136,7 +1228,7 @@ class Switch(Node):
             nodelist.append(("stmt", self.stmt))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.cond is not None:
             yield self.cond
         if self.stmt is not None:
@@ -1148,13 +1240,19 @@ class Switch(Node):
 class TernaryOp(Node):
     __slots__ = ("cond", "iftrue", "iffalse", "coord", "__weakref__")
 
-    def __init__(self, cond, iftrue, iffalse, coord=None):
+    def __init__(
+        self,
+        cond: Node | None,
+        iftrue: Node | None,
+        iffalse: Node | None,
+        coord: Coord | None = None,
+    ) -> None:
         self.cond = cond
         self.iftrue = iftrue
         self.iffalse = iffalse
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.cond is not None:
             nodelist.append(("cond", self.cond))
@@ -1164,7 +1262,7 @@ class TernaryOp(Node):
             nodelist.append(("iffalse", self.iffalse))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.cond is not None:
             yield self.cond
         if self.iftrue is not None:
@@ -1178,20 +1276,27 @@ class TernaryOp(Node):
 class TypeDecl(Node):
     __slots__ = ("declname", "quals", "align", "type", "coord", "__weakref__")
 
-    def __init__(self, declname, quals, align, type, coord=None):
+    def __init__(
+        self,
+        declname: str | None,
+        quals: str | None,
+        align: str | None,
+        type: Node | None,
+        coord: Coord | None = None,
+    ) -> None:
         self.declname = declname
         self.quals = quals
         self.align = align
         self.type = type
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.type is not None:
             nodelist.append(("type", self.type))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.type is not None:
             yield self.type
 
@@ -1205,20 +1310,27 @@ class TypeDecl(Node):
 class Typedef(Node):
     __slots__ = ("name", "quals", "storage", "type", "coord", "__weakref__")
 
-    def __init__(self, name, quals, storage, type, coord=None):
+    def __init__(
+        self,
+        name: str | None,
+        quals: str | None,
+        storage: str | None,
+        type: Node | None,
+        coord: Coord | None = None,
+    ) -> None:
         self.name = name
         self.quals = quals
         self.storage = storage
         self.type = type
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.type is not None:
             nodelist.append(("type", self.type))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.type is not None:
             yield self.type
 
@@ -1232,20 +1344,27 @@ class Typedef(Node):
 class Typename(Node):
     __slots__ = ("name", "quals", "align", "type", "coord", "__weakref__")
 
-    def __init__(self, name, quals, align, type, coord=None):
+    def __init__(
+        self,
+        name: str | None,
+        quals: str | None,
+        align: str | None,
+        type: Node | None,
+        coord: Coord | None = None,
+    ) -> None:
         self.name = name
         self.quals = quals
         self.align = align
         self.type = type
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.type is not None:
             nodelist.append(("type", self.type))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.type is not None:
             yield self.type
 
@@ -1259,18 +1378,20 @@ class Typename(Node):
 class UnaryOp(Node):
     __slots__ = ("op", "expr", "coord", "__weakref__")
 
-    def __init__(self, op, expr, coord=None):
+    def __init__(
+        self, op: str | None, expr: Node | None, coord: Coord | None = None
+    ) -> None:
         self.op = op
         self.expr = expr
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.expr is not None:
             nodelist.append(("expr", self.expr))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.expr is not None:
             yield self.expr
 
@@ -1280,18 +1401,20 @@ class UnaryOp(Node):
 class Union(Node):
     __slots__ = ("name", "decls", "coord", "__weakref__")
 
-    def __init__(self, name, decls, coord=None):
+    def __init__(
+        self, name: str | None, decls: list[Node] | None, coord: Coord | None = None
+    ) -> None:
         self.name = name
         self.decls = decls
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         for i, child in enumerate(self.decls or []):
             nodelist.append((f"decls[{i}]", child))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         for child in self.decls or []:
             yield child
 
@@ -1301,12 +1424,14 @@ class Union(Node):
 class While(Node):
     __slots__ = ("cond", "stmt", "coord", "__weakref__")
 
-    def __init__(self, cond, stmt, coord=None):
+    def __init__(
+        self, cond: Node | None, stmt: Node | None, coord: Coord | None = None
+    ) -> None:
         self.cond = cond
         self.stmt = stmt
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         if self.cond is not None:
             nodelist.append(("cond", self.cond))
@@ -1314,7 +1439,7 @@ class While(Node):
             nodelist.append(("stmt", self.stmt))
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         if self.cond is not None:
             yield self.cond
         if self.stmt is not None:
@@ -1326,15 +1451,15 @@ class While(Node):
 class Pragma(Node):
     __slots__ = ("string", "coord", "__weakref__")
 
-    def __init__(self, string, coord=None):
+    def __init__(self, string: str | None, coord: Coord | None = None) -> None:
         self.string = string
         self.coord = coord
 
-    def children(self):
+    def children(self) -> tuple[tuple[str, Node], ...]:
         nodelist = []
         return tuple(nodelist)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Node]:
         return
         yield
 

@@ -97,16 +97,16 @@ class NodeCfg:
         src = f"class {self.name}(Node):\n"
 
         if self.all_entries:
-            args = ", ".join(self.all_entries)
+            args = ", ".join(self._get_typed_arg(entry) for entry in self.all_entries)
             slots = ", ".join(f"'{e}'" for e in self.all_entries)
             slots += ", 'coord', '__weakref__'"
-            arglist = f"(self, {args}, coord=None)"
+            arglist = f"(self, {args}, coord: Coord | None = None)"
         else:
             slots = "'coord', '__weakref__'"
-            arglist = "(self, coord=None)"
+            arglist = "(self, coord: Coord | None = None)"
 
         src += f"    __slots__ = ({slots})\n"
-        src += f"    def __init__{arglist}:\n"
+        src += f"    def __init__{arglist} -> None:\n"
 
         for name in self.all_entries + ["coord"]:
             src += f"        self.{name} = {name}\n"
@@ -114,7 +114,7 @@ class NodeCfg:
         return src
 
     def _gen_children(self):
-        src = "    def children(self):\n"
+        src = "    def children(self) -> tuple[tuple[str, Node], ...]:\n"
 
         if self.all_entries:
             src += "        nodelist = []\n"
@@ -134,7 +134,7 @@ class NodeCfg:
         return src
 
     def _gen_iter(self):
-        src = "    def __iter__(self):\n"
+        src = "    def __iter__(self) -> Generator[Node]:\n"
 
         if self.all_entries:
             for child in self.child:
@@ -158,6 +158,16 @@ class NodeCfg:
         src = "    attr_names = (" + "".join(f"{nm!r}, " for nm in self.attr) + ")"
         return src
 
+    def _get_typed_arg(self, entry):
+        entry_type = (
+            "list[Node]"
+            if entry in self.seq_child
+            else "Node"
+            if entry in self.child
+            else "str"
+        )
+        return f"{entry}: {entry_type} | None"
+
 
 _PROLOGUE_COMMENT = r"""#-----------------------------------------------------------------
 # ** ATTENTION **
@@ -178,9 +188,13 @@ _PROLOGUE_COMMENT = r"""#-------------------------------------------------------
 """
 _PROLOGUE_CODE = r'''
 import sys
-from typing import Any, ClassVar, IO, Optional
+from collections.abc import Callable, Generator
+from typing import Any, ClassVar, IO, TYPE_CHECKING
 
-def _repr(obj):
+if TYPE_CHECKING:
+    from .c_parser import Coord
+
+def _repr(obj: Any | None) -> str:
     """
     Get the representation of an object, with dedicated pprint-like format for lists.
     """
@@ -190,12 +204,12 @@ def _repr(obj):
         return repr(obj)
 
 class Node:
-    __slots__ = ()
+    __slots__: ClassVar[tuple[str, ...]] = ()
     """ Abstract base class for AST nodes.
     """
     attr_names: ClassVar[tuple[str, ...]] = ()
-    coord: Optional[Any]
-    def __repr__(self):
+    coord: Coord | None
+    def __repr__(self) -> str:
         """ Generates a python representation of the current node
         """
         result = self.__class__.__name__ + '('
@@ -214,7 +228,7 @@ class Node:
 
         return result
 
-    def children(self):
+    def children(self) -> None:
         """ A sequence of all children that are Nodes
         """
         pass
@@ -227,8 +241,8 @@ class Node:
         showemptyattrs: bool = True,
         nodenames: bool = False,
         showcoord: bool = False,
-        _my_node_name: Optional[str] = None,
-    ):
+        _my_node_name: str | None = None,
+    ) -> None:
         """ Pretty print the Node and all its attributes and
             children (recursively) to a buffer.
 
@@ -260,7 +274,7 @@ class Node:
             buf.write(lead + self.__class__.__name__+ ': ')
 
         if self.attr_names:
-            def is_empty(v):
+            def is_empty(v: str | None) -> None:
                 v is None or (hasattr(v, '__len__') and len(v) == 0)
             nvlist = [(n, getattr(self,n)) for n in self.attr_names \
                         if showemptyattrs or not is_empty(getattr(self,n))]
@@ -319,9 +333,9 @@ class NodeVisitor:
             (the ast module of Python 3.0)
     """
 
-    _method_cache = None
+    _method_cache: dict[str, Callable[[Node], Any | None]] | None = None
 
-    def visit(self, node: Node):
+    def visit(self, node: Node) -> Any | None:
         """ Visit a node.
         """
 
@@ -336,7 +350,7 @@ class NodeVisitor:
 
         return visitor(node)
 
-    def generic_visit(self, node: Node):
+    def generic_visit(self, node: Node) -> None:
         """ Called if no explicit visitor function exists for a
             node. Implements preorder visiting of the node.
         """
