@@ -743,15 +743,16 @@ class CParser:
     ) -> List[c_ast.Node]:
         # saw_type is True if the specifiers included an actual type (as
         # opposed to only storage/function/qualifiers).
-        decls = None
+        decl_infos: Optional[List["_DeclInfo"]] = None
         if saw_type:
             if self._starts_declarator():
-                decls = self._parse_init_declarator_list()
+                decl_infos = self._parse_init_declarator_list()
         else:
             if self._starts_declarator(id_only=True):
-                decls = self._parse_init_declarator_list(id_only=True)
+                decl_infos = self._parse_init_declarator_list(id_only=True)
 
-        if decls is None:
+        decls: List[c_ast.Node]
+        if decl_infos is None:
             ty = spec["type"]
             s_u_or_e = (c_ast.Struct, c_ast.Union, c_ast.Enum)
             if len(ty) == 1 and isinstance(ty[0], s_u_or_e):
@@ -776,7 +777,7 @@ class CParser:
                 )
         else:
             decls = self._build_declarations(
-                spec=spec, decls=decls, typedef_namespace=True
+                spec=spec, decls=decl_infos, typedef_namespace=True
             )
 
         return decls

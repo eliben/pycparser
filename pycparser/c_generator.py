@@ -121,11 +121,13 @@ class CGenerator:
         # e.g., `(a+b) * c` is NOT equivalent to `a+b * c`.
         lval_str = self._parenthesize_if(
             n.left,
-            lambda d: not (
-                self._is_simple_node(d)
-                or self.reduce_parentheses
-                and isinstance(d, c_ast.BinaryOp)
-                and self.precedence_map[d.op] >= self.precedence_map[n.op]
+            lambda d: (
+                not (
+                    self._is_simple_node(d)
+                    or self.reduce_parentheses
+                    and isinstance(d, c_ast.BinaryOp)
+                    and self.precedence_map[d.op] >= self.precedence_map[n.op]
+                )
             ),
         )
         # If `n.right.op` has a stronger -but not equal- binding precedence,
@@ -137,11 +139,13 @@ class CGenerator:
         #       `a - (b+c)` is NOT equivalent to `a - b+c` (same precedence).
         rval_str = self._parenthesize_if(
             n.right,
-            lambda d: not (
-                self._is_simple_node(d)
-                or self.reduce_parentheses
-                and isinstance(d, c_ast.BinaryOp)
-                and self.precedence_map[d.op] > self.precedence_map[n.op]
+            lambda d: (
+                not (
+                    self._is_simple_node(d)
+                    or self.reduce_parentheses
+                    and isinstance(d, c_ast.BinaryOp)
+                    and self.precedence_map[d.op] > self.precedence_map[n.op]
+                )
             ),
         )
         return f"{lval_str} {n.op} {rval_str}"
