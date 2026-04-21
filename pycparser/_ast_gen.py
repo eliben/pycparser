@@ -261,7 +261,7 @@ class Node:
 
         if self.attr_names:
             def is_empty(v):
-                v is None or (hasattr(v, '__len__') and len(v) == 0)
+                return v is None or (hasattr(v, '__len__') and len(v) == 0)
             nvlist = [(n, getattr(self,n)) for n in self.attr_names \
                         if showemptyattrs or not is_empty(getattr(self,n))]
             if attrnames:
