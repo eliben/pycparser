@@ -17,3 +17,4 @@ utils/z.c
 *.swp
 .DS_Store
 ast.pickle
+.codex
