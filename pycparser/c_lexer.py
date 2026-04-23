@@ -537,6 +537,7 @@ _u32string_literal = "U" + _string_literal
 _bad_string_literal = '"' + _string_char + "*" + _bad_escape + _string_char + '*"'
 
 # floating constants (K&R2: A.2.5.3)
+_floating_suffix_opt = r"([FfLl][iIjJ]?|[iIjJ][FfLl]?)?"
 _exponent_part = r"""([eE][-+]?[0-9]+)"""
 _fractional_constant = r"""([0-9]*\.[0-9]+)|([0-9]+\.)"""
 _floating_constant = (
@@ -546,7 +547,9 @@ _floating_constant = (
     + _exponent_part
     + "?)|([0-9]+"
     + _exponent_part
-    + "))[FfLl]?)"
+    + "))"
+    + _floating_suffix_opt
+    + ")"
 )
 _binary_exponent_part = r"""([pP][+-]?[0-9]+)"""
 _hex_fractional_constant = (
@@ -561,7 +564,8 @@ _hex_floating_constant = (
     + _hex_fractional_constant
     + ")"
     + _binary_exponent_part
-    + "[FfLl]?)"
+    + _floating_suffix_opt
+    + ")"
 )
 
 
