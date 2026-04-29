@@ -1,9 +1,9 @@
 .PHONY: check test
 
-RUFF_VERSION ?= 0.15.11
+RUFF_VERSION ?= 0.15.12
 RUFF = uvx ruff@$(RUFF_VERSION)
 
-TY_VERSION ?= 0.0.31
+TY_VERSION ?= 0.0.33
 TY = uvx ty@$(TY_VERSION)
 
 check:
@@ -13,4 +13,3 @@ check:
 
 test:
 	python3 -m unittest discover
-
