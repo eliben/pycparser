@@ -128,6 +128,21 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("0x.488641p0", ["HEX_FLOAT_CONST"])
         self.assertTokensTypes("0X12.P0", ["HEX_FLOAT_CONST"])
 
+    def test_complex_constants(self):
+        self.assertTokensTypes("1.2i", ["FLOAT_CONST"])
+        self.assertTokensTypes("1.2I", ["FLOAT_CONST"])
+        self.assertTokensTypes("1.2j", ["FLOAT_CONST"])
+        self.assertTokensTypes("1.2J", ["FLOAT_CONST"])
+        self.assertTokensTypes("1.2fi", ["FLOAT_CONST"])
+        self.assertTokensTypes("1.2if", ["FLOAT_CONST"])
+
+        self.assertTokensTypes("0x1.2p3i", ["HEX_FLOAT_CONST"])
+        self.assertTokensTypes("0x1.2p3I", ["HEX_FLOAT_CONST"])
+        self.assertTokensTypes("0x1.2p3j", ["HEX_FLOAT_CONST"])
+        self.assertTokensTypes("0x1.2p3J", ["HEX_FLOAT_CONST"])
+        self.assertTokensTypes("0x1.2p3fi", ["HEX_FLOAT_CONST"])
+        self.assertTokensTypes("0x1.2p3if", ["HEX_FLOAT_CONST"])
+
     def test_char_constants(self):
         self.assertTokensTypes(r"""'x'""", ["CHAR_CONST"])
         self.assertTokensTypes(r"""L'x'""", ["WCHAR_CONST"])
