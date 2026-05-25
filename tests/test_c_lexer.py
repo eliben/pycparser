@@ -572,6 +572,10 @@ class TestCLexerErrors(unittest.TestCase):
         self.assertLexerError('#line "ka"', ERR_FILENAME_BEFORE_LINE)
         self.assertLexerError("#line df", ERR_INVALID_LINE_DIRECTIVE)
         self.assertLexerError("#line \n", ERR_LINENUM_MISSING)
+        # Integer suffixes are not valid in #line directives (issue #587).
+        self.assertLexerError("#line 0u", ERR_INVALID_LINE_DIRECTIVE)
+        self.assertLexerError("#line 1U", ERR_INVALID_LINE_DIRECTIVE)
+        self.assertLexerError("#line 10uLL", ERR_INVALID_LINE_DIRECTIVE)
         # a compatible preprocessor must remove comments.
         self.assertLexerError("//", ERR_COMMENT)
         self.assertLexerError("/*", ERR_COMMENT)

@@ -278,7 +278,11 @@ class CLexer:
             if pp_line is None:
                 self._error("line number missing in #line", self._pos + line_len)
             else:
-                self._lineno = int(pp_line)
+                try:
+                    self._lineno = int(pp_line)
+                except ValueError:
+                    self._error("invalid #line directive", self._pos + line_len)
+                    return
                 if pp_filename is not None:
                     self._filename = pp_filename
             self._pos = line_end + 1
