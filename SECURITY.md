@@ -4,7 +4,7 @@
 
 Only the latest released version is supported
 (see https://github.com/eliben/pycparser/tags). Updates will be made in
-the `master` branch.
+the `main` branch.
 
 ## Reporting a Vulnerability
 

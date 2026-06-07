@@ -66,7 +66,7 @@ standard (ISO/IEC 9899).
 How is pycparser licensed?
 --------------------------
 
-`BSD license <https://github.com/eliben/pycparser/blob/master/LICENSE>`_.
+`BSD license <https://github.com/eliben/pycparser/blob/main/LICENSE>`_.
 
 Contact details
 ---------------
