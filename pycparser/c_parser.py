@@ -124,7 +124,8 @@ class CParser:
         self._scope_stack.append(dict())
 
     def _pop_scope(self) -> None:
-        assert len(self._scope_stack) > 1
+        if len(self._scope_stack) <= 1:
+            raise ParseError("Unmatched '}'")
         self._scope_stack.pop()
 
     def _add_typedef_name(self, name: str, coord: Optional[Coord]) -> None:

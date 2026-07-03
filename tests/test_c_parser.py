@@ -3783,3 +3783,11 @@ if __name__ == "__main__":
 
     # ~ unittest.TextTestRunner(verbosity=2).run(suite)
     unittest.main()
+
+class TestUnmatchedRbrace(unittest.TestCase):
+    """Regression for #603: unmatched '}' raises ParseError, not AssertionError."""
+
+    def test_unmatched_rbrace_raises_parse_error(self):
+        parser = c_parser.CParser()
+        with self.assertRaises(ParseError):
+            parser.parse("}", filename="test.c")
