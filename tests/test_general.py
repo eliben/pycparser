@@ -3,8 +3,8 @@ import sys
 import unittest
 
 sys.path.insert(0, "..")
-from pycparser import parse_file, c_ast
-from tests.test_util import cpp_supported, cpp_path, cpp_args
+from pycparser import c_ast, parse_file
+from tests.test_util import cpp_args, cpp_path, cpp_supported
 
 
 # Test successful parsing

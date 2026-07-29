@@ -7,7 +7,7 @@
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 # -----------------------------------------------------------------
-__all__ = ["c_lexer", "c_parser", "c_ast"]
+__all__ = ["c_ast", "c_lexer", "c_parser"]
 __version__ = "3.00"
 
 import io
@@ -91,7 +91,7 @@ def parse_file(
     if use_cpp:
         text = preprocess_file(filename, cpp_path, cpp_args)
     else:
-        with io.open(filename, encoding=encoding) as f:
+        with open(filename, encoding=encoding) as f:
             text = f.read()
 
     if parser is None:

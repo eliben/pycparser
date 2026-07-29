@@ -7,7 +7,7 @@
 # License: BSD
 # ------------------------------------------------------------------------------
 
-from typing import Any, List, Tuple, cast
+from typing import Any, cast
 
 from . import c_ast
 
@@ -99,7 +99,7 @@ def fix_switch_cases(switch_node: c_ast.Switch) -> c_ast.Switch:
 
 
 def _extract_nested_case(
-    case_node: c_ast.Case | c_ast.Default, stmts_list: List[c_ast.Node]
+    case_node: c_ast.Case | c_ast.Default, stmts_list: list[c_ast.Node]
 ) -> None:
     """Recursively extract consecutive Case statements that are made nested
     by the parser and add them to the stmts_list.
@@ -146,7 +146,7 @@ def fix_atomic_specifiers(
 
 def _fix_atomic_specifiers_once(
     decl: c_ast.Decl | c_ast.Typedef,
-) -> Tuple[c_ast.Decl | c_ast.Typedef, bool]:
+) -> tuple[c_ast.Decl | c_ast.Typedef, bool]:
     """Performs one 'fix' round of atomic specifiers.
     Returns (modified_decl, found) where found is True iff a fix was made.
     """

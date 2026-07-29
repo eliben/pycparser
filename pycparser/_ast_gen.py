@@ -13,8 +13,8 @@
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 # -----------------------------------------------------------------
-from string import Template
 import os
+from string import Template
 from typing import IO
 
 

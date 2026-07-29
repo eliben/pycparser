@@ -13,7 +13,7 @@ import sys
 # your site-packages/ with setup.py
 sys.path.extend([".", ".."])
 
-from pycparser import parse_file, c_generator
+from pycparser import c_generator, parse_file
 
 
 def translate_to_c(filename: str) -> None:

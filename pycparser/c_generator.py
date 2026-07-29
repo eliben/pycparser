@@ -6,7 +6,7 @@
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 # ------------------------------------------------------------------------------
-from typing import Callable, List, Optional
+from collections.abc import Callable
 
 from . import c_ast
 
@@ -38,7 +38,7 @@ class CGenerator:
         method = "visit_" + node.__class__.__name__
         return getattr(self, method, self.generic_visit)(node)
 
-    def generic_visit(self, node: Optional[c_ast.Node]) -> str:
+    def generic_visit(self, node: c_ast.Node | None) -> str:
         if node is None:
             return ""
         else:
@@ -214,20 +214,13 @@ class CGenerator:
         return self._generate_struct_union_enum(n, name="enum")
 
     def visit_Alignas(self, n: c_ast.Alignas) -> str:
-        return "_Alignas({})".format(self.visit(n.alignment))
+        return f"_Alignas({self.visit(n.alignment)})"
 
     def visit_Enumerator(self, n: c_ast.Enumerator) -> str:
         if not n.value:
-            return "{indent}{name},\n".format(
-                indent=self._make_indent(),
-                name=n.name,
-            )
+            return f"{self._make_indent()}{n.name},\n"
         else:
-            return "{indent}{name} = {value},\n".format(
-                indent=self._make_indent(),
-                name=n.name,
-                value=self.visit(n.value),
-            )
+            return f"{self._make_indent()}{n.name} = {self.visit(n.value)},\n"
 
     def visit_FuncDef(self, n: c_ast.FuncDef) -> str:
         decl = self.visit(n.decl)
@@ -423,10 +416,10 @@ class CGenerator:
             s += self._make_indent() + "}"
         return s
 
-    def _generate_struct_union_body(self, members: List[c_ast.Node]) -> str:
+    def _generate_struct_union_body(self, members: list[c_ast.Node]) -> str:
         return "".join(self._generate_stmt(decl) for decl in members)
 
-    def _generate_enum_body(self, members: List[c_ast.Enumerator]) -> str:
+    def _generate_enum_body(self, members: list[c_ast.Enumerator]) -> str:
         # `[:-2] + '\n'` removes the final `,` from the enumerator list
         return "".join(self.visit(value) for value in members)[:-2] + "\n"
 
@@ -487,7 +480,7 @@ class CGenerator:
     def _generate_type(
         self,
         n: c_ast.Node,
-        modifiers: List[c_ast.Node] = [],
+        modifiers: list[c_ast.Node] = [],
         emit_declname: bool = True,
     ) -> str:
         """Recursive generation from a type node. n is the type node.

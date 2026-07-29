@@ -11,7 +11,7 @@ import sys
 
 sys.path.extend([".", ".."])
 
-from pycparser import c_parser, c_ast, c_generator
+from pycparser import c_ast, c_generator, c_parser
 
 text = r"""
 void foo(int a, int b) {

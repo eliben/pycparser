@@ -1,4 +1,4 @@
-from pycparser import c_parser, c_generator
+from pycparser import c_generator, c_parser
 
 if __name__ == "__main__":
     src = r"""

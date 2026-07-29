@@ -14,7 +14,6 @@ sys.path.extend([".", ".."])
 
 from pycparser import c_ast, c_generator
 
-
 # target C code:
 # int main() {
 #     return 0;

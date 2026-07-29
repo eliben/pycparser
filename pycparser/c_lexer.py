@@ -7,9 +7,9 @@
 # License: BSD
 # ------------------------------------------------------------------------------
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Dict, List, Optional, Tuple
 
 
 @dataclass(slots=True)
@@ -68,14 +68,14 @@ class CLexer:
         self._filename = ""
         self._pos = 0
         self._line_start = 0
-        self._pending_tok: Optional[Token] = None
+        self._pending_tok: Token | None = None
         self._lineno = 1
 
     @property
     def filename(self) -> str:
         return self._filename
 
-    def token(self) -> Optional[Token]:
+    def token(self) -> Token | None:
         # Lexing strategy overview:
         #
         # - We maintain a current position (self._pos), line number, and the
@@ -141,7 +141,7 @@ class CLexer:
                     else:
                         continue
 
-    def _match_token(self) -> Optional[Token]:
+    def _match_token(self) -> Token | None:
         """Match one token at the current position.
 
         Returns a Token on success, or None if no token could be matched and
@@ -188,7 +188,7 @@ class CLexer:
                     break
 
         if best is None:
-            self._error(f"Illegal character {repr(text[pos])}", pos)
+            self._error(f"Illegal character {text[pos]!r}", pos)
             self._pos += 1
             return None
 
@@ -274,7 +274,7 @@ class CLexer:
         if line.startswith("line", pos):
             pos += 4
 
-        def success(pp_line: Optional[str], pp_filename: Optional[str]) -> None:
+        def success(pp_line: str | None, pp_filename: str | None) -> None:
             if pp_line is None:
                 self._error("line number missing in #line", self._pos + line_len)
             else:
@@ -338,7 +338,7 @@ class CLexer:
 
         success(pp_line, pp_filename)
 
-    def _handle_pppragma(self) -> List[Token]:
+    def _handle_pppragma(self) -> list[Token]:
         # Parse a full #pragma line; returns a list of tokens with 1 or 2
         # tokens - PPPRAGMA and an optional PPPRAGMASTR. If an empty list is
         # returned, it means an error occurred, or we're at the end of input.
@@ -386,7 +386,7 @@ class CLexer:
 ##
 ## Reserved keywords
 ##
-_keywords: Tuple[str, ...] = (
+_keywords: tuple[str, ...] = (
     "AUTO",
     "BREAK",
     "CASE",
@@ -434,7 +434,7 @@ _keywords: Tuple[str, ...] = (
     "_PRAGMA",
 )
 
-_keyword_map: Dict[str, str] = {}
+_keyword_map: dict[str, str] = {}
 
 for keyword in _keywords:
     # Keywords from new C standard are mixed-case, like _Bool, _Alignas, etc.
@@ -584,10 +584,10 @@ class _RegexRule:
     tok_type: str
     regex_pattern: str
     action: _RegexAction
-    error_message: Optional[str]
+    error_message: str | None
 
 
-_regex_rules: List[_RegexRule] = [
+_regex_rules: list[_RegexRule] = [
     _RegexRule(
         "UNSUPPORTED_C_STYLE_COMMENT",
         _unsupported_c_style_comment,
@@ -634,8 +634,8 @@ _regex_rules: List[_RegexRule] = [
     _RegexRule("ID", _identifier, _RegexAction.ID, None),
 ]
 
-_regex_actions: Dict[str, Tuple[_RegexAction, Optional[str]]] = {}
-_regex_pattern_parts: List[str] = []
+_regex_actions: dict[str, tuple[_RegexAction, str | None]] = {}
+_regex_pattern_parts: list[str] = []
 for _rule in _regex_rules:
     _regex_actions[_rule.tok_type] = (_rule.action, _rule.error_message)
     _regex_pattern_parts.append(f"(?P<{_rule.tok_type}>{_rule.regex_pattern})")
@@ -652,7 +652,7 @@ class _FixedToken:
     literal: str
 
 
-_fixed_tokens: List[_FixedToken] = [
+_fixed_tokens: list[_FixedToken] = [
     _FixedToken("ELLIPSIS", "..."),
     _FixedToken("LSHIFTEQUAL", "<<="),
     _FixedToken("RSHIFTEQUAL", ">>="),
@@ -706,7 +706,7 @@ _fixed_tokens: List[_FixedToken] = [
 # text[i], and we pre-sort that bucket by token length so the first match is
 # also the longest. This preserves longest-match semantics (e.g. '>>=' before
 # '>>' before '>') while reducing the number of comparisons.
-_fixed_tokens_by_first: Dict[str, List[_FixedToken]] = {}
+_fixed_tokens_by_first: dict[str, list[_FixedToken]] = {}
 for _entry in _fixed_tokens:
     _fixed_tokens_by_first.setdefault(_entry.literal[0], []).append(_entry)
 for _bucket in _fixed_tokens_by_first.values():

@@ -13,7 +13,7 @@ import time
 
 sys.path.extend([".", ".."])
 
-from pycparser import c_parser, c_ast
+from pycparser import c_ast, c_parser
 
 
 def measure_parse(text, n, progress_cb):
@@ -38,7 +38,7 @@ def measure_parse(text, n, progress_cb):
 
 def measure_file(filename, n):
     def progress_cb(i):
-        print(".", sep="", end="", flush=True)
+        print(".", end="", flush=True)
 
     with open(filename) as f:
         print(f"{os.path.basename(filename):<25}", end="", flush=True)

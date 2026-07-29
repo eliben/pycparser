@@ -18,7 +18,6 @@ sys.path.extend([".", ".."])
 
 from pycparser import c_ast, c_parser
 
-
 SAMPLE_DECL = "const unsigned int *value;"
 
 

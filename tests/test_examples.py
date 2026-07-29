@@ -3,7 +3,7 @@ import sys
 import unittest
 
 sys.path.insert(0, ".")
-from tests.test_util import run_exe, cpp_supported
+from tests.test_util import cpp_supported, run_exe
 
 
 # Runs all pycparser examples with no command-line arguments and makes sure they

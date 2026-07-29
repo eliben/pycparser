@@ -1,6 +1,6 @@
 .PHONY: check test
 
-RUFF_VERSION ?= 0.15.12
+RUFF_VERSION ?= 0.16.0
 RUFF = uvx ruff@$(RUFF_VERSION)
 
 TY_VERSION ?= 0.0.33

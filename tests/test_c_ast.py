@@ -3,7 +3,7 @@ import unittest
 import weakref
 
 sys.path.insert(0, "..")
-import pycparser.c_ast as c_ast
+from pycparser import c_ast
 from pycparser.c_parser import Coord
 
 

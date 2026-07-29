@@ -1,13 +1,12 @@
 import re
 import sys
 import unittest
-from typing import Optional
 
 sys.path.insert(0, "..")
 from pycparser.c_lexer import CLexer, Token
 
 
-def require_token(tok: Optional[Token]) -> Token:
+def require_token(tok: Token | None) -> Token:
     # In tests we know token() should produce a token here; this helper asserts
     # that and narrows Optional[Token] to Token, avoiding repeated casts/guards.
     assert tok is not None

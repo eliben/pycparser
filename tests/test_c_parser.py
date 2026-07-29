@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import os
-import io
 import unittest
+
 from pycparser import c_parser
 from pycparser.c_ast import *
 
@@ -3304,7 +3304,7 @@ class TestCParser_whole_code(TestCParser_base):
         testdir = os.path.dirname(__file__)
         name = os.path.join(testdir, "c_files", name)
         assert os.path.exists(name)
-        return io.open(name)
+        return open(name)
 
     def test_whole_file(self):
         # See how pycparser handles a whole, real C file.

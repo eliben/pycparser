@@ -74,8 +74,9 @@ class NodeVisitor:
 def heapyprofile():
     # pip install guppy
     # [works on python 2.7, AFAIK]
-    from guppy import hpy
     import gc
+
+    from guppy import hpy
 
     hp = hpy()
     parse_file("/tmp/197.c")

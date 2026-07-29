@@ -1,6 +1,5 @@
 from pycparser import c_parser
 
-
 if __name__ == "__main__":
     parser = c_parser.CParser()
     code = r"""
