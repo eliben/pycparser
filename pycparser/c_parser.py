@@ -81,7 +81,7 @@ class CParser:
         # saw: int name;)
         # If 'name' is not a key in _scope_stack[n] then 'name' was not defined
         # in this scope at all.
-        self._scope_stack: list[dict[str, bool]] = [dict()]
+        self._scope_stack: list[dict[str, bool]] = [{}]
         self._tokens: _TokenStream = _TokenStream(self.clex)
 
     def parse(
@@ -98,7 +98,7 @@ class CParser:
         debug:
             Deprecated debug flag (unused); for backwards compatibility.
         """
-        self._scope_stack = [dict()]
+        self._scope_stack = [{}]
         self.clex.input(text, filename)
         self._tokens = _TokenStream(self.clex)
 
@@ -118,7 +118,7 @@ class CParser:
         raise ParseError(f"{coord}: {msg}")
 
     def _push_scope(self) -> None:
-        self._scope_stack.append(dict())
+        self._scope_stack.append({})
 
     def _pop_scope(self) -> None:
         if len(self._scope_stack) <= 1:
@@ -297,9 +297,13 @@ class CParser:
     ) -> "_DeclSpec":
         """See _DeclSpec for the specifier dictionary layout."""
         if declspec is None:
-            spec: _DeclSpec = dict(
-                qual=[], storage=[], type=[], function=[], alignment=[]
-            )
+            spec: _DeclSpec = {
+                "qual": [],
+                "storage": [],
+                "type": [],
+                "function": [],
+                "alignment": [],
+            }
         else:
             spec = declspec
 
@@ -426,7 +430,7 @@ class CParser:
 
         declaration = self._build_declarations(
             spec=spec,
-            decls=[dict(decl=decl, init=None, bitsize=None)],
+            decls=[{"decl": decl, "init": None, "bitsize": None}],
             typedef_namespace=True,
         )[0]
 
@@ -665,13 +669,13 @@ class CParser:
             param_decls = None
             if self._peek_type() != "LBRACE":
                 self._parse_error("Invalid function definition", decl.coord)
-            spec: _DeclSpec = dict(
-                qual=[],
-                alignment=[],
-                storage=[],
-                type=[c_ast.IdentifierType(["int"], coord=decl.coord)],
-                function=[],
-            )
+            spec: _DeclSpec = {
+                "qual": [],
+                "alignment": [],
+                "storage": [],
+                "type": [c_ast.IdentifierType(["int"], coord=decl.coord)],
+                "function": [],
+            }
             func = self._build_function_definition(
                 spec=spec,
                 decl=decl,
@@ -709,7 +713,7 @@ class CParser:
             )
             return [func]
 
-        decl_dict: _DeclInfo = dict(decl=decl, init=None, bitsize=None)
+        decl_dict: _DeclInfo = {"decl": decl, "init": None, "bitsize": None}
         if self._accept("EQUALS"):
             decl_dict["init"] = self._parse_initializer()
         decls = self._parse_init_declarator_list(first=decl_dict)
@@ -770,7 +774,7 @@ class CParser:
             else:
                 decls = self._build_declarations(
                     spec=spec,
-                    decls=[dict(decl=None, init=None, bitsize=None)],
+                    decls=[{"decl": None, "init": None, "bitsize": None}],
                     typedef_namespace=True,
                 )
         else:
@@ -1063,7 +1067,7 @@ class CParser:
         init = None
         if self._accept("EQUALS"):
             init = self._parse_initializer()
-        return dict(decl=decl, init=init, bitsize=None)
+        return {"decl": decl, "init": init, "bitsize": None}
 
     # ------------------------------------------------------------------
     # Structs/unions/enums
@@ -1140,12 +1144,13 @@ class CParser:
                 decl_type = c_ast.IdentifierType(node)
             self._expect("SEMI")
             return self._build_declarations(
-                spec=spec, decls=[dict(decl=decl_type, init=None, bitsize=None)]
+                spec=spec,
+                decls=[{"decl": decl_type, "init": None, "bitsize": None}],
             )
 
         self._expect("SEMI")
         return self._build_declarations(
-            spec=spec, decls=[dict(decl=None, init=None, bitsize=None)]
+            spec=spec, decls=[{"decl": None, "init": None, "bitsize": None}]
         )
 
     # BNF: struct_declarator_list : struct_declarator (',' struct_declarator)*
@@ -1359,14 +1364,13 @@ class CParser:
 
         func = c_ast.FuncDecl(args=args, type=None, coord=base_decl.coord)
 
-        if self._peek_type() == "LBRACE":
-            if func.args is not None:
-                for param in func.args.params:
-                    if isinstance(param, c_ast.EllipsisParam):
-                        break
-                    name = getattr(param, "name", None)
-                    if name:
-                        self._add_identifier(name, param.coord)
+        if self._peek_type() == "LBRACE" and func.args is not None:
+            for param in func.args.params:
+                if isinstance(param, c_ast.EllipsisParam):
+                    break
+                name = getattr(param, "name", None)
+                if name:
+                    self._add_identifier(name, param.coord)
 
         return func
 
@@ -1419,7 +1423,8 @@ class CParser:
             )
             if is_named:
                 return self._build_declarations(
-                    spec=spec, decls=[dict(decl=decl, init=None, bitsize=None)]
+                    spec=spec,
+                    decls=[{"decl": decl, "init": None, "bitsize": None}],
                 )[0]
             return self._build_parameter_declaration(spec, decl, spec_coord)
 
@@ -1435,7 +1440,7 @@ class CParser:
             and self._is_type_in_scope(spec["type"][-1].names[0])
         ):
             return self._build_declarations(
-                spec=spec, decls=[dict(decl=decl, init=None, bitsize=None)]
+                spec=spec, decls=[{"decl": decl, "init": None, "bitsize": None}]
             )[0]
 
         decl = c_ast.Typename(

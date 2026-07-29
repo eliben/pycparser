@@ -10,7 +10,6 @@
 __all__ = ["c_ast", "c_lexer", "c_parser"]
 __version__ = "3.00"
 
-import io
 from subprocess import check_output
 
 from . import c_parser

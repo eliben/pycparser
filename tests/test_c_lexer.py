@@ -37,10 +37,7 @@ class TestCLexerNoErrors(unittest.TestCase):
         pass
 
     def type_lookup_func(self, typ):
-        if typ.startswith("mytype"):
-            return True
-        else:
-            return False
+        return typ.startswith("mytype")
 
     def setUp(self):
         self.clex = CLexer(

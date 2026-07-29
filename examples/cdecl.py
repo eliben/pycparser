@@ -72,7 +72,7 @@ def explain_c_declaration(
             expand_struct=expand_struct,
             expand_typedef=expand_typedef,
         )
-    except Exception as e:
+    except RuntimeError as e:
         return "Not a valid declaration: " + str(e)
 
     return _explain_decl_node(expanded)
@@ -176,9 +176,12 @@ def _expand_in_place(
 def _find_struct(name: str, file_ast: c_ast.FileAST) -> c_ast.Struct | None:
     """Receives a struct name and return declared struct object in file_ast"""
     for node in file_ast.ext:
-        if isinstance(node, c_ast.Decl) and isinstance(node.type, c_ast.Struct):
-            if node.type.name == name:
-                return node.type
+        if (
+            isinstance(node, c_ast.Decl)
+            and isinstance(node.type, c_ast.Struct)
+            and node.type.name == name
+        ):
+            return node.type
     return None
 
 

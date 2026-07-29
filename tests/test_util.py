@@ -25,8 +25,10 @@ def cpp_path():
     return "cpp"
 
 
-def cpp_args(args=[]):
+def cpp_args(args=None):
     """Turn args into a suitable format for passing to cpp."""
+    if args is None:
+        args = []
     if isinstance(args, str):
         args = [args]
     if platform.system() == "Darwin":
@@ -38,11 +40,13 @@ def _bytes2str(b):
     return b.decode("latin-1")
 
 
-def run_exe(exe_path, args=[], echo=False):
+def run_exe(exe_path, args=None, echo=False):
     """Runs the given executable as a subprocess, given the
     list of arguments. Captures its return code (rc) and stdout and
     returns a tuple: rc, stdout, stderr
     """
+    if args is None:
+        args = []
     popen_cmd = [exe_path] + args
     if os.path.splitext(exe_path)[1] == ".py":
         popen_cmd.insert(0, sys.executable)

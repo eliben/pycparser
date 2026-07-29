@@ -81,7 +81,7 @@ def child_attrs_of(klass: type[c_ast.Node]) -> set[str]:
 
     """
     non_child_attrs = set(klass.attr_names)
-    all_attrs = set([i for i in klass.__slots__ if not RE_INTERNAL_ATTR.match(i)])
+    all_attrs: set[str] = {i for i in klass.__slots__ if not RE_INTERNAL_ATTR.match(i)}
     return all_attrs - non_child_attrs
 
 

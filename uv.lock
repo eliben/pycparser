@@ -1,0 +1,7 @@
+version = 1
+requires-python = ">=3.10"
+
+[[package]]
+name = "pycparser"
+version = "3.0"
+source = { editable = "." }

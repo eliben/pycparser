@@ -7,6 +7,7 @@
 # License: BSD
 # ------------------------------------------------------------------------------
 from collections.abc import Callable
+from typing import ClassVar
 
 from . import c_ast
 
@@ -86,7 +87,7 @@ class CGenerator:
                 return f"{n.op}{operand}"
 
     # Precedence map of binary operators:
-    precedence_map = {
+    precedence_map: ClassVar[dict[str, int]] = {
         # Should be in sync with c_parser.CParser.precedence
         # Higher numbers are stronger binding
         "||": 0,  # weakest binding
@@ -480,7 +481,7 @@ class CGenerator:
     def _generate_type(
         self,
         n: c_ast.Node,
-        modifiers: list[c_ast.Node] = [],
+        modifiers: list[c_ast.Node] | None = None,
         emit_declname: bool = True,
     ) -> str:
         """Recursive generation from a type node. n is the type node.
@@ -488,6 +489,9 @@ class CGenerator:
         encountered on the way down to a TypeDecl, to allow proper
         generation from it.
         """
+        if modifiers is None:
+            modifiers = []
+
         # ~ print(n, modifiers)
         match n:
             case c_ast.TypeDecl():
