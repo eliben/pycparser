@@ -1587,15 +1587,13 @@ class CParser:
 
     # BNF: block_item_list : block_item+
     def _parse_block_item_list(self) -> list[c_ast.Node]:
-        items = []
+        items: list[c_ast.Node] = []
         while self._peek_type() not in {"RBRACE", None}:
             item = self._parse_block_item()
-            if isinstance(item, list):
-                if item == [None]:
-                    continue
-                items.extend(item)
-            else:
+            if isinstance(item, c_ast.Node):
                 items.append(item)
+            elif item != [None]:
+                items.extend(item)
         return items
 
     # BNF: compound_statement : '{' block_item_list? '}'
