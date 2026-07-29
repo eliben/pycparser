@@ -105,6 +105,8 @@ class NodeCfg:
             slots = "'coord', '__weakref__'"
             arglist = "(self, coord=None)"
 
+        # Keep coord and __weakref__ last: Node.__repr__ relies on their
+        # positions when iterating over the node's fields.
         src += f"    __slots__ = ({slots})\n"
         src += f"    def __init__{arglist}:\n"
 
@@ -142,8 +144,7 @@ class NodeCfg:
                 src += f"            yield self.{child}\n"
 
             for seq_child in self.seq_child:
-                src += f"        for child in (self.{seq_child} or []):\n"
-                src += "            yield child\n"
+                src += f"        yield from self.{seq_child} or []\n"
 
             if not (self.child or self.seq_child):
                 # Empty generator
@@ -167,6 +168,9 @@ _PROLOGUE_COMMENT = r"""#-------------------------------------------------------
 # run the generator again.
 # ** ** *** ** **
 #
+# The order of generated __slots__ is significant to Node.__repr__.
+# ruff: noqa: RUF023
+#
 # pycparser: c_ast.py
 #
 # AST Node classes.
@@ -178,14 +182,15 @@ _PROLOGUE_COMMENT = r"""#-------------------------------------------------------
 """
 _PROLOGUE_CODE = r'''
 import sys
-from typing import Any, ClassVar, IO, Optional
+from typing import IO, Any, ClassVar
+
 
 def _repr(obj):
     """
     Get the representation of an object, with dedicated pprint-like format for lists.
     """
     if isinstance(obj, list):
-        return '[' + (',\n '.join((_repr(e).replace('\n', '\n ') for e in obj))) + '\n]'
+        return '[' + (',\n '.join(_repr(e).replace('\n', '\n ') for e in obj)) + '\n]'
     else:
         return repr(obj)
 
@@ -194,7 +199,7 @@ class Node:
     """ Abstract base class for AST nodes.
     """
     attr_names: ClassVar[tuple[str, ...]] = ()
-    coord: Optional[Any]
+    coord: Any | None
     def __repr__(self):
         """ Generates a python representation of the current node
         """
@@ -217,7 +222,6 @@ class Node:
     def children(self):
         """ A sequence of all children that are Nodes
         """
-        pass
 
     def show(
         self,
@@ -227,7 +231,7 @@ class Node:
         showemptyattrs: bool = True,
         nodenames: bool = False,
         showcoord: bool = False,
-        _my_node_name: Optional[str] = None,
+        _my_node_name: str | None = None,
     ):
         """ Pretty print the Node and all its attributes and
             children (recursively) to a buffer.
