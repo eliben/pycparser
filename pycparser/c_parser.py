@@ -1886,7 +1886,8 @@ class CParser:
                 if self._accept("RBRACE"):
                     # Empty compound literal, e.g. (int){} (C99 empty braces).
                     return c_ast.CompoundLiteral(
-                        typ, c_ast.InitList([], self._tok_coord(lbrace_tok)))
+                        typ, c_ast.InitList([], self._tok_coord(lbrace_tok))
+                    )
                 init = self._parse_initializer_list()
                 self._accept("COMMA")
                 self._expect("RBRACE")
