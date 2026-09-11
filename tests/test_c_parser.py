@@ -1330,6 +1330,30 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_empty_compound_literal(self):
+        # C99 allows empty initializer braces in compound literals,
+        # e.g. (int){}. Regression test for #503.
+        ps = self.parse(r"""
+            void foo() {
+                x = (int){};
+                y = (struct jk){};
+            }""")
+        compound = ps.ext[0].body.block_items[0].rvalue
+        self.assertIsInstance(compound, CompoundLiteral)
+        self.assertEqual(
+            expand_decl(compound.type),
+            ["Typename", ["TypeDecl", ["IdentifierType", ["int"]]]],
+        )
+        self.assertEqual(expand_init(compound.init), [])
+
+        compound = ps.ext[0].body.block_items[1].rvalue
+        self.assertIsInstance(compound, CompoundLiteral)
+        self.assertEqual(
+            expand_decl(compound.type),
+            ["Typename", ["TypeDecl", ["Struct", "jk", []]]],
+        )
+        self.assertEqual(expand_init(compound.init), [])
+
     def test_parenthesized_compounds(self):
         e = self.parse(r"""
         void foo() {

@@ -1881,7 +1881,12 @@ class CParser:
             # Disambiguate between casts and compound literals:
             #   (int) x   -> cast
             #   (int) {1} -> compound literal
-            if self._accept("LBRACE"):
+            lbrace_tok = self._accept("LBRACE")
+            if lbrace_tok is not None:
+                if self._accept("RBRACE"):
+                    # Empty compound literal, e.g. (int){} (C99 empty braces).
+                    return c_ast.CompoundLiteral(
+                        typ, c_ast.InitList([], self._tok_coord(lbrace_tok)))
                 init = self._parse_initializer_list()
                 self._accept("COMMA")
                 self._expect("RBRACE")
