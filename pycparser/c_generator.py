@@ -450,6 +450,7 @@ class CGenerator:
                 | c_ast.ID()
                 | c_ast.Typedef()
                 | c_ast.ExprList()
+                | c_ast.CompoundLiteral()
             ):
                 # These can also appear in an expression context so no semicolon
                 # is added to them automatically
