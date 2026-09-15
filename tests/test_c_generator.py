@@ -357,6 +357,11 @@ class TestCtoC(unittest.TestCase):
             } s;
         """)
 
+    def test_compound_literal_statement(self):
+        self._assert_ctoc_correct(
+            "struct S { int x; }; void f(void) { (struct S){1}; }"
+        )
+
     def test_compound_literal(self):
         self._assert_ctoc_correct('char **foo = (char *[]){ "x", "y", "z" };')
         self._assert_ctoc_correct("int i = ++(int){ 1 };")
