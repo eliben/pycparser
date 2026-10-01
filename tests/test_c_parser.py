@@ -2842,6 +2842,15 @@ class TestCParser_fundamentals(TestCParser_base):
         d2 = self.get_decl_init('char* s = L"hello " L"world" L" and I";')
         self.assertEqual(d2, ["Constant", "string", 'L"hello world and I"'])
 
+        d3 = self.get_decl_init('char* s = u8"hello" u8"world";')
+        self.assertEqual(d3, ["Constant", "string", 'u8"helloworld"'])
+
+        d4 = self.get_decl_init('char* s = u8"a" u8"b" u8"c";')
+        self.assertEqual(d4, ["Constant", "string", 'u8"abc"'])
+
+        d5 = self.get_decl_init('char* s = u"hello" u"world";')
+        self.assertEqual(d5, ["Constant", "string", 'u"helloworld"'])
+
     def test_inline_specifier(self):
         ps2 = self.parse("static inline void inlinefoo(void);")
         self.assertEqual(ps2.ext[0].funcspec, ["inline"])
