@@ -431,6 +431,7 @@ _keywords: tuple[str, ...] = (
     "_ATOMIC",
     "_ALIGNOF",
     "_ALIGNAS",
+    "_BITINT",
     "_PRAGMA",
 )
 
@@ -438,7 +439,9 @@ _keyword_map: dict[str, str] = {}
 
 for keyword in _keywords:
     # Keywords from new C standard are mixed-case, like _Bool, _Alignas, etc.
-    if keyword.startswith("_") and len(keyword) > 1 and keyword[1].isalpha():
+    if keyword == "_BITINT":
+        _keyword_map["_BitInt"] = keyword
+    elif keyword.startswith("_") and len(keyword) > 1 and keyword[1].isalpha():
         _keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
     else:
         _keyword_map[keyword.lower()] = keyword
@@ -459,8 +462,10 @@ _bin_digits = "[01](?:'?[01])*"
 _dec_digits = "[0-9](?:'?[0-9])*"
 
 # integer constants (K&R2: A.2.5.1)
+# The wb/WB suffixes (C23) denote a _BitInt constant, optionally unsigned.
 _integer_suffix_opt = (
-    r"(([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?"
+    r"(([uU](wb|WB))|((wb|WB)[uU]?)|"
+    r"([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?"
 )
 _decimal_constant = (
     "(0" + _integer_suffix_opt + ")|([1-9](?:'?[0-9])*" + _integer_suffix_opt + ")"

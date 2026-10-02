@@ -93,6 +93,29 @@ class TestCLexerNoErrors(unittest.TestCase):
         # - is MINUS, the rest a constnant
         self.assertTokensTypes("-1", ["MINUS", "INT_CONST_DEC"])
 
+    def test_bitint(self):
+        self.assertTokensTypes("_BitInt", ["_BITINT"])
+        self.assertTokensTypes(
+            "_BitInt(8)", ["_BITINT", "LPAREN", "INT_CONST_DEC", "RPAREN"]
+        )
+        self.assertTokensTypes("_Bitint _BITINT _bitint", ["ID", "ID", "ID"])
+
+        self.assertTokensTypes("5wb", ["INT_CONST_DEC"])
+        self.assertTokensTypes("5WB", ["INT_CONST_DEC"])
+        self.assertTokensTypes("5uwb", ["INT_CONST_DEC"])
+        self.assertTokensTypes("5UWB", ["INT_CONST_DEC"])
+        self.assertTokensTypes("5wbu", ["INT_CONST_DEC"])
+        self.assertTokensTypes("5WBU", ["INT_CONST_DEC"])
+        self.assertTokensTypes("017wb", ["INT_CONST_OCT"])
+        self.assertTokensTypes("0x1fwb", ["INT_CONST_HEX"])
+        self.assertTokensTypes("0b101uwb", ["INT_CONST_BIN"])
+
+        # The two letters of the suffix must have the same case, and it can't
+        # be combined with l/L
+        self.assertTokensTypes("5wB", ["INT_CONST_DEC", "ID"])
+        self.assertTokensTypes("5lwb", ["INT_CONST_DEC", "ID"])
+        self.assertTokensTypes("5wbl", ["INT_CONST_DEC", "ID"])
+
     def test_special_names(self):
         self.assertTokensTypes("sizeof offsetof", ["SIZEOF", "OFFSETOF"])
 

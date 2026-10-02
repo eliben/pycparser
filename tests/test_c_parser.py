@@ -1131,6 +1131,109 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_bitint(self):
+        d = self.parse("_BitInt(7) a;").ext[0]
+        self.assertIsInstance(d.type.type, BitIntType)
+        self.assertEqual(d.type.type.attr_names, ("signed",))
+        self.assertIsNone(d.type.type.signed)
+        self.assertEqual(expand_init(d.type.type.width), ["Constant", "int", "7"])
+        self.assert_coord(d.type.type, 1, 1)
+
+        for src, signed in [
+            ("signed _BitInt(7) a;", True),
+            ("_BitInt(7) signed a;", True),
+            ("unsigned _BitInt(7) a;", False),
+            ("_BitInt(7) unsigned a;", False),
+            ("const unsigned _BitInt(7) a;", False),
+        ]:
+            d = self.parse(src).ext[0]
+            self.assertIsInstance(d.type.type, BitIntType)
+            self.assertEqual(d.type.type.signed, signed, src)
+
+        # The width is a constant expression
+        d = self.parse("_BitInt(N * 2 + 1) a;").ext[0]
+        self.assertIsInstance(d.type.type.width, BinaryOp)
+        d = self.parse("_BitInt(0x10) a;").ext[0]
+        self.assertEqual(d.type.type.width.value, "0x10")
+
+        # Declarators sharing the specifiers each get their own type node
+        d1, d2 = self.parse("unsigned _BitInt(7) a, *b;").ext
+        self.assertEqual(d1.type.type.signed, False)
+        self.assertEqual(d2.type.type.type.signed, False)
+
+    def test_bitint_in_declarations(self):
+        t = self.parse("typedef unsigned _BitInt(128) wide;").ext[0]
+        self.assertIsInstance(t, Typedef)
+        self.assertIsInstance(t.type.type, BitIntType)
+
+        t = self.parse("_BitInt(9) *a[2];").ext[0]
+        self.assertIsInstance(t.type, ArrayDecl)
+        self.assertIsInstance(t.type.type, PtrDecl)
+        self.assertIsInstance(t.type.type.type.type, BitIntType)
+
+        t = self.parse("_BitInt(8) f(_BitInt(4) a, unsigned _BitInt(4) b);").ext[0]
+        self.assertIsInstance(t.type.type.type, BitIntType)
+        params = t.type.args.params
+        self.assertIsInstance(params[0].type.type, BitIntType)
+        self.assertEqual(params[1].type.type.signed, False)
+
+        t = self.parse("struct S { _BitInt(5) a : 3; };").ext[0]
+        self.assertIsInstance(t.type.decls[0].type.type, BitIntType)
+
+        body = self.parse(
+            "void f(void) { int a = (_BitInt(16)) 3; int b = sizeof(_BitInt(4)); }"
+        )
+        items = body.ext[0].body.block_items
+        self.assertIsInstance(items[0].init.to_type.type.type, BitIntType)
+        self.assertIsInstance(items[1].init.expr.type.type, BitIntType)
+
+    def test_bitint_errors(self):
+        for width in ["0", "00", "0x0", "0b0", "-1", "-0", "0u", "0'0", "0x0'0"]:
+            with self.assertRaisesRegex(ParseError, "positive"):
+                self.parse(f"_BitInt({width}) a;")
+
+        self.assertRaises(ParseError, self.parse, "_BitInt a;")
+        self.assertRaises(ParseError, self.parse, "_BitInt() a;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(8;")
+        self.assertRaises(ParseError, self.parse, "signed unsigned _BitInt(8) a;")
+        self.assertRaises(ParseError, self.parse, "signed signed _BitInt(8) a;")
+        self.assertRaises(ParseError, self.parse, "unsigned _BitInt(8) unsigned a;")
+        self.assertRaises(ParseError, self.parse, "int _BitInt(8) a;")
+        self.assertRaises(ParseError, self.parse, "long _BitInt(8) a;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(8) char a;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(8) _BitInt(8) a;")
+
+    def test_bitint_width_with_digit_separators(self):
+        for width in ["1'024", "0x1'00", "0b1'0", "0'17", "8'0u"]:
+            d = self.parse(f"_BitInt({width}) a;").ext[0]
+            self.assertEqual(d.type.type.width.value, width)
+
+    def test_bitint_constants(self):
+        for value, typ in [
+            ("5wb", "_BitInt"),
+            ("5WB", "_BitInt"),
+            ("0wb", "_BitInt"),
+            ("017wb", "_BitInt"),
+            ("0x1fwb", "_BitInt"),
+            ("0b101wb", "_BitInt"),
+            ("5uwb", "unsigned _BitInt"),
+            ("5UWB", "unsigned _BitInt"),
+            ("5wbu", "unsigned _BitInt"),
+            ("5WBU", "unsigned _BitInt"),
+            ("0xaauwb", "unsigned _BitInt"),
+        ]:
+            d = self.parse(f"_BitInt(16) a = {value};").ext[0]
+            self.assertEqual(expand_init(d.init), ["Constant", typ, value])
+
+        # Plain integer constants are not affected
+        d = self.parse("long a = 5ul;").ext[0]
+        self.assertEqual(expand_init(d.init), ["Constant", "unsigned long int", "5ul"])
+
+        self.assertRaises(ParseError, self.parse, "int a = 5lwb;")
+        self.assertRaises(ParseError, self.parse, "int a = 5wbl;")
+        self.assertRaises(ParseError, self.parse, "int a = 5wB;")
+        self.assertRaises(ParseError, self.parse, "int a = 1.5wb;")
+
     def test_sizeof(self):
         e = """
             void foo()

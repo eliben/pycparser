@@ -407,6 +407,25 @@ class TestCtoC(unittest.TestCase):
             name="",
         )
 
+    def test_bitint(self):
+        self._assert_ctoc_correct("_BitInt(7) a;")
+        self._assert_ctoc_correct("signed _BitInt(7) a;")
+        self._assert_ctoc_correct("unsigned _BitInt(7) a;")
+        self._assert_ctoc_correct("const unsigned _BitInt(N + 1) *a[3];")
+        self._assert_ctoc_correct("typedef unsigned _BitInt(128) wide;")
+        self._assert_ctoc_correct("_BitInt(8) f(_BitInt(4) a, unsigned _BitInt(4) b);")
+        self._assert_ctoc_correct("struct S { _BitInt(5) a : 3; };")
+        self._assert_ctoc_correct(
+            "void f(void) { int a = (_BitInt(16)) 3; int b = sizeof(_BitInt(4)); }"
+        )
+        self.assertEqual(
+            self._run_c_to_c("_BitInt(7) signed a;"), "signed _BitInt(7) a;\n"
+        )
+
+    def test_bitint_constants(self):
+        self._assert_ctoc_correct("_BitInt(16) a = 5wb;")
+        self._assert_ctoc_correct("unsigned _BitInt(16) a = 0xFFuwb, b = 5WBU;")
+
     def test_array_decl(self):
         self._assert_ctoc_correct("int g(const int a[const 20]){}")
         ast = parse_to_ast("const int a[const 20];")
