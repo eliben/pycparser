@@ -1293,6 +1293,36 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_nullptr(self):
+        t = self.parse("void *p = nullptr;")
+        self.assertIsInstance(t.ext[0].init, NullPtr)
+        self.assert_coord(t.ext[0].init, 1, 11)
+        self.assertEqual(t.ext[0].init.attr_names, ())
+        self.assertEqual(t.ext[0].init.children(), ())
+
+        e = """
+            int foo(void *p) {
+                if (p == nullptr)
+                    return bar(nullptr, (void *)nullptr);
+                return sizeof(nullptr);
+            }
+            """
+        body = self.parse(e).ext[0].body
+        cond = body.block_items[0].cond
+        self.assertIsInstance(cond, BinaryOp)
+        self.assertIsInstance(cond.right, NullPtr)
+
+        call = body.block_items[0].iftrue.expr
+        self.assertIsInstance(call.args.exprs[0], NullPtr)
+        self.assertIsInstance(call.args.exprs[1], Cast)
+        self.assertIsInstance(call.args.exprs[1].expr, NullPtr)
+
+        size = body.block_items[1].expr
+        self.assertEqual(size.op, "sizeof")
+        self.assertIsInstance(size.expr, NullPtr)
+
+        self.assertRaises(ParseError, self.parse, "int nullptr;")
+
     def test_compound_statement(self):
         e = """
             void foo() {

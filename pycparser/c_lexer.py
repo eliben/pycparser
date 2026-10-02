@@ -406,6 +406,7 @@ _keywords: tuple[str, ...] = (
     "INLINE",
     "INT",
     "LONG",
+    "NULLPTR",
     "REGISTER",
     "OFFSETOF",
     "RESTRICT",

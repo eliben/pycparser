@@ -473,6 +473,13 @@ class TestCtoC(unittest.TestCase):
         )
         self._assert_ctoc_correct("_Static_assert(sizeof(int) == sizeof(int));")
 
+    def test_nullptr(self):
+        self._assert_ctoc_correct("void *p = nullptr;")
+        self._assert_ctoc_correct("int f(void *p) { return p == nullptr; }")
+        self._assert_ctoc_correct("void f(void) { g(nullptr, (void *)nullptr); }")
+        self._assert_ctoc_correct("void f(void) { nullptr; }")
+        self.assertEqual(self._run_c_to_c("void *p = nullptr;"), "void *p = nullptr;\n")
+
     def test_reduce_parentheses_binaryops(self):
         c1 = "int x = a + b + c + d;"
         self.assertEqual(self._run_c_to_c(c1), "int x = ((a + b) + c) + d;\n")

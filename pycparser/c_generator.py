@@ -51,6 +51,9 @@ class CGenerator:
     def visit_ID(self, n: c_ast.ID) -> str:
         return n.name
 
+    def visit_NullPtr(self, n: c_ast.NullPtr) -> str:
+        return "nullptr"
+
     def visit_Pragma(self, n: c_ast.Pragma) -> str:
         ret = "#pragma"
         if n.string:
@@ -448,6 +451,7 @@ class CGenerator:
                 | c_ast.StructRef()
                 | c_ast.Constant()
                 | c_ast.ID()
+                | c_ast.NullPtr()
                 | c_ast.Typedef()
                 | c_ast.ExprList()
                 | c_ast.CompoundLiteral()
@@ -571,5 +575,12 @@ class CGenerator:
         """
         return isinstance(
             n,
-            (c_ast.Constant, c_ast.ID, c_ast.ArrayRef, c_ast.StructRef, c_ast.FuncCall),
+            (
+                c_ast.Constant,
+                c_ast.ID,
+                c_ast.NullPtr,
+                c_ast.ArrayRef,
+                c_ast.StructRef,
+                c_ast.FuncCall,
+            ),
         )
