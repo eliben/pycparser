@@ -1543,6 +1543,145 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_attributes(self):
+        def attrs_of(node):
+            return [
+                (a.name, None if a.args is None else [e.value for e in a.args])
+                for a in node.attrs or []
+            ]
+
+        t = self.parse("[[deprecated]] int a;")
+        self.assertIsInstance(t.ext[0].attrs[0], Attribute)
+        self.assertEqual(attrs_of(t.ext[0]), [("deprecated", None)])
+        self.assert_coord(t.ext[0].attrs[0], 1, 3)
+        self.assertEqual(t.ext[0].attrs[0].attr_names, ("name",))
+        self.assertIsNone(self.parse("int a;").ext[0].attrs)
+
+        t = self.parse('[[deprecated("old"), gnu::aligned(8, 16), a::b()]] int a;')
+        self.assertEqual(
+            attrs_of(t.ext[0]),
+            [("deprecated", ['"old"']), ("gnu::aligned", ["8", "16"]), ("a::b", [])],
+        )
+
+        t = self.parse("[[a]] [[b, c]] int x;")
+        self.assertEqual([a.name for a in t.ext[0].attrs], ["a", "b", "c"])
+
+        t = self.parse("[[]] int x; [[,a,,]] int y;")
+        self.assertIsNone(t.ext[0].attrs)
+        self.assertEqual([a.name for a in t.ext[1].attrs], ["a"])
+
+        t = self.parse("[ [ a ] ] int x;")
+        self.assertEqual([a.name for a in t.ext[0].attrs], ["a"])
+
+        t = self.parse("[[_Noreturn, gnu::const]] void f(void);")
+        self.assertEqual([a.name for a in t.ext[0].attrs], ["_Noreturn", "gnu::const"])
+
+    def test_attribute_positions(self):
+        def names(node):
+            return [a.name for a in node.attrs or []]
+
+        t = self.parse("static [[a]] int [[b]] x [[c]] = 1, y [[d]], z;")
+        self.assertEqual(names(t.ext[0]), ["a", "b", "c"])
+        self.assertEqual(t.ext[0].storage, ["static"])
+        self.assertEqual(t.ext[0].init.value, "1")
+        self.assertEqual(names(t.ext[1]), ["a", "b", "d"])
+        self.assertEqual(names(t.ext[2]), ["a", "b"])
+
+        t = self.parse("int a[3] [[x]], b[[y]], c[2][[z]];")
+        self.assertEqual(self.get_decl("int a[3] [[x]];")[2][0], "ArrayDecl")
+        self.assertEqual([names(d) for d in t.ext], [["x"], ["y"], ["z"]])
+        self.assertEqual(t.ext[2].type.dim.value, "2")
+
+        t = self.parse("[[a]] typedef int T [[b]]; T [[c]] v;")
+        self.assertEqual(names(t.ext[0]), ["a", "b"])
+        self.assertEqual(names(t.ext[1]), ["c"])
+
+        t = self.parse("[[a]] struct S { int x; } s;")
+        self.assertEqual(names(t.ext[0]), ["a"])
+
+        t = self.parse("[[nodiscard]] int f(void) { return 0; }")
+        self.assertEqual(names(t.ext[0].decl), ["nodiscard"])
+
+        t = self.parse("int f([[maybe_unused]] int a, int b [[maybe_unused]], int c);")
+        params = t.ext[0].type.args.params
+        self.assertEqual([names(p) for p in params], [["maybe_unused"]] * 2 + [[]])
+
+        t = self.parse("struct S { [[a]] int x; int y [[b]] : 3; int z[2] [[c]]; };")
+        members = t.ext[0].type.decls
+        self.assertEqual([names(m) for m in members], [["a"], ["b"], ["c"]])
+        self.assertEqual(members[1].bitsize.value, "3")
+
+        t = self.parse("void f(void) { [[a]] int x = 1; [[b]] const int y [[c]]; }")
+        items = t.ext[0].body.block_items
+        self.assertEqual([names(d) for d in items], [["a"], ["b", "c"]])
+
+    def test_attributes_on_enumerators_and_labels(self):
+        t = self.parse("enum E { A [[deprecated]], B [[x::y(1)]] = 2, C, };")
+        enums = t.ext[0].type.values.enumerators
+        self.assertEqual([e.name for e in enums], ["A", "B", "C"])
+        self.assertEqual(enums[0].attrs[0].name, "deprecated")
+        self.assertEqual(enums[1].attrs[0].name, "x::y")
+        self.assertEqual(enums[1].value.value, "2")
+        self.assertIsNone(enums[2].attrs)
+
+        code = """
+            void f(int n) {
+                [[a]] out: n++;
+                [[b]] end:
+                switch (n) {
+                    case 1:
+                        n++;
+                        [[fallthrough]];
+                    case 2:
+                        [[]];
+                        break;
+                }
+            }
+            """
+        body = self.parse(code).ext[0].body.block_items
+        self.assertIsInstance(body[0], Label)
+        self.assertEqual(body[0].attrs[0].name, "a")
+        self.assertIsInstance(body[0].stmt, UnaryOp)
+        self.assertEqual(body[1].attrs[0].name, "b")
+        cases = body[1].stmt.stmt.block_items
+        stmts = cases[0].stmts
+        self.assertIsInstance(stmts[1], EmptyStatement)
+        self.assertEqual(stmts[1].attrs[0].name, "fallthrough")
+        self.assertIsNone(
+            self.parse("void f(void) { ; }").ext[0].body.block_items[0].attrs
+        )
+
+    def test_attributes_with_typedef_names(self):
+        code = """
+            typedef int T;
+            [[a]] T x;
+            void f(void) {
+                [[b]] T y [[c]];
+            }
+            """
+        t = self.parse(code)
+        self.assertEqual([a.name for a in t.ext[1].attrs], ["a"])
+        items = t.ext[2].body.block_items
+        self.assertEqual([a.name for a in items[0].attrs], ["b", "c"])
+
+    def test_attribute_errors(self):
+        for code in [
+            "[[a]",
+            "[[a]] ;",
+            "[[a,]]]] int x;",
+            "[[1]] int x;",
+            "[[a::]] int x;",
+            "[[a(]] int x;",
+            "void f(void) { [[a]] return; }",
+            "void f(void) { [[a]] x = 1; }",
+            "void f(void) { [[a]] }",
+            "void f([[a]] int);",
+            "void f(void) { (int [[a]])0; }",
+            "int x [[a]] [3];",
+            "int a[[1]];",
+        ]:
+            self.assertRaises(ParseError, self.parse, code)
+
     def test_struct_union(self):
         s1 = """
             struct {
