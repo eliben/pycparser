@@ -206,6 +206,7 @@ class CLexer:
                 return None
             case _RegexAction.ID:
                 tok_type = _keyword_map.get(value, "ID")
+                value = _keyword_aliases.get(value, value)
                 if tok_type == "ID" and self.type_lookup_func(value):
                     tok_type = "TYPEID"
             case _:
@@ -442,6 +443,19 @@ for keyword in _keywords:
         _keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
     else:
         _keyword_map[keyword.lower()] = keyword
+
+# C23 drops the underscore from these keywords. The lexer emits the same token
+# type and the same value as for the C11 spelling, so the parser and AST users
+# only ever see one form.
+_keyword_aliases: dict[str, str] = {
+    "thread_local": "_Thread_local",
+    "alignas": "_Alignas",
+    "alignof": "_Alignof",
+    "static_assert": "_Static_assert",
+}
+
+for alias, spelling in _keyword_aliases.items():
+    _keyword_map[alias] = _keyword_map[spelling]
 
 ##
 ## Regexes for use in tokens

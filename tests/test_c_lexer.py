@@ -153,6 +153,23 @@ class TestCLexerNoErrors(unittest.TestCase):
         token_list(clex)
         self.assertEqual(braces, ["{", "}", "}", "}", "}", "{"])
 
+    def test_c23_keyword_spellings(self):
+        self.assertTokensTypes(
+            "thread_local alignas alignof static_assert",
+            ["_THREAD_LOCAL", "_ALIGNAS", "_ALIGNOF", "_STATIC_ASSERT"],
+        )
+        self.assertTokensTypes(
+            "_Thread_local _Alignas _Alignof _Static_assert",
+            ["_THREAD_LOCAL", "_ALIGNAS", "_ALIGNOF", "_STATIC_ASSERT"],
+        )
+        self.assertTokensTypes("thread_locals Alignas alignof_", ["ID", "ID", "ID"])
+
+        self.clex.input("thread_local alignas alignof static_assert")
+        self.assertEqual(
+            [tok.value for tok in token_list(self.clex)],
+            ["_Thread_local", "_Alignas", "_Alignof", "_Static_assert"],
+        )
+
     def test_string_literal(self):
         self.assertTokensTypes('"a string"', ["STRING_LITERAL"])
         self.assertTokensTypes('L"ing"', ["WSTRING_LITERAL"])

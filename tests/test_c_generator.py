@@ -324,6 +324,23 @@ class TestCtoC(unittest.TestCase):
             int main(void) { f((1, 2)); return 0; }
         """)
 
+    def test_c23_keyword_spellings(self):
+        self.assertEqual(
+            self._run_c_to_c("thread_local int x;"), "_Thread_local int x;\n"
+        )
+        self.assertEqual(
+            self._run_c_to_c("alignas(16) static int x;"),
+            "static _Alignas(16) int x;\n",
+        )
+        self.assertEqual(
+            self._run_c_to_c("int n = alignof(long);"), "int n = _Alignof(long);\n"
+        )
+        self.assertEqual(
+            self._run_c_to_c('static_assert(1, "m");'), '_Static_assert(1,"m");\n'
+        )
+        self._assert_ctoc_correct("thread_local int x = alignof(int);")
+        self._assert_ctoc_correct("alignas(8) int y; static_assert(alignof(int) == 8);")
+
     def test_comma_op_in_ternary(self):
         self._assert_ctoc_correct(r"""
             void f() {
