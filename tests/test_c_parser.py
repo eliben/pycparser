@@ -2628,6 +2628,36 @@ class TestCParser_fundamentals(TestCParser_base):
             self.get_decl_init(d63), ["Constant", "unsigned long long int", "1LLU"]
         )
 
+    def test_digit_separators(self):
+        for value, typ in [
+            ("1'000'000", "int"),
+            ("1'0u", "unsigned int"),
+            ("1'0ul", "unsigned long int"),
+            ("1'0LLU", "unsigned long long int"),
+            ("0'7'7", "int"),
+            ("0xFF'FF", "int"),
+            ("0b1010'0101", "int"),
+            ("1'234.5'6", "double"),
+            ("1'234.5'6e1'0f", "float"),
+            ("1'234.5'6e1'0L", "long double"),
+            ("0x1'0.8'0p1'0", "double"),
+        ]:
+            decl = self.parse(f"int a = {value};").ext[0]
+            self.assertEqual(expand_init(decl.init), ["Constant", typ, value])
+
+        d = self.parse("int a[1'0] = {1'0, 2'0};").ext[0]
+        self.assertEqual(d.type.dim.value, "1'0")
+        self.assertEqual([e.value for e in d.init.exprs], ["1'0", "2'0"])
+
+        self.assertEqual(
+            self.get_decl_init("int a = 1'0 + 0xA'B;"),
+            ["BinaryOp", ["Constant", "int", "1'0"], "+", ["Constant", "int", "0xA'B"]],
+        )
+
+        self.assertRaises(ParseError, self.parse, "int a = 1'000';")
+        self.assertRaises(ParseError, self.parse, "int a = '100;")
+        self.assertRaises(ParseError, self.parse, "int a = 1''000;")
+
     def test_decl_named_inits(self):
         d1 = "int a = {.k = 16};"
         self.assertEqual(

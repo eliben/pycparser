@@ -287,6 +287,13 @@ class TestCtoC(unittest.TestCase):
             int array[3] = {[0] = 0, [1] = 1, [1+1] = 2};
             """)
 
+    def test_digit_separators(self):
+        self._assert_ctoc_correct("int a = 1'000'000;")
+        self._assert_ctoc_correct("unsigned long a = 0xFF'FFul;")
+        self._assert_ctoc_correct("int a = 0b1010'0101, b = 0'7'7;")
+        self._assert_ctoc_correct("double a = 1'234.5'6e-1'0;")
+        self.assertEqual(self._run_c_to_c("int a = 1'000;"), "int a = 1'000;\n")
+
     def test_noreturn(self):
         self._assert_ctoc_correct(r"""
             _Noreturn int x(void) {
