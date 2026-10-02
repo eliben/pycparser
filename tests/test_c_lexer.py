@@ -101,6 +101,12 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("_Atomic", ["_ATOMIC"])
         self.assertTokensTypes("_Alignas _Alignof", ["_ALIGNAS", "_ALIGNOF"])
 
+    def test_typeof_keywords(self):
+        self.assertTokensTypes("typeof", ["TYPEOF"])
+        self.assertTokensTypes("typeof_unqual", ["TYPEOF_UNQUAL"])
+        self.assertTokensTypes("typeof(x)", ["TYPEOF", "LPAREN", "ID", "RPAREN"])
+        self.assertTokensTypes("typeof_ typeofs", ["ID", "ID"])
+
     def test_floating_constants(self):
         self.assertTokensTypes("1.5f", ["FLOAT_CONST"])
         self.assertTokensTypes("01.5", ["FLOAT_CONST"])

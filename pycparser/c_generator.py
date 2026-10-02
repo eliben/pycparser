@@ -364,6 +364,10 @@ class CGenerator:
     def visit_Typename(self, n: c_ast.Typename) -> str:
         return self._generate_type(n.type)
 
+    def visit_TypeOf(self, n: c_ast.TypeOf) -> str:
+        keyword = "typeof_unqual" if n.unqual else "typeof"
+        return f"{keyword}({self._visit_expr(n.operand)})"
+
     def visit_Union(self, n: c_ast.Union) -> str:
         return self._generate_struct_union_enum(n, "union")
 

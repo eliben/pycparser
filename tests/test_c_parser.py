@@ -1240,6 +1240,85 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_typeof(self):
+        # The operand is a Typename when it is spelled as a type...
+        t = self.parse("typeof(int *) a;").ext[0]
+        typeof = t.type.type
+        self.assertIsInstance(typeof, TypeOf)
+        self.assertFalse(typeof.unqual)
+        self.assertEqual(typeof.attr_names, ("unqual",))
+        self.assertEqual(
+            expand_decl(typeof.operand),
+            ["Typename", ["PtrDecl", ["TypeDecl", ["IdentifierType", ["int"]]]]],
+        )
+        self.assert_coord(typeof, 1, 1)
+
+        # ... and an arbitrary expression otherwise.
+        t = self.parse("typeof(1 + 2) a;").ext[0]
+        typeof = t.type.type
+        self.assertIsInstance(typeof, TypeOf)
+        self.assertIsInstance(typeof.operand, BinaryOp)
+
+        t = self.parse("typeof(sizeof(int)) a;").ext[0]
+        self.assertIsInstance(t.type.type.operand, UnaryOp)
+
+        t = self.parse("typeof_unqual(const int) a;").ext[0]
+        typeof = t.type.type
+        self.assertTrue(typeof.unqual)
+        self.assertEqual(typeof.operand.quals, ["const"])
+
+        # A typedef name is a type, not an expression
+        t = self.parse("typedef int T; typeof(T) a;").ext[1]
+        self.assertIsInstance(t.type.type.operand, Typename)
+
+        # Variables, expressions and nested typeof
+        t = self.parse("int x; typeof(x) a; typeof(typeof(x)) b;").ext
+        self.assertIsInstance(t[1].type.type.operand, ID)
+        self.assertIsInstance(t[2].type.type.operand, Typename)
+        self.assertIsInstance(t[2].type.type.operand.type.type, TypeOf)
+
+    def test_typeof_in_declarations(self):
+        t = self.parse("const typeof(int) a;").ext[0]
+        self.assertEqual(t.quals, ["const"])
+        self.assertIsInstance(t.type.type, TypeOf)
+
+        t = self.parse("static typeof(int) *a[3];").ext[0]
+        self.assertEqual(t.storage, ["static"])
+        self.assertIsInstance(t.type, ArrayDecl)
+        self.assertIsInstance(t.type.type, PtrDecl)
+        self.assertIsInstance(t.type.type.type.type, TypeOf)
+
+        t = self.parse("typedef typeof(int (*)(void)) fp;").ext[0]
+        self.assertIsInstance(t, Typedef)
+        self.assertIsInstance(t.type.type, TypeOf)
+
+        t = self.parse("typeof(int) f(typeof(int) a, typeof(a) *b);").ext[0]
+        self.assertIsInstance(t.type, FuncDecl)
+        self.assertIsInstance(t.type.type.type, TypeOf)
+        params = t.type.args.params
+        self.assertIsInstance(params[0].type.type, TypeOf)
+        self.assertIsInstance(params[1].type.type.type, TypeOf)
+
+        t = self.parse("struct S { typeof(int) a : 3; typeof(a) b; };").ext[0]
+        for member in t.type.decls:
+            self.assertIsInstance(member.type.type, TypeOf)
+
+        body = self.parse("void f(void) { typeof(int) a = 1; int b = (typeof(a))b; }")
+        items = body.ext[0].body.block_items
+        self.assertIsInstance(items[0].type.type, TypeOf)
+        self.assertIsInstance(items[1].init.to_type.type.type, TypeOf)
+
+        t = self.parse("int s = sizeof(typeof(int));").ext[0]
+        self.assertIsInstance(t.init.expr.type.type, TypeOf)
+
+    def test_typeof_errors(self):
+        self.assertRaises(ParseError, self.parse, "typeof int a;")
+        self.assertRaises(ParseError, self.parse, "typeof() a;")
+        self.assertRaises(ParseError, self.parse, "typeof(int a;")
+        self.assertRaises(ParseError, self.parse, "typeof(int) unsigned a;")
+        self.assertRaises(ParseError, self.parse, "int typeof(int) a;")
+        self.assertRaises(ParseError, self.parse, "int typeof;")
+
     def test_offsetof(self):
         def expand_ref(n):
             if isinstance(n, StructRef):
