@@ -64,6 +64,11 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("mytype", ["TYPEID"])
         self.assertTokensTypes("mytype6 var", ["TYPEID", "ID"])
 
+    def test_constexpr(self):
+        self.assertTokensTypes("constexpr", ["CONSTEXPR"])
+        self.assertTokensTypes("constexpr int", ["CONSTEXPR", "INT"])
+        self.assertTokensTypes("const constexprs", ["CONST", "ID"])
+
     def test_integer_constants(self):
         self.assertTokensTypes("12", ["INT_CONST_DEC"])
         self.assertTokensTypes("12u", ["INT_CONST_DEC"])
