@@ -2058,7 +2058,9 @@ class CParser:
         node = c_ast.Constant("string", tok.value, self._tok_coord(tok))
         while self._peek_type() in _WSTR_LITERAL:
             tok2 = self._advance()
-            node.value = node.value.rstrip()[:-1] + tok2.value[2:]
+            # u8" is three characters. L", u", and U" are two.
+            prefix_len = 3 if tok2.type == "U8STRING_LITERAL" else 2
+            node.value = node.value.rstrip()[:-1] + tok2.value[prefix_len:]
         return node
 
     # ------------------------------------------------------------------
