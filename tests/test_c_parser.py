@@ -2851,6 +2851,91 @@ class TestCParser_fundamentals(TestCParser_base):
         d5 = self.get_decl_init('char* s = u"hello" u"world";')
         self.assertEqual(d5, ["Constant", "string", 'u"helloworld"'])
 
+    def test_unified_string_literals_whitespace(self):
+        for prefix in ("", "L", "u8", "u", "U"):
+            for separator in ("", " ", "\t", "\n    "):
+                with self.subTest(prefix=prefix, separator=separator):
+                    literals = separator.join(
+                        f'{prefix}"{part}"' for part in ("hello ", "world", "!")
+                    )
+                    self.assertEqual(
+                        self.get_decl_init(f"char* s = {literals};"),
+                        ["Constant", "string", f'{prefix}"hello world!"'],
+                    )
+
+    def test_unified_string_literals_empty(self):
+        cases = [
+            (("", "", ""), ""),
+            (("", "hello"), "hello"),
+            (("hello", ""), "hello"),
+            (("hello", "", " world"), "hello world"),
+            (("", "hello", "", " world", ""), "hello world"),
+        ]
+        for prefix in ("", "L", "u8", "u", "U"):
+            for parts, expected in cases:
+                with self.subTest(prefix=prefix, parts=parts):
+                    literals = " ".join(f'{prefix}"{part}"' for part in parts)
+                    self.assertEqual(
+                        self.get_decl_init(f"char* s = {literals};"),
+                        ["Constant", "string", f'{prefix}"{expected}"'],
+                    )
+
+    def test_unified_string_literals_escapes(self):
+        cases = [
+            ((r'"foo\""', r'"\"bar"'), r'"foo\"\"bar"'),
+            ((r'"\\"', r'"\n\t"', r'"\0end"'), r'"\\\n\t\0end"'),
+        ]
+        for prefix in ("", "L", "u8", "u", "U"):
+            for parts, expected in cases:
+                with self.subTest(prefix=prefix, parts=parts):
+                    literals = " ".join(prefix + part for part in parts)
+                    self.assertEqual(
+                        self.get_decl_init(f"char* s = {literals};"),
+                        ["Constant", "string", prefix + expected],
+                    )
+
+    def test_unified_string_literals_expression_boundaries(self):
+        ast = self.parse("""
+            int f(void) {
+                consume("a" "b", "c" "d");
+                char *s[] = {"e" "f", "g" "h"};
+                return ("i" "j")[1];
+            }
+        """)
+        call, decl, ret = ast.ext[0].body.block_items
+        self.assertIsInstance(call, FuncCall)
+        self.assertEqual(
+            expand_init(call.args),
+            [["Constant", "string", '"ab"'], ["Constant", "string", '"cd"']],
+        )
+        self.assertEqual(
+            expand_init(decl.init),
+            [["Constant", "string", '"ef"'], ["Constant", "string", '"gh"']],
+        )
+        self.assertIsInstance(ret, Return)
+        self.assertIsInstance(ret.expr, ArrayRef)
+        self.assertEqual(expand_init(ret.expr.name), ["Constant", "string", '"ij"'])
+        self.assertEqual(expand_init(ret.expr.subscript), ["Constant", "int", "1"])
+
+    def test_unified_string_literals_static_assert(self):
+        ast = self.parse('_Static_assert(1, "hello" " " "world");')
+        self.assertEqual(
+            expand_decl(ast.ext[0]), ["StaticAssert", "1", '"hello world"']
+        )
+
+    def test_unified_string_literals_coord(self):
+        for prefix in ("", "L", "u8", "u", "U"):
+            with self.subTest(prefix=prefix):
+                ast = self.parse(
+                    f'char* s =\n    {prefix}"hello "\n    {prefix}"world";',
+                    filename="strings.c",
+                )
+                self.assertEqual(
+                    expand_init(ast.ext[0].init),
+                    ["Constant", "string", f'{prefix}"hello world"'],
+                )
+                self.assert_coord(ast.ext[0].init, 2, 5, "strings.c")
+
     def test_inline_specifier(self):
         ps2 = self.parse("static inline void inlinefoo(void);")
         self.assertEqual(ps2.ext[0].funcspec, ["inline"])
