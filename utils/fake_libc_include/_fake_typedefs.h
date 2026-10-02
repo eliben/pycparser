@@ -150,9 +150,6 @@ typedef int uintptr_t;
 typedef int intmax_t;
 typedef int uintmax_t;
 
-/* C99 stdbool.h bool type. _Bool is built-in in C99 */
-typedef _Bool bool;
-
 /* GNU Extension for 64-bit targets */
 #ifdef __SIZEOF_INT128__
 typedef int __int128_t;

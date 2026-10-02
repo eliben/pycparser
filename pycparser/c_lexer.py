@@ -388,6 +388,7 @@ class CLexer:
 ##
 _keywords: tuple[str, ...] = (
     "AUTO",
+    "BOOL",
     "BREAK",
     "CASE",
     "CHAR",
@@ -399,6 +400,7 @@ _keywords: tuple[str, ...] = (
     "ELSE",
     "ENUM",
     "EXTERN",
+    "FALSE",
     "FLOAT",
     "FOR",
     "GOTO",
@@ -416,6 +418,7 @@ _keywords: tuple[str, ...] = (
     "STATIC",
     "STRUCT",
     "SWITCH",
+    "TRUE",
     "TYPEDEF",
     "UNION",
     "UNSIGNED",

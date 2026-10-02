@@ -1929,7 +1929,7 @@ class CParser:
         return expr
 
     # BNF: primary_expression : ID | constant | string_literal
-    #                        | '(' expression ')' | offsetof
+    #                        | '(' expression ')' | offsetof | TRUE | FALSE
     def _parse_primary_expression(self) -> c_ast.Node:
         tok_type = self._peek_type()
         if tok_type == "ID":
@@ -1949,6 +1949,9 @@ class CParser:
             expr = self._parse_expression()
             self._expect("RPAREN")
             return expr
+        if tok_type in {"TRUE", "FALSE"}:
+            tok = self._advance()
+            return c_ast.Constant("bool", tok.value, self._tok_coord(tok))
         if tok_type == "OFFSETOF":
             off_tok = self._advance()
             self._expect("LPAREN")
@@ -2217,6 +2220,7 @@ _TYPE_QUALIFIER = {"CONST", "RESTRICT", "VOLATILE", "_ATOMIC"}
 _TYPE_SPEC_SIMPLE = {
     "VOID",
     "_BOOL",
+    "BOOL",
     "CHAR",
     "SHORT",
     "INT",
@@ -2239,6 +2243,8 @@ _DECL_START = (
 
 _EXPR_START = {
     "ID",
+    "TRUE",
+    "FALSE",
     "LPAREN",
     "PLUSPLUS",
     "MINUSMINUS",
