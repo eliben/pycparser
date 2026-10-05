@@ -217,6 +217,10 @@ class CGenerator:
     def visit_Alignas(self, n: c_ast.Alignas) -> str:
         return f"_Alignas({self.visit(n.alignment)})"
 
+    def visit_BitIntType(self, n: c_ast.BitIntType) -> str:
+        sign = {True: "signed ", False: "unsigned ", None: ""}[n.signed]
+        return f"{sign}_BitInt({self.visit(n.width)})"
+
     def visit_Enumerator(self, n: c_ast.Enumerator) -> str:
         if not n.value:
             return f"{self._make_indent()}{n.name},\n"

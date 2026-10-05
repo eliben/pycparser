@@ -93,6 +93,29 @@ class TestCLexerNoErrors(unittest.TestCase):
         # - is MINUS, the rest a constnant
         self.assertTokensTypes("-1", ["MINUS", "INT_CONST_DEC"])
 
+    def test_bitint(self):
+        self.assertTokensTypes("_BitInt", ["_BITINT"])
+        self.assertTokensTypes(
+            "_BitInt(8)", ["_BITINT", "LPAREN", "INT_CONST_DEC", "RPAREN"]
+        )
+        self.assertTokensTypes("_Bitint _BITINT _bitint", ["ID", "ID", "ID"])
+
+        self.assertTokensTypes("5wb", ["INT_CONST_DEC"])
+        self.assertTokensTypes("5WB", ["INT_CONST_DEC"])
+        self.assertTokensTypes("5uwb", ["INT_CONST_DEC"])
+        self.assertTokensTypes("5UWB", ["INT_CONST_DEC"])
+        self.assertTokensTypes("5wbu", ["INT_CONST_DEC"])
+        self.assertTokensTypes("5WBU", ["INT_CONST_DEC"])
+        self.assertTokensTypes("017wb", ["INT_CONST_OCT"])
+        self.assertTokensTypes("0x1fwb", ["INT_CONST_HEX"])
+        self.assertTokensTypes("0b101uwb", ["INT_CONST_BIN"])
+
+        # The two letters of the suffix must have the same case, and it can't
+        # be combined with l/L
+        self.assertTokensTypes("5wB", ["INT_CONST_DEC", "ID"])
+        self.assertTokensTypes("5lwb", ["INT_CONST_DEC", "ID"])
+        self.assertTokensTypes("5wbl", ["INT_CONST_DEC", "ID"])
+
     def test_special_names(self):
         self.assertTokensTypes("sizeof offsetof", ["SIZEOF", "OFFSETOF"])
 
@@ -123,6 +146,33 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("0xDE.488641p0", ["HEX_FLOAT_CONST"])
         self.assertTokensTypes("0x.488641p0", ["HEX_FLOAT_CONST"])
         self.assertTokensTypes("0X12.P0", ["HEX_FLOAT_CONST"])
+
+    def test_digit_separators(self):
+        self.assertTokensTypes("1'000'000", ["INT_CONST_DEC"])
+        self.assertTokensTypes("1'0u 1'0LL", ["INT_CONST_DEC", "INT_CONST_DEC"])
+        self.assertTokensTypes("0'7'7", ["INT_CONST_OCT"])
+        self.assertTokensTypes("0xFF'aa", ["INT_CONST_HEX"])
+        self.assertTokensTypes("0XAB'CDul", ["INT_CONST_HEX"])
+        self.assertTokensTypes("0b1010'0101", ["INT_CONST_BIN"])
+        self.assertTokensTypes("1'234.5'6", ["FLOAT_CONST"])
+        self.assertTokensTypes("1'2.", ["FLOAT_CONST"])
+        self.assertTokensTypes(".1'2f", ["FLOAT_CONST"])
+        self.assertTokensTypes("1.5e1'0", ["FLOAT_CONST"])
+        self.assertTokensTypes("1'0e+1'0L", ["FLOAT_CONST"])
+        self.assertTokensTypes("0x1'0.8'0p1'0", ["HEX_FLOAT_CONST"])
+        self.assertTokensTypes("0xA'B.p-1'2f", ["HEX_FLOAT_CONST"])
+
+        # Separators are part of the token, nothing is stripped
+        self.clex.input("1'000 0xFF'FF 1.2'3")
+        self.assertEqual(
+            [tok.value for tok in token_list(self.clex)], ["1'000", "0xFF'FF", "1.2'3"]
+        )
+
+        # Character constants are not affected
+        self.assertTokensTypes("'1' '1'", ["CHAR_CONST", "CHAR_CONST"])
+        self.assertTokensTypes(
+            "x?'1':'0'", ["ID", "CONDOP", "CHAR_CONST", "COLON", "CHAR_CONST"]
+        )
 
     def test_char_constants(self):
         self.assertTokensTypes(r"""'x'""", ["CHAR_CONST"])
@@ -529,6 +579,22 @@ class TestCLexerErrors(unittest.TestCase):
     def test_integer_constants(self):
         self.assertLexerError("029", ERR_OCTAL)
         self.assertLexerError("012345678", ERR_OCTAL)
+
+    def test_digit_separators(self):
+        self.assertLexerError("0'8", ERR_OCTAL)
+        self.assertLexerError("07'9", ERR_OCTAL)
+
+        # A separator must sit between two digits
+        self.assertLexerError("'100", ERR_UNMATCHED_QUOTE)
+        self.assertLexerError("100'", ERR_UNMATCHED_QUOTE)
+        self.assertLexerError("1'000'", ERR_UNMATCHED_QUOTE)
+        self.assertLexerError("1'.5", ERR_UNMATCHED_QUOTE)
+        self.assertLexerError("1.'5", ERR_UNMATCHED_QUOTE)
+        self.assertLexerError("1'e5", ERR_UNMATCHED_QUOTE)
+        self.assertLexerError("1e'5", ERR_UNMATCHED_QUOTE)
+        self.assertLexerError("0x'1", ERR_UNMATCHED_QUOTE)
+        self.assertLexerError("0b1'", ERR_UNMATCHED_QUOTE)
+        self.assertLexerError("1'a", ERR_UNMATCHED_QUOTE)
 
     def test_char_constants(self):
         self.assertLexerError("'", ERR_UNMATCHED_QUOTE)

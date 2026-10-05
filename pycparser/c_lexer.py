@@ -431,6 +431,7 @@ _keywords: tuple[str, ...] = (
     "_ATOMIC",
     "_ALIGNOF",
     "_ALIGNAS",
+    "_BITINT",
     "_PRAGMA",
 )
 
@@ -438,7 +439,9 @@ _keyword_map: dict[str, str] = {}
 
 for keyword in _keywords:
     # Keywords from new C standard are mixed-case, like _Bool, _Alignas, etc.
-    if keyword.startswith("_") and len(keyword) > 1 and keyword[1].isalpha():
+    if keyword == "_BITINT":
+        _keyword_map["_BitInt"] = keyword
+    elif keyword.startswith("_") and len(keyword) > 1 and keyword[1].isalpha():
         _keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
     else:
         _keyword_map[keyword.lower()] = keyword
@@ -450,23 +453,28 @@ for keyword in _keywords:
 # valid C identifiers (K&R2: A.2.3), plus '$' (supported by some compilers)
 _identifier = r"[a-zA-Z_$][0-9a-zA-Z_$]*"
 
+# C23 allows a single apostrophe between two digits of a numeric constant as a
+# separator, e.g. 1'000'000. The separator is kept in the token value.
 _hex_prefix = "0[xX]"
-_hex_digits = "[0-9a-fA-F]+"
+_hex_digits = "[0-9a-fA-F](?:'?[0-9a-fA-F])*"
 _bin_prefix = "0[bB]"
-_bin_digits = "[01]+"
+_bin_digits = "[01](?:'?[01])*"
+_dec_digits = "[0-9](?:'?[0-9])*"
 
 # integer constants (K&R2: A.2.5.1)
+# The wb/WB suffixes (C23) denote a _BitInt constant, optionally unsigned.
 _integer_suffix_opt = (
-    r"(([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?"
+    r"(([uU](wb|WB))|((wb|WB)[uU]?)|"
+    r"([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?"
 )
 _decimal_constant = (
-    "(0" + _integer_suffix_opt + ")|([1-9][0-9]*" + _integer_suffix_opt + ")"
+    "(0" + _integer_suffix_opt + ")|([1-9](?:'?[0-9])*" + _integer_suffix_opt + ")"
 )
-_octal_constant = "0[0-7]*" + _integer_suffix_opt
+_octal_constant = "0(?:'?[0-7])*" + _integer_suffix_opt
 _hex_constant = _hex_prefix + _hex_digits + _integer_suffix_opt
 _bin_constant = _bin_prefix + _bin_digits + _integer_suffix_opt
 
-_bad_octal_constant = "0[0-7]*[89]"
+_bad_octal_constant = "0(?:'?[0-7])*'?[89]"
 
 # comments are not supported
 _unsupported_c_style_comment = r"\/\*"
@@ -541,18 +549,21 @@ _u32string_literal = "U" + _string_literal
 _bad_string_literal = '"' + _string_char + "*" + _bad_escape + _string_char + '*"'
 
 # floating constants (K&R2: A.2.5.3)
-_exponent_part = r"""([eE][-+]?[0-9]+)"""
-_fractional_constant = r"""([0-9]*\.[0-9]+)|([0-9]+\.)"""
+_exponent_part = "([eE][-+]?" + _dec_digits + ")"
+_fractional_constant = (
+    "((?:" + _dec_digits + r")?\." + _dec_digits + ")|(" + _dec_digits + r"\.)"
+)
 _floating_constant = (
     "(((("
     + _fractional_constant
     + ")"
     + _exponent_part
-    + "?)|([0-9]+"
+    + "?)|("
+    + _dec_digits
     + _exponent_part
     + "))[FfLl]?)"
 )
-_binary_exponent_part = r"""([pP][+-]?[0-9]+)"""
+_binary_exponent_part = "([pP][+-]?" + _dec_digits + ")"
 _hex_fractional_constant = (
     "(((" + _hex_digits + r""")?\.""" + _hex_digits + ")|(" + _hex_digits + r"""\.))"""
 )

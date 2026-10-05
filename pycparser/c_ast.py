@@ -322,6 +322,27 @@ class BinaryOp(Node):
     attr_names = ("op",)
 
 
+class BitIntType(Node):
+    __slots__ = ("width", "signed", "coord", "__weakref__")
+
+    def __init__(self, width, signed, coord=None):
+        self.width = width
+        self.signed = signed
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.width is not None:
+            nodelist.append(("width", self.width))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.width is not None:
+            yield self.width
+
+    attr_names = ("signed",)
+
+
 class Break(Node):
     __slots__ = ("coord", "__weakref__")
 

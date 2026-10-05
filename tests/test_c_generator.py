@@ -287,6 +287,13 @@ class TestCtoC(unittest.TestCase):
             int array[3] = {[0] = 0, [1] = 1, [1+1] = 2};
             """)
 
+    def test_digit_separators(self):
+        self._assert_ctoc_correct("int a = 1'000'000;")
+        self._assert_ctoc_correct("unsigned long a = 0xFF'FFul;")
+        self._assert_ctoc_correct("int a = 0b1010'0101, b = 0'7'7;")
+        self._assert_ctoc_correct("double a = 1'234.5'6e-1'0;")
+        self.assertEqual(self._run_c_to_c("int a = 1'000;"), "int a = 1'000;\n")
+
     def test_noreturn(self):
         self._assert_ctoc_correct(r"""
             _Noreturn int x(void) {
@@ -399,6 +406,25 @@ class TestCtoC(unittest.TestCase):
             ),
             name="",
         )
+
+    def test_bitint(self):
+        self._assert_ctoc_correct("_BitInt(7) a;")
+        self._assert_ctoc_correct("signed _BitInt(7) a;")
+        self._assert_ctoc_correct("unsigned _BitInt(7) a;")
+        self._assert_ctoc_correct("const unsigned _BitInt(N + 1) *a[3];")
+        self._assert_ctoc_correct("typedef unsigned _BitInt(128) wide;")
+        self._assert_ctoc_correct("_BitInt(8) f(_BitInt(4) a, unsigned _BitInt(4) b);")
+        self._assert_ctoc_correct("struct S { _BitInt(5) a : 3; };")
+        self._assert_ctoc_correct(
+            "void f(void) { int a = (_BitInt(16)) 3; int b = sizeof(_BitInt(4)); }"
+        )
+        self.assertEqual(
+            self._run_c_to_c("_BitInt(7) signed a;"), "signed _BitInt(7) a;\n"
+        )
+
+    def test_bitint_constants(self):
+        self._assert_ctoc_correct("_BitInt(16) a = 5wb;")
+        self._assert_ctoc_correct("unsigned _BitInt(16) a = 0xFFuwb, b = 5WBU;")
 
     def test_array_decl(self):
         self._assert_ctoc_correct("int g(const int a[const 20]){}")

@@ -262,6 +262,12 @@ class CParser:
         decl.name = typ.declname
         typ.quals = decl.quals[:]
 
+        # A _BitInt specifier may only be combined with signed or unsigned.
+        for tn in typename:
+            if isinstance(tn, c_ast.BitIntType):
+                typ.type = self._merge_bitint_sign(tn, typename)
+                return decl
+
         # The typename is a list of types. If any type in this
         # list isn't an IdentifierType, it must be the only
         # type in the list (it's illegal to declare "int enum ..")
@@ -287,6 +293,25 @@ class CParser:
                 [name for id in typename for name in id.names], coord=typename[0].coord
             )
         return decl
+
+    def _merge_bitint_sign(
+        self, bitint: c_ast.BitIntType, typename: list[Any]
+    ) -> c_ast.BitIntType:
+        """Folds a signed/unsigned specifier found next to a _BitInt specifier
+        into a new BitIntType node. Any other combination is an error.
+        """
+        signed = None
+        for tn in typename:
+            if tn is bitint:
+                continue
+            if not (
+                isinstance(tn, c_ast.IdentifierType)
+                and tn.names in (["signed"], ["unsigned"])
+                and signed is None
+            ):
+                self._parse_error("Invalid multiple types specified", tn.coord)
+            signed = tn.names[0] == "signed"
+        return c_ast.BitIntType(bitint.width, signed, bitint.coord)
 
     def _add_declaration_specifier(
         self,
@@ -873,6 +898,15 @@ class CParser:
                 saw_type = True
                 continue
 
+            if tok.type == "_BITINT":
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_bitint_specifier(), "type", append=True
+                )
+                saw_type = True
+                continue
+
             if tok.type == "TYPEID":
                 if saw_type:
                     break
@@ -969,6 +1003,15 @@ class CParser:
                 saw_type = True
                 continue
 
+            if tok.type == "_BITINT":
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_bitint_specifier(), "type", append=True
+                )
+                saw_type = True
+                continue
+
             if tok.type == "TYPEID":
                 if saw_type:
                     break
@@ -1037,6 +1080,31 @@ class CParser:
         expr = self._parse_constant_expression()
         self._expect("RPAREN")
         return c_ast.Alignas(expr, self._tok_coord(tok))
+
+    # BNF: bitint_specifier : _BITINT '(' constant_expression ')'
+    def _parse_bitint_specifier(self) -> c_ast.Node:
+        tok = self._expect("_BITINT")
+        self._expect("LPAREN")
+        width = self._parse_constant_expression()
+        self._expect("RPAREN")
+        value = self._literal_value(width)
+        if value is not None and value <= 0:
+            self._parse_error("_BitInt width must be positive", self._tok_coord(tok))
+        return c_ast.BitIntType(width, None, self._tok_coord(tok))
+
+    def _literal_value(self, node: c_ast.Node) -> int | None:
+        """Returns the value of an integer literal, possibly negated, or None
+        if node isn't one.
+        """
+        if isinstance(node, c_ast.UnaryOp) and node.op == "-":
+            value = self._literal_value(node.expr)
+            return None if value is None else -value
+        if not (isinstance(node, c_ast.Constant) and node.type.endswith("int")):
+            return None
+        digits = node.value.replace("'", "").rstrip("uUlL")
+        if digits[:2] in ("0x", "0X", "0b", "0B"):
+            return int(digits, 0)
+        return int(digits, 8) if digits.startswith("0") else int(digits)
 
     # BNF: atomic_specifier : _ATOMIC '(' type_name ')'
     def _parse_atomic_specifier(self) -> c_ast.Node:
@@ -2013,6 +2081,12 @@ class CParser:
     def _parse_constant(self) -> c_ast.Node:
         tok = self._advance()
         if tok.type in _INT_CONST:
+            lowered = tok.value.lower()
+            if lowered.endswith(("wb", "wbu")):
+                prefix = "unsigned " if lowered.endswith(("uwb", "wbu")) else ""
+                return c_ast.Constant(
+                    prefix + "_BitInt", tok.value, self._tok_coord(tok)
+                )
             u_count = 0
             l_count = 0
             for ch in tok.value[-3:]:
@@ -2235,6 +2309,7 @@ _DECL_START = (
     | _TYPE_QUALIFIER
     | _TYPE_SPEC_SIMPLE
     | {"TYPEID", "STRUCT", "UNION", "ENUM", "_ALIGNAS", "_ATOMIC"}
+    | {"_BITINT"}
 )
 
 _EXPR_START = {
