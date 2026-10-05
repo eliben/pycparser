@@ -111,6 +111,15 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct("int test(const char* const* arg);")
         self._assert_ctoc_correct("int test(const char** const arg);")
 
+    def test_constexpr(self):
+        self._assert_ctoc_correct("constexpr int a = 5;")
+        self._assert_ctoc_correct("static constexpr const double a = 1.5;")
+        self._assert_ctoc_correct("void f(void) { constexpr int a = 1; }")
+        self.assertEqual(
+            self._run_c_to_c("constexpr char *const a = 0;"),
+            "constexpr char * const a = 0;\n",
+        )
+
     def test_alignment(self):
         self._assert_ctoc_correct("_Alignas(32) int b;")
         self._assert_ctoc_correct("int _Alignas(32) a;")

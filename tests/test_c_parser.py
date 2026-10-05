@@ -1051,6 +1051,33 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(pdecl, PtrDecl)
         self.assertEqual(pdecl.quals, ["const"])
 
+    def test_constexpr(self):
+        d = self.parse("constexpr int n = 5;").ext[0]
+        self.assertEqual(d.storage, ["constexpr"])
+        self.assertEqual(d.quals, [])
+        self.assertEqual(
+            expand_decl(d), ["Decl", "n", ["TypeDecl", ["IdentifierType", ["int"]]]]
+        )
+        self.assertEqual(d.init.value, "5")
+
+        d = self.parse("static constexpr const double x = 1.5;").ext[0]
+        self.assertEqual(d.storage, ["static", "constexpr"])
+        self.assertEqual(d.quals, ["const"])
+
+        d = self.parse("constexpr char *const p = 0;").ext[0]
+        self.assertEqual(d.storage, ["constexpr"])
+        self.assertIsInstance(d.type, PtrDecl)
+
+        d = self.parse("int constexpr n = 5;").ext[0]
+        self.assertEqual(d.storage, ["constexpr"])
+
+        body = self.parse("void f(void) { constexpr int n = 5; int a[n]; }")
+        decl = body.ext[0].body.block_items[0]
+        self.assertIsInstance(decl, Decl)
+        self.assertEqual(decl.storage, ["constexpr"])
+
+        self.assertRaises(ParseError, self.parse, "constexpr n = 5;")
+
     def test_atomic_specifier(self):
         self.assertEqual(
             self.get_decl("_Atomic(int) ai;"),

@@ -392,6 +392,7 @@ _keywords: tuple[str, ...] = (
     "CASE",
     "CHAR",
     "CONST",
+    "CONSTEXPR",
     "CONTINUE",
     "DEFAULT",
     "DO",
