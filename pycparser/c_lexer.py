@@ -417,6 +417,8 @@ _keywords: tuple[str, ...] = (
     "STRUCT",
     "SWITCH",
     "TYPEDEF",
+    "TYPEOF",
+    "TYPEOF_UNQUAL",
     "UNION",
     "UNSIGNED",
     "VOID",

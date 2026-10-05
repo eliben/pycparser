@@ -836,6 +836,15 @@ class CParser:
                 saw_type = True
                 continue
 
+            if tok.type in {"TYPEOF", "TYPEOF_UNQUAL"}:
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_typeof_specifier(), "type", append=True
+                )
+                saw_type = True
+                continue
+
             if tok.type in _TYPE_QUALIFIER:
                 if first_coord is None:
                     first_coord = self._tok_coord(tok)
@@ -948,6 +957,15 @@ class CParser:
                 saw_type = True
                 continue
 
+            if tok.type in {"TYPEOF", "TYPEOF_UNQUAL"}:
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_typeof_specifier(), "type", append=True
+                )
+                saw_type = True
+                continue
+
             if tok.type in _TYPE_QUALIFIER:
                 if first_coord is None:
                     first_coord = self._tok_coord(tok)
@@ -1046,6 +1064,18 @@ class CParser:
         self._expect("RPAREN")
         typ.quals.append("_Atomic")
         return typ
+
+    # BNF: typeof_specifier : (TYPEOF | TYPEOF_UNQUAL) '(' (type_name | expression) ')'
+    def _parse_typeof_specifier(self) -> c_ast.Node:
+        tok = self._advance()
+        self._expect("LPAREN")
+        operand: c_ast.Node
+        if self._starts_declaration():
+            operand = self._parse_type_name()
+        else:
+            operand = self._parse_expression()
+        self._expect("RPAREN")
+        return c_ast.TypeOf(operand, tok.type == "TYPEOF_UNQUAL", self._tok_coord(tok))
 
     # BNF: init_declarator_list : init_declarator (',' init_declarator)*
     def _parse_init_declarator_list(
@@ -2234,6 +2264,7 @@ _DECL_START = (
     | _FUNCTION_SPEC
     | _TYPE_QUALIFIER
     | _TYPE_SPEC_SIMPLE
+    | {"TYPEOF", "TYPEOF_UNQUAL"}
     | {"TYPEID", "STRUCT", "UNION", "ENUM", "_ALIGNAS", "_ATOMIC"}
 )
 

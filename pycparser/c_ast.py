@@ -1192,6 +1192,27 @@ class TypeDecl(Node):
     )
 
 
+class TypeOf(Node):
+    __slots__ = ("operand", "unqual", "coord", "__weakref__")
+
+    def __init__(self, operand, unqual, coord=None):
+        self.operand = operand
+        self.unqual = unqual
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.operand is not None:
+            nodelist.append(("operand", self.operand))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.operand is not None:
+            yield self.operand
+
+    attr_names = ("unqual",)
+
+
 class Typedef(Node):
     __slots__ = ("name", "quals", "storage", "type", "coord", "__weakref__")
 

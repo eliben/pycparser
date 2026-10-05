@@ -466,6 +466,26 @@ class TestCtoC(unittest.TestCase):
         src = "int x = " + src + ";"
         self._assert_ctoc_correct(src)
 
+    def test_typeof(self):
+        self._assert_ctoc_correct("typeof(int) a;")
+        self._assert_ctoc_correct("typeof(int *) a;")
+        self._assert_ctoc_correct("typeof(const int) a;")
+        self._assert_ctoc_correct("typeof_unqual(const int) a;")
+        self._assert_ctoc_correct("typeof(int (*)(void)) a;")
+        self._assert_ctoc_correct("const typeof(int) *a[3];")
+        self._assert_ctoc_correct("typedef typeof(x + 1) a;")
+        self._assert_ctoc_correct("typeof_unqual(a) b;")
+        self._assert_ctoc_correct("typeof(typeof(int)) a;")
+        self._assert_ctoc_correct("typeof(int) f(typeof(int) a, typeof(a) *b);")
+        self._assert_ctoc_correct(
+            "void f(void) { typeof(int) a = 1; sizeof(typeof(a)); }"
+        )
+        self._assert_ctoc_correct("struct S { typeof(int) a; };")
+        self.assertEqual(self._run_c_to_c("typeof(1 + 2) a;"), "typeof(1 + 2) a;\n")
+        self.assertEqual(
+            self._run_c_to_c("typeof_unqual(int *) a;"), "typeof_unqual(int *) a;\n"
+        )
+
     def test_static_assert(self):
         self._assert_ctoc_correct('_Static_assert(sizeof(int) == sizeof(int), "123");')
         self._assert_ctoc_correct(
