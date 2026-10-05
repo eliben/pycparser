@@ -1178,23 +1178,30 @@ class CParser:
 
         return {"decl": decl, "init": None, "bitsize": None}
 
-    # BNF: enum_specifier : ENUM ID? '{' enumerator_list? '}'
-    #                     | ENUM ID
+    # BNF: enum_specifier : ENUM ID? enum_type_specifier? '{' enumerator_list? '}'
+    #                     | ENUM ID enum_type_specifier?
+    #      enum_type_specifier : ':' type_name
     def _parse_enum_specifier(self) -> c_ast.Node:
         tok = self._expect("ENUM")
+        name = None
         if self._peek_type() in {"ID", "TYPEID"}:
-            name_tok = self._advance()
-            if self._peek_type() == "LBRACE":
-                self._advance()
-                enums = self._parse_enumerator_list()
-                self._expect("RBRACE")
-                return c_ast.Enum(name_tok.value, enums, self._tok_coord(tok))
-            return c_ast.Enum(name_tok.value, None, self._tok_coord(tok))
+            name = self._advance().value
+
+        # In a struct, 'enum E : 3;' is an unnamed bit-field. Only a type name
+        # after the colon starts an underlying type.
+        underlying_type = None
+        if self._peek_type() == "COLON" and self._starts_declaration(self._peek(2)):
+            self._advance()
+            underlying_type = self._parse_type_name()
+
+        coord = self._tok_coord(tok)
+        if name is not None and self._peek_type() != "LBRACE":
+            return c_ast.Enum(name, None, coord, underlying_type=underlying_type)
 
         self._expect("LBRACE")
         enums = self._parse_enumerator_list()
         self._expect("RBRACE")
-        return c_ast.Enum(None, enums, self._tok_coord(tok))
+        return c_ast.Enum(name, enums, coord, underlying_type=underlying_type)
 
     # BNF: enumerator_list : enumerator (',' enumerator)* ','?
     def _parse_enumerator_list(self) -> c_ast.Node:

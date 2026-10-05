@@ -388,6 +388,23 @@ class TestCtoC(unittest.TestCase):
     def test_enum_typedef(self):
         self._assert_ctoc_correct("typedef enum EnumName EnumTypedefName;")
 
+    def test_enum_underlying_type(self):
+        self._assert_ctoc_correct("enum E : unsigned char { A, B = 2 };")
+        self._assert_ctoc_correct("enum : long { X };")
+        self._assert_ctoc_correct("enum F : long long;")
+        self._assert_ctoc_correct("typedef unsigned char u8; enum G : u8 { P } g;")
+        self._assert_ctoc_correct("struct S { enum E : 3; enum : int { Z } z; };")
+        self.assertEqual(
+            self._run_c_to_c("enum F : long long;"), "enum F : long long;\n"
+        )
+        self.assertEqual(
+            self._run_c_to_c("enum E : int { A } e;"),
+            "enum E : int\n{\n  A\n} e;\n",
+        )
+        self.assertEqual(
+            self._run_c_to_c("enum : short { A };"), "enum : short\n{\n  A\n};\n"
+        )
+
     def test_generate_struct_union_enum_exception(self):
         generator = c_generator.CGenerator()
         self.assertRaises(

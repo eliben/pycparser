@@ -2957,6 +2957,53 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(ps2.ext[0].body.block_items[1].type.dim, Assignment)
         self.assertIsInstance(ps2.ext[0].body.block_items[2].type.dim, ID)
 
+    def test_enum_underlying_type(self):
+        t = self.parse("enum E : unsigned char { A, B = 2 } e;")
+        enum = t.ext[0].type.type
+        self.assertIsInstance(enum, Enum)
+        self.assertEqual(enum.name, "E")
+        self.assertIsInstance(enum.underlying_type, Typename)
+        self.assertEqual(
+            expand_decl(enum.underlying_type),
+            ["Typename", ["TypeDecl", ["IdentifierType", ["unsigned", "char"]]]],
+        )
+        self.assertEqual([e.name for e in enum.values.enumerators], ["A", "B"])
+        self.assertEqual(enum.children()[0][0], "underlying_type")
+        self.assertEqual(enum.children()[1][0], "values")
+        self.assert_coord(enum, 1, 1)
+
+        enum = self.parse("enum : long { X };").ext[0].type
+        self.assertIsNone(enum.name)
+        self.assertEqual(enum.underlying_type.type.type.names, ["long"])
+        self.assertEqual([e.name for e in enum.values.enumerators], ["X"])
+
+        enum = self.parse("enum F : long long;").ext[0].type
+        self.assertEqual(enum.name, "F")
+        self.assertIsNone(enum.values)
+        self.assertEqual(enum.underlying_type.type.type.names, ["long", "long"])
+
+        t = self.parse("typedef unsigned char u8; enum G : u8 { P } g;")
+        self.assertEqual(t.ext[1].type.type.underlying_type.type.type.names, ["u8"])
+
+        t = self.parse("enum H : const int { Q };")
+        self.assertEqual(t.ext[0].type.underlying_type.quals, ["const"])
+
+        t = self.parse("enum E { A }; enum E x; enum { B } y;")
+        for enum in [t.ext[0].type, t.ext[1].type.type, t.ext[2].type.type]:
+            self.assertIsNone(enum.underlying_type)
+
+        t = self.parse("struct S { enum E : 3; enum E e : 2; enum : int { Z } z; };")
+        a, b, c = t.ext[0].type.decls
+        self.assertIsNone(a.type.type.underlying_type)
+        self.assertEqual(a.bitsize.value, "3")
+        self.assertIsNone(b.type.type.underlying_type)
+        self.assertEqual(b.bitsize.value, "2")
+        self.assertIsNotNone(c.type.type.underlying_type)
+
+        self.assertRaises(ParseError, self.parse, "enum E : { A };")
+        self.assertRaises(ParseError, self.parse, "enum : int;")
+        self.assertRaises(ParseError, self.parse, "enum E : int : int { A };")
+
     def test_pragma(self):
         s1 = r"""
             #pragma bar
