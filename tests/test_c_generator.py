@@ -131,6 +131,13 @@ class TestCtoC(unittest.TestCase):
             } node;
             """)
 
+    def test_bool(self):
+        self._assert_ctoc_correct("bool flag = true;")
+        self._assert_ctoc_correct("bool a[] = {true, false, true};")
+        self._assert_ctoc_correct("bool f(bool a, bool b) { return a ? false : b; }")
+        self.assertEqual(self._run_c_to_c("bool flag = true;"), "bool flag = true;\n")
+        self.assertEqual(self._run_c_to_c("bool x = false;"), "bool x = false;\n")
+
     def test_ternary(self):
         self._assert_ctoc_correct("""
             int main(void)

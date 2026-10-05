@@ -139,6 +139,12 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes(r"""'\x2f12'""", ["CHAR_CONST"])
         self.assertTokensTypes(r"""L'\xaf'""", ["WCHAR_CONST"])
 
+    def test_bool_keywords(self):
+        self.assertTokensTypes("bool true false", ["BOOL", "TRUE", "FALSE"])
+        self.assertTokensTypes("_Bool bool", ["_BOOL", "BOOL"])
+        self.assertTokensTypes("boolean trueish false_", ["ID", "ID", "ID"])
+        self.assertTokensTypes("True FALSE Bool", ["ID", "ID", "ID"])
+
     def test_on_rbrace_lbrace(self):
         braces = []
 

@@ -1460,6 +1460,64 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(e3_elist.enumerators[1].name, "blue")
         self.assertEqual(e3_elist.enumerators[2].name, "green")
 
+    def test_bool(self):
+        self.assertEqual(
+            self.get_decl("bool flag;"),
+            ["Decl", "flag", ["TypeDecl", ["IdentifierType", ["bool"]]]],
+        )
+        self.assertEqual(
+            self.get_decl("const bool *flags[2];"),
+            [
+                "Decl",
+                ["const"],
+                "flags",
+                [
+                    "ArrayDecl",
+                    "2",
+                    [],
+                    ["PtrDecl", ["TypeDecl", ["IdentifierType", ["bool"]]]],
+                ],
+            ],
+        )
+        self.assertEqual(
+            self.get_decl("typedef bool flag_t;"),
+            ["Typedef", "flag_t", ["TypeDecl", ["IdentifierType", ["bool"]]]],
+        )
+
+        t = self.parse("bool a = true, b = false;")
+        for decl, value in zip(t.ext, ["true", "false"]):
+            self.assertIsInstance(decl.init, Constant)
+            self.assertEqual(decl.init.type, "bool")
+            self.assertEqual(decl.init.value, value)
+        self.assert_coord(t.ext[0].init, 1, 10)
+
+        code = """
+            bool f(bool a, bool b[]) {
+                bool arr[] = {true, false, true};
+                if (a == true)
+                    return (bool)b[0] ? false : true;
+                return sizeof(bool);
+            }
+            """
+        body = self.parse(code).ext[0].body.block_items
+        arr_init = body[0].init
+        self.assertEqual(
+            [(e.type, e.value) for e in arr_init.exprs],
+            [("bool", "true"), ("bool", "false"), ("bool", "true")],
+        )
+        self.assertEqual(body[1].cond.right.value, "true")
+        ret = body[1].iftrue.expr
+        self.assertIsInstance(ret, TernaryOp)
+        self.assertEqual((ret.iftrue.value, ret.iffalse.value), ("false", "true"))
+        self.assertEqual(body[2].expr.expr.type.type.names, ["bool"])
+
+        self.assertRaises(ParseError, self.parse, "int bool;")
+        self.assertRaises(ParseError, self.parse, "int true = 1;")
+        self.assertRaises(ParseError, self.parse, "enum { false, true };")
+        self.assertRaises(
+            ParseError, self.parse, "bool long x;" if False else "typedef int bool;"
+        )
+
     def test_typedef(self):
         # without typedef, error
         s1 = """
