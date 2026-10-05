@@ -1929,11 +1929,14 @@ class CParser:
         return expr
 
     # BNF: primary_expression : ID | constant | string_literal
-    #                        | '(' expression ')' | offsetof
+    #                        | '(' expression ')' | offsetof | NULLPTR
     def _parse_primary_expression(self) -> c_ast.Node:
         tok_type = self._peek_type()
         if tok_type == "ID":
             return self._parse_identifier()
+        if tok_type == "NULLPTR":
+            tok = self._advance()
+            return c_ast.NullPtr(self._tok_coord(tok))
         if (
             tok_type in _INT_CONST
             or tok_type in _FLOAT_CONST
@@ -2251,6 +2254,7 @@ _EXPR_START = {
     "SIZEOF",
     "_ALIGNOF",
     "OFFSETOF",
+    "NULLPTR",
 }
 
 _INT_CONST = {

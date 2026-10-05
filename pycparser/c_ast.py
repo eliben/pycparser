@@ -979,6 +979,22 @@ class NamedInitializer(Node):
     attr_names = ()
 
 
+class NullPtr(Node):
+    __slots__ = ("coord", "__weakref__")
+
+    def __init__(self, coord=None):
+        self.coord = coord
+
+    def children(self):
+        return ()
+
+    def __iter__(self):
+        return
+        yield
+
+    attr_names = ()
+
+
 class ParamList(Node):
     __slots__ = ("params", "coord", "__weakref__")
 

@@ -96,6 +96,11 @@ class TestCLexerNoErrors(unittest.TestCase):
     def test_special_names(self):
         self.assertTokensTypes("sizeof offsetof", ["SIZEOF", "OFFSETOF"])
 
+    def test_nullptr(self):
+        self.assertTokensTypes("nullptr", ["NULLPTR"])
+        self.assertTokensTypes("p = nullptr;", ["ID", "EQUALS", "NULLPTR", "SEMI"])
+        self.assertTokensTypes("nullptr_t nullptr1", ["ID", "ID"])
+
     def test_new_keywords(self):
         self.assertTokensTypes("_Bool", ["_BOOL"])
         self.assertTokensTypes("_Atomic", ["_ATOMIC"])
