@@ -189,7 +189,7 @@ class CGenerator:
         return s
 
     def visit_Typedef(self, n: c_ast.Typedef) -> str:
-        s = ""
+        s = self._generate_attributes(n.attrs)
         if n.storage:
             s += " ".join(n.storage) + " "
         s += self._generate_type(n.type)
@@ -218,10 +218,17 @@ class CGenerator:
         return f"_Alignas({self.visit(n.alignment)})"
 
     def visit_Enumerator(self, n: c_ast.Enumerator) -> str:
-        if not n.value:
-            return f"{self._make_indent()}{n.name},\n"
-        else:
-            return f"{self._make_indent()}{n.name} = {self.visit(n.value)},\n"
+        s = f"{self._make_indent()}{n.name}"
+        if n.attrs:
+            s += " " + self._generate_attributes(n.attrs).rstrip()
+        if n.value:
+            s += f" = {self.visit(n.value)}"
+        return s + ",\n"
+
+    def visit_Attribute(self, n: c_ast.Attribute) -> str:
+        if n.args is None:
+            return n.name
+        return n.name + "(" + ", ".join(self.visit(arg) for arg in n.args) + ")"
 
     def visit_FuncDef(self, n: c_ast.FuncDef) -> str:
         decl = self.visit(n.decl)
@@ -258,6 +265,8 @@ class CGenerator:
         return "(" + self.visit(n.type) + "){" + self.visit(n.init) + "}"
 
     def visit_EmptyStatement(self, n: c_ast.EmptyStatement) -> str:
+        if n.attrs:
+            return self._generate_attributes(n.attrs).rstrip() + ";"
         return ";"
 
     def visit_ParamList(self, n: c_ast.ParamList) -> str:
@@ -350,7 +359,12 @@ class CGenerator:
         return s
 
     def visit_Label(self, n: c_ast.Label) -> str:
-        return n.name + ":\n" + self._generate_stmt(n.stmt)
+        return (
+            self._generate_attributes(n.attrs)
+            + n.name
+            + ":\n"
+            + self._generate_stmt(n.stmt)
+        )
 
     def visit_Goto(self, n: c_ast.Goto) -> str:
         return "goto " + n.name + ";"
@@ -467,9 +481,17 @@ class CGenerator:
             case _:
                 return indent + self.visit(n) + "\n"
 
+    def _generate_attributes(self, attrs: list[c_ast.Attribute] | None) -> str:
+        """Generates an attribute specifier with a trailing space, or an
+        empty string if there are no attributes.
+        """
+        if not attrs:
+            return ""
+        return "[[" + ", ".join(self.visit(attr) for attr in attrs) + "]] "
+
     def _generate_decl(self, n: c_ast.Decl) -> str:
         """Generation from a Decl node."""
-        s = ""
+        s = self._generate_attributes(n.attrs)
         if n.funcspec:
             s = " ".join(n.funcspec) + " "
         if n.storage:

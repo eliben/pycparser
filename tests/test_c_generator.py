@@ -185,6 +185,39 @@ class TestCtoC(unittest.TestCase):
             } node;
             """)
 
+    def test_attributes(self):
+        self._assert_ctoc_correct("[[deprecated]] int a;")
+        self._assert_ctoc_correct('[[deprecated("old"), gnu::aligned(8, 16)]] int a;')
+        self._assert_ctoc_correct("[[a, b::c()]] extern const int *p [[d]], q;")
+        self._assert_ctoc_correct("[[a]] typedef int T [[b]];")
+        self._assert_ctoc_correct("int a[3] [[x]], b[2][2] [[y]];")
+        self._assert_ctoc_correct("[[nodiscard]] int f([[maybe_unused]] int a);")
+        self._assert_ctoc_correct("struct S { [[a]] int x; int y [[b]] : 3; };")
+        self._assert_ctoc_correct("enum E { A [[deprecated]] = 1, B [[x::y(1)]], C };")
+        self._assert_ctoc_correct("""
+            [[nodiscard]] int f(int n) {
+                [[maybe_unused]] int unused = 0;
+                switch (n) {
+                    case 1:
+                        n++;
+                        [[fallthrough]];
+                    case 2:
+                        [[a]] done: n--;
+                        break;
+                }
+                return n;
+            }
+        """)
+
+        self.assertEqual(
+            self._run_c_to_c("[[x]] int a [[y]];"),
+            "[[x, y]] int a;\n",
+        )
+        self.assertEqual(
+            self._run_c_to_c("void f(void) { [[fallthrough]]; }"),
+            "void f(void)\n{\n  [[fallthrough]];\n}\n\n",
+        )
+
     def test_krstyle(self):
         self._assert_ctoc_correct(r"""
             int main(argc, argv)

@@ -22,6 +22,22 @@ class Test_c_ast(unittest.TestCase):
         self.assertIsInstance(b1.right, c_ast.ID)
         self.assertEqual(b1.right.name, "joe")
 
+    def test_optional_attrs(self):
+        coord = Coord("f.c", 1, 2)
+        e = c_ast.Enumerator("A", None, coord)
+        self.assertIs(e.coord, coord)
+        self.assertIsNone(e.attrs)
+        self.assertEqual(e.children(), ())
+
+        attr = c_ast.Attribute("deprecated", None)
+        e = c_ast.Enumerator("A", None, coord, attrs=[attr])
+        self.assertEqual(e.children(), (("attrs[0]", attr),))
+        self.assertEqual(list(e), [attr])
+
+        stmt = c_ast.EmptyStatement(coord)
+        self.assertIsNone(stmt.attrs)
+        self.assertEqual(list(c_ast.EmptyStatement(attrs=[attr])), [attr])
+
     def test_weakref_works_on_nodes(self):
         c1 = c_ast.Constant(type="float", value="3.14")
         wr = weakref.ref(c1)
