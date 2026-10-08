@@ -22,6 +22,16 @@ alignas(64) int qqq;
 
 static_assert(sizeof(flag) == sizeof(flag2), "Really unexpected size difference");
 
+struct checked_struct {
+  static_assert(sizeof(int) >= 2, "int size");
+  int value;
+};
+
+union checked_union {
+  int value;
+  _Static_assert(sizeof(int) >= 2, u8"int " u8"size");
+};
+
 noreturn void func2(void)
 {
   abort();

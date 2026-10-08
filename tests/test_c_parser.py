@@ -2791,8 +2791,9 @@ class TestCParser_fundamentals(TestCParser_base):
             expand_decl(f1.ext[1].body.block_items[0]), ["StaticAssert", "2", '"456"']
         )
         self.assertEqual(
-            expand_decl(f1.ext[1].body.block_items[2]), ["StaticAssert", "3"]
+            expand_decl(f1.ext[1].body.block_items[1]), ["StaticAssert", "3"]
         )
+        self.assertEqual(len(f1.ext[1].body.block_items), 2)
 
     def test_unified_string_literals(self):
         # simple string, for reference
@@ -3070,6 +3071,133 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(
             s1_ast.ext[0].body.block_items[5].stmt.stmts[0].block_items[1], Assignment
         )
+
+
+class TestCParser_static_assert(TestCParser_base):
+    def test_aggregate_members(self):
+        for kind in ("struct", "union"):
+            with self.subTest(kind=kind):
+                ast = self.parse(f"""
+                    {kind} S {{
+                        _Static_assert(1, "before");
+                        int x;
+                        _Static_assert(2);
+                        struct {{
+                            int y;
+                            _Static_assert(3, "nested");
+                        }} member;
+                    }};
+                """)
+                members = ast.ext[0].type.decls
+                self.assertEqual(
+                    [type(n) for n in members], [StaticAssert, Decl, StaticAssert, Decl]
+                )
+                self.assertEqual(
+                    expand_decl(members[0]), ["StaticAssert", "1", '"before"']
+                )
+                self.assertEqual(expand_decl(members[2]), ["StaticAssert", "2"])
+                nested = members[3].type.type.decls
+                self.assertEqual([type(n) for n in nested], [Decl, StaticAssert])
+                self.assertEqual(
+                    expand_decl(nested[1]), ["StaticAssert", "3", '"nested"']
+                )
+
+    def test_semicolon_consumption(self):
+        ast = self.parse("""
+            _Static_assert(1, "file");
+            _Static_assert(2);
+            void f(void) {
+                _Static_assert(3, "block");
+                _Static_assert(4);;
+                int x;
+            }
+        """)
+        self.assertEqual(
+            [type(n) for n in ast.ext], [StaticAssert, StaticAssert, FuncDef]
+        )
+        self.assertEqual(
+            [type(n) for n in ast.ext[2].body.block_items],
+            [StaticAssert, StaticAssert, EmptyStatement, Decl],
+        )
+
+    def test_for_initializer(self):
+        for args in ('1, "init"', "1"):
+            with self.subTest(args=args):
+                ast = self.parse(
+                    f"void f(void) {{ for (_Static_assert({args}); ; ) {{}} }}"
+                )
+                loop = ast.ext[0].body.block_items[0]
+                self.assertIsInstance(loop, For)
+                self.assertIsInstance(loop.init, DeclList)
+                self.assertEqual(len(loop.init.decls), 1)
+                self.assertIsInstance(loop.init.decls[0], StaticAssert)
+                self.assertIsNone(loop.cond)
+                self.assertIsNone(loop.next)
+
+    def test_message_literals(self):
+        for prefix in ("", "L", "u8", "u", "U"):
+            for message, expected in (
+                (f'{prefix}""', f'{prefix}""'),
+                (f'{prefix}"hello"', f'{prefix}"hello"'),
+                (f'{prefix}"hello" {prefix}" world"', f'{prefix}"hello world"'),
+            ):
+                with self.subTest(message=message):
+                    ast = self.parse(f"_Static_assert(1, {message});")
+                    self.assertEqual(
+                        expand_decl(ast.ext[0]), ["StaticAssert", "1", expected]
+                    )
+
+    def test_coordinates(self):
+        ast = self.parse(
+            '\n_Static_assert(\n  1,\n  u8"hello" u8" world"\n);\n',
+            filename="assert.c",
+        )
+        assertion = ast.ext[0]
+        self.assert_coord(assertion, 2, 1, "assert.c")
+        self.assert_coord(assertion.cond, 3, 3, "assert.c")
+        self.assert_coord(assertion.message, 4, 3, "assert.c")
+
+    def test_missing_semicolon(self):
+        for assertion in ('_Static_assert(1, "ok")', "_Static_assert(1)"):
+            for source in (
+                assertion,
+                f"{assertion} int x;",
+                f"{assertion} _Static_assert(1);",
+                f"void f(void) {{ {assertion} }}",
+                f"struct S {{ int x; {assertion} }};",
+                f"union U {{ {assertion} int x; }};",
+            ):
+                with self.subTest(source=source):
+                    self.assertRaises(ParseError, self.parse, source)
+
+    def test_invalid_syntax(self):
+        for args in (
+            "",
+            ', "message"',
+            '1 "message"',
+            "1,",
+            "1, 2",
+            "1, message",
+            '1, ("message")',
+            '1, "message",',
+            '1, "message", "extra"',
+            'x = 1, "message"',
+        ):
+            with self.subTest(args=args):
+                self.assertRaises(ParseError, self.parse, f"_Static_assert({args});")
+
+    def test_invalid_statement_positions(self):
+        for statement in (
+            'if (1) _Static_assert(1, "if");',
+            'if (1) {} else _Static_assert(1, "else");',
+            'while (1) _Static_assert(1, "while");',
+            'do _Static_assert(1, "do"); while (0);',
+            'for (;;) _Static_assert(1, "for");',
+        ):
+            with self.subTest(statement=statement):
+                self.assertRaises(
+                    ParseError, self.parse, f"void f(void) {{ {statement} }}"
+                )
 
 
 class TestCParser_generic_selection(TestCParser_base):

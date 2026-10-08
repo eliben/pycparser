@@ -654,7 +654,7 @@ class CParser:
         if self._accept("SEMI"):
             return []
         if tok.type == "_STATIC_ASSERT":
-            return self._parse_static_assert()
+            return [self._parse_static_assert()]
 
         if not self._starts_declaration(tok):
             # Special handling for old-style function definitions that have an
@@ -728,7 +728,10 @@ class CParser:
     # line). When returning parsed declarations, a list is always returned -
     # even if it contains a single element.
     # ------------------------------------------------------------------
+    # BNF: declaration : decl_body ';' | static_assert
     def _parse_declaration(self) -> list[c_ast.Node]:
+        if self._peek_type() == "_STATIC_ASSERT":
+            return [self._parse_static_assert()]
         decls = self._parse_decl_body()
         self._expect("SEMI")
         return decls
@@ -1120,6 +1123,8 @@ class CParser:
     #                           | static_assert
     #                           | pppragma_directive
     def _parse_struct_declaration(self) -> list[c_ast.Node] | None:
+        if self._peek_type() == "_STATIC_ASSERT":
+            return [self._parse_static_assert()]
         if self._peek_type() == "SEMI":
             self._advance()
             return None
@@ -1548,8 +1553,8 @@ class CParser:
     # BNF: statement : labeled_statement | compound_statement
     #                | selection_statement | iteration_statement
     #                | jump_statement | expression_statement
-    #                | static_assert | pppragma_directive
-    def _parse_statement(self) -> c_ast.Node | list[c_ast.Node]:
+    #                | pppragma_directive
+    def _parse_statement(self) -> c_ast.Node:
         tok_type = self._peek_type()
         match tok_type:
             case "CASE" | "DEFAULT":
@@ -1566,13 +1571,11 @@ class CParser:
                 return self._parse_jump_statement()
             case "PPPRAGMA" | "_PRAGMA":
                 return self._parse_pppragma_directive()
-            case "_STATIC_ASSERT":
-                return self._parse_static_assert()
             case _:
                 return self._parse_expression_statement()
 
     # BNF: pragmacomp_or_statement : pppragma_directive* statement
-    def _parse_pragmacomp_or_statement(self) -> c_ast.Node | list[c_ast.Node]:
+    def _parse_pragmacomp_or_statement(self) -> c_ast.Node:
         if self._peek_type() in {"PPPRAGMA", "_PRAGMA"}:
             pragmas = self._parse_pppragma_directive_list()
             stmt = self._parse_statement()
@@ -1581,6 +1584,8 @@ class CParser:
 
     # BNF: block_item : declaration | statement
     def _parse_block_item(self) -> c_ast.Node | list[c_ast.Node]:
+        if self._peek_type() == "_STATIC_ASSERT":
+            return self._parse_static_assert()
         if self._starts_declaration():
             return self._parse_declaration()
         return self._parse_statement()
@@ -1687,7 +1692,7 @@ class CParser:
                 return c_ast.DoWhile(cond, stmt, self._tok_coord(tok))
             case "FOR":
                 self._expect("LPAREN")
-                if self._starts_declaration():
+                if self._peek_type() == "_STATIC_ASSERT" or self._starts_declaration():
                     decls = self._parse_declaration()
                     init = c_ast.DeclList(decls, self._tok_coord(tok))
                     cond = self._parse_expression_opt()
@@ -2184,16 +2189,23 @@ class CParser:
             pragmas.append(self._parse_pppragma_directive())
         return pragmas
 
-    # BNF: static_assert : _STATIC_ASSERT '(' constant_expression (',' string_literal)? ')'
-    def _parse_static_assert(self) -> list[c_ast.Node]:
+    # BNF: static_assert : _STATIC_ASSERT '(' constant_expression
+    #                     (',' unified_string_literal)? ')' ';'
+    # C11 requires a message; omission is supported as an extension.
+    def _parse_static_assert(self) -> c_ast.StaticAssert:
         tok = self._expect("_STATIC_ASSERT")
         self._expect("LPAREN")
         cond = self._parse_constant_expression()
         msg = None
         if self._accept("COMMA"):
-            msg = self._parse_unified_string_literal()
+            msg = (
+                self._parse_unified_wstring_literal()
+                if self._peek_type() in _WSTR_LITERAL
+                else self._parse_unified_string_literal()
+            )
         self._expect("RPAREN")
-        return [c_ast.StaticAssert(cond, msg, self._tok_coord(tok))]
+        self._expect("SEMI")
+        return c_ast.StaticAssert(cond, msg, self._tok_coord(tok))
 
 
 _ASSIGNMENT_OPS = {
@@ -2331,7 +2343,6 @@ _STARTS_STATEMENT = {
     "DEFAULT",
     "PPPRAGMA",
     "_PRAGMA",
-    "_STATIC_ASSERT",
     "SEMI",
 }
 

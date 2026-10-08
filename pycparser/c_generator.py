@@ -338,7 +338,7 @@ class CGenerator:
         s = "_Static_assert("
         s += self.visit(n.cond)
         if n.message:
-            s += ","
+            s += ", "
             s += self.visit(n.message)
         s += ")"
         return s
@@ -463,10 +463,10 @@ class CGenerator:
                 | c_ast.ExprList()
                 | c_ast.CompoundLiteral()
                 | c_ast.GenericSelection()
+                | c_ast.StaticAssert()
             ):
-                # These can also appear in an expression context so no semicolon
-                # is added to them automatically
-                #
+                # These visitors leave the semicolon to the enclosing context,
+                # so they can also be used in expressions or for clauses.
                 return indent + self.visit(n) + ";\n"
             case c_ast.Compound():
                 # No extra indentation required before the opening brace of a

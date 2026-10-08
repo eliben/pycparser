@@ -553,6 +553,56 @@ class TestCtoC(unittest.TestCase):
         )
         self._assert_ctoc_correct("_Static_assert(sizeof(int) == sizeof(int));")
 
+    def test_static_assert_semicolons(self):
+        self.assertEqual(
+            self._assert_ctoc_correct('_Static_assert(1, "file");'),
+            '_Static_assert(1, "file");\n',
+        )
+        self.assertEqual(
+            self._assert_ctoc_correct(
+                'void f(void) { _Static_assert(1, "block"); _Static_assert(2); }'
+            ),
+            'void f(void)\n{\n  _Static_assert(1, "block");\n  _Static_assert(2);\n}\n\n',
+        )
+
+    def test_static_assert_declaration_contexts(self):
+        src = """
+            _Static_assert(_Generic(0, int: 1, default: 0), "file");
+            struct S {
+                _Static_assert(1, "before");
+                int x;
+                _Static_assert(1, "after");
+                union {
+                    int y;
+                    _Static_assert(1, "nested");
+                } member;
+            };
+            union U { _Static_assert(1); int x; };
+            void f(void) {
+                if (1) { _Static_assert(1, "block"); }
+                for (_Static_assert(1, "init"); ; ) { break; }
+                for (_Static_assert(1); ; ) { break; }
+                switch (0) {
+                    case 0:;
+                        _Static_assert(1, "case");
+                        break;
+                }
+            }
+        """
+        for reduce_parentheses in (False, True):
+            with self.subTest(reduce_parentheses=reduce_parentheses):
+                self._assert_ctoc_correct(src, reduce_parentheses=reduce_parentheses)
+
+    def test_static_assert_message_literals(self):
+        for prefix in ("", "L", "u8", "u", "U"):
+            with self.subTest(prefix=prefix):
+                self.assertEqual(
+                    self._assert_ctoc_correct(
+                        f'_Static_assert(1, {prefix}"hello" {prefix}" world");'
+                    ),
+                    f'_Static_assert(1, {prefix}"hello world");\n',
+                )
+
     def test_reduce_parentheses_binaryops(self):
         c1 = "int x = a + b + c + d;"
         self.assertEqual(self._run_c_to_c(c1), "int x = ((a + b) + c) + d;\n")
