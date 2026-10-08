@@ -100,6 +100,8 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("_Bool", ["_BOOL"])
         self.assertTokensTypes("_Atomic", ["_ATOMIC"])
         self.assertTokensTypes("_Alignas _Alignof", ["_ALIGNAS", "_ALIGNOF"])
+        self.assertTokensTypes("_Generic", ["_GENERIC"])
+        self.assertTokensTypes("_Generic_value _generic", ["ID", "ID"])
 
     def test_floating_constants(self):
         self.assertTokensTypes("1.5f", ["FLOAT_CONST"])

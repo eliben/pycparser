@@ -831,6 +831,55 @@ class FuncDef(Node):
     attr_names = ()
 
 
+class GenericAssociation(Node):
+    __slots__ = ("type", "expr", "coord", "__weakref__")
+
+    def __init__(self, type, expr, coord=None):
+        self.type = type
+        self.expr = expr
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.type is not None:
+            nodelist.append(("type", self.type))
+        if self.expr is not None:
+            nodelist.append(("expr", self.expr))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.type is not None:
+            yield self.type
+        if self.expr is not None:
+            yield self.expr
+
+    attr_names = ()
+
+
+class GenericSelection(Node):
+    __slots__ = ("expr", "associations", "coord", "__weakref__")
+
+    def __init__(self, expr, associations, coord=None):
+        self.expr = expr
+        self.associations = associations
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.expr is not None:
+            nodelist.append(("expr", self.expr))
+        for i, child in enumerate(self.associations or []):
+            nodelist.append((f"associations[{i}]", child))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.expr is not None:
+            yield self.expr
+        yield from self.associations or []
+
+    attr_names = ()
+
+
 class Goto(Node):
     __slots__ = ("name", "coord", "__weakref__")
 

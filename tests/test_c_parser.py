@@ -3072,6 +3072,217 @@ class TestCParser_fundamentals(TestCParser_base):
         )
 
 
+class TestCParser_generic_selection(TestCParser_base):
+    def test_associations(self):
+        selection = (
+            self.parse("int v = _Generic(x, int: 1, default: 2, float: 3);").ext[0].init
+        )
+        self.assertIsInstance(selection, GenericSelection)
+        self.assertEqual(expand_init(selection.expr), ["ID", "x"])
+        self.assertEqual(len(selection.associations), 3)
+        for association in selection.associations:
+            self.assertIsInstance(association, GenericAssociation)
+        first, default, last = selection.associations
+        self.assertEqual(
+            expand_decl(first.type),
+            ["Typename", ["TypeDecl", ["IdentifierType", ["int"]]]],
+        )
+        self.assertIsNone(default.type)
+        self.assertEqual(
+            expand_decl(last.type),
+            ["Typename", ["TypeDecl", ["IdentifierType", ["float"]]]],
+        )
+        self.assertEqual(
+            [a.expr.value for a in selection.associations], ["1", "2", "3"]
+        )
+
+    def test_single_association(self):
+        for association in ("int: 1", "default: 1"):
+            with self.subTest(association=association):
+                ast = self.parse(f"int v = _Generic(x, {association});")
+                selection = ast.ext[0].init
+                self.assertEqual(len(selection.associations), 1)
+                self.assertEqual(selection.associations[0].expr.value, "1")
+
+    def test_association_type_names(self):
+        ast = self.parse("""
+            typedef int T;
+            int v = _Generic(x, T: 1, const T *: 2,
+                             int (*)(int, int): 3, int[3]: 4, struct S: 5);
+        """)
+        types = [a.type for a in ast.ext[1].init.associations]
+        for typ in types:
+            self.assertIsInstance(typ, Typename)
+        self.assertEqual(types[0].type.type.names, ["T"])
+        self.assertEqual(
+            expand_decl(types[1]),
+            [
+                "Typename",
+                ["const"],
+                ["PtrDecl", ["TypeDecl", ["IdentifierType", ["T"]]]],
+            ],
+        )
+        self.assertIsInstance(types[2].type, PtrDecl)
+        self.assertIsInstance(types[2].type.type, FuncDecl)
+        self.assertEqual(len(types[2].type.type.args.params), 2)
+        self.assertIsInstance(types[3].type, ArrayDecl)
+        self.assertEqual(types[3].type.dim.value, "3")
+        self.assertIsInstance(types[4].type.type, Struct)
+        self.assertEqual(types[4].type.type.name, "S")
+
+    def test_typedef_scope(self):
+        ast = self.parse("""
+            typedef int T;
+            int f(void) {
+                int T;
+                return _Generic(T, int: 1);
+            }
+            int v = _Generic(0, T: 2);
+        """)
+        selection = ast.ext[1].body.block_items[1].expr
+        self.assertEqual(expand_init(selection.expr), ["ID", "T"])
+        self.assertEqual(ast.ext[2].init.associations[0].type.type.type.names, ["T"])
+
+    def test_assignment_and_conditional_expressions(self):
+        selection = (
+            self.parse("int v = _Generic(x = y, int: a = b, default: flag ? c : d);")
+            .ext[0]
+            .init
+        )
+        self.assertIsInstance(selection.expr, Assignment)
+        self.assertEqual(selection.expr.lvalue.name, "x")
+        self.assertEqual(selection.expr.rvalue.name, "y")
+        assignment, conditional = [a.expr for a in selection.associations]
+        self.assertIsInstance(assignment, Assignment)
+        self.assertEqual(assignment.lvalue.name, "a")
+        self.assertEqual(assignment.rvalue.name, "b")
+        self.assertIsInstance(conditional, TernaryOp)
+        self.assertEqual(conditional.iftrue.name, "c")
+        self.assertEqual(conditional.iffalse.name, "d")
+
+    def test_comma_boundaries(self):
+        ast = self.parse(
+            "int v = _Generic((a, b), int: (c, d), default: f(e, g)), w = 1;"
+        )
+        self.assertEqual([decl.name for decl in ast.ext], ["v", "w"])
+        selection = ast.ext[0].init
+        self.assertIsInstance(selection.expr, ExprList)
+        self.assertEqual([n.name for n in selection.expr.exprs], ["a", "b"])
+        self.assertEqual(len(selection.associations), 2)
+        first, second = selection.associations
+        self.assertIsInstance(first.expr, ExprList)
+        self.assertEqual([n.name for n in first.expr.exprs], ["c", "d"])
+        self.assertIsInstance(second.expr, FuncCall)
+        self.assertEqual([n.name for n in second.expr.args.exprs], ["e", "g"])
+
+    def test_nested_selections(self):
+        selection = (
+            self.parse("""
+            int v = _Generic(_Generic(x, int: 0, default: 1),
+                             int: _Generic(y, float: 2, default: 3), default: 4);
+        """)
+            .ext[0]
+            .init
+        )
+        self.assertIsInstance(selection.expr, GenericSelection)
+        self.assertEqual(selection.expr.expr.name, "x")
+        self.assertEqual(len(selection.expr.associations), 2)
+        inner = selection.associations[0].expr
+        self.assertIsInstance(inner, GenericSelection)
+        self.assertEqual(inner.expr.name, "y")
+        self.assertEqual(len(inner.associations), 2)
+        self.assertEqual(selection.associations[1].expr.value, "4")
+
+    def test_expression_contexts(self):
+        body = (
+            self.parse("""
+            int f(int x) {
+                _Generic(x, int: 0);
+                if (x) _Generic(x, default: 1);
+                for (_Generic(x, default: 2); _Generic(x, default: 3);
+                     _Generic(x, default: 4)) ;
+                int a[_Generic(x, int: 5)];
+                return _Generic(x, int: 6);
+            }
+        """)
+            .ext[0]
+            .body.block_items
+        )
+        expressions = [
+            body[0],
+            body[1].iftrue,
+            body[2].init,
+            body[2].cond,
+            body[2].next,
+            body[3].type.dim,
+            body[4].expr,
+        ]
+        for i, expr in enumerate(expressions):
+            self.assertIsInstance(expr, GenericSelection)
+            self.assertEqual(expr.associations[0].expr.value, str(i))
+
+    def test_postfix_and_precedence(self):
+        for suffix, klass, attr in (
+            ("(x)", FuncCall, "name"),
+            ("[0]", ArrayRef, "name"),
+            (".field", StructRef, "name"),
+            ("->field", StructRef, "name"),
+            ("++", UnaryOp, "expr"),
+        ):
+            with self.subTest(suffix=suffix):
+                ast = self.parse(f"int v = _Generic(x, default: y){suffix};")
+                expr = ast.ext[0].init
+                self.assertIsInstance(expr, klass)
+                self.assertIsInstance(getattr(expr, attr), GenericSelection)
+        expr = self.parse("int v = 1 + _Generic(x, int: 2) * 3;").ext[0].init
+        self.assertEqual(expr.op, "+")
+        self.assertEqual(expr.right.op, "*")
+        self.assertIsInstance(expr.right.left, GenericSelection)
+
+    def test_coordinates(self):
+        selection = (
+            self.parse(
+                "int v =\n  _Generic(x,\n    const int *: 1,\n    default: 2);\n",
+                filename="generic.c",
+            )
+            .ext[0]
+            .init
+        )
+        self.assert_coord(selection, 2, 3, "generic.c")
+        self.assert_coord(selection.expr, 2, 12, "generic.c")
+        self.assert_coord(selection.associations[0], 3, 5, "generic.c")
+        self.assert_coord(selection.associations[0].expr, 3, 18, "generic.c")
+        self.assert_coord(selection.associations[1], 4, 5, "generic.c")
+
+    def test_invalid_syntax(self):
+        for expr in (
+            "_Generic()",
+            "_Generic(x)",
+            "_Generic(x,)",
+            "_Generic(, int: 1)",
+            "_Generic(x int: 1)",
+            "_Generic(x, int 1)",
+            "_Generic(x, int:)",
+            "_Generic(x, int: 1,)",
+            "_Generic(x, default 1)",
+            "_Generic(x, default:)",
+            "_Generic(x, unknown_type: 1)",
+            "_Generic(x, int value: 1)",
+            "_Generic(x, int: 1, 2)",
+            "_Generic x, int: 1",
+        ):
+            with self.subTest(expr=expr):
+                self.assertRaises(ParseError, self.parse, f"int v = {expr};")
+        for source in (
+            "int v = _Generic(",
+            "int v = _Generic(x,",
+            "int v = _Generic(x, int:",
+            "int v = _Generic(x, int: 1",
+        ):
+            with self.subTest(source=source):
+                self.assertRaises(ParseError, self.parse, source)
+
+
 class TestUnmatchedRbrace(unittest.TestCase):
     """Regression for #603: unmatched '}' raises ParseError, not AssertionError."""
 
@@ -3160,6 +3371,13 @@ class TestCParser_whole_code(TestCParser_base):
         cv = self.NodeKlassCounter(klass)
         cv.visit(parsed)
         self.assertEqual(cv.n, num)
+
+    def test_generic_selection_visitors(self):
+        ast = self.parse("int v = _Generic(0, int[1]: 2, default: 3);")
+        self.assert_all_Constants(ast, ["0", "1", "2", "3"])
+        self.assert_num_klass_nodes(ast, GenericSelection, 1)
+        self.assert_num_klass_nodes(ast, GenericAssociation, 2)
+        self.assert_num_klass_nodes(ast, Typename, 1)
 
     def test_expressions(self):
         e1 = """int k = (r + 10.0) >> 6 + 8 << (3 & 0x14);"""

@@ -425,6 +425,7 @@ _keywords: tuple[str, ...] = (
     "__INT128",
     "_BOOL",
     "_COMPLEX",
+    "_GENERIC",
     "_NORETURN",
     "_THREAD_LOCAL",
     "_STATIC_ASSERT",

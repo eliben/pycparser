@@ -1929,7 +1929,7 @@ class CParser:
         return expr
 
     # BNF: primary_expression : ID | constant | string_literal
-    #                        | '(' expression ')' | offsetof
+    #                        | '(' expression ')' | generic_selection | offsetof
     def _parse_primary_expression(self) -> c_ast.Node:
         tok_type = self._peek_type()
         if tok_type == "ID":
@@ -1949,6 +1949,8 @@ class CParser:
             expr = self._parse_expression()
             self._expect("RPAREN")
             return expr
+        if tok_type == "_GENERIC":
+            return self._parse_generic_selection()
         if tok_type == "OFFSETOF":
             off_tok = self._advance()
             self._expect("LPAREN")
@@ -1964,6 +1966,30 @@ class CParser:
             )
 
         self._parse_error("Invalid expression", self.clex.filename)
+
+    # BNF: generic_selection : _GENERIC '(' assignment_expression ','
+    #                         generic_association (',' generic_association)* ')'
+    def _parse_generic_selection(self) -> c_ast.GenericSelection:
+        tok = self._expect("_GENERIC")
+        self._expect("LPAREN")
+        expr = self._parse_assignment_expression()
+        self._expect("COMMA")
+        associations = [self._parse_generic_association()]
+        while self._accept("COMMA"):
+            associations.append(self._parse_generic_association())
+        self._expect("RPAREN")
+        return c_ast.GenericSelection(expr, associations, self._tok_coord(tok))
+
+    # BNF: generic_association : type_name ':' assignment_expression
+    #                          | DEFAULT ':' assignment_expression
+    def _parse_generic_association(self) -> c_ast.GenericAssociation:
+        tok = self._peek()
+        if tok is None:
+            self._parse_error("At end of input", self.clex.filename)
+        typ = None if self._accept("DEFAULT") else self._parse_type_name()
+        self._expect("COLON")
+        expr = self._parse_assignment_expression()
+        return c_ast.GenericAssociation(typ, expr, self._tok_coord(tok))
 
     # BNF: offsetof_member_designator : identifier_or_typeid
     #                                ('.' identifier_or_typeid | '[' expression ']')*
@@ -2250,6 +2276,7 @@ _EXPR_START = {
     "LNOT",
     "SIZEOF",
     "_ALIGNOF",
+    "_GENERIC",
     "OFFSETOF",
 }
 

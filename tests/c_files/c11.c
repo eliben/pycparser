@@ -7,6 +7,8 @@
 #include <stdalign.h>
 #include <wchar.h>
 
+#define type_name(x) _Generic((x), int: "int", float: "float", default: "other")
+
 /* C11 thread locals */
 _Thread_local int flag;
 thread_local int flag2;
@@ -49,6 +51,8 @@ int main()
   char16_t c16c = u'1';
   char32_t c32c = U'1';
   char u8c = u8'1';
+
+  const char *name = type_name(flag);
 
   printf("Flag: %d\n", flag);
   printf("Flag2: %d\n", flag2);
