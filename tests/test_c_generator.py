@@ -598,7 +598,7 @@ class TestCtoC(unittest.TestCase):
             with self.subTest(prefix=prefix):
                 self.assertEqual(
                     self._assert_ctoc_correct(
-                        f'_Static_assert(1, {prefix}"hello" {prefix}" world");'
+                        f'_Static_assert(1, "hello" {prefix}" world");'
                     ),
                     f'_Static_assert(1, {prefix}"hello world");\n',
                 )

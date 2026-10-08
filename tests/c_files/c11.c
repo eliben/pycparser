@@ -29,7 +29,7 @@ struct checked_struct {
 
 union checked_union {
   int value;
-  _Static_assert(sizeof(int) >= 2, u8"int " u8"size");
+  _Static_assert(sizeof(int) >= 2, "int " u8"size");
 };
 
 noreturn void func2(void)

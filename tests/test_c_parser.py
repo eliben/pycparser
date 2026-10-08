@@ -2924,6 +2924,19 @@ class TestCParser_fundamentals(TestCParser_base):
             expand_decl(ast.ext[0]), ["StaticAssert", "1", '"hello world"']
         )
 
+    def test_unified_string_literals_mixed_prefix(self):
+        for prefix in ("L", "u8", "u", "U"):
+            for parts in (
+                f'{prefix}"hello" " world"',
+                f'"hello" {prefix}" world"',
+                f'"hello" {prefix}" " "world"',
+            ):
+                with self.subTest(prefix=prefix, parts=parts):
+                    self.assertEqual(
+                        self.get_decl_init(f"void *s = {parts};"),
+                        ["Constant", "string", f'{prefix}"hello world"'],
+                    )
+
     def test_unified_string_literals_coord(self):
         for prefix in ("", "L", "u8", "u", "U"):
             with self.subTest(prefix=prefix):
@@ -3140,6 +3153,7 @@ class TestCParser_static_assert(TestCParser_base):
                 (f'{prefix}""', f'{prefix}""'),
                 (f'{prefix}"hello"', f'{prefix}"hello"'),
                 (f'{prefix}"hello" {prefix}" world"', f'{prefix}"hello world"'),
+                (f'"hello" {prefix}" " "world"', f'{prefix}"hello world"'),
             ):
                 with self.subTest(message=message):
                     ast = self.parse(f"_Static_assert(1, {message});")
@@ -3149,7 +3163,7 @@ class TestCParser_static_assert(TestCParser_base):
 
     def test_coordinates(self):
         ast = self.parse(
-            '\n_Static_assert(\n  1,\n  u8"hello" u8" world"\n);\n',
+            '\n_Static_assert(\n  1,\n  u8"hello" " world"\n);\n',
             filename="assert.c",
         )
         assertion = ast.ext[0]

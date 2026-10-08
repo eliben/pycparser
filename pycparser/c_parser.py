@@ -1947,8 +1947,6 @@ class CParser:
             return self._parse_constant()
         if tok_type in _STRING_LITERAL:
             return self._parse_unified_string_literal()
-        if tok_type in _WSTR_LITERAL:
-            return self._parse_unified_wstring_literal()
         if tok_type == "LPAREN":
             self._advance()
             expr = self._parse_expression()
@@ -2072,27 +2070,21 @@ class CParser:
 
         self._parse_error("Invalid constant", self._tok_coord(tok))
 
-    # BNF: unified_string_literal : STRING_LITERAL+
-    def _parse_unified_string_literal(self) -> c_ast.Node:
-        tok = self._expect("STRING_LITERAL")
-        node = c_ast.Constant("string", tok.value, self._tok_coord(tok))
-        while self._peek_type() == "STRING_LITERAL":
-            tok2 = self._advance()
-            node.value = node.value[:-1] + tok2.value[1:]
-        return node
-
-    # BNF: unified_wstring_literal : WSTRING_LITERAL+
-    def _parse_unified_wstring_literal(self) -> c_ast.Node:
+    # BNF: unified_string_literal : (STRING_LITERAL | WSTRING_LITERAL
+    #                               | U8STRING_LITERAL | U16STRING_LITERAL
+    #                               | U32STRING_LITERAL)+
+    def _parse_unified_string_literal(self) -> c_ast.Constant:
         tok = self._advance()
-        if tok.type not in _WSTR_LITERAL:
+        if tok.type not in _STRING_LITERAL:
             self._parse_error("Invalid string literal", self._tok_coord(tok))
-        node = c_ast.Constant("string", tok.value, self._tok_coord(tok))
-        while self._peek_type() in _WSTR_LITERAL:
+        prefix, contents = tok.value.split('"', 1)
+        while self._peek_type() in _STRING_LITERAL:
             tok2 = self._advance()
-            # u8" is three characters. L", u", and U" are two.
-            prefix_len = 3 if tok2.type == "U8STRING_LITERAL" else 2
-            node.value = node.value.rstrip()[:-1] + tok2.value[prefix_len:]
-        return node
+            next_prefix, next_contents = tok2.value.split('"', 1)
+            # Ordinary literals adopt the encoding of an adjacent prefixed one.
+            prefix = prefix or next_prefix
+            contents = contents[:-1] + next_contents
+        return c_ast.Constant("string", prefix + '"' + contents, self._tok_coord(tok))
 
     # ------------------------------------------------------------------
     # Initializers
@@ -2198,11 +2190,7 @@ class CParser:
         cond = self._parse_constant_expression()
         msg = None
         if self._accept("COMMA"):
-            msg = (
-                self._parse_unified_wstring_literal()
-                if self._peek_type() in _WSTR_LITERAL
-                else self._parse_unified_string_literal()
-            )
+            msg = self._parse_unified_string_literal()
         self._expect("RPAREN")
         self._expect("SEMI")
         return c_ast.StaticAssert(cond, msg, self._tok_coord(tok))
@@ -2310,9 +2298,8 @@ _CHAR_CONST = {
     "U32CHAR_CONST",
 }
 
-_STRING_LITERAL = {"STRING_LITERAL"}
-
-_WSTR_LITERAL = {
+_STRING_LITERAL = {
+    "STRING_LITERAL",
     "WSTRING_LITERAL",
     "U8STRING_LITERAL",
     "U16STRING_LITERAL",
@@ -2320,12 +2307,7 @@ _WSTR_LITERAL = {
 }
 
 _STARTS_EXPRESSION = (
-    _EXPR_START
-    | _INT_CONST
-    | _FLOAT_CONST
-    | _CHAR_CONST
-    | _STRING_LITERAL
-    | _WSTR_LITERAL
+    _EXPR_START | _INT_CONST | _FLOAT_CONST | _CHAR_CONST | _STRING_LITERAL
 )
 
 _STARTS_STATEMENT = {
