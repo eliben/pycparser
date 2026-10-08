@@ -487,7 +487,7 @@ class CGenerator:
         if n.storage:
             s += " ".join(n.storage) + " "
         if n.align:
-            s += self.visit(n.align[0]) + " "
+            s += " ".join(self.visit(align) for align in n.align) + " "
         s += self._generate_type(n.type)
         return s
 

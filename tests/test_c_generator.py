@@ -131,6 +131,17 @@ class TestCtoC(unittest.TestCase):
             } node;
             """)
 
+    def test_multiple_alignments(self):
+        self.assertEqual(
+            self._assert_ctoc_correct("_Alignas(4) _Alignas(16) int x;"),
+            "_Alignas(4) _Alignas(16) int x;\n",
+        )
+        self._assert_ctoc_correct("_Alignas(0) int _Alignas(long long) x, y;")
+        self._assert_ctoc_correct("struct S { _Alignas(int) _Alignas(16) int x; };")
+        self._assert_ctoc_correct(
+            "void f(void) { _Alignas(8) _Alignas(16) _Atomic(int *) p; }"
+        )
+
     def test_ternary(self):
         self._assert_ctoc_correct("""
             int main(void)
@@ -530,10 +541,6 @@ class TestCtoC(unittest.TestCase):
         self.assertEqual(c3, "_Atomic int * _Atomic x;\n")
         self._assert_ctoc_correct(s3)
 
-        # TODO: Regeneration with multiple qualifiers is not fully supported.
-        # REF: https://github.com/eliben/pycparser/issues/433
-        # self._assert_ctoc_correct('auto const _Atomic(int *) a;')
-
         s4 = "typedef _Atomic(int) atomic_int;"
         c4 = self._run_c_to_c(s4)
         self.assertEqual(c4, "typedef _Atomic int atomic_int;\n")
@@ -551,6 +558,56 @@ class TestCtoC(unittest.TestCase):
                 _Atomic void *c;
             } node;
             """)
+
+    def test_atomic_specifier_qualifiers(self):
+        # Issue #433: qualifiers outside _Atomic(T) apply to T itself.
+        cases = [
+            ("const _Atomic(int) x;", "const _Atomic int x;\n"),
+            ("auto const _Atomic(int *) a;", "auto int * const _Atomic a;\n"),
+            (
+                "const volatile _Atomic(int *) p;",
+                "int * const volatile _Atomic p;\n",
+            ),
+            ("restrict _Atomic(int *) p;", "int * restrict _Atomic p;\n"),
+            ("_Atomic(const int *) p;", "const int * _Atomic p;\n"),
+            ("const _Atomic(const int *) p;", "const int * const _Atomic p;\n"),
+            ("const _Atomic(int *) *p;", "int * const _Atomic *p;\n"),
+            (
+                "const _Atomic(volatile _Atomic(int) *) p;",
+                "volatile _Atomic int * const _Atomic p;\n",
+            ),
+            (
+                "typedef const _Atomic(int *) P;",
+                "typedef int * const _Atomic P;\n",
+            ),
+            (
+                "_Atomic(int) a, b;",
+                "_Atomic int a;\n_Atomic int b;\n",
+            ),
+            (
+                "const _Atomic(int *) a, *b;",
+                "int * const _Atomic a;\nint * const _Atomic *b;\n",
+            ),
+        ]
+        for src, expected in cases:
+            with self.subTest(src=src):
+                self.assertEqual(self._assert_ctoc_correct(src), expected)
+
+    def test_atomic_type_names(self):
+        self.assertEqual(
+            self._assert_ctoc_correct("int n = sizeof(const _Atomic(int *));"),
+            "int n = sizeof(int * const _Atomic);\n",
+        )
+        for src in [
+            "void f(const _Atomic(int *) p, volatile _Atomic(int *));",
+            "void f(const _Atomic(int *) *, volatile _Atomic(int *)[4]);",
+            "int n = _Alignof(const _Atomic(int *));",
+            "void f(void) { (const _Atomic(int *) *) 0; }",
+            "int x = _Generic(0, const _Atomic(int *): 1, default: 2);",
+            "const _Atomic(int (*)(const _Atomic(int *))) p;",
+        ]:
+            with self.subTest(src=src):
+                self._assert_ctoc_correct(src)
 
     def test_nested_sizeof(self):
         src = "1"

@@ -1131,6 +1131,35 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_atomic_specifier_qualifiers(self):
+        decl = self.parse("const _Atomic(volatile int *) p;").ext[0]
+        # The outer const qualifies the atomic pointer, while volatile stays
+        # on the pointed-to int and in the declaration's base qualifiers.
+        self.assertEqual(decl.quals, ["volatile"])
+        self.assertIsInstance(decl.type, PtrDecl)
+        self.assertEqual(decl.type.quals, ["const", "_Atomic"])
+        self.assertIsInstance(decl.type.type, TypeDecl)
+        self.assertEqual(decl.type.type.quals, ["volatile"])
+        self.assertEqual(decl.type.type.declname, "p")
+
+        typ = self.parse("int n = sizeof(const _Atomic(int *));").ext[0].init.expr
+        self.assertIsInstance(typ, Typename)
+        self.assertEqual(typ.quals, [])
+        self.assertIsInstance(typ.type, PtrDecl)
+        self.assertEqual(typ.type.quals, ["const", "_Atomic"])
+        self.assertEqual(typ.type.type.quals, [])
+        self.assertIsNone(typ.type.type.declname)
+
+    def test_atomic_specifier_multiple_declarators(self):
+        decls = self.parse("const _Atomic(int) a, b;").ext
+        for decl, name, column in zip(decls, ("a", "b"), (20, 23)):
+            self.assertEqual(decl.name, name)
+            self.assertEqual(decl.type.declname, name)
+            self.assertEqual(decl.quals, ["const", "_Atomic"])
+            self.assertEqual(decl.type.quals, ["const", "_Atomic"])
+            self.assert_coord(decl.type, 1, column)
+        self.assertIsNot(decls[0].type, decls[1].type)
+
     def test_sizeof(self):
         e = """
             void foo()

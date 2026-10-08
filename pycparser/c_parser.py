@@ -273,7 +273,9 @@ class CParser:
                     self._parse_error("Invalid multiple types specified", tn.coord)
                 else:
                     typ.type = tn
-                    return decl
+                    # Normalize atomic specifiers for declarations and type
+                    # names alike (casts, sizeof, unnamed parameters, etc.).
+                    return fix_atomic_specifiers(decl)
 
         if not typename:
             # Functions default to returning int
@@ -410,9 +412,6 @@ class CParser:
                 else:
                     self._add_identifier(fixed_decl.name, fixed_decl.coord)
 
-            fixed_decl = fix_atomic_specifiers(
-                cast(c_ast.Decl | c_ast.Typedef, fixed_decl)
-            )
             declarations.append(fixed_decl)
 
         return declarations

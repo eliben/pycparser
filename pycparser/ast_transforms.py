@@ -7,6 +7,7 @@
 # License: BSD
 # ------------------------------------------------------------------------------
 
+from copy import deepcopy
 from typing import Any, cast
 
 from . import c_ast
@@ -111,8 +112,8 @@ def _extract_nested_case(
 
 
 def fix_atomic_specifiers(
-    decl: c_ast.Decl | c_ast.Typedef,
-) -> c_ast.Decl | c_ast.Typedef:
+    decl: c_ast.Decl | c_ast.Typedef | c_ast.Typename,
+) -> c_ast.Decl | c_ast.Typedef | c_ast.Typename:
     """Atomic specifiers like _Atomic(type) are unusually structured,
     conferring a qualifier upon the contained type.
 
@@ -127,17 +128,16 @@ def fix_atomic_specifiers(
         if not found:
             break
 
-    # Make sure to add an _Atomic qual on the topmost decl if needed. Also
-    # restore the declname on the innermost TypeDecl (it gets placed in the
-    # wrong place during construction).
+    # Match the declaration's qualifiers to the innermost TypeDecl, as for
+    # ordinary declarations. Qualifiers moved onto pointers belong only on
+    # those PtrDecl nodes. Also restore the name lost with the wrapper TypeDecl.
     typ: Any = decl
     while not isinstance(typ, c_ast.TypeDecl):
         try:
             typ = typ.type
         except AttributeError:
             return decl
-    if "_Atomic" in typ.quals and "_Atomic" not in decl.quals:
-        decl.quals.append("_Atomic")
+    decl.quals = typ.quals[:]
     if typ.declname is None:
         typ.declname = decl.name
 
@@ -145,8 +145,8 @@ def fix_atomic_specifiers(
 
 
 def _fix_atomic_specifiers_once(
-    decl: c_ast.Decl | c_ast.Typedef,
-) -> tuple[c_ast.Decl | c_ast.Typedef, bool]:
+    decl: c_ast.Decl | c_ast.Typedef | c_ast.Typename,
+) -> tuple[c_ast.Decl | c_ast.Typedef | c_ast.Typename, bool]:
     """Performs one 'fix' round of atomic specifiers.
     Returns (modified_decl, found) where found is True iff a fix was made.
     """
@@ -168,11 +168,17 @@ def _fix_atomic_specifiers_once(
 
     assert isinstance(parent, c_ast.TypeDecl)
     assert grandparent is not None
-    if node.type.coord is None:
+    # Declaration specifiers are shared by comma-separated declarators. Copy
+    # the contained type before attaching qualifiers, coordinates, and a name.
+    typ = deepcopy(node.type)
+    if typ.coord is None:
         # Preserve the declarator coord for _Atomic(T) so TypeDecl doesn't lose
         # its location when we replace the wrapper Typename.
-        node.type.coord = parent.coord
-    cast(Any, grandparent).type = node.type
-    if "_Atomic" not in node.type.quals:
-        node.type.quals.append("_Atomic")
+        typ.coord = parent.coord
+    # Qualifiers outside _Atomic(T) apply to T itself. In particular, const in
+    # const _Atomic(int *) qualifies the pointer, not the pointed-to int.
+    typ.quals = parent.quals + typ.quals
+    if "_Atomic" not in typ.quals:
+        typ.quals.append("_Atomic")
+    cast(Any, grandparent).type = typ
     return decl, True
