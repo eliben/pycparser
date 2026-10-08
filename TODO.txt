@@ -26,7 +26,7 @@ To upload to PyPI:
 
   $ uv publish dist/*
 
-(can use ``--token``)
+(setting UV_PUBLISH_TOKEN)
 
 Check that `pip` can install and load pycparser from PyPI in this new version.
 
