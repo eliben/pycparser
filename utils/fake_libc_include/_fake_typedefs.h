@@ -41,6 +41,7 @@ typedef int _iconv_t;
 typedef int __ULong;
 typedef int __FILE;
 typedef int ptrdiff_t;
+typedef int max_align_t;
 typedef int wchar_t;
 typedef int char16_t;
 typedef int char32_t;

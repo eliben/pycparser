@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <stdnoreturn.h>
 #include <threads.h>
 #include <assert.h>
@@ -31,6 +32,8 @@ atomic_bool flag6;
 _Alignas(32) int q32;
 _Alignas(long long) int qll;
 alignas(64) int qqq;
+max_align_t max_aligned;
+_Alignas(max_align_t) char aligned_storage[64];
 
 static_assert(sizeof(flag) == sizeof(flag2), "Really unexpected size difference");
 
