@@ -234,6 +234,8 @@
 
 /* C11 threads.h defines */
 #define thread_local _Thread_local
+#define ONCE_FLAG_INIT 0
+#define TSS_DTOR_ITERATIONS 1
 
 /* C11 assert.h defines */
 #define static_assert _Static_assert

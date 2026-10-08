@@ -78,9 +78,17 @@ class TestParsing(unittest.TestCase):
             self._find_file("c11.c"),
             use_cpp=True,
             cpp_path=cpp_path(),
-            cpp_args=cpp_args(f"-I{fake_libc}"),
+            # Missing fake headers must not fall back to the host's libc headers.
+            cpp_args=cpp_args(["-std=c11", "-nostdinc", f"-I{fake_libc}"]),
         )
         self.assertIsInstance(ast, c_ast.FileAST)
+        decls = {node.name: node for node in ast.ext if isinstance(node, c_ast.Decl)}
+        self.assertEqual(decls["flag2"].storage, ["_Thread_local"])
+        # Unexpanded macro names would also parse, so check their expansion.
+        for name in ("once", "destructor_iterations"):
+            with self.subTest(name=name):
+                self.assertIsInstance(decls[name].init, c_ast.Constant)
+                self.assertEqual(decls[name].init.type, "int")
 
 
 if __name__ == "__main__":

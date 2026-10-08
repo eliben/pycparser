@@ -6,12 +6,24 @@
 #include <stdatomic.h>
 #include <stdalign.h>
 #include <wchar.h>
+#include <uchar.h>
 
 #define type_name(x) _Generic((x), int: "int", float: "float", default: "other")
 
 /* C11 thread locals */
 _Thread_local int flag;
 thread_local int flag2;
+
+/* C11 thread types and macros */
+thrd_t worker;
+mtx_t lock;
+cnd_t ready;
+tss_t key;
+thrd_start_t start;
+tss_dtor_t destroy;
+once_flag once = ONCE_FLAG_INIT;
+int destructor_iterations = TSS_DTOR_ITERATIONS;
+
 _Atomic int flag3;
 _Atomic(int) flag4;
 _Atomic(_Atomic(int) *) flag5;
