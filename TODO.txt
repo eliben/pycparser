@@ -6,8 +6,8 @@ pyproject.toml, pycparser/__init__.py
 Building
 --------
 
-If the AST was modified `_c_ast.cfg`, make sure that `_ast_gen.py` was run and
-`c_ast.py` is up to date.
+If the AST was modified `_c_ast.cfg`, make sure that `make regen-ast` was run
+and `c_ast.py` is up to date.
 
 Run:
 

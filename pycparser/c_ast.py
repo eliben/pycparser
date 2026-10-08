@@ -3,7 +3,7 @@
 # This code was automatically generated from _c_ast.cfg
 #
 # Do not modify it directly. Modify the configuration file and
-# run the generator again.
+# run 'make regen-ast' from the repository root to regenerate and format it.
 # ** ** *** ** **
 #
 # The order of generated __slots__ is significant to Node.__repr__.

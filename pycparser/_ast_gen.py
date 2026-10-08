@@ -2,10 +2,10 @@
 # _ast_gen.py
 #
 # Generates the AST Node classes from a specification given in
-# a configuration file. This module can also be run as a script to
-# regenerate c_ast.py from _c_ast.cfg (from the repo root or the
-# pycparser/ directory). Use 'make check' to reformat the generated
-# file after running this script.
+# a configuration file. Run 'make regen-ast' from the repository root
+# to regenerate c_ast.py from _c_ast.cfg and format the code.
+# This module can also be run as a script (from the repo root or the
+# pycparser/ directory); then run 'make format' from the repo root.
 #
 # The design of this module was inspired by astgen.py from the
 # Python 2.5 code-base.
@@ -165,7 +165,7 @@ _PROLOGUE_COMMENT = r"""#-------------------------------------------------------
 # This code was automatically generated from _c_ast.cfg
 #
 # Do not modify it directly. Modify the configuration file and
-# run the generator again.
+# run 'make regen-ast' from the repository root to regenerate and format it.
 # ** ** *** ** **
 #
 # The order of generated __slots__ is significant to Node.__repr__.

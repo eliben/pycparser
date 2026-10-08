@@ -171,9 +171,8 @@ There are a few points to keep in mind when modifying **pycparser**:
 
 * The code for **pycparser**'s AST nodes is automatically generated from a
   configuration file - ``_c_ast.cfg``, by ``_ast_gen.py``. If you modify the AST
-  configuration, make sure to re-generate the code. This can be done by running
-  the ``_ast_gen.py`` script (from the repository root or the
-  ``pycparser`` directory).
+  configuration or the generator, run ``make regen-ast`` from the repository
+  root to re-generate ``pycparser/c_ast.py`` and run ``make format``.
 * Read the docstring in the constructor of the ``CParser`` class for details
   on configuration and compatibility arguments.
 
