@@ -139,6 +139,86 @@ class TestCtoC(unittest.TestCase):
                 (a == 0) ? (b = 1) : (b = 2);
             }""")
 
+    def test_generic_selection(self):
+        snippets = [
+            "int v = _Generic(x, int: 1);",
+            "int v = _Generic(x, default: 1);",
+            "int v = _Generic(x, int: 1, default: 2, float: 3);",
+            """
+                typedef int T;
+                struct S { int value; };
+                int v = _Generic(x, T: 1, const T *: 2,
+                                 int (*)(int, int): 3, int[3]: 4, struct S: 5);
+            """,
+            """
+                int v = _Generic(_Generic(x, int: 0, default: 1),
+                                 int: _Generic(y, float: 2, default: 3), default: 4);
+            """,
+        ]
+        for reduce_parentheses in (False, True):
+            for src in snippets:
+                with self.subTest(src=src, reduce_parentheses=reduce_parentheses):
+                    generated = self._assert_ctoc_correct(
+                        src, reduce_parentheses=reduce_parentheses
+                    )
+                    if "\n" not in src:
+                        self.assertEqual(generated, src + "\n")
+
+    def test_generic_selection_expression_boundaries(self):
+        snippets = [
+            "int v = _Generic((a, b), int: (c, d), default: f(e, g)), w = 1;",
+            "int v = _Generic(x = y, int: a = b, default: flag ? c : d);",
+            "int v = _Generic(x ? (a, b) : c, int: (d, (e, f)), default: g);",
+            "int v = f(_Generic(x, int: 1, default: 2), 3);",
+            "int v = _Generic(x, int: (int){1}, default: (int){2});",
+            "int v = 1 + _Generic(x, int: 2) * 3;",
+        ]
+        for reduce_parentheses in (False, True):
+            for src in snippets:
+                with self.subTest(src=src, reduce_parentheses=reduce_parentheses):
+                    self._assert_ctoc_correct(
+                        src, reduce_parentheses=reduce_parentheses
+                    )
+
+    def test_generic_selection_statements(self):
+        src = """
+            int f(int x) {
+                _Generic(x, int: 0);
+                if (x) _Generic(x, default: 1);
+                else _Generic(x, default: 2);
+                for (_Generic(x, default: 3); _Generic(x, default: 4);
+                     _Generic(x, default: 5))
+                    _Generic(x, default: 6);
+                int a[_Generic(x, int: 7)];
+                return _Generic(x, int: 8);
+            }
+        """
+        for reduce_parentheses in (False, True):
+            with self.subTest(reduce_parentheses=reduce_parentheses):
+                self._assert_ctoc_correct(src, reduce_parentheses=reduce_parentheses)
+
+    def test_generic_selection_precedence(self):
+        # Generic selections are primary expressions and need no extra parentheses
+        # when used as operands or followed by postfix operators.
+        snippets = [
+            "int v = _Generic(x, int: 2) * 3;",
+            "int v = 1 + _Generic(x, int: 2);",
+            "int v = _Generic(x, default: f)(x);",
+            "int v = _Generic(x, default: a)[0];",
+            "int v = _Generic(x, default: s).field;",
+            "int v = _Generic(x, default: p)->field;",
+            "int v = _Generic(x, default: y)++;",
+            "int v = -_Generic(x, int: 1);",
+            "int v = sizeof(_Generic(x, int: 1));",
+        ]
+        for reduce_parentheses in (False, True):
+            for src in snippets:
+                with self.subTest(src=src, reduce_parentheses=reduce_parentheses):
+                    generated = self._assert_ctoc_correct(
+                        src, reduce_parentheses=reduce_parentheses
+                    )
+                    self.assertEqual(generated, src + "\n")
+
     def test_casts(self):
         self._assert_ctoc_correct(r"""
             int main() {

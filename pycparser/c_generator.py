@@ -70,6 +70,17 @@ class CGenerator:
         args = self.visit(n.args) if n.args is not None else ""
         return fref + "(" + args + ")"
 
+    def visit_GenericSelection(self, n: c_ast.GenericSelection) -> str:
+        # The controlling and association expressions are assignment-expressions:
+        # preserve parentheses around comma expressions with _visit_expr.
+        expr = self._visit_expr(n.expr)
+        associations = ", ".join(self.visit(a) for a in n.associations)
+        return f"_Generic({expr}, {associations})"
+
+    def visit_GenericAssociation(self, n: c_ast.GenericAssociation) -> str:
+        typ = self.visit(n.type) if n.type is not None else "default"
+        return f"{typ}: {self._visit_expr(n.expr)}"
+
     def visit_UnaryOp(self, n: c_ast.UnaryOp) -> str:
         match n.op:
             case "sizeof":
@@ -451,6 +462,7 @@ class CGenerator:
                 | c_ast.Typedef()
                 | c_ast.ExprList()
                 | c_ast.CompoundLiteral()
+                | c_ast.GenericSelection()
             ):
                 # These can also appear in an expression context so no semicolon
                 # is added to them automatically
@@ -571,5 +583,12 @@ class CGenerator:
         """
         return isinstance(
             n,
-            (c_ast.Constant, c_ast.ID, c_ast.ArrayRef, c_ast.StructRef, c_ast.FuncCall),
+            (
+                c_ast.Constant,
+                c_ast.ID,
+                c_ast.ArrayRef,
+                c_ast.StructRef,
+                c_ast.FuncCall,
+                c_ast.GenericSelection,
+            ),
         )
