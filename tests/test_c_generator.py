@@ -111,6 +111,27 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct("int test(const char* const* arg);")
         self._assert_ctoc_correct("int test(const char** const arg);")
 
+    def test_for_declaration_lists(self):
+        declarations = [
+            "int i = 0, j = 1",
+            "int *p = 0, *q = 0",
+            "int a[2] = {0}, b[3] = {1, 2, 3}",
+            "int i = 0, *p = 0, (*q)[3] = 0",
+            "int *a[2] = {0}, (*b)[3] = 0, (*c[2])(int) = {0}",
+            "int (*f)(int) = 0, (*g)(const char *, int [static 2]) = 0",
+            "const int * const p = 0, * volatile q = 0",
+            "const _Atomic(int *) p = 0, q = 0",
+            "struct S { int value; } a = {0}, *b = 0",
+            "int *p = 0, *q = (p = 0, p)",
+        ]
+        for decl in declarations:
+            with self.subTest(decl=decl):
+                self._assert_ctoc_correct(f"void f(void) {{ for ({decl}; ;) {{}} }}")
+        self._assert_ctoc_correct("""
+            typedef int *P;
+            void f(void) { for (P p = 0, q = 0; ;) {} }
+        """)
+
     def test_alignment(self):
         self._assert_ctoc_correct("_Alignas(32) int b;")
         self._assert_ctoc_correct("int _Alignas(32) a;")

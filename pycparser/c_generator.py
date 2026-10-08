@@ -181,10 +181,13 @@ class CGenerator:
                 return self.visit(n)
 
     def visit_Decl(self, n: c_ast.Decl, no_type: bool = False) -> str:
-        # no_type is used when a Decl is part of a DeclList, where the type is
-        # explicitly only for the first declaration in a list.
-        #
-        s = n.name if no_type else self._generate_decl(n)
+        # Later declarations in a DeclList omit the shared specifiers, but
+        # still need their own pointer, array, and function declarator parts.
+        s = (
+            self._generate_type(n.type, emit_base_type=False)
+            if no_type
+            else self._generate_decl(n)
+        )
         if n.bitsize:
             s += " : " + self.visit(n.bitsize)
         if n.init:
@@ -496,11 +499,14 @@ class CGenerator:
         n: c_ast.Node,
         modifiers: list[c_ast.Node] | None = None,
         emit_declname: bool = True,
+        emit_base_type: bool = True,
     ) -> str:
         """Recursive generation from a type node. n is the type node.
         modifiers collects the PtrDecl, ArrayDecl and FuncDecl modifiers
         encountered on the way down to a TypeDecl, to allow proper
         generation from it.
+        emit_base_type controls whether the shared type specifier and its
+        qualifiers are emitted, independently of the declarator parts.
         """
         if modifiers is None:
             modifiers = []
@@ -509,9 +515,10 @@ class CGenerator:
         match n:
             case c_ast.TypeDecl():
                 s = ""
-                if n.quals:
-                    s += " ".join(n.quals) + " "
-                s += self.visit(n.type)
+                if emit_base_type:
+                    if n.quals:
+                        s += " ".join(n.quals) + " "
+                    s += self.visit(n.type)
 
                 nstr = n.declname if n.declname and emit_declname else ""
                 # Resolve modifiers.
@@ -545,18 +552,27 @@ class CGenerator:
                                 nstr = f"* {quals}{suffix}"
                             else:
                                 nstr = "*" + nstr
+                if not emit_base_type:
+                    return nstr
                 if nstr:
                     s += " " + nstr
                 return s
             case c_ast.Decl():
                 return self._generate_decl(n.type)
             case c_ast.Typename():
-                return self._generate_type(n.type, emit_declname=emit_declname)
+                return self._generate_type(
+                    n.type,
+                    emit_declname=emit_declname,
+                    emit_base_type=emit_base_type,
+                )
             case c_ast.IdentifierType():
                 return " ".join(n.names) + " "
             case c_ast.ArrayDecl() | c_ast.PtrDecl() | c_ast.FuncDecl():
                 return self._generate_type(
-                    n.type, modifiers + [n], emit_declname=emit_declname
+                    n.type,
+                    modifiers + [n],
+                    emit_declname=emit_declname,
+                    emit_base_type=emit_base_type,
                 )
             case _:
                 return self.visit(n)
