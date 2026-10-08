@@ -58,8 +58,8 @@ int main()
   char *u8 = u8"12345";
 
   wchar_t wc = L'1';
-  char16_t c16c = u'1';
-  char32_t c32c = U'1';
+  char16_t c16c = u'\u00e9';
+  char32_t c32c = U'\U0001F600';
   char u8c = u8'1';
 
   const char *name = type_name(flag);

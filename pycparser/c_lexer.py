@@ -473,51 +473,55 @@ _bad_octal_constant = "0[0-7]*[89]"
 _unsupported_c_style_comment = r"\/\*"
 _unsupported_cxx_style_comment = r"\/\/"
 
-# character constants (K&R2: A.2.5.2)
-# Note: a-zA-Z and '.-~^_!=&;,' are allowed as escape chars to support #line
-# directives with Windows paths as filenames (..\..\dir\file)
-# For the same reason, decimal_escape allows all digit sequences. We want to
-# parse all correct code, even if it means to sometimes parse incorrect
-# code.
+# Character constants and escape sequences.
 #
-# The original regexes were taken verbatim from the C syntax definition,
-# and were later modified to avoid worst-case exponential running time.
+# Tokens preserve their source spelling; the lexer does not decode escapes or
+# validate Unicode code points. Each complete escape must match as one character
+# in _cconst_char, which is used for both single and multicharacter constants.
+# Matching is deliberately permissive: simple escapes accept extra letters and
+# punctuation, and numeric escapes accept decimal digits, not just octal digits.
 #
-#   simple_escape = r"""([a-zA-Z._~!=&\^\-\\?'"])"""
-#   decimal_escape = r"""(\d+)"""
-#   hex_escape = r"""(x[0-9a-fA-F]+)"""
-#   bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-7])"""
-#
-# The following modifications were made to avoid the ambiguity that allowed
-# backtracking: (https://github.com/eliben/pycparser/issues/61)
-#
-# - \x was removed from simple_escape, unless it was not followed by a hex
-#   digit, to avoid ambiguity with hex_escape.
-# - hex_escape allows one or more hex characters, but requires that the next
-#   character(if any) is not hex
-# - decimal_escape allows one or more decimal characters, but requires that the
-#   next character(if any) is not a decimal
-# - bad_escape does not allow any decimals (8-9), to avoid conflicting with the
-#   permissive decimal_escape.
-#
-# Without this change, python's `re` module would recursively try parsing each
-# ambiguous escape sequence in multiple ways. e.g. `\123` could be parsed as
-# `\1`+`23`, `\12`+`3`, and `\123`.
+# _cconst_char is also repeated in the error patterns. If an escape can match in
+# several ways, long malformed constants can cause exponential backtracking
+# (https://github.com/eliben/pycparser/issues/61). The lookaheads prevent this:
+# - Decimal and hexadecimal escapes consume the whole run of digits. For
+#   example, \123 cannot be split into \1 followed by the characters 2 and 3.
+# - A simple \x escape is allowed only when no hexadecimal digit follows it.
+# - A complete Unicode escape cannot fall back to a simple \u or \U escape.
+# _bad_escape also excludes all decimal digits to agree with this permissiveness.
 
-_simple_escape = r"""([a-wyzA-Z._~!=&\^\-\\?'"]|x(?![0-9a-fA-F]))"""
+# Universal character names consume exactly four hex digits after u or eight
+# after U. A following hex digit is a separate character, unlike with \x.
+_unicode_escape = r"(u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8})"
+# This lookahead runs immediately after the backslash. If a complete Unicode
+# escape follows, only _unicode_escape may match it: \u00e9 cannot be read as
+# \u followed by 0, 0, e, 9. Incomplete forms retain the permissive behavior
+# of simple escapes.
+_simple_escape = (
+    rf"(?!{_unicode_escape})"
+    r"""([a-wyzA-Z._~!=&\^\-\\?'"]|x(?![0-9a-fA-F]))"""
+)
 _decimal_escape = r"""(\d+)(?!\d)"""
 _hex_escape = r"""(x[0-9a-fA-F]+)(?![0-9a-fA-F])"""
 _bad_escape = r"""([\\][^a-zA-Z._~^!=&\^\-\\?'"x0-9])"""
 
 _escape_sequence = (
-    r"""(\\(""" + _simple_escape + "|" + _decimal_escape + "|" + _hex_escape + "))"
+    r"""(\\("""
+    + _simple_escape
+    + "|"
+    + _decimal_escape
+    + "|"
+    + _hex_escape
+    + "|"
+    + _unicode_escape
+    + "))"
 )
 
-# This complicated regex with lookahead might be slow for strings, so because
-# all of the valid escapes (including \x) allowed
-# 0 or more non-escaped characters after the first character,
-# simple_escape+decimal_escape+hex_escape got simplified to
-
+# Strings do not need to count the characters represented by escapes. Match
+# just the backslash and a permitted following character; _string_char consumes
+# any remaining numeric or Unicode digits as ordinary text. This avoids matching
+# complete escape sequences repeatedly. The permissive spellings also support
+# Windows paths in #line filenames, which are matched with _string_literal.
 _escape_sequence_start_in_string = r"""(\\[0-9a-zA-Z._~!=&\^\-\\?'"])"""
 
 _cconst_char = r"""([^'\\\n]|""" + _escape_sequence + ")"
@@ -532,7 +536,7 @@ _bad_char_const = (
     r"""('""" + _cconst_char + """[^'\n]+')|('')|('""" + _bad_escape + r"""[^'\n]*')"""
 )
 
-# string literals (K&R2: A.2.6)
+# String literals, including wide and Unicode prefixes.
 _string_char = r"""([^"\\\n]|""" + _escape_sequence_start_in_string + ")"
 _string_literal = '"' + _string_char + '*"'
 _wstring_literal = "L" + _string_literal

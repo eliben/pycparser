@@ -232,6 +232,19 @@ class TestCtoC(unittest.TestCase):
             }
         """)
 
+    def test_unicode_character_escapes(self):
+        for literal in (
+            r"'\u00e9'",
+            r"L'\u03A9'",
+            r"u8'\u00e9'",
+            r"u'\u00e9'",
+            r"U'\U0001F600'",
+            r"'\u00e9a'",
+        ):
+            with self.subTest(literal=literal):
+                source = f"int c = {literal};"
+                self.assertEqual(self._assert_ctoc_correct(source), source + "\n")
+
     def test_initlist(self):
         self._assert_ctoc_correct("int arr[] = {1, 2, 3};")
 

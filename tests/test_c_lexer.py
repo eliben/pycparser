@@ -141,6 +141,43 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes(r"""'\x2f12'""", ["CHAR_CONST"])
         self.assertTokensTypes(r"""L'\xaf'""", ["WCHAR_CONST"])
 
+    def test_unicode_char_constants(self):
+        for prefix, token_type in (
+            ("", "CHAR_CONST"),
+            ("L", "WCHAR_CONST"),
+            ("u8", "U8CHAR_CONST"),
+            ("u", "U16CHAR_CONST"),
+            ("U", "U32CHAR_CONST"),
+        ):
+            for escape in (r"\u00e9", r"\u03A9", r"\U000000E9", r"\U0001F600"):
+                literal = f"{prefix}'{escape}'"
+                with self.subTest(literal=literal):
+                    self.clex.input(f"\n  {literal};")
+                    self.assertEqual(
+                        token_list(self.clex),
+                        [
+                            Token(token_type, literal, 2, 3),
+                            Token("SEMI", ";", 2, 3 + len(literal)),
+                        ],
+                    )
+
+    def test_unicode_multicharacter_constants(self):
+        # Unicode escapes have fixed width: a following hex digit is a separate
+        # character, unlike the variable-width hexadecimal escape \x.
+        for literal in (
+            r"'\u00e9a'",
+            r"'\U0001F6000'",
+            r"'a\u00e9'",
+            r"'\u00e9\U0001F600'",
+            r"'\u00e9\u00f1\u03a9\u03b1'",
+        ):
+            with self.subTest(literal=literal):
+                self.assertTokensTypes(literal, ["INT_CONST_CHAR"])
+        # Keep the lexer's existing permissiveness for other escape spellings.
+        self.assertTokensTypes(
+            r"'\u' '\U' '\u123'", ["CHAR_CONST", "CHAR_CONST", "INT_CONST_CHAR"]
+        )
+
     def test_on_rbrace_lbrace(self):
         braces = []
 
@@ -542,6 +579,14 @@ class TestCLexerErrors(unittest.TestCase):
         self.assertLexerError("''", ERR_INVALID_CCONST)
         self.assertLexerError("'abcjx'", ERR_INVALID_CCONST)
         self.assertLexerError(r"'\*'", ERR_INVALID_CCONST)
+
+    def test_unicode_escape_backtracking(self):
+        # Long malformed constants must not permit exponential backtracking
+        # between Unicode escapes and the permissive simple-escape pattern.
+        escapes = r"\u00e9\U0001F600" * 30
+        self.assertLexerError("'" + escapes, ERR_UNMATCHED_QUOTE)
+        self.assertLexerError("'" + escapes + "\n", ERR_UNMATCHED_QUOTE)
+        self.assertLexerError("'" + escapes + "'", ERR_INVALID_CCONST)
 
     def test_string_literals(self):
         self.assertLexerError(r'"jx\`"', ERR_STRING_ESCAPE)

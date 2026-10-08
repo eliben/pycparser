@@ -2795,6 +2795,20 @@ class TestCParser_fundamentals(TestCParser_base):
         )
         self.assertEqual(len(f1.ext[1].body.block_items), 2)
 
+    def test_unicode_character_escapes(self):
+        for prefix in ("", "L", "u8", "u", "U"):
+            for escape in (r"\u00e9", r"\U0001F600"):
+                literal = f"{prefix}'{escape}'"
+                with self.subTest(literal=literal):
+                    self.assertEqual(
+                        self.get_decl_init(f"int c = {literal};"),
+                        ["Constant", "char", literal],
+                    )
+        self.assertEqual(
+            self.get_decl_init(r"int c = '\u00e9a';"),
+            ["Constant", "int", r"'\u00e9a'"],
+        )
+
     def test_unified_string_literals(self):
         # simple string, for reference
         d1 = self.get_decl_init('char* s = "hello";')
