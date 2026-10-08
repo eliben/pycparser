@@ -1,7 +1,7 @@
 Version Update
 --------------
 
-pyproject.toml, pycparser/__init__.py, README
+pyproject.toml, pycparser/__init__.py
 
 Building
 --------

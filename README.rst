@@ -1,6 +1,6 @@
-===============
-pycparser v3.00
-===============
+=========
+pycparser
+=========
 
 
 .. image:: https://github.com/eliben/pycparser/workflows/pycparser-tests/badge.svg
