@@ -2869,15 +2869,9 @@ class TestCParser_fundamentals(TestCParser_base):
         d5 = self.get_decl_init(r'char* s = "foo\"" "bar";')
         self.assertEqual(d5, ["Constant", "string", r'"foo\"bar"'])
 
-        # This is not correct based on the the C spec, but testing it here to
-        # see the behavior in action. Will have to fix this
-        # for https://github.com/eliben/pycparser/issues/392
-        #
-        # The spec says in section 6.4.5 that "escape sequences are converted
-        # into single members of the execution character set just prior to
-        # adjacent string literal concatenation".
+        # Issue #392: concatenation must not turn two characters into an escape.
         d6 = self.get_decl_init(r'char* s = "\1" "23";')
-        self.assertEqual(d6, ["Constant", "string", r'"\123"'])
+        self.assertEqual(d6, ["Constant", "string", r'"\1" "23"'])
 
     def test_unified_wstring_literals(self):
         d1 = self.get_decl_init('char* s = L"hello" L"world";')
@@ -2937,6 +2931,54 @@ class TestCParser_fundamentals(TestCParser_base):
                         self.get_decl_init(f"char* s = {literals};"),
                         ["Constant", "string", prefix + expected],
                     )
+
+    def test_unified_string_literals_escape_boundaries(self):
+        cases = [
+            (r'"\1" "23"', r'"\1" "23"'),
+            (r'"\12" "3"', r'"\12" "3"'),
+            (r'"\123" "4"', r'"\1234"'),
+            (r'"\1" "89"', r'"\189"'),
+            (r'"\x1" "aF"', r'"\x1" "aF"'),
+            (r'"\x0012" "3"', r'"\x0012" "3"'),
+            (r'"\x1" "g"', r'"\x1g"'),
+            (r'"\\x1" "a"', r'"\\x1a"'),
+            (r'"\\1" "23"', r'"\\123"'),
+            (r'"\\\x1" "a"', r'"\\\x1" "a"'),
+            (r'"\u00e9" "a"', r'"\u00e9a"'),
+            (r'"\U0001F600" "a"', r'"\U0001F600a"'),
+            (r'"\1" "" "2" "3"', r'"\1" "23"'),
+            (r'"\x1" "a\2" "3" "end"', r'"\x1" "a\2" "3end"'),
+        ]
+        for prefix in ("", "L", "u8", "u", "U"):
+            for literals, expected in cases:
+                with self.subTest(prefix=prefix, literals=literals):
+                    ast = self.parse(f"void *s = {prefix}{literals};")
+                    self.assertEqual(
+                        expand_init(ast.ext[0].init),
+                        ["Constant", "string", prefix + expected],
+                    )
+                    self.assert_coord(ast.ext[0].init, 1, 11)
+
+        # A later encoding prefix still applies to the entire string.
+        for prefix in ("L", "u8", "u", "U"):
+            with self.subTest(prefix=prefix):
+                self.assertEqual(
+                    self.get_decl_init(r'void *s = "\x1" ' + prefix + '"a";'),
+                    ["Constant", "string", prefix + r'"\x1" "a"'],
+                )
+
+    def test_unified_string_literals_trigraph_boundaries(self):
+        for last in "=/'()!<>-":
+            for literals in (f'"?" "?{last}"', f'"??" "{last}"'):
+                with self.subTest(literals=literals):
+                    self.assertEqual(
+                        self.get_decl_init(f"char *s = {literals};"),
+                        ["Constant", "string", literals],
+                    )
+        self.assertEqual(
+            self.get_decl_init('char *s = "?" "?" "=";'),
+            ["Constant", "string", '"??" "="'],
+        )
 
     def test_unified_string_literals_expression_boundaries(self):
         ast = self.parse("""

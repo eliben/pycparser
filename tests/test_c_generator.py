@@ -277,6 +277,23 @@ class TestCtoC(unittest.TestCase):
                 source = f"int c = {literal};"
                 self.assertEqual(self._assert_ctoc_correct(source), source + "\n")
 
+    def test_string_literal_escape_boundaries(self):
+        # Round trips alone cannot catch a parser that changes escape meanings.
+        for prefix in ("", "L", "u8", "u", "U"):
+            for literals in (r'"\1" "23"', r'"\x1" "a"', r'"\x12" "3"'):
+                src = f"void *s = {prefix}{literals};"
+                with self.subTest(src=src):
+                    self.assertEqual(self._assert_ctoc_correct(src), src + "\n")
+
+        for src in (
+            r'_Static_assert(1, "\x1" "a");',
+            r'void f(void) { consume("\1" "23"); }',
+            r'int f(void) { return ("\x1" "a")[1]; }',
+            'char *s = "?" "?=";',
+        ):
+            with self.subTest(src=src):
+                self._assert_ctoc_correct(src)
+
     def test_initlist(self):
         self._assert_ctoc_correct("int arr[] = {1, 2, 3};")
 

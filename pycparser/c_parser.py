@@ -2073,17 +2073,77 @@ class CParser:
     #                               | U8STRING_LITERAL | U16STRING_LITERAL
     #                               | U32STRING_LITERAL)+
     def _parse_unified_string_literal(self) -> c_ast.Constant:
+        # Represent the whole run of adjacent literals with one Constant.
+        # C interprets escapes before concatenating the character sequences,
+        # whereas Constant.value holds source spelling. Simply removing the
+        # quotes between "\1" "23" would produce "\123", changing three
+        # characters into one (issue #392).
         tok = self._advance()
         if tok.type not in _STRING_LITERAL:
             self._parse_error("Invalid string literal", self._tok_coord(tok))
+        # Split off the optional encoding prefix and remove the closing quote.
+        # Each part holds unquoted source text that can safely share one literal.
         prefix, contents = tok.value.split('"', 1)
+        parts = [contents[:-1]]
         while self._peek_type() in _STRING_LITERAL:
             tok2 = self._advance()
             next_prefix, next_contents = tok2.value.split('"', 1)
-            # Ordinary literals adopt the encoding of an adjacent prefixed one.
+            # The first nonempty prefix applies to the whole run, even if it
+            # occurs after ordinary literals. Conflicting prefixes retain the
+            # parser's existing permissive behavior: the first one wins.
             prefix = prefix or next_prefix
-            contents = contents[:-1] + next_contents
-        return c_ast.Constant("string", prefix + '"' + contents, self._tok_coord(tok))
+            next_contents = next_contents[:-1]
+            # Extend the current part when safe; otherwise start a new one so
+            # a quote boundary survives. Empty literals can merge, but do not
+            # end a trailing escape: "\1" "" "23" still needs a boundary.
+            if self._string_literal_needs_separator(parts[-1], next_contents):
+                parts.append(next_contents)
+            else:
+                parts[-1] += next_contents
+        # Re-quote each part, keeping only the necessary literal boundaries.
+        # The prefix on the first literal applies to the adjacent sequence.
+        # The generator can emit this value directly without decoding escapes.
+        value = prefix + '"' + '" "'.join(parts) + '"'
+        return c_ast.Constant("string", value, self._tok_coord(tok))
+
+    @staticmethod
+    def _string_literal_needs_separator(left: str, right: str) -> bool:
+        """Whether joining two literal bodies would change their C spelling."""
+        if not left or not right:
+            return False
+
+        # A generated trigraph would be replaced before C string processing;
+        # for example, merging "?" "?=" would create the trigraph for '#'.
+        boundary = left[-2:] + right[:2]
+        if any("??" + ch in boundary for ch in "=/'()!<>-"):
+            return True
+
+        # Only an escape reaching the end of left can absorb characters from
+        # right. The last backslash is the only possible start of that escape.
+        escape_start = left.rfind("\\")
+        if escape_start == -1:
+            return False
+        # An even run of backslashes represents escaped backslashes, not the
+        # start of the numeric escape that the following digits might suggest.
+        run_start = escape_start
+        while run_start > 0 and left[run_start - 1] == "\\":
+            run_start -= 1
+        if (escape_start - run_start + 1) % 2 == 0:
+            return False
+
+        escape = left[escape_start + 1 :]
+        if escape.startswith("x"):
+            # Hex escapes have no digit limit: "\x1" "a" must stay separated.
+            hex_digits = "0123456789abcdefABCDEF"
+            return right[0] in hex_digits and all(ch in hex_digits for ch in escape[1:])
+        # Octal escapes consume at most three digits: "\12" "3" needs a
+        # boundary, but "\123" "4" can become "\1234". Universal character names
+        # have fixed widths and cannot absorb characters from the next literal.
+        return (
+            1 <= len(escape) < 3
+            and all(ch in "01234567" for ch in escape)
+            and right[0] in "01234567"
+        )
 
     # ------------------------------------------------------------------
     # Initializers
