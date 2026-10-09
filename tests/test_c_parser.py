@@ -2805,6 +2805,41 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_c23_keyword_spellings(self):
+        for spelled, canonical in [
+            ("thread_local int x;", "_Thread_local int x;"),
+            ("alignas(16) int x;", "_Alignas(16) int x;"),
+            ("alignas(long) int x;", "_Alignas(long) int x;"),
+            ('static_assert(1, "m");', '_Static_assert(1, "m");'),
+        ]:
+            self.assertEqual(
+                expand_decl(self.parse(spelled).ext[0]),
+                expand_decl(self.parse(canonical).ext[0]),
+            )
+
+        self.assertEqual(
+            self.parse("thread_local int x;").ext[0].storage, ["_Thread_local"]
+        )
+
+        t = self.parse("int x = alignof(long);")
+        self.assertIsInstance(t.ext[0].init, UnaryOp)
+        self.assertEqual(t.ext[0].init.op, "_Alignof")
+        self.assertEqual(t.ext[0].init.expr.type.type.names, ["long"])
+
+        code = """
+            void f(void) {
+                static_assert(alignof(int) <= 16);
+                static_assert(1);
+            }
+            """
+        items = self.parse(code).ext[0].body.block_items
+        self.assertIsInstance(items[0], StaticAssert)
+        self.assertEqual(items[0].cond.left.op, "_Alignof")
+        self.assertEqual(expand_decl(items[2]), ["StaticAssert", "1"])
+
+        self.assertRaises(ParseError, self.parse, "int alignas;")
+        self.assertRaises(ParseError, self.parse, "int thread_local = 1;")
+
     def test_static_assert(self):
         f1 = self.parse("""
         _Static_assert(1, "123");
