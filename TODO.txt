@@ -3,6 +3,9 @@ Version Update
 
 pyproject.toml, pycparser/__init__.py
 
+Note: don't use versions like 3.01 -- this gets interpreted by PyPI as 3.1
+and confusion ensues.
+
 Building
 --------
 
