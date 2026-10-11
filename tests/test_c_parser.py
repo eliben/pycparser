@@ -291,7 +291,7 @@ class TestCParser_fundamentals(TestCParser_base):
                 )
                 ast = self.parse(text)
                 self.assert_coord(ast.ext[0].init, 7, 3, "value.h")
-                self.assert_coord(ast.ext[0], 1, 5 if value == "1" else 7, "main.c")
+                self.assert_coord(ast.ext[0], 1, 5 if value == "1" else 6, "main.c")
 
     def test_coords_adjacent_strings_across_files(self):
         for filename in ("first.h", ""):

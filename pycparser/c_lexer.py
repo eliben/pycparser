@@ -8,7 +8,7 @@
 # ------------------------------------------------------------------------------
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 
@@ -18,7 +18,8 @@ class Token:
     value: str
     lineno: int
     column: int
-    filename: str | None = None
+    # Preserve comparisons with tokens made with four arguments.
+    filename: str | None = field(default=None, compare=False)
 
 
 class CLexer:

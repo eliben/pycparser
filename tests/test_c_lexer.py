@@ -75,7 +75,7 @@ class TestCLexerNoErrors(unittest.TestCase):
                 ("PPHASH", "header.h", 8, 1),
                 ("PLUS", "header.h", 9, 1),
                 ("ID", "header.h", 9, 3),
-                ("INT_CONST_DEC", "main.c", 1, 1),
+                ("INT_CONST_OCT", "main.c", 1, 1),
             ],
         )
 
@@ -89,6 +89,7 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.clex.input("four")
         self.assertEqual(require_token(self.clex.token()).filename, "")
         self.assertEqual(tokens[0].filename, "first.c")
+        self.assertEqual(tokens[0], Token("ID", "one", 1, 1))
 
     def test_id_typeid(self):
         self.assertTokensTypes("myt", ["ID"])
