@@ -202,6 +202,84 @@ class CGenerator:
             )
         return s
 
+    def _defined_type(
+        self, n: c_ast.Node
+    ) -> c_ast.Struct | c_ast.Union | c_ast.Enum | None:
+        """Return a struct, union, or enum body shared by this declarator.
+
+        Declarators written together, such as ``struct { int a; } x, *y``,
+        point at one definition node. Emitting that node once keeps them the
+        same type. A reference without a body, such as ``struct Foo x``, is
+        not returned.
+        """
+        if not isinstance(n, (c_ast.Decl, c_ast.Typedef)):
+            return None
+        typ = n.type
+        while isinstance(typ, (c_ast.PtrDecl, c_ast.ArrayDecl, c_ast.FuncDecl)):
+            typ = typ.type
+        if isinstance(typ, c_ast.TypeDecl):
+            typ = typ.type
+        if isinstance(typ, (c_ast.Struct, c_ast.Union)) and typ.decls is not None:
+            return typ
+        if isinstance(typ, c_ast.Enum) and typ.values is not None:
+            return typ
+        return None
+
+    def _same_decl_specs(self, left: c_ast.Node, right: c_ast.Node) -> bool:
+        if type(left) is not type(right):
+            return False
+        if isinstance(left, c_ast.Decl) and isinstance(right, c_ast.Decl):
+            return (
+                left.quals == right.quals
+                and left.align == right.align
+                and left.storage == right.storage
+                and left.funcspec == right.funcspec
+            )
+        if isinstance(left, c_ast.Typedef) and isinstance(right, c_ast.Typedef):
+            return left.quals == right.quals and left.storage == right.storage
+        return False
+
+    def _coalesce_defined_types(
+        self, nodes: list[c_ast.Node]
+    ) -> list[c_ast.Node | list[c_ast.Node]]:
+        """Group consecutive declarators that share one type definition."""
+        grouped: list[c_ast.Node | list[c_ast.Node]] = []
+        index = 0
+        while index < len(nodes):
+            node = nodes[index]
+            defined = self._defined_type(node)
+            if defined is None:
+                grouped.append(node)
+                index += 1
+                continue
+            end = index + 1
+            while end < len(nodes) and self._same_decl_specs(node, nodes[end]):
+                if self._defined_type(nodes[end]) is not defined:
+                    break
+                end += 1
+            if end == index + 1:
+                grouped.append(node)
+            else:
+                grouped.append(list(nodes[index:end]))
+            index = end
+        return grouped
+
+    def _visit_decl_group(self, nodes: list[c_ast.Node]) -> str:
+        first = nodes[0]
+        if isinstance(first, c_ast.Typedef):
+            extras: list[str] = []
+            for decl in nodes[1:]:
+                if not isinstance(decl, c_ast.Typedef):
+                    raise TypeError("typedef group contains a non-typedef")
+                extras.append(self._generate_type(decl.type, emit_base_type=False))
+            return self.visit(first) + ", " + ", ".join(extras)
+        decls: list[c_ast.Decl] = []
+        for decl in nodes:
+            if not isinstance(decl, c_ast.Decl):
+                raise TypeError("declaration group contains a non-declaration")
+            decls.append(decl)
+        return self.visit(c_ast.DeclList(decls))
+
     def visit_Typedef(self, n: c_ast.Typedef) -> str:
         s = ""
         if n.storage:
@@ -249,7 +327,10 @@ class CGenerator:
 
     def visit_FileAST(self, n: c_ast.FileAST) -> str:
         s = ""
-        for ext in n.ext:
+        for ext in self._coalesce_defined_types(n.ext):
+            if isinstance(ext, list):
+                s += self._visit_decl_group(ext) + ";\n"
+                continue
             match ext:
                 case c_ast.FuncDef():
                     s += self.visit(ext)
@@ -263,7 +344,11 @@ class CGenerator:
         s = self._make_indent() + "{\n"
         self.indent_level += 2
         if n.block_items:
-            s += "".join(self._generate_stmt(stmt) for stmt in n.block_items)
+            for item in self._coalesce_defined_types(n.block_items):
+                if isinstance(item, list):
+                    s += self._make_indent() + self._visit_decl_group(item) + ";\n"
+                else:
+                    s += self._generate_stmt(item)
         self.indent_level -= 2
         s += self._make_indent() + "}\n"
         return s
@@ -432,7 +517,13 @@ class CGenerator:
         return s
 
     def _generate_struct_union_body(self, members: list[c_ast.Node]) -> str:
-        return "".join(self._generate_stmt(decl) for decl in members)
+        parts: list[str] = []
+        for item in self._coalesce_defined_types(members):
+            if isinstance(item, list):
+                parts.append(self._make_indent() + self._visit_decl_group(item) + ";\n")
+            else:
+                parts.append(self._generate_stmt(item))
+        return "".join(parts)
 
     def _generate_enum_body(self, members: list[c_ast.Enumerator]) -> str:
         # `[:-2] + '\n'` removes the final `,` from the enumerator list

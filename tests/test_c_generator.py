@@ -51,6 +51,16 @@ def parse_to_ast(src):
     return _c_parser.parse(src)
 
 
+def declared_type(node):
+    """Return the type specifier under a declaration or typedef."""
+    typ = node.type
+    while isinstance(typ, (c_ast.PtrDecl, c_ast.ArrayDecl, c_ast.FuncDecl)):
+        typ = typ.type
+    if isinstance(typ, c_ast.TypeDecl):
+        typ = typ.type
+    return typ
+
+
 class TestFunctionDeclGeneration(unittest.TestCase):
     class _FuncDeclVisitor(c_ast.NodeVisitor):
         def __init__(self):
@@ -101,6 +111,78 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct("auto int a;")
         self._assert_ctoc_correct("register int a;")
         self._assert_ctoc_correct("_Thread_local int a;")
+        # Plain declarators do not share a type-definition node, so they stay
+        # separate. Joining them is not required for the types to match.
+        self.assertEqual(self._run_c_to_c("int b, a;"), "int b;\nint a;\n")
+
+    def test_multi_declarator_type_definition_is_emitted_once(self):
+        # One definition must be emitted once. Repeating it gives the later
+        # declarator a different type, or redefines a tag.
+        union_src = """
+            struct a { int x; };
+            union {
+                struct a b;
+            } u, *uu = &u;
+            """
+        union_out = self._assert_ctoc_correct(union_src)
+        self.assertEqual(union_out.count("struct a b"), 1)
+        self.assertIn("*uu = &u", union_out)
+        union_ast = parse_to_ast(union_out)
+        self.assertIs(declared_type(union_ast.ext[1]), declared_type(union_ast.ext[2]))
+
+        alias_src = "typedef struct { int a; } B, C;"
+        alias_out = self._assert_ctoc_correct(alias_src)
+        self.assertEqual(alias_out.count("typedef"), 1)
+        self.assertEqual(alias_out.count("int a"), 1)
+        alias_ast = parse_to_ast(alias_out)
+        self.assertIs(declared_type(alias_ast.ext[0]), declared_type(alias_ast.ext[1]))
+
+        typedef_src = """
+            typedef struct MyStruct {
+                int a;
+            } myType, *pMyType;
+            """
+        typedef_out = self._assert_ctoc_correct(typedef_src)
+        self.assertEqual(typedef_out.count("typedef"), 1)
+        self.assertEqual(typedef_out.count("struct MyStruct"), 1)
+        self.assertIn("*pMyType", typedef_out)
+        typedef_ast = parse_to_ast(typedef_out)
+        self.assertIs(
+            declared_type(typedef_ast.ext[0]), declared_type(typedef_ast.ext[1])
+        )
+
+        enum_src = "enum { A, B } x, y;"
+        enum_out = self._assert_ctoc_correct(enum_src)
+        self.assertEqual(enum_out.count("A,"), 1)
+        enum_ast = parse_to_ast(enum_out)
+        self.assertIs(declared_type(enum_ast.ext[0]), declared_type(enum_ast.ext[1]))
+
+        member_src = """
+            struct Outer {
+                struct { int a; } x, *y;
+            };
+            """
+        member_out = self._assert_ctoc_correct(member_src)
+        self.assertEqual(member_out.count("int a"), 1)
+        self.assertIn("x, *y", member_out)
+
+        block_src = """
+            void f(void) {
+                struct { int a; } x, *y;
+            }
+            """
+        block_out = self._assert_ctoc_correct(block_src)
+        self.assertEqual(block_out.count("int a"), 1)
+        self.assertIn("x, *y", block_out)
+
+        # Separate definitions stay separate, even when the text matches.
+        twins_src = "struct { int a; } x; struct { int a; } y;"
+        twins_out = self._assert_ctoc_correct(twins_src)
+        self.assertEqual(twins_out.count("int a"), 2)
+        twins_ast = parse_to_ast(twins_out)
+        self.assertIsNot(
+            declared_type(twins_ast.ext[0]), declared_type(twins_ast.ext[1])
+        )
 
     def test_complex_decls(self):
         self._assert_ctoc_correct("int** (*a)(void);")
