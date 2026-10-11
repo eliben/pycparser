@@ -1,6 +1,7 @@
 import re
 import sys
 import unittest
+from dataclasses import dataclass
 
 sys.path.insert(0, "..")
 from pycparser.c_lexer import CLexer, Token
@@ -93,6 +94,18 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(
             repr(tokens[0]), "Token(type='ID', value='one', lineno=1, column=1)"
         )
+
+    def test_token_subclass_required_field(self):
+        @dataclass
+        class LexerToken(Token):
+            lexpos: int
+
+        token = LexerToken("ID", "value", 1, 1, 0)
+        self.assertEqual(token.lexpos, 0)
+        self.assertIsNone(token.filename)
+        named_token = LexerToken("ID", "value", 1, 1, 0, filename="header.h")
+        self.assertEqual(named_token.lexpos, 0)
+        self.assertEqual(named_token.filename, "header.h")
 
     def test_id_typeid(self):
         self.assertTokensTypes("myt", ["ID"])

@@ -18,8 +18,9 @@ class Token:
     value: str
     lineno: int
     column: int
+    # Keep required fields in dataclass subclasses valid.
     # Keep the existing token comparison and representation.
-    filename: str | None = field(default=None, compare=False, repr=False)
+    filename: str | None = field(default=None, compare=False, repr=False, kw_only=True)
 
 
 class CLexer:
@@ -231,7 +232,7 @@ class CLexer:
         Returns a Token with lineno/column computed from current line tracking.
         """
         column = pos - self._line_start + 1
-        tok = Token(tok_type, value, self._lineno, column, self._filename)
+        tok = Token(tok_type, value, self._lineno, column, filename=self._filename)
         return tok
 
     def _error(self, msg: str, pos: int) -> None:
