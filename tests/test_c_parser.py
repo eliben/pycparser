@@ -1,5 +1,7 @@
 import os
 import unittest
+from types import SimpleNamespace
+from typing import cast
 
 from pycparser import c_parser
 from pycparser.c_ast import *
@@ -325,16 +327,29 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assert_coord(ast.ext[0].body.block_items[0], 7, 3, "body.h")
 
     def test_coords_custom_lexer_tokens(self):
-        class CustomLexer(c_parser.CLexer):
-            def token(self):
-                tok = super().token()
-                if tok is not None:
-                    return c_parser.Token(tok.type, tok.value, tok.lineno, tok.column)
-                return None
+        def lexer_class(token_factory):
+            class CustomLexer(c_parser.CLexer):
+                def token(self):
+                    tok = super().token()
+                    if tok is not None:
+                        return cast(
+                            c_parser.Token,
+                            token_factory(
+                                type=tok.type,
+                                value=tok.value,
+                                lineno=tok.lineno,
+                                column=tok.column,
+                            ),
+                        )
+                    return None
 
-        parser = c_parser.CParser(lexer=CustomLexer)
-        ast = parser.parse("int value;", filename="custom.c")
-        self.assert_coord(ast.ext[0], 1, 5, "custom.c")
+            return CustomLexer
+
+        for token_factory in (c_parser.Token, SimpleNamespace):
+            with self.subTest(token_factory=token_factory):
+                parser = c_parser.CParser(lexer=lexer_class(token_factory))
+                ast = parser.parse("int value;", filename="custom.c")
+                self.assert_coord(ast.ext[0], 1, 5, "custom.c")
 
     def test_forloop_coord(self):
         t = """\

@@ -490,8 +490,12 @@ class CParser:
 
     def _tok_coord(self, tok: Token) -> Coord:
         # Custom lexers can return tokens without a filename.
-        filename = tok.filename if tok.filename is not None else self.clex.filename
-        return Coord(file=filename, line=tok.lineno, column=tok.column)
+        filename = getattr(tok, "filename", None)
+        return Coord(
+            file=self.clex.filename if filename is None else filename,
+            line=tok.lineno,
+            column=tok.column,
+        )
 
     def _starts_declaration(self, tok: Token | None = None) -> bool:
         tok = tok or self._peek()

@@ -90,6 +90,9 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(require_token(self.clex.token()).filename, "")
         self.assertEqual(tokens[0].filename, "first.c")
         self.assertEqual(tokens[0], Token("ID", "one", 1, 1))
+        self.assertEqual(
+            repr(tokens[0]), "Token(type='ID', value='one', lineno=1, column=1)"
+        )
 
     def test_id_typeid(self):
         self.assertTokensTypes("myt", ["ID"])

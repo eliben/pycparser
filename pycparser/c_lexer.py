@@ -18,8 +18,8 @@ class Token:
     value: str
     lineno: int
     column: int
-    # Preserve comparisons with tokens made with four arguments.
-    filename: str | None = field(default=None, compare=False)
+    # Keep the existing token comparison and representation.
+    filename: str | None = field(default=None, compare=False, repr=False)
 
 
 class CLexer:
