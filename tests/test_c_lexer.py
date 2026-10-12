@@ -93,6 +93,34 @@ class TestCLexerNoErrors(unittest.TestCase):
         # - is MINUS, the rest a constnant
         self.assertTokensTypes("-1", ["MINUS", "INT_CONST_DEC"])
 
+    def test_bitint_constants(self):
+        # Numeric regexes are shared, so even the legacy lexer recognizes
+        # these suffixes. The parser enforces C23.
+        self.assertTokensTypes("42wb", ["INT_CONST_DEC"])
+        self.assertTokensTypes("42WB", ["INT_CONST_DEC"])
+        self.assertTokensTypes("42uwb", ["INT_CONST_DEC"])
+        self.assertTokensTypes("42uWB", ["INT_CONST_DEC"])
+        self.assertTokensTypes("42Uwb", ["INT_CONST_DEC"])
+        self.assertTokensTypes("42UWB", ["INT_CONST_DEC"])
+        self.assertTokensTypes("42wbu", ["INT_CONST_DEC"])
+        self.assertTokensTypes("42wbU", ["INT_CONST_DEC"])
+        self.assertTokensTypes("42WBu", ["INT_CONST_DEC"])
+        self.assertTokensTypes("42WBU", ["INT_CONST_DEC"])
+        self.assertTokensTypes("0wb", ["INT_CONST_OCT"])
+        self.assertTokensTypes("077uwb", ["INT_CONST_OCT"])
+        self.assertTokensTypes("0XffWB", ["INT_CONST_HEX"])
+        self.assertTokensTypes("0b101wbu", ["INT_CONST_BIN"])
+
+        self.clex.input("42wb+0xffUWB")
+        self.assertEqual(
+            token_list(self.clex),
+            [
+                Token("INT_CONST_DEC", "42wb", 1, 1),
+                Token("PLUS", "+", 1, 5),
+                Token("INT_CONST_HEX", "0xffUWB", 1, 6),
+            ],
+        )
+
     def test_special_names(self):
         self.assertTokensTypes("sizeof offsetof", ["SIZEOF", "OFFSETOF"])
 

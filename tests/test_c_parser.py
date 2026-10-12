@@ -4336,6 +4336,152 @@ class TestCParser_bitint(TestCParser_base):
         self.assertEqual(visitor.ids, ["WIDTH"])
 
 
+class TestCParser_bitint_literals(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_signed_suffixes(self):
+        init = self.parse("auto x = 42wb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_BitInt", "42wb"])
+
+        init = self.parse("auto x = 42WB;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_BitInt", "42WB"])
+
+    def test_unsigned_prefixes(self):
+        init = self.parse("auto x = 42uwb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42uwb"])
+
+        init = self.parse("auto x = 42uWB;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42uWB"])
+
+        init = self.parse("auto x = 42Uwb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42Uwb"])
+
+        init = self.parse("auto x = 42UWB;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42UWB"])
+
+    def test_unsigned_suffixes(self):
+        init = self.parse("auto x = 42wbu;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42wbu"])
+
+        init = self.parse("auto x = 42wbU;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42wbU"])
+
+        init = self.parse("auto x = 42WBu;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42WBu"])
+
+        init = self.parse("auto x = 42WBU;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42WBU"])
+
+    def test_integer_bases(self):
+        init = self.parse("auto x = 0wb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_BitInt", "0wb"])
+
+        init = self.parse("auto x = 077uwb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "077uwb"])
+
+        init = self.parse("auto x = 0x1bwb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_BitInt", "0x1bwb"])
+
+        init = self.parse("auto x = 0XffUWB;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "0XffUWB"])
+
+        init = self.parse("auto x = 0b101wbu;").ext[0].init
+        self.assertEqual(
+            expand_init(init), ["Constant", "unsigned _BitInt", "0b101wbu"]
+        )
+
+        init = self.parse("auto x = 0B101WB;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_BitInt", "0B101WB"])
+
+    def test_large_value_and_negation(self):
+        init = (
+            self.parse("auto x = 340282366920938463463374607431768211456wb;")
+            .ext[0]
+            .init
+        )
+        self.assertEqual(init.type, "_BitInt")
+        self.assertEqual(init.value, "340282366920938463463374607431768211456wb")
+
+        init = self.parse("auto x = -3wb;").ext[0].init
+        self.assertIsInstance(init, UnaryOp)
+        self.assertEqual(init.op, "-")
+        self.assertEqual(expand_init(init.expr), ["Constant", "_BitInt", "3wb"])
+
+    def test_expression_contexts(self):
+        ast = self.parse("""
+            _BitInt(8wb) value = 42wb;
+            void f(void) {
+                1wb;
+                auto sum = 1uwb + 2WBU;
+                consume(3WB);
+                if (1wb) 2uwb; else 3WB;
+                _Generic(1wb, _BitInt(2): 1, default: 0);
+            }
+        """)
+        self.assertEqual(ast.ext[0].type.type.width.type, "_BitInt")
+        self.assertEqual(ast.ext[0].init.type, "_BitInt")
+        constant, sum_decl, call, conditional, generic = ast.ext[1].body.block_items
+        self.assertEqual(expand_init(constant), ["Constant", "_BitInt", "1wb"])
+        self.assertEqual(sum_decl.init.op, "+")
+        self.assertEqual(sum_decl.init.left.type, "unsigned _BitInt")
+        self.assertEqual(sum_decl.init.right.type, "unsigned _BitInt")
+        self.assertEqual(call.args.exprs[0].type, "_BitInt")
+        self.assertEqual(conditional.cond.type, "_BitInt")
+        self.assertEqual(conditional.iftrue.type, "unsigned _BitInt")
+        self.assertEqual(conditional.iffalse.type, "_BitInt")
+        self.assertEqual(generic.expr.type, "_BitInt")
+
+    def test_invalid_suffixes(self):
+        self.assertRaises(ParseError, self.parse, "auto x = 42wB;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42Wb;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42uwB;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42Wbu;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42uwbu;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42wbwb;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42wbl;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42Lwb;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42llwb;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42WBUL;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0wb;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1e2wb;")
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1p0wb;")
+
+    def test_ordinary_integer_and_character_constants(self):
+        init = self.parse("auto x = 42U;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned int", "42U"])
+
+        init = self.parse("auto x = 42uLL;").ext[0].init
+        self.assertEqual(
+            expand_init(init), ["Constant", "unsigned long long int", "42uLL"]
+        )
+
+        init = self.parse("auto x = 'wb';").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "int", "'wb'"])
+
+    def test_legacy_mode_and_reuse(self):
+        parser = c_parser.CParser()
+        with self.assertRaisesRegex(
+            ParseError, "Bit-precise integer constants require C23"
+        ):
+            parser.parse("int x = 42wb;")
+        self.assertRaises(ParseError, parser.parse, "int x = 42WB;")
+        self.assertRaises(ParseError, parser.parse, "int x = 42uwb;")
+        self.assertRaises(ParseError, parser.parse, "int x = 42UWB;")
+        self.assertRaises(ParseError, parser.parse, "int x = 42wbu;")
+        self.assertRaises(ParseError, parser.parse, "int x = 42WBU;")
+        self.assertEqual(self.parse("auto x = 42wb;").ext[0].init.type, "_BitInt")
+        self.assertEqual(parser.parse("int x = 42;").ext[0].init.type, "int")
+        self.assertEqual(
+            self.parse("auto x = 42uwb;").ext[0].init.type, "unsigned _BitInt"
+        )
+        self.assertRaises(ParseError, parser.parse, "int x = 42uwb;")
+
+    def test_coordinates(self):
+        init = self.parse("auto x = 42uwb;", filename="bitint.c").ext[0].init
+        self.assert_coord(init, 1, 10, "bitint.c")
+
+
 class TestCParser_decimal_float(TestCParser_base):
     def setUp(self):
         self.cparser = c_parser.CParser(dialect="c23")

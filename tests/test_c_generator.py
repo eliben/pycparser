@@ -799,6 +799,33 @@ class TestCtoC(unittest.TestCase):
         self.assertIn("_Atomic unsigned _BitInt(17) atomic;", generated)
         self.assertIn("for (unsigned _BitInt(8) i = 0, j = 1;", generated)
 
+    def test_c23_bitint_literals(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            constexpr auto count = 42wb;
+            unsigned _BitInt(8) zero = 0uwb;
+            _BitInt(17) value = 42WB;
+            auto octal = 077uWB;
+            auto hex = 0xffWBu;
+            auto binary = 0B101wbU;
+            auto huge = 340282366920938463463374607431768211456wb;
+            void f(void) {
+                auto negative = -3wb;
+                auto sum = 1Uwb + 2WBU;
+                static_assert(3uwb > 0wb);
+                for (auto i = 0wb; i < 3WB; ++i) {}
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("constexpr auto count = 42wb;", generated)
+        self.assertIn("unsigned _BitInt(8) zero = 0uwb;", generated)
+        self.assertIn("_BitInt(17) value = 42WB;", generated)
+        self.assertIn("auto octal = 077uWB;", generated)
+        self.assertIn("auto hex = 0xffWBu;", generated)
+        self.assertIn("auto binary = 0B101wbU;", generated)
+
     def test_c23_decimal_float(self):
         parser = c_parser.CParser(dialect="c23")
         source = """

@@ -2162,6 +2162,19 @@ class CParser:
             )
 
         if tok.type in _INT_CONST:
+            # Integer suffixes are at most three characters (e.g. ull, wbu).
+            suffix = tok.value[-3:].lower()
+            if suffix.endswith(("wb", "wbu")):
+                if self._dialect != "c23":
+                    self._parse_error(
+                        "Bit-precise integer constants require C23",
+                        self._tok_coord(tok),
+                    )
+                # Classify by suffix, as with other integer constants; retain
+                # the spelling without computing the value or its bit width.
+                t = "unsigned _BitInt" if "u" in suffix else "_BitInt"
+                return c_ast.Constant(t, tok.value, self._tok_coord(tok))
+
             u_count = 0
             l_count = 0
             for ch in tok.value[-3:]:

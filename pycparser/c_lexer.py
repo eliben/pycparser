@@ -494,8 +494,12 @@ _bin_prefix = "0[bB]"
 _bin_digits = "[01]+"
 
 # integer constants (K&R2: A.2.5.1)
+# C23 wb/WB allows u/U before or after it, but no long suffix. Recognize it
+# in every dialect and let the parser enforce C23. Keep these alternatives
+# ahead of bare u/U so that an unsigned bit-precise suffix is consumed whole.
 _integer_suffix_opt = (
-    r"(([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?"
+    r"(([uU](wb|WB))|((wb|WB)[uU]?)|"
+    r"([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?"
 )
 _decimal_constant = (
     "(0" + _integer_suffix_opt + ")|([1-9][0-9]*" + _integer_suffix_opt + ")"
