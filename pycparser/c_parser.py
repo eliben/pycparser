@@ -270,12 +270,31 @@ class CParser:
         decl.name = typ.declname
         typ.quals = decl.quals[:]
 
-        # The typename is a list of types. If any type in this
-        # list isn't an IdentifierType, it must be the only
-        # type in the list (it's illegal to declare "int enum ..")
+        # The typename is a list of types. Except for _BitInt with an
+        # optional signedness, any type that isn't an IdentifierType must
+        # be the only type in the list (it's illegal to declare "int enum ..").
         # If all the types are basic, they're collected in the
         # IdentifierType holder.
         for tn in typename:
+            if isinstance(tn, c_ast.BitIntType):
+                signedness = None
+                for spec in typename:
+                    if spec is tn:
+                        continue
+                    if (
+                        signedness is not None
+                        or not isinstance(spec, c_ast.IdentifierType)
+                        or spec.names not in (["signed"], ["unsigned"])
+                    ):
+                        self._parse_error(
+                            "Invalid multiple types specified", spec.coord
+                        )
+                    signedness = spec.names[0]
+                # Specifiers are shared by comma-separated declarations;
+                # keep the parsed specifier unchanged when attaching the sign.
+                typ.type = c_ast.BitIntType(tn.width, signedness, tn.coord)
+                return decl
+
             if not isinstance(tn, c_ast.IdentifierType):
                 if len(typename) > 1:
                     self._parse_error("Invalid multiple types specified", tn.coord)
@@ -884,6 +903,15 @@ class CParser:
                 saw_type = True
                 continue
 
+            if tok.type == "_BITINT":
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_bitint_specifier(), "type", append=True
+                )
+                saw_type = True
+                continue
+
             if tok.type in _TYPE_QUALIFIER:
                 if first_coord is None:
                     first_coord = self._tok_coord(tok)
@@ -1005,6 +1033,15 @@ class CParser:
                 saw_type = True
                 continue
 
+            if tok.type == "_BITINT":
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_bitint_specifier(), "type", append=True
+                )
+                saw_type = True
+                continue
+
             if tok.type in _TYPE_QUALIFIER:
                 if first_coord is None:
                     first_coord = self._tok_coord(tok)
@@ -1114,6 +1151,14 @@ class CParser:
             expr = self._parse_expression()
         self._expect("RPAREN")
         return c_ast.TypeOf(tok.value, expr, self._tok_coord(tok))
+
+    # BNF: bitint_specifier : _BITINT '(' constant_expression ')'
+    def _parse_bitint_specifier(self) -> c_ast.BitIntType:
+        tok = self._expect("_BITINT")
+        self._expect("LPAREN")
+        width = self._parse_constant_expression()
+        self._expect("RPAREN")
+        return c_ast.BitIntType(width, None, self._tok_coord(tok))
 
     # BNF: init_declarator_list : init_declarator (',' init_declarator)*
     def _parse_init_declarator_list(
@@ -2406,7 +2451,7 @@ _DECL_START = (
     | _TYPE_QUALIFIER
     | _TYPE_SPEC_SIMPLE
     | _TYPEOF_SPEC
-    | {"TYPEID", "STRUCT", "UNION", "ENUM", "_ALIGNAS", "_ATOMIC"}
+    | {"TYPEID", "STRUCT", "UNION", "ENUM", "_ALIGNAS", "_ATOMIC", "_BITINT"}
 )
 
 _EXPR_START = {

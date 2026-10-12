@@ -3654,6 +3654,7 @@ class TestCParser_dialects(unittest.TestCase):
             "int *constexpr;",
             "int *typeof;",
             "int *typeof_unqual;",
+            "int *_BitInt;",
         ):
             with self.subTest(source=source):
                 self.assertRaises(ParseError, parser.parse, source)
@@ -3662,7 +3663,6 @@ class TestCParser_dialects(unittest.TestCase):
         parser = c_parser.CParser(dialect="c23")
         legacy = c_parser.CParser()
         for keyword in (
-            "_BitInt",
             "_Decimal32",
             "_Decimal64",
             "_Decimal128",
@@ -3673,7 +3673,6 @@ class TestCParser_dialects(unittest.TestCase):
                 self.assertEqual(legacy.parse(source).ext[0].name, keyword)
                 self.assertRaises(ParseError, parser.parse, source)
         for source in (
-            "unsigned _BitInt(17) x;",
             "_Decimal32 x;",
             "_Decimal64 x;",
             "_Decimal128 x;",
@@ -4152,6 +4151,201 @@ class TestCParser_typeof(TestCParser_base):
         visitor.visit(ast)
         self.assertEqual(visitor.operators, ["typeof"])
         self.assertEqual(visitor.ids, ["x"])
+
+
+class TestCParser_bitint(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_plain_type(self):
+        decl = self.parse("_BitInt(17) value;").ext[0]
+        self.assertEqual(decl.name, "value")
+        self.assertIsInstance(decl.type.type, BitIntType)
+        self.assertIsNone(decl.type.type.signedness)
+        self.assertEqual(expand_init(decl.type.type.width), ["Constant", "int", "17"])
+
+    def test_signed_type(self):
+        typ = self.parse("signed _BitInt(17) value;").ext[0].type.type
+        self.assertIsInstance(typ, BitIntType)
+        self.assertEqual(typ.signedness, "signed")
+        self.assertEqual(typ.width.value, "17")
+
+        typ = self.parse("_BitInt(17) signed value;").ext[0].type.type
+        self.assertIsInstance(typ, BitIntType)
+        self.assertEqual(typ.signedness, "signed")
+        self.assertEqual(typ.width.value, "17")
+
+    def test_unsigned_type(self):
+        typ = self.parse("unsigned _BitInt(1) flag;").ext[0].type.type
+        self.assertIsInstance(typ, BitIntType)
+        self.assertEqual(typ.signedness, "unsigned")
+        self.assertEqual(typ.width.value, "1")
+
+        typ = self.parse("_BitInt(17) unsigned value;").ext[0].type.type
+        self.assertIsInstance(typ, BitIntType)
+        self.assertEqual(typ.signedness, "unsigned")
+        self.assertEqual(typ.width.value, "17")
+
+    def test_width_expressions(self):
+        width = self.parse("_BitInt(WIDTH) value;").ext[0].type.type.width
+        self.assertIsInstance(width, ID)
+        self.assertEqual(width.name, "WIDTH")
+
+        width = self.parse("_BitInt(8 * sizeof(int)) value;").ext[0].type.type.width
+        self.assertIsInstance(width, BinaryOp)
+        self.assertEqual(width.op, "*")
+        self.assertEqual(width.left.value, "8")
+        self.assertIsInstance(width.right, UnaryOp)
+        self.assertEqual(width.right.op, "sizeof")
+        self.assertEqual(width.right.expr.type.type.names, ["int"])
+
+        width = (
+            self.parse("_BitInt(WIDTH > 8 ? WIDTH : 8) value;").ext[0].type.type.width
+        )
+        self.assertIsInstance(width, TernaryOp)
+        self.assertEqual(width.cond.op, ">")
+        self.assertEqual(width.iftrue.name, "WIDTH")
+        self.assertEqual(width.iffalse.value, "8")
+
+    def test_qualifiers_and_declarators(self):
+        value, pointer, array = self.parse(
+            "static const unsigned _BitInt(17) value = 1, *pointer, array[3];"
+        ).ext
+        self.assertEqual(value.storage, ["static"])
+        self.assertEqual(value.quals, ["const"])
+        self.assertEqual(value.type.quals, ["const"])
+        self.assertEqual(value.type.type.signedness, "unsigned")
+        self.assertEqual(value.type.type.width.value, "17")
+        self.assertEqual(value.init.value, "1")
+        self.assertIsInstance(pointer.type, PtrDecl)
+        self.assertEqual(pointer.type.type.quals, ["const"])
+        self.assertEqual(pointer.type.type.type.signedness, "unsigned")
+        self.assertEqual(pointer.type.type.type.width.value, "17")
+        self.assertIsInstance(array.type, ArrayDecl)
+        self.assertEqual(array.type.dim.value, "3")
+        self.assertEqual(array.type.type.type.signedness, "unsigned")
+        self.assertEqual(array.type.type.type.width.value, "17")
+
+    def test_atomic_and_typeof(self):
+        atomic, qualified, typeof = self.parse("""
+            _Atomic(unsigned _BitInt(17)) atomic;
+            _Atomic _BitInt(17) qualified;
+            typeof_unqual(const unsigned _BitInt(17)) value;
+        """).ext
+        self.assertEqual(atomic.quals, ["_Atomic"])
+        self.assertIsInstance(atomic.type.type, BitIntType)
+        self.assertEqual(atomic.type.type.signedness, "unsigned")
+        self.assertEqual(qualified.quals, ["_Atomic"])
+        self.assertIsInstance(qualified.type.type, BitIntType)
+        self.assertIsNone(qualified.type.type.signedness)
+        self.assertEqual(typeof.type.type.op, "typeof_unqual")
+        self.assertEqual(typeof.type.type.expr.quals, ["const"])
+        self.assertIsInstance(typeof.type.type.expr.type.type, BitIntType)
+        self.assertEqual(typeof.type.type.expr.type.type.signedness, "unsigned")
+
+    def test_declaration_contexts(self):
+        ast = self.parse("""
+            typedef unsigned _BitInt(17) T;
+            struct S { _BitInt(8) member; unsigned _BitInt(3) bits : 3; };
+            _BitInt(17) f(unsigned _BitInt(8) arg, _BitInt(17)) {
+                T from_typedef;
+                _BitInt(8) T = 0;
+                for (unsigned _BitInt(8) i = 0; i < 3; ++i) {}
+                return T;
+            }
+            T after;
+        """)
+        typedef, struct, func, after = ast.ext
+        self.assertIsInstance(typedef, Typedef)
+        self.assertIsInstance(typedef.type.type, BitIntType)
+        self.assertEqual(typedef.type.type.signedness, "unsigned")
+        member, bits = struct.type.decls
+        self.assertIsInstance(member.type.type, BitIntType)
+        self.assertIsInstance(bits.type.type, BitIntType)
+        self.assertEqual(bits.type.type.signedness, "unsigned")
+        self.assertEqual(bits.bitsize.value, "3")
+        self.assertIsInstance(func.decl.type.type.type, BitIntType)
+        named, unnamed = func.decl.type.args.params
+        self.assertEqual(named.name, "arg")
+        self.assertIsInstance(named.type.type, BitIntType)
+        self.assertIsInstance(unnamed, Typename)
+        self.assertIsInstance(unnamed.type.type, BitIntType)
+        from_typedef, shadow, loop, _ = func.body.block_items
+        self.assertEqual(from_typedef.type.type.names, ["T"])
+        self.assertEqual(shadow.name, "T")
+        self.assertIsInstance(shadow.type.type, BitIntType)
+        self.assertEqual(loop.init.decls[0].type.type.signedness, "unsigned")
+        self.assertEqual(after.type.type.names, ["T"])
+
+    def test_type_name_contexts(self):
+        ast = self.parse("""
+            alignas(_BitInt(8)) int aligned;
+            void f(void) {
+                sizeof(_BitInt(17));
+                alignof(unsigned _BitInt(8));
+                (_BitInt(17))2;
+                (unsigned _BitInt(8)){3};
+                _Generic(1, _BitInt(17): 1, default: 0);
+            }
+        """)
+        self.assertIsInstance(ast.ext[0].align[0].alignment.type.type, BitIntType)
+        size, align, cast, literal, generic = ast.ext[1].body.block_items
+        self.assertIsInstance(size.expr.type.type, BitIntType)
+        self.assertEqual(align.expr.type.type.signedness, "unsigned")
+        self.assertIsInstance(cast.to_type.type.type, BitIntType)
+        self.assertEqual(literal.type.type.type.signedness, "unsigned")
+        self.assertIsInstance(generic.associations[0].type.type.type, BitIntType)
+
+    def test_invalid_width_syntax(self):
+        self.assertRaises(ParseError, self.parse, "_BitInt() x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt 17 x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(17 x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(int) x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(8, 17) x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(WIDTH = 17) x;")
+
+    def test_invalid_type_combinations(self):
+        self.assertRaises(ParseError, self.parse, "int _BitInt(17) x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(17) int x;")
+        self.assertRaises(ParseError, self.parse, "long _BitInt(17) x;")
+        self.assertRaises(ParseError, self.parse, "unsigned signed _BitInt(17) x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(17) unsigned unsigned x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(8) _BitInt(17) x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(17) typeof(int) x;")
+        self.assertRaises(ParseError, self.parse, "typeof(int) _BitInt(17) x;")
+        self.assertRaises(ParseError, self.parse, "int _BitInt(17);")
+        self.assertRaises(ParseError, self.parse, "void f(int _BitInt(17));")
+
+    def test_legacy_mode(self):
+        parser = c_parser.CParser()
+        ast = parser.parse("int _BitInt = 1; int f(void) { return _BitInt; }")
+        self.assertEqual(ast.ext[0].name, "_BitInt")
+        self.assertEqual(ast.ext[1].body.block_items[0].expr.name, "_BitInt")
+        self.assertRaises(ParseError, parser.parse, "_BitInt(17) x;")
+        self.assertRaises(ParseError, parser.parse, "unsigned _BitInt(17) x;")
+
+    def test_coordinates_and_visitor(self):
+        ast = self.parse("unsigned _BitInt(WIDTH + 1) x;", filename="bitint.c")
+        typ = ast.ext[0].type.type
+        self.assert_coord(typ, 1, 10, "bitint.c")
+        self.assert_coord(typ.width, 1, 18, "bitint.c")
+
+        class BitIntVisitor(NodeVisitor):
+            def __init__(self):
+                self.types = []
+                self.ids = []
+
+            def visit_BitIntType(self, node):
+                self.types.append(node)
+                self.generic_visit(node)
+
+            def visit_ID(self, node):
+                self.ids.append(node.name)
+
+        visitor = BitIntVisitor()
+        visitor.visit(ast)
+        self.assertEqual(visitor.types, [typ])
+        self.assertEqual(visitor.ids, ["WIDTH"])
 
 
 class TestUnmatchedRbrace(unittest.TestCase):

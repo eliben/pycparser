@@ -178,6 +178,10 @@ class CGenerator:
     def visit_TypeOf(self, n: c_ast.TypeOf) -> str:
         return f"{n.op}({self._visit_expr(n.expr)})"
 
+    def visit_BitIntType(self, n: c_ast.BitIntType) -> str:
+        sign = n.signedness + " " if n.signedness else ""
+        return f"{sign}_BitInt({self._visit_expr(n.width)})"
+
     def _visit_expr(self, n: c_ast.Node) -> str:
         match n:
             case c_ast.InitList():

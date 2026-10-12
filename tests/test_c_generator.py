@@ -767,6 +767,38 @@ class TestCtoC(unittest.TestCase):
         self.assertIn("typeof(_Atomic int) inner_atomic;", generated)
         self.assertIn("_Atomic typeof(int) outer_atomic;", generated)
 
+    def test_c23_bitint(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            constexpr int WIDTH = 17;
+            typedef unsigned _BitInt(WIDTH) T;
+            _BitInt(17) plain;
+            signed _BitInt(17) explicit_signed;
+            _BitInt(17) unsigned reversed;
+            const unsigned _BitInt(8 * sizeof(int)) value = 1, *pointer, array[3];
+            _BitInt(WIDTH > 8 ? WIDTH : 8) conditional;
+            _Atomic(unsigned _BitInt(17)) atomic;
+            typeof_unqual(const _BitInt(17)) unqualified;
+            struct S { unsigned _BitInt(3) bits : 3; };
+            _BitInt(17) (*callback)(unsigned _BitInt(8));
+            _BitInt(17) f(_BitInt(8) arg) {
+                auto cast = (unsigned _BitInt(17))arg;
+                auto literal = (_BitInt(17)){3};
+                auto size = sizeof(_BitInt(17));
+                auto selection = _Generic(arg, _BitInt(8): 1, default: 0);
+                for (unsigned _BitInt(8) i = 0, j = 1; i < j; ++i) {}
+                return arg;
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("_BitInt(17) plain;", generated)
+        self.assertIn("signed _BitInt(17) explicit_signed;", generated)
+        self.assertIn("unsigned _BitInt(17) reversed;", generated)
+        self.assertIn("_Atomic unsigned _BitInt(17) atomic;", generated)
+        self.assertIn("for (unsigned _BitInt(8) i = 0, j = 1;", generated)
+
     def test_static_assert_semicolons(self):
         self.assertEqual(
             self._assert_ctoc_correct('_Static_assert(1, "file");'),
