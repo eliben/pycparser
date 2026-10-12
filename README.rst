@@ -49,24 +49,12 @@ simple to install and deploy.
 Which version of C does pycparser support?
 ------------------------------------------
 
-**pycparser** aims to support the full C99 language (according to the standard
-ISO/IEC 9899). Some features from C11 are also supported, and patches to support
-more are welcome.
+**pycparser** aims to support the full C11 language, including earlier
+revisions like C99.
 
-``CParser()`` defaults to ``dialect="legacy"``, which preserves the existing mix
-of supported features and extensions. Select ``CParser(dialect="c23")`` to
-recognize ``bool``, ``alignas``, ``alignof``, ``static_assert``, and
-``thread_local`` as keywords, and ``true``, ``false``, and ``nullptr`` as
-constants. The constants use AST ``Constant`` nodes with types ``bool`` and
-``nullptr_t`` and retain their source spelling. The older underscored keyword
-spellings remain supported.
-
-C23 support is partial. Other C23 keywords, including ``constexpr``, ``typeof``,
-``typeof_unqual``, ``_BitInt``, ``_Decimal32``, ``_Decimal64``, ``_Decimal128``, and
-``_Imaginary``, are reserved in this mode but their syntax is not yet supported.
-The dialect controls keyword recognition, not strict standards conformance;
-features already accepted in legacy mode remain available. The dialect is
-selected when constructing the parser and applies to all subsequent parses.
+C23 support is conditional on a ``dialect="c23"`` setting, since this revision
+introduces new keywords like ``bool`` that would conflict with existing C code
+if not handled properly.
 
 **pycparser** supports very few GCC extensions, but it's fairly easy to set
 things up so that it parses code with a lot of GCC-isms successfully. See the
