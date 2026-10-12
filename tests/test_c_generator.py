@@ -732,6 +732,41 @@ class TestCtoC(unittest.TestCase):
         self.assertIn("for (auto i = 0;", generated)
         self.assertNotIn("auto auto", generated)
 
+    def test_c23_typeof(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            typedef typeof(1) T;
+            typeof_unqual(const int *) pointer;
+            typeof(int (*)(int)) callback;
+            typeof(int [3]) array;
+            typeof(typeof_unqual(const int)) nested;
+            typeof(_Atomic(int)) inner_atomic;
+            _Atomic(typeof(int)) outer_atomic;
+            const typeof_unqual(volatile int) qualified;
+            struct S { typeof(T) member; };
+            typeof(int) f(typeof(int) arg, typeof_unqual(const int)) {
+                typeof(T) before;
+                typeof(int) T = 1;
+                typeof(T) after;
+                typeof(arg, f(arg, 2)) comma;
+                typeof(({ int x = 1; x; })) statement_expression;
+                auto cast = (typeof(arg))2;
+                auto literal = (typeof(int)){3};
+                auto size = sizeof(typeof(int));
+                auto generic = _Generic(arg, typeof(int): 1, default: 0);
+                for (typeof(arg) i = 0; i < 3; ++i) {}
+                return arg;
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("typeof_unqual(const int *) pointer;", generated)
+        self.assertIn("typeof(int (*)(int)) callback;", generated)
+        self.assertIn("typeof(typeof_unqual(const int)) nested;", generated)
+        self.assertIn("typeof(_Atomic int) inner_atomic;", generated)
+        self.assertIn("_Atomic typeof(int) outer_atomic;", generated)
+
     def test_static_assert_semicolons(self):
         self.assertEqual(
             self._assert_ctoc_correct('_Static_assert(1, "file");'),

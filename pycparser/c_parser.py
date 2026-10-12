@@ -347,6 +347,7 @@ class CParser:
             if decls[0]["decl"] is None:
                 if (
                     len(spec["type"]) < 2
+                    or not isinstance(spec["type"][-1], c_ast.IdentifierType)
                     or len(spec["type"][-1].names) != 1
                     or not self._is_type_in_scope(spec["type"][-1].names[0])
                 ):
@@ -874,6 +875,15 @@ class CParser:
                 saw_type = True
                 continue
 
+            if tok.type in _TYPEOF_SPEC:
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_typeof_specifier(), "type", append=True
+                )
+                saw_type = True
+                continue
+
             if tok.type in _TYPE_QUALIFIER:
                 if first_coord is None:
                     first_coord = self._tok_coord(tok)
@@ -986,6 +996,15 @@ class CParser:
                 saw_type = True
                 continue
 
+            if tok.type in _TYPEOF_SPEC:
+                if first_coord is None:
+                    first_coord = self._tok_coord(tok)
+                spec = self._add_declaration_specifier(
+                    spec, self._parse_typeof_specifier(), "type", append=True
+                )
+                saw_type = True
+                continue
+
             if tok.type in _TYPE_QUALIFIER:
                 if first_coord is None:
                     first_coord = self._tok_coord(tok)
@@ -1084,6 +1103,17 @@ class CParser:
         self._expect("RPAREN")
         typ.quals.append("_Atomic")
         return typ
+
+    # BNF: typeof_specifier : (TYPEOF | TYPEOF_UNQUAL) '(' (type_name | expression) ')'
+    def _parse_typeof_specifier(self) -> c_ast.TypeOf:
+        tok = self._advance()
+        self._expect("LPAREN")
+        if self._starts_declaration():
+            expr = self._parse_type_name()
+        else:
+            expr = self._parse_expression()
+        self._expect("RPAREN")
+        return c_ast.TypeOf(tok.value, expr, self._tok_coord(tok))
 
     # BNF: init_declarator_list : init_declarator (',' init_declarator)*
     def _parse_init_declarator_list(
@@ -1479,6 +1509,7 @@ class CParser:
     ) -> c_ast.Node:
         if (
             len(spec["type"]) > 1
+            and isinstance(spec["type"][-1], c_ast.IdentifierType)
             and len(spec["type"][-1].names) == 1
             and self._is_type_in_scope(spec["type"][-1].names[0])
         ):
@@ -2352,6 +2383,8 @@ _FUNCTION_SPEC = {"INLINE", "_NORETURN"}
 
 _TYPE_QUALIFIER = {"CONST", "RESTRICT", "VOLATILE", "_ATOMIC"}
 
+_TYPEOF_SPEC = {"TYPEOF", "TYPEOF_UNQUAL"}
+
 _TYPE_SPEC_SIMPLE = {
     "VOID",
     "_BOOL",
@@ -2372,6 +2405,7 @@ _DECL_START = (
     | _FUNCTION_SPEC
     | _TYPE_QUALIFIER
     | _TYPE_SPEC_SIMPLE
+    | _TYPEOF_SPEC
     | {"TYPEID", "STRUCT", "UNION", "ENUM", "_ALIGNAS", "_ATOMIC"}
 )
 

@@ -3652,6 +3652,8 @@ class TestCParser_dialects(unittest.TestCase):
             "int *static_assert;",
             "int *thread_local;",
             "int *constexpr;",
+            "int *typeof;",
+            "int *typeof_unqual;",
         ):
             with self.subTest(source=source):
                 self.assertRaises(ParseError, parser.parse, source)
@@ -3660,8 +3662,6 @@ class TestCParser_dialects(unittest.TestCase):
         parser = c_parser.CParser(dialect="c23")
         legacy = c_parser.CParser()
         for keyword in (
-            "typeof",
-            "typeof_unqual",
             "_BitInt",
             "_Decimal32",
             "_Decimal64",
@@ -3673,8 +3673,6 @@ class TestCParser_dialects(unittest.TestCase):
                 self.assertEqual(legacy.parse(source).ext[0].name, keyword)
                 self.assertRaises(ParseError, parser.parse, source)
         for source in (
-            "typeof(int) x;",
-            "typeof_unqual(const int) x;",
             "unsigned _BitInt(17) x;",
             "_Decimal32 x;",
             "_Decimal64 x;",
@@ -3856,6 +3854,304 @@ class TestCParser_auto(TestCParser_base):
         visitor = InferredVisitor()
         visitor.visit(ast)
         self.assertEqual(visitor.types, [decl.type.type])
+
+
+class TestCParser_typeof(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_typeof_type_operands(self):
+        typ = self.parse("typeof(int) value;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertEqual(
+            expand_decl(typ.expr),
+            ["Typename", ["TypeDecl", ["IdentifierType", ["int"]]]],
+        )
+
+        typ = self.parse("typeof(const int *) value;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertEqual(
+            expand_decl(typ.expr),
+            [
+                "Typename",
+                ["const"],
+                ["PtrDecl", ["TypeDecl", ["IdentifierType", ["int"]]]],
+            ],
+        )
+
+        typ = self.parse("typeof(int [3]) value;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertEqual(
+            expand_decl(typ.expr),
+            [
+                "Typename",
+                ["ArrayDecl", "3", [], ["TypeDecl", ["IdentifierType", ["int"]]]],
+            ],
+        )
+
+        typ = self.parse("typeof(int (*)(int)) callback;").ext[0].type.type
+        self.assertIsInstance(typ.expr.type, PtrDecl)
+        self.assertIsInstance(typ.expr.type.type, FuncDecl)
+        self.assertEqual(typ.expr.type.type.args.params[0].type.type.names, ["int"])
+
+    def test_typeof_unqual_type_operands(self):
+        typ = self.parse("typeof_unqual(int) value;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertEqual(
+            expand_decl(typ.expr),
+            ["Typename", ["TypeDecl", ["IdentifierType", ["int"]]]],
+        )
+
+        typ = self.parse("typeof_unqual(const int *) value;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertEqual(
+            expand_decl(typ.expr),
+            [
+                "Typename",
+                ["const"],
+                ["PtrDecl", ["TypeDecl", ["IdentifierType", ["int"]]]],
+            ],
+        )
+
+        typ = self.parse("typeof_unqual(int [3]) value;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertEqual(
+            expand_decl(typ.expr),
+            [
+                "Typename",
+                ["ArrayDecl", "3", [], ["TypeDecl", ["IdentifierType", ["int"]]]],
+            ],
+        )
+
+        typ = self.parse("typeof_unqual(int (*)(int)) callback;").ext[0].type.type
+        self.assertIsInstance(typ.expr.type, PtrDecl)
+        self.assertIsInstance(typ.expr.type.type, FuncDecl)
+        self.assertEqual(typ.expr.type.type.args.params[0].type.type.names, ["int"])
+
+    def test_typeof_expression_operands(self):
+        typ = self.parse("typeof(value) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, ID)
+
+        typ = self.parse("typeof(value + 1) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, BinaryOp)
+
+        typ = self.parse("typeof(value++) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, UnaryOp)
+
+        typ = self.parse("typeof(f(value)) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, FuncCall)
+
+        typ = self.parse("typeof((int)value) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, Cast)
+
+        typ = self.parse("typeof((int){1}) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, CompoundLiteral)
+
+        typ = self.parse("typeof(value, f()) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, ExprList)
+
+    def test_typeof_unqual_expression_operands(self):
+        typ = self.parse("typeof_unqual(value) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, ID)
+
+        typ = self.parse("typeof_unqual(value + 1) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, BinaryOp)
+
+        typ = self.parse("typeof_unqual(value++) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, UnaryOp)
+
+        typ = self.parse("typeof_unqual(f(value)) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, FuncCall)
+
+        typ = self.parse("typeof_unqual((int)value) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, Cast)
+
+        typ = self.parse("typeof_unqual((int){1}) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, CompoundLiteral)
+
+        typ = self.parse("typeof_unqual(value, f()) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, ExprList)
+
+    def test_typedef_scopes(self):
+        ast = self.parse("""
+            typedef int T;
+            typeof(T) outer;
+            void f(void) {
+                typeof(T) before;
+                typeof(int) T = 0;
+                typeof(T) after;
+                { typedef char T; typeof_unqual(T) inner; }
+                typeof(T) last;
+            }
+            typeof(T) restored;
+        """)
+        before, shadow, after, block, last = ast.ext[2].body.block_items
+        for decl in (ast.ext[1], before, block.block_items[1], ast.ext[3]):
+            self.assertIsInstance(decl.type.type.expr, Typename)
+            self.assertEqual(decl.type.type.expr.type.type.names, ["T"])
+        self.assertEqual(shadow.name, "T")
+        for decl in (after, last):
+            self.assertIsInstance(decl.type.type.expr, ID)
+            self.assertEqual(decl.type.type.expr.name, "T")
+
+    def test_nested_types_and_qualifiers(self):
+        ast = self.parse("""
+            typeof(typeof_unqual(const int)) nested;
+            typeof(_Atomic(int)) inner_atomic;
+            _Atomic(typeof(int)) outer_atomic;
+            const typeof_unqual(volatile int) qualified;
+        """)
+        nested, inner, outer, qualified = ast.ext
+        self.assertEqual(nested.type.type.expr.type.type.op, "typeof_unqual")
+        self.assertEqual(nested.type.type.expr.type.type.expr.quals, ["const"])
+        self.assertEqual(inner.quals, [])
+        self.assertEqual(inner.type.type.expr.quals, ["_Atomic"])
+        self.assertEqual(outer.quals, ["_Atomic"])
+        self.assertEqual(outer.type.type.expr.quals, [])
+        self.assertEqual(qualified.quals, ["const"])
+        self.assertEqual(qualified.type.type.expr.quals, ["volatile"])
+
+    def test_declaration_contexts(self):
+        ast = self.parse("""
+            typedef typeof(1) T;
+            struct S { typeof(T) member; typeof_unqual(unsigned int) bits : 3; };
+            typeof(int) f(typeof(int) arg, typeof_unqual(const int)) {
+                typeof(arg) local = arg;
+                for (typeof(arg) i = 0; i < 3; ++i) {}
+                return local;
+            }
+        """)
+        typedef, struct, func = ast.ext
+        self.assertIsInstance(typedef.type.type, TypeOf)
+        for member in struct.type.decls:
+            self.assertIsInstance(member.type.type, TypeOf)
+        self.assertEqual(struct.type.decls[1].bitsize.value, "3")
+        self.assertIsInstance(func.decl.type.type.type, TypeOf)
+        for param in func.decl.type.args.params:
+            self.assertIsInstance(param.type.type, TypeOf)
+        local, loop, _ = func.body.block_items
+        self.assertIsInstance(local.type.type, TypeOf)
+        self.assertIsInstance(loop.init.decls[0].type.type, TypeOf)
+
+    def test_type_name_contexts(self):
+        ast = self.parse("""
+            alignas(typeof(int)) int aligned;
+            void f(void) {
+                sizeof(typeof(int));
+                alignof(typeof_unqual(const int));
+                (typeof(1))2;
+                (typeof(int)){3};
+                _Generic(1, typeof(int): 1, default: 0);
+            }
+        """)
+        self.assertIsInstance(ast.ext[0].align[0].alignment.type.type, TypeOf)
+        size, align, cast, literal, generic = ast.ext[1].body.block_items
+        for expr in (size, align):
+            self.assertIsInstance(expr.expr.type.type, TypeOf)
+        self.assertIsInstance(cast.to_type.type.type, TypeOf)
+        self.assertIsInstance(literal.type.type.type, TypeOf)
+        self.assertIsInstance(generic.associations[0].type.type.type, TypeOf)
+
+    def test_invalid_typeof_specifiers(self):
+        self.assertRaises(ParseError, self.parse, "typeof() x;")
+        self.assertRaises(ParseError, self.parse, "typeof int x;")
+        self.assertRaises(ParseError, self.parse, "typeof(int x;")
+        self.assertRaises(ParseError, self.parse, "typeof(int x) y;")
+        self.assertRaises(ParseError, self.parse, "typeof(value,) x;")
+        self.assertRaises(ParseError, self.parse, "typeof(int);")
+        self.assertRaises(ParseError, self.parse, "int typeof(int);")
+        self.assertRaises(ParseError, self.parse, "int typeof(int) x;")
+        self.assertRaises(ParseError, self.parse, "typeof(int) int x;")
+        self.assertRaises(ParseError, self.parse, "typeof(int) typeof(int) x;")
+        self.assertRaises(ParseError, self.parse, "void f(int typeof(int));")
+        self.assertRaises(ParseError, self.parse, "void f(void) { int x = typeof(1); }")
+
+    def test_invalid_typeof_unqual_specifiers(self):
+        self.assertRaises(ParseError, self.parse, "typeof_unqual() x;")
+        self.assertRaises(ParseError, self.parse, "typeof_unqual int x;")
+        self.assertRaises(ParseError, self.parse, "typeof_unqual(int x;")
+        self.assertRaises(ParseError, self.parse, "typeof_unqual(int x) y;")
+        self.assertRaises(ParseError, self.parse, "typeof_unqual(value,) x;")
+        self.assertRaises(ParseError, self.parse, "typeof_unqual(int);")
+        self.assertRaises(ParseError, self.parse, "int typeof_unqual(int);")
+        self.assertRaises(ParseError, self.parse, "int typeof_unqual(int) x;")
+        self.assertRaises(ParseError, self.parse, "typeof_unqual(int) int x;")
+        self.assertRaises(
+            ParseError, self.parse, "typeof_unqual(int) typeof_unqual(int) x;"
+        )
+        self.assertRaises(ParseError, self.parse, "void f(int typeof_unqual(int));")
+        self.assertRaises(
+            ParseError, self.parse, "void f(void) { int x = typeof_unqual(1); }"
+        )
+
+    def test_legacy_mode(self):
+        for parser in (c_parser.CParser(), c_parser.CParser(dialect="legacy")):
+            ast = parser.parse("""
+                int typeof(int x) { return x; }
+                int typeof_unqual(int x) { return typeof(x); }
+            """)
+            self.assertEqual(ast.ext[0].decl.name, "typeof")
+            self.assertEqual(ast.ext[1].decl.name, "typeof_unqual")
+            self.assertEqual(ast.ext[1].body.block_items[0].expr.name.name, "typeof")
+            self.assertRaises(ParseError, parser.parse, "typeof(int) x;")
+            self.assertRaises(ParseError, parser.parse, "typeof_unqual(const int) x;")
+
+    def test_coordinates_and_visitor(self):
+        ast = self.parse("typeof(x + 1) y;", filename="typeof.c")
+        typ = ast.ext[0].type.type
+        self.assert_coord(typ, 1, 1, "typeof.c")
+        self.assert_coord(typ.expr, 1, 8, "typeof.c")
+
+        class TypeOfVisitor(NodeVisitor):
+            def __init__(self):
+                self.operators = []
+                self.ids = []
+
+            def visit_TypeOf(self, node):
+                self.operators.append(node.op)
+                self.generic_visit(node)
+
+            def visit_ID(self, node):
+                self.ids.append(node.name)
+
+        visitor = TypeOfVisitor()
+        visitor.visit(ast)
+        self.assertEqual(visitor.operators, ["typeof"])
+        self.assertEqual(visitor.ids, ["x"])
 
 
 class TestUnmatchedRbrace(unittest.TestCase):
