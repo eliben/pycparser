@@ -3548,6 +3548,45 @@ class TestCParser_dialects(unittest.TestCase):
         self.assertEqual(old_flag.storage, ["_Thread_local"])
         self.assertEqual(old_alignment.init.op, "_Alignof")
 
+    def test_c23_constexpr(self):
+        parser = c_parser.CParser(dialect="c23")
+        declarations = """
+            constexpr T limit = 16;
+            int constexpr next = limit + 1;
+            static constexpr double scale = 0.5;
+            constexpr bool enabled = true;
+            constexpr int values[] = {1, 2};
+        """
+        for block_scope in (False, True):
+            with self.subTest(block_scope=block_scope):
+                source = declarations
+                if block_scope:
+                    source = "void f(void) {" + declarations + "}"
+                ast = parser.parse("typedef int T;" + source)
+                decls = ast.ext[1].body.block_items if block_scope else ast.ext[1:]
+                limit, next_value, scale, enabled, values = decls
+                for decl in (limit, next_value, enabled, values):
+                    self.assertEqual(decl.storage, ["constexpr"])
+                self.assertEqual(scale.storage, ["static", "constexpr"])
+                self.assertEqual(limit.type.type.names, ["T"])
+                self.assertEqual(expand_init(limit.init), ["Constant", "int", "16"])
+                self.assertIsInstance(next_value.init, BinaryOp)
+                self.assertEqual(next_value.init.left.name, "limit")
+                self.assertEqual(scale.init.value, "0.5")
+                self.assertEqual(
+                    expand_init(enabled.init), ["Constant", "bool", "true"]
+                )
+                self.assertIsInstance(values.type, ArrayDecl)
+                self.assertEqual([expr.value for expr in values.init.exprs], ["1", "2"])
+
+    def test_constexpr_dialect(self):
+        for parser in (c_parser.CParser(), c_parser.CParser(dialect="legacy")):
+            ast = parser.parse("int constexpr = 1; int x = constexpr;")
+            self.assertEqual(ast.ext[0].name, "constexpr")
+            self.assertIsInstance(ast.ext[1].init, ID)
+            self.assertEqual(ast.ext[1].init.name, "constexpr")
+            self.assertRaises(ParseError, parser.parse, "constexpr int x = 1;")
+
     def test_c23_static_assert_contexts(self):
         parser = c_parser.CParser(dialect="c23")
         ast = parser.parse("""
@@ -3612,6 +3651,7 @@ class TestCParser_dialects(unittest.TestCase):
             "int *alignof;",
             "int *static_assert;",
             "int *thread_local;",
+            "int *constexpr;",
         ):
             with self.subTest(source=source):
                 self.assertRaises(ParseError, parser.parse, source)
@@ -3620,7 +3660,6 @@ class TestCParser_dialects(unittest.TestCase):
         parser = c_parser.CParser(dialect="c23")
         legacy = c_parser.CParser()
         for keyword in (
-            "constexpr",
             "typeof",
             "typeof_unqual",
             "_BitInt",
@@ -3634,7 +3673,6 @@ class TestCParser_dialects(unittest.TestCase):
                 self.assertEqual(legacy.parse(source).ext[0].name, keyword)
                 self.assertRaises(ParseError, parser.parse, source)
         for source in (
-            "constexpr int x = 1;",
             "typeof(int) x;",
             "typeof_unqual(const int) x;",
             "unsigned _BitInt(17) x;",

@@ -56,8 +56,8 @@ class CParser:
     compatibility with the old PLY-based parser and are otherwise unused.
 
     The keyword-only `dialect` parameter selects keyword recognition: "legacy"
-    preserves existing behavior, while "c23" enables C23 spellings and predefined
-    constants.
+    preserves existing behavior, while "c23" enables C23 spellings, predefined
+    constants, and other C23-only features.
     """
 
     def __init__(
@@ -2306,7 +2306,15 @@ _BINARY_PRECEDENCE = {
     "MOD": 9,
 }
 
-_STORAGE_CLASS = {"AUTO", "REGISTER", "STATIC", "EXTERN", "TYPEDEF", "_THREAD_LOCAL"}
+_STORAGE_CLASS = {
+    "AUTO",
+    "CONSTEXPR",
+    "REGISTER",
+    "STATIC",
+    "EXTERN",
+    "TYPEDEF",
+    "_THREAD_LOCAL",
+}
 
 _FUNCTION_SPEC = {"INLINE", "_NORETURN"}
 

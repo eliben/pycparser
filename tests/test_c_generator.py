@@ -682,6 +682,29 @@ class TestCtoC(unittest.TestCase):
         self.assertIn("void *p = nullptr;", generated)
         self.assertIn('_Static_assert(true, "member");', generated)
 
+    def test_c23_constexpr(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            typedef int T;
+            constexpr T limit = 16;
+            int constexpr next = limit + 1;
+            static constexpr double scale = 0.5;
+            constexpr int values[] = {1, 2};
+            struct S { int x; };
+            constexpr struct S s = {.x = limit};
+            void f(void) {
+                constexpr bool enabled = true;
+                constexpr void *p = nullptr;
+                constexpr const int local = next;
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("constexpr T limit = 16;", generated)
+        self.assertIn("static constexpr double scale = 0.5;", generated)
+        self.assertIn("constexpr const int local = next;", generated)
+
     def test_static_assert_semicolons(self):
         self.assertEqual(
             self._assert_ctoc_correct('_Static_assert(1, "file");'),
