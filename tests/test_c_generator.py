@@ -799,6 +799,43 @@ class TestCtoC(unittest.TestCase):
         self.assertIn("_Atomic unsigned _BitInt(17) atomic;", generated)
         self.assertIn("for (unsigned _BitInt(8) i = 0, j = 1;", generated)
 
+    def test_digit_separators(self):
+        generated = self._assert_ctoc_correct("""
+            unsigned long long count = 1'000'000ULL;
+            int octal = 0'7'7;
+            int hex = 0xAB'CD;
+            int binary = 0b1010'0101;
+            float fraction = 1'234.56'78F;
+            double exponent = 1'2e-3'4;
+            long double hex_float = 0xA'B.C'Dp+1'0L;
+            int values[1'000];
+            void f(void) {
+                int sum = 1'000 + 2'000;
+                char quote = '\\'';
+                char *text = "1'000";
+            }
+        """)
+        self.assertIn("unsigned long long count = 1'000'000ULL;", generated)
+        self.assertIn("float fraction = 1'234.56'78F;", generated)
+        self.assertIn("long double hex_float = 0xA'B.C'Dp+1'0L;", generated)
+        self.assertIn("int values[1'000];", generated)
+
+    def test_c23_digit_separators(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            auto count = 1'000wb;
+            auto bits = 0b1010'0101UWB;
+            _Decimal32 price = 1'234.56'78df;
+            _Decimal64 scale = 1'0e-1'0DD;
+            _Decimal128 fraction = .1'25DL;
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("auto count = 1'000wb;", generated)
+        self.assertIn("auto bits = 0b1010'0101UWB;", generated)
+        self.assertIn("_Decimal32 price = 1'234.56'78df;", generated)
+
     def test_c23_bitint_literals(self):
         parser = c_parser.CParser(dialect="c23")
         source = """

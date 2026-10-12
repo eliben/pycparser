@@ -4336,6 +4336,111 @@ class TestCParser_bitint(TestCParser_base):
         self.assertEqual(visitor.ids, ["WIDTH"])
 
 
+class TestCParser_digit_separators(TestCParser_base):
+    def test_integer_constants_in_default_mode(self):
+        init = self.parse("int x = 1'000'000;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "int", "1'000'000"])
+
+        init = self.parse("int x = 0'7'7;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "int", "0'7'7"])
+
+        init = self.parse("int x = 0xAB'CD;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "int", "0xAB'CD"])
+
+        init = self.parse("int x = 0b1010'0101;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "int", "0b1010'0101"])
+
+    def test_floating_constants_in_default_mode(self):
+        init = self.parse("double x = 1'234.56'78;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "double", "1'234.56'78"])
+
+        init = self.parse("double x = .1'25;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "double", ".1'25"])
+
+        init = self.parse("double x = 1'000.;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "double", "1'000."])
+
+        init = self.parse("double x = 1'2e-3'4;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "double", "1'2e-3'4"])
+
+        init = self.parse("double x = 0xAB'CD.EF'01p+1'0;").ext[0].init
+        self.assertEqual(
+            expand_init(init), ["Constant", "double", "0xAB'CD.EF'01p+1'0"]
+        )
+
+    def test_suffixes(self):
+        init = self.parse("unsigned x = 1'000U;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned int", "1'000U"])
+
+        init = self.parse("long x = 1'000L;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "long int", "1'000L"])
+
+        init = self.parse("unsigned long long x = 0xFF'FFuLL;").ext[0].init
+        self.assertEqual(
+            expand_init(init), ["Constant", "unsigned long long int", "0xFF'FFuLL"]
+        )
+
+        init = self.parse("float x = 1.2'5F;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "float", "1.2'5F"])
+
+        init = self.parse("long double x = 0xA'B.p1'0L;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "long double", "0xA'B.p1'0L"])
+
+    def test_c23_constants(self):
+        parser = c_parser.CParser(dialect="c23")
+        init = parser.parse("auto x = 1'000;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "int", "1'000"])
+
+        init = parser.parse("auto x = 1'000wb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_BitInt", "1'000wb"])
+
+        init = parser.parse("auto x = 0b1010'0101UWB;").ext[0].init
+        self.assertEqual(
+            expand_init(init), ["Constant", "unsigned _BitInt", "0b1010'0101UWB"]
+        )
+
+        init = parser.parse("_Decimal32 x = 1'2.3'4e+1'0DF;").ext[0].init
+        self.assertEqual(
+            expand_init(init), ["Constant", "_Decimal32", "1'2.3'4e+1'0DF"]
+        )
+
+        init = parser.parse("_Decimal64 x = 1'000.00dd;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_Decimal64", "1'000.00dd"])
+
+        init = parser.parse("_Decimal128 x = .1'25DL;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_Decimal128", ".1'25DL"])
+
+    def test_separators_do_not_enable_c23_suffixes_in_legacy_mode(self):
+        self.assertRaises(ParseError, self.parse, "int x = 1'000wb;")
+        self.assertRaises(ParseError, self.parse, "int x = 1'000uwb;")
+        self.assertRaises(ParseError, self.parse, "double x = 1'000.0df;")
+        self.assertRaises(ParseError, self.parse, "double x = 1'000.0dd;")
+        self.assertRaises(ParseError, self.parse, "double x = 1'000.0dl;")
+
+    def test_invalid_separator_positions(self):
+        self.assertRaises(ParseError, self.parse, "int x = 1''000;")
+        self.assertRaises(ParseError, self.parse, "int x = 1'000';")
+        self.assertRaises(ParseError, self.parse, "int x = 0x'FF;")
+        self.assertRaises(ParseError, self.parse, "int x = 0b'10;")
+        self.assertRaises(ParseError, self.parse, "int x = 1'U;")
+        self.assertRaises(ParseError, self.parse, "int x = 0'8;")
+        self.assertRaises(ParseError, self.parse, "double x = 1'.0;")
+        self.assertRaises(ParseError, self.parse, "double x = 1.'0;")
+        self.assertRaises(ParseError, self.parse, "double x = 1'e2;")
+        self.assertRaises(ParseError, self.parse, "double x = 1e'2;")
+        self.assertRaises(ParseError, self.parse, "double x = 1e+'2;")
+        self.assertRaises(ParseError, self.parse, "double x = 0x1'p2;")
+        self.assertRaises(ParseError, self.parse, "double x = 0x1p'2;")
+
+    def test_coordinates_and_line_directives(self):
+        ast = self.parse("int x = 1'000, y = 2'000;", filename="digits.c")
+        self.assert_coord(ast.ext[0].init, 1, 9, "digits.c")
+        self.assert_coord(ast.ext[1].init, 1, 20, "digits.c")
+
+        ast = self.parse("#line 1'000\nint x = 2'000;", filename="digits.c")
+        self.assert_coord(ast.ext[0].init, 1000, 9, "digits.c")
+
+
 class TestCParser_bitint_literals(TestCParser_base):
     def setUp(self):
         self.cparser = c_parser.CParser(dialect="c23")

@@ -295,7 +295,7 @@ class CLexer:
                 self._error("line number missing in #line", self._pos + line_len)
             else:
                 try:
-                    self._lineno = int(pp_line)
+                    self._lineno = int(pp_line.replace("'", ""))
                 except ValueError:
                     self._error("invalid #line directive", self._pos + line_len)
                     return
@@ -317,7 +317,8 @@ class CLexer:
             fail("filename before line number in #line", pos)
             return
 
-        m = re.match(_decimal_constant, line[pos:])
+        # Line numbers allow digit separators, but no integer suffixes.
+        m = re.match(_decimal_digits, line[pos:])
         if not m:
             fail("invalid #line directive", pos)
             return
@@ -346,7 +347,7 @@ class CLexer:
             skip_ws()
             if pos >= line_len:
                 break
-            m = re.match(_decimal_constant, line[pos:])
+            m = re.match(_decimal_digits, line[pos:])
             if not m:
                 fail("invalid #line directive", pos)
                 return
@@ -488,10 +489,14 @@ _c23_keywords = {
 # valid C identifiers (K&R2: A.2.3), plus '$' (supported by some compilers)
 _identifier = r"[a-zA-Z_$][0-9a-zA-Z_$]*"
 
+# Accept digit separators in all dialects, retaining them in token values.
+# A quote must be between two digits of the appropriate base; it cannot
+# touch a prefix, decimal point, exponent marker/sign, or suffix.
+_decimal_digits = "[0-9](?:'?[0-9])*"
 _hex_prefix = "0[xX]"
-_hex_digits = "[0-9a-fA-F]+"
+_hex_digits = "[0-9a-fA-F](?:'?[0-9a-fA-F])*"
 _bin_prefix = "0[bB]"
-_bin_digits = "[01]+"
+_bin_digits = "[01](?:'?[01])*"
 
 # integer constants (K&R2: A.2.5.1)
 # C23 wb/WB allows u/U before or after it, but no long suffix. Recognize it
@@ -502,13 +507,13 @@ _integer_suffix_opt = (
     r"([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?"
 )
 _decimal_constant = (
-    "(0" + _integer_suffix_opt + ")|([1-9][0-9]*" + _integer_suffix_opt + ")"
+    "(0" + _integer_suffix_opt + ")|([1-9](?:'?[0-9])*" + _integer_suffix_opt + ")"
 )
-_octal_constant = "0[0-7]*" + _integer_suffix_opt
+_octal_constant = "0(?:'?[0-7])*" + _integer_suffix_opt
 _hex_constant = _hex_prefix + _hex_digits + _integer_suffix_opt
 _bin_constant = _bin_prefix + _bin_digits + _integer_suffix_opt
 
-_bad_octal_constant = "0[0-7]*[89]"
+_bad_octal_constant = "0(?:'?[0-7])*'?[89]"
 
 # comments are not supported
 _unsupported_c_style_comment = r"\/\*"
@@ -586,14 +591,23 @@ _u32string_literal = "U" + _string_literal
 _bad_string_literal = '"' + _string_char + "*" + _bad_escape + _string_char + '*"'
 
 # floating constants (K&R2: A.2.5.3)
-_exponent_part = r"""([eE][-+]?[0-9]+)"""
-_fractional_constant = r"""([0-9]*\.[0-9]+)|([0-9]+\.)"""
+_exponent_part = "([eE][-+]?" + _decimal_digits + ")"
+_fractional_constant = (
+    "(("
+    + _decimal_digits
+    + r")?\."
+    + _decimal_digits
+    + ")|("
+    + _decimal_digits
+    + r"\.)"
+)
 _unsuffixed_floating_constant = (
     "((("
     + _fractional_constant
     + ")"
     + _exponent_part
-    + "?)|([0-9]+"
+    + "?)|("
+    + _decimal_digits
     + _exponent_part
     + "))"
 )
@@ -601,7 +615,7 @@ _unsuffixed_floating_constant = (
 # outside C23. Each suffix must be entirely lowercase or uppercase.
 # The hexadecimal float pattern below keeps only f/F/l/L.
 _floating_constant = _unsuffixed_floating_constant + "(df|dd|dl|DF|DD|DL|[FfLl])?"
-_binary_exponent_part = r"""([pP][+-]?[0-9]+)"""
+_binary_exponent_part = "([pP][+-]?" + _decimal_digits + ")"
 _hex_fractional_constant = (
     "(((" + _hex_digits + r""")?\.""" + _hex_digits + ")|(" + _hex_digits + r"""\.))"""
 )

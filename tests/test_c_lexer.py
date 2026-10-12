@@ -93,6 +93,64 @@ class TestCLexerNoErrors(unittest.TestCase):
         # - is MINUS, the rest a constnant
         self.assertTokensTypes("-1", ["MINUS", "INT_CONST_DEC"])
 
+    def test_integer_digit_separators(self):
+        self.assertTokensTypes("1'000'000", ["INT_CONST_DEC"])
+        self.assertTokensTypes("0'7'7", ["INT_CONST_OCT"])
+        self.assertTokensTypes("0xAB'CD", ["INT_CONST_HEX"])
+        self.assertTokensTypes("0B1010'0101", ["INT_CONST_BIN"])
+        self.assertTokensTypes("1'000uLL", ["INT_CONST_DEC"])
+        self.assertTokensTypes("0XFF'FFwbU", ["INT_CONST_HEX"])
+
+        self.clex.input("1'000+2'000\n0xAB'CD")
+        self.assertEqual(
+            token_list(self.clex),
+            [
+                Token("INT_CONST_DEC", "1'000", 1, 1),
+                Token("PLUS", "+", 1, 6),
+                Token("INT_CONST_DEC", "2'000", 1, 7),
+                Token("INT_CONST_HEX", "0xAB'CD", 2, 1),
+            ],
+        )
+
+    def test_floating_digit_separators(self):
+        self.assertTokensTypes("1'234.56'78", ["FLOAT_CONST"])
+        self.assertTokensTypes(".1'25", ["FLOAT_CONST"])
+        self.assertTokensTypes("1'000.", ["FLOAT_CONST"])
+        self.assertTokensTypes("1'2e+3'4", ["FLOAT_CONST"])
+        self.assertTokensTypes("0'8.0", ["FLOAT_CONST"])
+        self.assertTokensTypes("0xAB'CD.EF'01p+1'0", ["HEX_FLOAT_CONST"])
+        self.assertTokensTypes("0x.A'Bp-1'0", ["HEX_FLOAT_CONST"])
+        self.assertTokensTypes("0xA'B.p1'0", ["HEX_FLOAT_CONST"])
+        self.assertTokensTypes("0xA'Bp1'0", ["HEX_FLOAT_CONST"])
+
+        self.clex.input("1'2.3'4e-5'6DF")
+        self.assertEqual(
+            token_list(self.clex),
+            [
+                Token("FLOAT_CONST", "1'2.3'4e-5'6DF", 1, 1),
+            ],
+        )
+
+    def test_digit_separators_and_quotes(self):
+        self.clex.input("'1'2 1'2 \"1'2\"")
+        self.assertEqual(
+            token_list(self.clex),
+            [
+                Token("CHAR_CONST", "'1'", 1, 1),
+                Token("INT_CONST_DEC", "2", 1, 4),
+                Token("INT_CONST_DEC", "1'2", 1, 6),
+                Token("STRING_LITERAL", '"1\'2"', 1, 10),
+            ],
+        )
+
+    def test_line_directive_digit_separators(self):
+        self.clex.input('#line 1\'000 "file.c"\nvalue')
+        self.assertEqual(token_list(self.clex), [Token("ID", "value", 1000, 1)])
+        self.assertEqual(self.clex.filename, "file.c")
+
+        self.clex.input("#line 0'010\nvalue")
+        self.assertEqual(token_list(self.clex), [Token("ID", "value", 10, 1)])
+
     def test_bitint_constants(self):
         # Numeric regexes are shared, so even the legacy lexer recognizes
         # these suffixes. The parser enforces C23.
@@ -716,6 +774,8 @@ class TestCLexerErrors(unittest.TestCase):
     def test_integer_constants(self):
         self.assertLexerError("029", ERR_OCTAL)
         self.assertLexerError("012345678", ERR_OCTAL)
+        self.assertLexerError("0'8", ERR_OCTAL)
+        self.assertLexerError("0'7'9", ERR_OCTAL)
 
     def test_char_constants(self):
         self.assertLexerError("'", ERR_UNMATCHED_QUOTE)
@@ -767,6 +827,8 @@ class TestCLexerErrors(unittest.TestCase):
         self.assertLexerError("#line 0u", ERR_INVALID_LINE_DIRECTIVE)
         self.assertLexerError("#line 1U", ERR_INVALID_LINE_DIRECTIVE)
         self.assertLexerError("#line 10uLL", ERR_INVALID_LINE_DIRECTIVE)
+        self.assertLexerError("#line 1'000u", ERR_INVALID_LINE_DIRECTIVE)
+        self.assertLexerError("#line 1''000", ERR_INVALID_LINE_DIRECTIVE)
         # a compatible preprocessor must remove comments.
         self.assertLexerError("//", ERR_COMMENT)
         self.assertLexerError("/*", ERR_COMMENT)
