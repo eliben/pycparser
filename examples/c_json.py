@@ -122,10 +122,13 @@ def to_dict(node: c_ast.Node) -> dict[str, Any]:
         else:
             result[child_name] = to_dict(child)
 
-    # Any child attributes that were missing need "None" values in the json.
+    # Preserve empty child lists and absent child nodes omitted by children().
     for child_attr in child_attrs_of(klass):
         if child_attr not in result:
-            result[child_attr] = None
+            if isinstance(getattr(node, child_attr), list):
+                result[child_attr] = []
+            else:
+                result[child_attr] = None
 
     return result
 
