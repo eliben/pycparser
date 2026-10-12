@@ -376,6 +376,37 @@ class TestCtoC(unittest.TestCase):
             struct test test_var = {.i = 0, .test_i = {.k = 1}, .j = 2};
         """)
 
+    def test_identifier_array_designators(self):
+        src = """
+            enum { x = 1, y = 0 };
+            struct A { int x[3]; };
+            struct A a[2] = { [x].x[y] = 7, [y].x[x + 1] = 9 };
+            int b[2][2] = { [x][y] = 13, [y][x] = 21 };
+            int c[2] = { [(x)] = 11 };
+            struct A d = { .x = { [x] = 17 } };
+            struct B { struct A items[2]; } e = { .items[x].x[y] = 19 };
+        """
+        generated = self._assert_ctoc_correct(src)
+        for designation in ("[x].x[y]", "[y].x[x + 1]", "[x][y]", "[y][x]"):
+            self.assertIn(designation + " =", generated)
+        self.assertIn("int c[2] = {[x] = 11};", generated)
+        self.assertIn("struct A d = {.x = {[x] = 17}};", generated)
+        self.assertIn(".items[x].x[y] = 19", generated)
+
+    def test_manual_named_initializer(self):
+        generator = c_generator.CGenerator()
+        names = [c_ast.ID("x"), c_ast.Constant("int", "0")]
+        value = c_ast.Constant("int", "1")
+        legacy = c_ast.NamedInitializer(names, value)
+        self.assertEqual(generator.visit(legacy), ".x[0] = 1")
+        explicit = c_ast.NamedInitializer(names, value, designator_types=["[", "["])
+        self.assertEqual(generator.visit(explicit), "[x][0] = 1")
+        for kinds in ([], ["["], ["[", "[", "["], ["?", "["]):
+            with self.subTest(kinds=kinds):
+                explicit.designator_types = kinds
+                with self.assertRaises(ValueError):
+                    generator.visit(explicit)
+
     def test_expr_list_in_initializer_list(self):
         self._assert_ctoc_correct(r"""
         int main()

@@ -2361,31 +2361,37 @@ class CParser:
             designation = self._parse_designation()
         init = self._parse_initializer()
         if designation is not None:
-            return c_ast.NamedInitializer(designation, init)
+            names, designator_types = designation
+            return c_ast.NamedInitializer(
+                names, init, designator_types=designator_types
+            )
         return init
 
     # BNF: designation : designator_list '='
-    def _parse_designation(self) -> list[c_ast.Node]:
+    def _parse_designation(self) -> tuple[list[c_ast.Node], list[str]]:
         designators = self._parse_designator_list()
         self._expect("EQUALS")
         return designators
 
     # BNF: designator_list : designator+
-    def _parse_designator_list(self) -> list[c_ast.Node]:
+    def _parse_designator_list(self) -> tuple[list[c_ast.Node], list[str]]:
         designators = []
+        designator_types = []
         while self._peek_type() in {"LBRACKET", "PERIOD"}:
-            designators.append(self._parse_designator())
-        return designators
+            designator, designator_type = self._parse_designator()
+            designators.append(designator)
+            designator_types.append(designator_type)
+        return designators, designator_types
 
     # BNF: designator : '[' constant_expression ']'
     #                | '.' identifier_or_typeid
-    def _parse_designator(self) -> c_ast.Node:
+    def _parse_designator(self) -> tuple[c_ast.Node, str]:
         if self._accept("LBRACKET"):
             expr = self._parse_constant_expression()
             self._expect("RBRACKET")
-            return expr
+            return expr, "["
         if self._accept("PERIOD"):
-            return self._parse_identifier_or_typeid()
+            return self._parse_identifier_or_typeid(), "."
         self._parse_error("Invalid designator", self.clex.filename)
 
     # ------------------------------------------------------------------

@@ -74,8 +74,12 @@ class NodeCfg:
         self.attr = []
         self.child = []
         self.seq_child = []
+        self.optional = []
 
         for entry in contents:
+            if entry.endswith("=None"):
+                entry = entry.removesuffix("=None")
+                self.optional.append(entry)
             clean_entry = entry.rstrip("*")
             self.all_entries.append(clean_entry)
 
@@ -97,10 +101,14 @@ class NodeCfg:
         src = f"class {self.name}(Node):\n"
 
         if self.all_entries:
-            args = ", ".join(self.all_entries)
+            args = ", ".join(e for e in self.all_entries if e not in self.optional)
             slots = ", ".join(f"'{e}'" for e in self.all_entries)
             slots += ", 'coord', '__weakref__'"
-            arglist = f"(self, {args}, coord=None)"
+            arglist = f"(self, {args}, coord=None" if args else "(self, coord=None"
+            if self.optional:
+                defaults = ", ".join(f"{name}=None" for name in self.optional)
+                arglist += f", *, {defaults}"
+            arglist += ")"
         else:
             slots = "'coord', '__weakref__'"
             arglist = "(self, coord=None)"

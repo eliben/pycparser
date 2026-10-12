@@ -2686,6 +2686,17 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_named_initializer_designator_types(self):
+        ast = self.parse("int a = { [x].x[0] = 1 };", filename="designators.c")
+        init = ast.ext[0].init.exprs[0]
+        self.assertEqual(init.designator_types, ["[", ".", "["])
+        self.assertEqual([type(node) for node in init.name], [ID, ID, Constant])
+        self.assertEqual([node.name for node in init.name[:2]], ["x", "x"])
+        self.assertEqual(init.name[2].value, "0")
+        for node, column in zip(init.name, [12, 15, 17]):
+            self.assert_coord(node, 1, column, "designators.c")
+        self.assertIsNone(init.coord)
+
     def test_function_definitions(self):
         def parse_fdef(str):
             return self.parse(str).ext[0]

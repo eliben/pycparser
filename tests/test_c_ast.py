@@ -1,13 +1,65 @@
+import ast
+import io
 import sys
 import unittest
 import weakref
+from pathlib import Path
 
 sys.path.insert(0, "..")
-from pycparser import c_ast
+from pycparser import _ast_gen, c_ast
 from pycparser.c_parser import Coord
 
 
 class Test_c_ast(unittest.TestCase):
+    def test_generated_ast_matches_config(self):
+        def normalized_ast(source):
+            tree = ast.parse(source)
+            for node in ast.walk(tree):
+                # The formatter also adjusts docstring whitespace.
+                if (
+                    isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef))
+                    and ast.get_docstring(node) is not None
+                ):
+                    node.body.pop(0)
+            return ast.dump(tree)
+
+        path = Path(c_ast.__file__)
+        generated = io.StringIO()
+        _ast_gen.ASTCodeGenerator(path.with_name("_c_ast.cfg")).generate(generated)
+        self.assertEqual(
+            normalized_ast(generated.getvalue()),
+            normalized_ast(path.read_text()),
+        )
+
+    def test_named_initializer_compatibility(self):
+        names = [c_ast.ID("x"), c_ast.Constant("int", "0")]
+        value = c_ast.Constant("int", "1")
+        coord = Coord("a.c", 2, 3)
+        for init in (
+            c_ast.NamedInitializer(names, value, coord),
+            c_ast.NamedInitializer(name=names, expr=value, coord=coord),
+            c_ast.NamedInitializer(names, value, coord, designator_types=["[", "["]),
+        ):
+            with self.subTest(kinds=init.designator_types):
+                self.assertIs(init.name, names)
+                self.assertIs(init.expr, value)
+                self.assertIs(init.coord, coord)
+                self.assertEqual(list(init), [value, *names])
+                self.assertEqual(
+                    init.children(),
+                    (("expr", value), ("name[0]", names[0]), ("name[1]", names[1])),
+                )
+                visitor = TestNodeVisitor.ConstantVisitor()
+                visitor.visit(init)
+                self.assertEqual(visitor.values, ["1", "0"])
+                self.assertIs(weakref.ref(init)(), init)
+                self.assertIn("designator_types=", repr(init))
+                output = io.StringIO()
+                init.show(buf=output, attrnames=True, showcoord=True)
+                self.assertIn("designator_types=", output.getvalue())
+                self.assertIn("a.c:2:3", output.getvalue())
+        self.assertIsNone(c_ast.NamedInitializer(names, value).designator_types)
+
     def test_BinaryOp(self):
         b1 = c_ast.BinaryOp(
             op="+",
