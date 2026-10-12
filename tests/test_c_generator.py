@@ -499,6 +499,53 @@ class TestCtoC(unittest.TestCase):
             } s;
         """)
 
+    def test_pragma_operator_literals(self):
+        literals = [
+            '""',
+            '"foo"',
+            r'"message(\"hello\")"',
+            r'"message(\"C:\\\\tmp\")"',
+            r'"foo\nbar"',
+            'L"foo"',
+            'u8"foo"',
+            'u"foo"',
+            'U"foo"',
+        ]
+        for literal in literals:
+            with self.subTest(literal=literal):
+                source = f"_Pragma(\n{literal}\n)\nint x;"
+                generated = self._assert_ctoc_correct(source)
+                self.assertEqual(generated, f"_Pragma({literal})\nint x;\n")
+
+    def test_pragma_operator_contexts(self):
+        self._assert_ctoc_correct(r"""
+            #pragma foo
+            _Pragma("bar")
+            void f(void) {
+                _Pragma("foo")
+                int x = 0;
+                if (x)
+                    _Pragma("bar")
+                    _Pragma("baz")
+                    x = 1;
+                label:
+                    _Pragma("qux")
+                    x++;
+                _Pragma("")
+            }
+            struct s {
+                _Pragma("foo")
+                int x;
+                _Pragma("bar")
+            };
+            union u {
+                _Pragma("baz")
+                int x;
+            };
+            _Pragma("")
+            #pragma
+        """)
+
     def test_compound_literal_statement(self):
         self._assert_ctoc_correct(
             "struct S { int x; }; void f(void) { (struct S){1}; }"
