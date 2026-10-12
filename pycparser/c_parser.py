@@ -18,7 +18,7 @@ from typing import (
 
 from . import c_ast
 from .ast_transforms import fix_atomic_specifiers, fix_switch_cases
-from .c_lexer import CLexer, Token
+from .c_lexer import CLexer, Dialect, Token
 
 
 @dataclass
@@ -52,8 +52,12 @@ class CParser:
         ast = parser.parse(text, filename)
 
     The `lexer` parameter lets you inject a lexer class (defaults to CLexer).
-    The parameters after `lexer` are accepted for backward compatibility with
-    the old PLY-based parser and are otherwise unused.
+    The positional parameters other than `lexer` are accepted for backward
+    compatibility with the old PLY-based parser and are otherwise unused.
+
+    The keyword-only `dialect` parameter selects keyword recognition: "legacy"
+    preserves existing behavior, while "c23" enables C23 spellings and predefined
+    constants.
     """
 
     def __init__(
@@ -65,12 +69,15 @@ class CParser:
         yacctab: str = "pycparser.yacctab",
         yacc_debug: bool = False,
         taboutputdir: str = "",
+        *,
+        dialect: Dialect = "legacy",
     ) -> None:
         self.clex: CLexer = lexer(
             error_func=self._lex_error_func,
             on_lbrace_func=self._lex_on_lbrace_func,
             on_rbrace_func=self._lex_on_rbrace_func,
             type_lookup_func=self._lex_type_lookup_func,
+            dialect=dialect,
         )
 
         # Stack of scopes for keeping track of symbols. _scope_stack[-1] is
@@ -1942,6 +1949,7 @@ class CParser:
             tok_type in _INT_CONST
             or tok_type in _FLOAT_CONST
             or tok_type in _CHAR_CONST
+            or tok_type in _PREDEFINED_CONST
         ):
             return self._parse_constant()
         if tok_type in _STRING_LITERAL:
@@ -2037,9 +2045,14 @@ class CParser:
             self._parse_error("Expected identifier", self._tok_coord(tok))
         return c_ast.ID(tok.value, self._tok_coord(tok))
 
-    # BNF: constant : INT_CONST | FLOAT_CONST | CHAR_CONST
+    # BNF: constant : INT_CONST | FLOAT_CONST | CHAR_CONST | predefined_constant
     def _parse_constant(self) -> c_ast.Node:
         tok = self._advance()
+        if tok.type in _PREDEFINED_CONST:
+            return c_ast.Constant(
+                _PREDEFINED_CONST[tok.type], tok.value, self._tok_coord(tok)
+            )
+
         if tok.type in _INT_CONST:
             u_count = 0
             l_count = 0
@@ -2349,6 +2362,8 @@ _INT_CONST = {
 
 _FLOAT_CONST = {"FLOAT_CONST", "HEX_FLOAT_CONST"}
 
+_PREDEFINED_CONST = {"BOOL_CONST": "bool", "NULLPTR": "nullptr_t"}
+
 _CHAR_CONST = {
     "CHAR_CONST",
     "WCHAR_CONST",
@@ -2366,7 +2381,12 @@ _STRING_LITERAL = {
 }
 
 _STARTS_EXPRESSION = (
-    _EXPR_START | _INT_CONST | _FLOAT_CONST | _CHAR_CONST | _STRING_LITERAL
+    _EXPR_START
+    | _INT_CONST
+    | _FLOAT_CONST
+    | _CHAR_CONST
+    | _STRING_LITERAL
+    | _PREDEFINED_CONST.keys()
 )
 
 _STARTS_STATEMENT = {

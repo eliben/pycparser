@@ -3510,6 +3510,164 @@ class TestCParser_generic_selection(TestCParser_base):
                 self.assertRaises(ParseError, self.parse, source)
 
 
+class TestCParser_dialects(unittest.TestCase):
+    def test_legacy_identifiers(self):
+        source = """
+            typedef int bool;
+            bool true = 1, false = 0;
+            int alignas, alignof, static_assert, thread_local;
+            int constexpr, typeof, typeof_unqual;
+            void *nullptr;
+            _Bool b = true;
+            void *p = nullptr;
+        """
+        for parser in (c_parser.CParser(), c_parser.CParser(dialect="legacy")):
+            ast = parser.parse(source)
+            self.assertIsInstance(ast.ext[0], Typedef)
+            self.assertEqual(ast.ext[1].type.type.names, ["bool"])
+            self.assertIsInstance(ast.ext[-2].init, ID)
+            self.assertEqual(ast.ext[-2].init.name, "true")
+            self.assertIsInstance(ast.ext[-1].init, ID)
+            self.assertEqual(ast.ext[-1].init.name, "nullptr")
+
+    def test_c23_keyword_aliases(self):
+        parser = c_parser.CParser(dialect="c23")
+        ast = parser.parse("""
+            alignas(16) thread_local bool flag = false;
+            int alignment = alignof(bool);
+            _Alignas(16) _Thread_local _Bool old_flag = 0;
+            int old_alignment = _Alignof(_Bool);
+        """)
+        flag, alignment, old_flag, old_alignment = ast.ext
+        self.assertEqual(flag.type.type.names, ["bool"])
+        self.assertEqual(flag.storage, ["thread_local"])
+        self.assertEqual(flag.align[0].alignment.value, "16")
+        self.assertEqual(alignment.init.op, "alignof")
+        self.assertEqual(alignment.init.expr.type.type.names, ["bool"])
+        self.assertEqual(old_flag.type.type.names, ["_Bool"])
+        self.assertEqual(old_flag.storage, ["_Thread_local"])
+        self.assertEqual(old_alignment.init.op, "_Alignof")
+
+    def test_c23_static_assert_contexts(self):
+        parser = c_parser.CParser(dialect="c23")
+        ast = parser.parse("""
+            static_assert(true);
+            struct S { static_assert(true, "member"); bool value; };
+            void f(void) { static_assert(!false); _Static_assert(true); }
+        """)
+        assertions = [
+            ast.ext[0],
+            ast.ext[1].type.decls[0],
+            *ast.ext[2].body.block_items,
+        ]
+        for node in assertions:
+            self.assertIsInstance(node, StaticAssert)
+        self.assertIsNone(assertions[0].message)
+        self.assertEqual(assertions[1].message.value, '"member"')
+
+    def test_c23_predefined_constants(self):
+        parser = c_parser.CParser(dialect="c23")
+        ast = parser.parse(
+            "bool t = true;\nbool f = false;\nvoid *p = nullptr;", "c23.c"
+        )
+        expected = [
+            ("bool", "true", 10),
+            ("bool", "false", 10),
+            ("nullptr_t", "nullptr", 11),
+        ]
+        for line, (decl, (typ, value, column)) in enumerate(
+            zip(ast.ext, expected), start=1
+        ):
+            node = decl.init
+            self.assertIsInstance(node, Constant)
+            self.assertEqual((node.type, node.value), (typ, value))
+            self.assertEqual(str(node.coord), f"c23.c:{line}:{column}")
+
+    def test_c23_constants_start_statements(self):
+        parser = c_parser.CParser(dialect="c23")
+        ast = parser.parse("""
+            void f(void) {
+                true; false; nullptr;
+                label: true;
+                if (true) false;
+                while (false) nullptr;
+            }
+        """)
+        stmts = ast.ext[0].body.block_items
+        for node, value in zip(stmts[:3], ("true", "false", "nullptr")):
+            self.assertIsInstance(node, Constant)
+            self.assertEqual(node.value, value)
+        self.assertIsInstance(stmts[3].stmt, Constant)
+        self.assertIsInstance(stmts[4].iftrue, Constant)
+        self.assertIsInstance(stmts[5].stmt, Constant)
+
+    def test_c23_reserved_identifiers(self):
+        parser = c_parser.CParser(dialect="c23")
+        for source in (
+            "typedef int bool; bool x;",
+            "int true;",
+            "int false;",
+            "void *nullptr;",
+            "int *alignas;",
+            "int *alignof;",
+            "int *static_assert;",
+            "int *thread_local;",
+        ):
+            with self.subTest(source=source):
+                self.assertRaises(ParseError, parser.parse, source)
+
+    def test_c23_unsupported_keywords_are_reserved(self):
+        parser = c_parser.CParser(dialect="c23")
+        legacy = c_parser.CParser()
+        for keyword in (
+            "constexpr",
+            "typeof",
+            "typeof_unqual",
+            "_BitInt",
+            "_Decimal32",
+            "_Decimal64",
+            "_Decimal128",
+            "_Imaginary",
+        ):
+            with self.subTest(keyword=keyword):
+                source = f"int {keyword};"
+                self.assertEqual(legacy.parse(source).ext[0].name, keyword)
+                self.assertRaises(ParseError, parser.parse, source)
+        for source in (
+            "constexpr int x = 1;",
+            "typeof(int) x;",
+            "typeof_unqual(const int) x;",
+            "unsigned _BitInt(17) x;",
+            "_Decimal32 x;",
+            "_Decimal64 x;",
+            "_Decimal128 x;",
+            "_Imaginary double x;",
+        ):
+            with self.subTest(source=source):
+                self.assertRaises(ParseError, parser.parse, source)
+
+    def test_dialect_isolation_and_parser_reuse(self):
+        legacy = c_parser.CParser()
+        c23 = c_parser.CParser(dialect="c23")
+        another_legacy = c_parser.CParser(dialect="legacy")
+        for _ in range(2):
+            for parser, expected_type in (
+                (legacy, ID),
+                (c23, Constant),
+                (another_legacy, ID),
+            ):
+                with self.subTest(expected_type=expected_type):
+                    ast = parser.parse("_Bool b = true; void *p = nullptr;")
+                    for decl in ast.ext:
+                        self.assertIsInstance(decl.init, expected_type)
+            legacy.parse("typedef int bool; bool x;")
+            self.assertRaises(ParseError, c23.parse, "typedef int bool;")
+
+    def test_invalid_dialect(self):
+        with self.assertRaisesRegex(ValueError, "Unknown dialect"):
+            c_parser.CParser(dialect="c99")  # ty: ignore[invalid-argument-type]
+
+
 class TestUnmatchedRbrace(unittest.TestCase):
     """Regression for #603: unmatched '}' raises ParseError, not AssertionError."""
 

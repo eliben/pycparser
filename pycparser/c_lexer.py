@@ -10,6 +10,9 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
+from typing import Literal
+
+Dialect = Literal["legacy", "c23"]
 
 
 @dataclass(slots=True)
@@ -34,6 +37,9 @@ class CLexer:
         type_lookup_func:
             Called with an identifier name; expected to return True if it is
             a typedef name and should be tokenized as TYPEID.
+        dialect:
+            "legacy" preserves the existing keyword set. "c23" also recognizes
+            C23 keywords and predefined constants.
 
     Call input(text) to initialize lexing, and then keep calling token() to
     get the next token, until it returns None (at end of input).
@@ -45,7 +51,15 @@ class CLexer:
         on_lbrace_func: Callable[[], None],
         on_rbrace_func: Callable[[], None],
         type_lookup_func: Callable[[str], bool],
+        *,
+        dialect: Dialect = "legacy",
     ) -> None:
+        if dialect not in ("legacy", "c23"):
+            raise ValueError(f"Unknown dialect {dialect!r}; expected 'legacy' or 'c23'")
+        self._keyword_map = _keyword_map.copy()
+        if dialect == "c23":
+            self._keyword_map.update(_c23_keywords)
+
         self.error_func = error_func
         self.on_lbrace_func = on_lbrace_func
         self.on_rbrace_func = on_rbrace_func
@@ -205,7 +219,7 @@ class CLexer:
                 self._pos += max(1, length)
                 return None
             case _RegexAction.ID:
-                tok_type = _keyword_map.get(value, "ID")
+                tok_type = self._keyword_map.get(value, "ID")
                 if tok_type == "ID" and self.type_lookup_func(value):
                     tok_type = "TYPEID"
             case _:
@@ -443,6 +457,27 @@ for keyword in _keywords:
         _keyword_map[keyword[:2].upper() + keyword[2:].lower()] = keyword
     else:
         _keyword_map[keyword.lower()] = keyword
+
+# Alternate spellings share token types with the existing grammar. The other
+# keywords are reserved even where the parser does not yet support their syntax.
+_c23_keywords = {
+    "alignas": "_ALIGNAS",
+    "alignof": "_ALIGNOF",
+    "bool": "_BOOL",
+    "static_assert": "_STATIC_ASSERT",
+    "thread_local": "_THREAD_LOCAL",
+    "true": "BOOL_CONST",
+    "false": "BOOL_CONST",
+    "nullptr": "NULLPTR",
+    "constexpr": "CONSTEXPR",
+    "typeof": "TYPEOF",
+    "typeof_unqual": "TYPEOF_UNQUAL",
+    "_BitInt": "_BITINT",
+    "_Decimal32": "_DECIMAL32",
+    "_Decimal64": "_DECIMAL64",
+    "_Decimal128": "_DECIMAL128",
+    "_Imaginary": "_IMAGINARY",
+}
 
 ##
 ## Regexes for use in tokens

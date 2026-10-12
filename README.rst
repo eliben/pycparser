@@ -53,6 +53,21 @@ Which version of C does pycparser support?
 ISO/IEC 9899). Some features from C11 are also supported, and patches to support
 more are welcome.
 
+``CParser()`` defaults to ``dialect="legacy"``, which preserves the existing mix
+of supported features and extensions. Select ``CParser(dialect="c23")`` to
+recognize ``bool``, ``alignas``, ``alignof``, ``static_assert``, and
+``thread_local`` as keywords, and ``true``, ``false``, and ``nullptr`` as
+constants. The constants use AST ``Constant`` nodes with types ``bool`` and
+``nullptr_t`` and retain their source spelling. The older underscored keyword
+spellings remain supported.
+
+C23 support is partial. Other C23 keywords, including ``constexpr``, ``typeof``,
+``typeof_unqual``, ``_BitInt``, ``_Decimal32``, ``_Decimal64``, ``_Decimal128``, and
+``_Imaginary``, are reserved in this mode but their syntax is not yet supported.
+The dialect controls keyword recognition, not strict standards conformance;
+features already accepted in legacy mode remain available. The dialect is
+selected when constructing the parser and applies to all subsequent parses.
+
 **pycparser** supports very few GCC extensions, but it's fairly easy to set
 things up so that it parses code with a lot of GCC-isms successfully. See the
 `FAQ <https://github.com/eliben/pycparser/wiki/FAQ>`_ for more details.
@@ -148,6 +163,20 @@ of using **pycparser**. These should be enough to get you started. Please note
 that most realistic C code samples would require running the C preprocessor
 before passing the code to **pycparser**; see the previous sections for more
 details.
+
+For example, to parse C23 source with a preprocessor that supports ``-std=c23``::
+
+    from pycparser import CParser, parse_file
+
+    ast = parse_file(
+        "example.c",
+        use_cpp=True,
+        cpp_args=["-std=c23"],
+        parser=CParser(dialect="c23"),
+    )
+
+The parser's dialect does not configure the external preprocessor; select its
+language mode separately through ``cpp_args``.
 
 .. |examples| replace:: ``examples``
 .. _examples: examples

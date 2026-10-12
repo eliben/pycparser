@@ -1,9 +1,10 @@
 import os
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, "..")
-from pycparser import c_ast, parse_file
+from pycparser import CParser, c_ast, parse_file
 from tests.test_util import cpp_args, cpp_path, cpp_supported
 
 
@@ -22,6 +23,17 @@ class TestParsing(unittest.TestCase):
     def test_without_cpp(self):
         ast = parse_file(self._find_file("example_c_file.c"))
         self.assertIsInstance(ast, c_ast.FileAST)
+
+    def test_c23_parser(self):
+        with tempfile.TemporaryDirectory() as directory:
+            filename = os.path.join(directory, "c23.c")
+            with open(filename, "w", encoding="utf-8") as source:
+                source.write("bool flag = true; void *p = nullptr;")
+            ast = parse_file(filename, parser=CParser(dialect="c23"))
+        self.assertEqual(ast.ext[0].type.type.names, ["bool"])
+        for decl, typ in zip(ast.ext, ("bool", "nullptr_t")):
+            self.assertIsInstance(decl.init, c_ast.Constant)
+            self.assertEqual(decl.init.type, typ)
 
     @unittest.skipUnless(cpp_supported(), "cpp only works on Unix")
     def test_with_cpp(self):

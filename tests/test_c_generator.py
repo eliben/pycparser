@@ -661,6 +661,27 @@ class TestCtoC(unittest.TestCase):
         )
         self._assert_ctoc_correct("_Static_assert(sizeof(int) == sizeof(int));")
 
+    def test_c23_keywords(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            alignas(16) thread_local bool flag = true;
+            _Thread_local _Bool old_flag = 0;
+            bool flags[2] = {true, false};
+            void *p = nullptr;
+            static_assert(alignof(bool) == _Alignof(_Bool));
+            struct S { static_assert(true, "member"); bool value; };
+            bool f(bool x) {
+                static_assert(!false);
+                return x ? true : false;
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("thread_local _Alignas(16) bool flag = true;", generated)
+        self.assertIn("void *p = nullptr;", generated)
+        self.assertIn('_Static_assert(true, "member");', generated)
+
     def test_static_assert_semicolons(self):
         self.assertEqual(
             self._assert_ctoc_correct('_Static_assert(1, "file");'),

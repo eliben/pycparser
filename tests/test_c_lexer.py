@@ -103,6 +103,59 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("_Generic", ["_GENERIC"])
         self.assertTokensTypes("_Generic_value _generic", ["ID", "ID"])
 
+    def test_c23_keywords_and_typedef_lookup(self):
+        source = (
+            "bool alignas alignof static_assert thread_local true false nullptr "
+            "constexpr typeof typeof_unqual _BitInt _Decimal32 _Decimal64 "
+            "_Decimal128 _Imaginary bool_value True nullptr_t"
+        )
+        c23 = CLexer(
+            self.error_func,
+            lambda: None,
+            lambda: None,
+            lambda name: True,
+            dialect="c23",
+        )
+        expected = [
+            "_BOOL",
+            "_ALIGNAS",
+            "_ALIGNOF",
+            "_STATIC_ASSERT",
+            "_THREAD_LOCAL",
+            "BOOL_CONST",
+            "BOOL_CONST",
+            "NULLPTR",
+            "CONSTEXPR",
+            "TYPEOF",
+            "TYPEOF_UNQUAL",
+            "_BITINT",
+            "_DECIMAL32",
+            "_DECIMAL64",
+            "_DECIMAL128",
+            "_IMAGINARY",
+            "TYPEID",
+            "TYPEID",
+            "TYPEID",
+        ]
+        # input() must preserve the dialect, and selecting it must not affect
+        # another lexer's keyword map.
+        for _ in range(2):
+            self.assertTokensTypes(source, ["ID"] * len(source.split()))
+            c23.input(source)
+            tokens = token_list(c23)
+            self.assertEqual([tok.type for tok in tokens], expected)
+            self.assertEqual([tok.value for tok in tokens], source.split())
+
+    def test_invalid_dialect(self):
+        with self.assertRaisesRegex(ValueError, "Unknown dialect"):
+            CLexer(
+                self.error_func,
+                lambda: None,
+                lambda: None,
+                self.type_lookup_func,
+                dialect="c99",  # ty: ignore[invalid-argument-type]
+            )
+
     def test_floating_constants(self):
         self.assertTokensTypes("1.5f", ["FLOAT_CONST"])
         self.assertTokensTypes("01.5", ["FLOAT_CONST"])
