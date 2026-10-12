@@ -168,6 +168,16 @@ def _fix_atomic_specifiers_once(
 
     assert isinstance(parent, c_ast.TypeDecl)
     assert grandparent is not None
+    # _Atomic(T) cannot wrap an array or function type (C11 6.7.3p3). Such a T
+    # has no `quals` to merge below, so report it instead of letting the attach
+    # raise AttributeError out of parse().
+    if isinstance(node.type, (c_ast.ArrayDecl, c_ast.FuncDecl)):
+        # Imported here to avoid a circular import at module load time.
+        from .c_parser import ParseError
+
+        raise ParseError(
+            f"{node.coord}: _Atomic cannot be applied to array or function type"
+        )
     # Declaration specifiers are shared by comma-separated declarators. Copy
     # the contained type before attaching qualifiers, coordinates, and a name.
     typ = deepcopy(node.type)

@@ -1131,6 +1131,20 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_atomic_specifier_rejects_array_and_function(self):
+        # _Atomic cannot wrap an array or function type (C11 6.7.3p3). These
+        # must raise ParseError rather than crash with AttributeError.
+        for s in (
+            "_Atomic(char[3]) a;",
+            "_Atomic(int[]) a;",
+            "_Atomic(char*[3]) a;",
+            "_Atomic(void(int)) f;",
+            "typedef _Atomic(char[3]) t;",
+            "void g(_Atomic(char[3]));",
+        ):
+            with self.assertRaises(ParseError):
+                self.parse(s)
+
     def test_atomic_specifier_qualifiers(self):
         decl = self.parse("const _Atomic(volatile int *) p;").ext[0]
         # The outer const qualifies the atomic pointer, while volatile stays
