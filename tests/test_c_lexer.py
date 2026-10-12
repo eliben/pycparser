@@ -174,6 +174,73 @@ class TestCLexerNoErrors(unittest.TestCase):
         # but this is a hex integer + 3
         self.assertTokensTypes("0x0666e+3", ["INT_CONST_HEX", "PLUS", "INT_CONST_DEC"])
 
+    def test_c23_decimal_floating_constants(self):
+        c23 = CLexer(
+            self.error_func,
+            lambda: None,
+            lambda: None,
+            self.type_lookup_func,
+            dialect="c23",
+        )
+        c23.input("1.25df\n2.50dd\n.3dl\n4e+2DF\n5e-1DD\n6.DL")
+        self.assertEqual(
+            token_list(c23),
+            [
+                Token("FLOAT_CONST", "1.25df", 1, 1),
+                Token("FLOAT_CONST", "2.50dd", 2, 1),
+                Token("FLOAT_CONST", ".3dl", 3, 1),
+                Token("FLOAT_CONST", "4e+2DF", 4, 1),
+                Token("FLOAT_CONST", "5e-1DD", 5, 1),
+                Token("FLOAT_CONST", "6.DL", 6, 1),
+            ],
+        )
+
+        c23.input("1.25df+2.50dd")
+        self.assertEqual(
+            token_list(c23),
+            [
+                Token("FLOAT_CONST", "1.25df", 1, 1),
+                Token("PLUS", "+", 1, 7),
+                Token("FLOAT_CONST", "2.50dd", 1, 8),
+            ],
+        )
+
+    def test_decimal_literals_in_legacy_lexer(self):
+        # Literal recognition is shared; the parser enforces the dialect.
+        self.clex.input("1.25df 2.dd 3e1DL")
+        self.assertEqual(
+            token_list(self.clex),
+            [
+                Token("FLOAT_CONST", "1.25df", 1, 1),
+                Token("FLOAT_CONST", "2.dd", 1, 8),
+                Token("FLOAT_CONST", "3e1DL", 1, 13),
+            ],
+        )
+
+        self.clex.input(".5DD")
+        self.assertEqual(token_list(self.clex), [Token("FLOAT_CONST", ".5DD", 1, 1)])
+
+    def test_c23_binary_floating_constants(self):
+        c23 = CLexer(
+            self.error_func,
+            lambda: None,
+            lambda: None,
+            self.type_lookup_func,
+            dialect="c23",
+        )
+        c23.input("1.5\n1.5f\n.5L\n0x1.fp+2F\n0x1p0dd")
+        self.assertEqual(
+            token_list(c23),
+            [
+                Token("FLOAT_CONST", "1.5", 1, 1),
+                Token("FLOAT_CONST", "1.5f", 2, 1),
+                Token("FLOAT_CONST", ".5L", 3, 1),
+                Token("HEX_FLOAT_CONST", "0x1.fp+2F", 4, 1),
+                Token("HEX_FLOAT_CONST", "0x1p0", 5, 1),
+                Token("ID", "dd", 5, 6),
+            ],
+        )
+
     def test_hexadecimal_floating_constants(self):
         self.assertTokensTypes("0xDE.488641p0", ["HEX_FLOAT_CONST"])
         self.assertTokensTypes("0x.488641p0", ["HEX_FLOAT_CONST"])

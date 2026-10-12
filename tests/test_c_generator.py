@@ -799,6 +799,36 @@ class TestCtoC(unittest.TestCase):
         self.assertIn("_Atomic unsigned _BitInt(17) atomic;", generated)
         self.assertIn("for (unsigned _BitInt(8) i = 0, j = 1;", generated)
 
+    def test_c23_decimal_float(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            typedef _Decimal64 Money;
+            constexpr _Decimal32 price = 1.25df;
+            const _Decimal64 total = 100.00DD;
+            _Decimal128 precise = .1dl;
+            _Decimal32 values[] = {1.DF, 2e-1df};
+            _Decimal64 *pointer, array[2];
+            _Atomic(_Decimal32) atomic;
+            typeof_unqual(const _Decimal128) unqualified;
+            struct S { _Decimal64 amount; };
+            _Decimal128 f(_Decimal32 input) {
+                auto sum = 1.0df + 2.0DF;
+                Money result = (_Decimal64)input + 1e+2dd;
+                auto literal = (_Decimal128){3.00DL};
+                auto selection = _Generic(input, _Decimal32: 1, default: 0);
+                auto size = sizeof(_Decimal64);
+                return 0.5DL;
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("constexpr _Decimal32 price = 1.25df;", generated)
+        self.assertIn("const _Decimal64 total = 100.00DD;", generated)
+        self.assertIn("_Decimal128 precise = .1dl;", generated)
+        self.assertIn("_Decimal32 values[] = {1.DF, 2e-1df};", generated)
+        self.assertIn("_Atomic _Decimal32 atomic;", generated)
+
     def test_static_assert_semicolons(self):
         self.assertEqual(
             self._assert_ctoc_correct('_Static_assert(1, "file");'),

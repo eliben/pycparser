@@ -3655,6 +3655,9 @@ class TestCParser_dialects(unittest.TestCase):
             "int *typeof;",
             "int *typeof_unqual;",
             "int *_BitInt;",
+            "int *_Decimal32;",
+            "int *_Decimal64;",
+            "int *_Decimal128;",
         ):
             with self.subTest(source=source):
                 self.assertRaises(ParseError, parser.parse, source)
@@ -3662,24 +3665,9 @@ class TestCParser_dialects(unittest.TestCase):
     def test_c23_unsupported_keywords_are_reserved(self):
         parser = c_parser.CParser(dialect="c23")
         legacy = c_parser.CParser()
-        for keyword in (
-            "_Decimal32",
-            "_Decimal64",
-            "_Decimal128",
-            "_Imaginary",
-        ):
-            with self.subTest(keyword=keyword):
-                source = f"int {keyword};"
-                self.assertEqual(legacy.parse(source).ext[0].name, keyword)
-                self.assertRaises(ParseError, parser.parse, source)
-        for source in (
-            "_Decimal32 x;",
-            "_Decimal64 x;",
-            "_Decimal128 x;",
-            "_Imaginary double x;",
-        ):
-            with self.subTest(source=source):
-                self.assertRaises(ParseError, parser.parse, source)
+        self.assertEqual(legacy.parse("int _Imaginary;").ext[0].name, "_Imaginary")
+        self.assertRaises(ParseError, parser.parse, "int _Imaginary;")
+        self.assertRaises(ParseError, parser.parse, "_Imaginary double x;")
 
     def test_dialect_isolation_and_parser_reuse(self):
         legacy = c_parser.CParser()
@@ -4346,6 +4334,200 @@ class TestCParser_bitint(TestCParser_base):
         visitor.visit(ast)
         self.assertEqual(visitor.types, [typ])
         self.assertEqual(visitor.ids, ["WIDTH"])
+
+
+class TestCParser_decimal_float(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_decimal32(self):
+        decl = self.parse("_Decimal32 price = 1.25df;").ext[0]
+        self.assertEqual(decl.type.type.names, ["_Decimal32"])
+        self.assertEqual(expand_init(decl.init), ["Constant", "_Decimal32", "1.25df"])
+
+    def test_decimal64(self):
+        decl = self.parse("_Decimal64 total = 100.00dd;").ext[0]
+        self.assertEqual(decl.type.type.names, ["_Decimal64"])
+        self.assertEqual(expand_init(decl.init), ["Constant", "_Decimal64", "100.00dd"])
+
+    def test_decimal128(self):
+        decl = self.parse("_Decimal128 precise = 0.1dl;").ext[0]
+        self.assertEqual(decl.type.type.names, ["_Decimal128"])
+        self.assertEqual(expand_init(decl.init), ["Constant", "_Decimal128", "0.1dl"])
+
+    def test_uppercase_suffixes(self):
+        init = self.parse("_Decimal32 x = 1.25DF;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_Decimal32", "1.25DF"])
+
+        init = self.parse("_Decimal64 x = 100.00DD;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_Decimal64", "100.00DD"])
+
+        init = self.parse("_Decimal128 x = 0.1DL;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_Decimal128", "0.1DL"])
+
+    def test_fractional_and_exponent_forms(self):
+        zero, fraction, exponent, combined = self.parse("""
+            auto zero = 0.dd;
+            auto fraction = .5df;
+            auto exponent = 12e-2dl;
+            auto combined = 1.5e+2DF;
+        """).ext
+        self.assertEqual(expand_init(zero.init), ["Constant", "_Decimal64", "0.dd"])
+        self.assertEqual(expand_init(fraction.init), ["Constant", "_Decimal32", ".5df"])
+        self.assertEqual(
+            expand_init(exponent.init), ["Constant", "_Decimal128", "12e-2dl"]
+        )
+        self.assertEqual(
+            expand_init(combined.init), ["Constant", "_Decimal32", "1.5e+2DF"]
+        )
+
+    def test_declaration_contexts(self):
+        ast = self.parse("""
+            typedef _Decimal64 Money;
+            const _Decimal32 *pointer;
+            _Decimal128 array[2];
+            struct S { _Decimal64 amount; };
+            _Decimal64 f(_Decimal32 arg, _Decimal128) {
+                constexpr _Decimal64 rate = 0.05dd;
+                Money result = rate;
+                return result;
+            }
+        """)
+        typedef, pointer, array, struct, func = ast.ext
+        self.assertEqual(typedef.type.type.names, ["_Decimal64"])
+        self.assertIsInstance(pointer.type, PtrDecl)
+        self.assertEqual(pointer.type.type.quals, ["const"])
+        self.assertEqual(pointer.type.type.type.names, ["_Decimal32"])
+        self.assertIsInstance(array.type, ArrayDecl)
+        self.assertEqual(array.type.type.type.names, ["_Decimal128"])
+        self.assertEqual(struct.type.decls[0].type.type.names, ["_Decimal64"])
+        self.assertEqual(func.decl.type.type.type.names, ["_Decimal64"])
+        named, unnamed = func.decl.type.args.params
+        self.assertEqual(named.type.type.names, ["_Decimal32"])
+        self.assertEqual(unnamed.type.type.names, ["_Decimal128"])
+        rate, result, _ = func.body.block_items
+        self.assertEqual(rate.storage, ["constexpr"])
+        self.assertEqual(rate.init.type, "_Decimal64")
+        self.assertEqual(result.type.type.names, ["Money"])
+
+    def test_type_name_contexts(self):
+        ast = self.parse("""
+            alignas(_Decimal64) int aligned;
+            _Atomic(_Decimal32) atomic;
+            typeof_unqual(const _Decimal128) value;
+            void f(void) {
+                sizeof(_Decimal32);
+                alignof(_Decimal64);
+                (_Decimal128)1;
+                (_Decimal64){2.dd};
+                _Generic(1.df, _Decimal32: 1, default: 0);
+            }
+        """)
+        self.assertEqual(ast.ext[0].align[0].alignment.type.type.names, ["_Decimal64"])
+        self.assertEqual(ast.ext[1].quals, ["_Atomic"])
+        self.assertEqual(ast.ext[1].type.type.names, ["_Decimal32"])
+        self.assertEqual(ast.ext[2].type.type.expr.type.type.names, ["_Decimal128"])
+        size, align, cast, literal, generic = ast.ext[3].body.block_items
+        self.assertEqual(size.expr.type.type.names, ["_Decimal32"])
+        self.assertEqual(align.expr.type.type.names, ["_Decimal64"])
+        self.assertEqual(cast.to_type.type.type.names, ["_Decimal128"])
+        self.assertEqual(literal.type.type.type.names, ["_Decimal64"])
+        self.assertEqual(generic.associations[0].type.type.type.names, ["_Decimal32"])
+
+    def test_literals_in_expressions_and_statements(self):
+        ast = self.parse("""
+            void f(void) {
+                1.25df;
+                -2.5dd;
+                auto sum = 1.df + 2.df;
+                consume(3.dl);
+                if (1.DF) 2.DD; else 3.DL;
+            }
+        """)
+        constant, negative, sum_decl, call, conditional = ast.ext[0].body.block_items
+        self.assertEqual(expand_init(constant), ["Constant", "_Decimal32", "1.25df"])
+        self.assertEqual(negative.op, "-")
+        self.assertEqual(
+            expand_init(negative.expr), ["Constant", "_Decimal64", "2.5dd"]
+        )
+        self.assertEqual(sum_decl.init.op, "+")
+        self.assertEqual(sum_decl.init.left.type, "_Decimal32")
+        self.assertEqual(sum_decl.init.right.type, "_Decimal32")
+        self.assertEqual(call.args.exprs[0].type, "_Decimal128")
+        self.assertEqual(conditional.cond.type, "_Decimal32")
+        self.assertEqual(conditional.iftrue.type, "_Decimal64")
+        self.assertEqual(conditional.iffalse.type, "_Decimal128")
+
+    def test_binary_floating_constants(self):
+        double, float_decl, long_double, hex_float = self.parse("""
+            double x = 1.25;
+            float y = 1.25f;
+            long double z = 1.25L;
+            float h = 0x1.fp2F;
+        """).ext
+        self.assertEqual(double.init.type, "double")
+        self.assertEqual(float_decl.init.type, "float")
+        self.assertEqual(long_double.init.type, "long double")
+        self.assertEqual(hex_float.init.type, "float")
+
+    def test_invalid_suffixes(self):
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0dF;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0Df;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0dD;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0Dd;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0dL;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0Dl;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0fdf;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0ddL;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0ddextra;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1df;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1dd;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1dl;")
+
+    def test_hexadecimal_decimal_suffixes(self):
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1p0df;")
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1p0dd;")
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1p0dl;")
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1.fp+2DF;")
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1.fp+2DD;")
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1.fp+2DL;")
+
+    def test_legacy_mode_and_reuse(self):
+        parser = c_parser.CParser()
+        names = parser.parse("int _Decimal32, _Decimal64, _Decimal128;").ext
+        self.assertEqual(names[0].name, "_Decimal32")
+        self.assertEqual(names[1].name, "_Decimal64")
+        self.assertEqual(names[2].name, "_Decimal128")
+        self.assertRaises(ParseError, parser.parse, "_Decimal32 x;")
+        self.assertRaises(ParseError, parser.parse, "_Decimal64 x;")
+        self.assertRaises(ParseError, parser.parse, "_Decimal128 x;")
+        self.assertRaises(ParseError, parser.parse, "double x = 1.25df;")
+        self.assertRaises(ParseError, parser.parse, "double x = 1.25dd;")
+        self.assertRaises(ParseError, parser.parse, "double x = 1.25dl;")
+        self.assertRaises(ParseError, parser.parse, "double x = 1.25DF;")
+        self.assertRaises(ParseError, parser.parse, "double x = 1.25DD;")
+        self.assertRaises(ParseError, parser.parse, "double x = 1.25DL;")
+
+        self.assertEqual(
+            self.parse("_Decimal32 x = 1.df;").ext[0].init.type, "_Decimal32"
+        )
+        self.assertEqual(parser.parse("double x = 1.;").ext[0].init.type, "double")
+        self.assertEqual(
+            self.parse("_Decimal64 x = 1.dd;").ext[0].init.type, "_Decimal64"
+        )
+        self.assertRaises(ParseError, parser.parse, "double x = 1.dd;")
+
+    def test_coordinates(self):
+        ast = self.parse("_Decimal64 x = 1.25dd;", filename="decimal.c")
+        self.assert_coord(ast.ext[0].type.type, 1, 1, "decimal.c")
+        self.assert_coord(ast.ext[0].init, 1, 16, "decimal.c")
+
+    def test_legacy_literal_diagnostic(self):
+        parser = c_parser.CParser(dialect="legacy")
+        with self.assertRaisesRegex(
+            ParseError, "decimal.c:1:12: Decimal floating constants require C23"
+        ):
+            parser.parse("double x = 1.25dd;", filename="decimal.c")
 
 
 class TestUnmatchedRbrace(unittest.TestCase):

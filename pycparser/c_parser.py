@@ -2177,12 +2177,25 @@ class CParser:
             return c_ast.Constant(prefix + "int", tok.value, self._tok_coord(tok))
 
         if tok.type in _FLOAT_CONST:
-            if tok.value[-1] in ("f", "F"):
+            if tok.value[-2:] in {"df", "DF"}:
+                t = "_Decimal32"
+            elif tok.value[-2:] in {"dd", "DD"}:
+                t = "_Decimal64"
+            elif tok.value[-2:] in {"dl", "DL"}:
+                t = "_Decimal128"
+            elif tok.value[-1] in ("f", "F"):
                 t = "float"
             elif tok.value[-1] in ("l", "L"):
                 t = "long double"
             else:
                 t = "double"
+            if (
+                t in {"_Decimal32", "_Decimal64", "_Decimal128"}
+                and self._dialect != "c23"
+            ):
+                self._parse_error(
+                    "Decimal floating constants require C23", self._tok_coord(tok)
+                )
             return c_ast.Constant(t, tok.value, self._tok_coord(tok))
 
         if tok.type in _CHAR_CONST:
@@ -2439,6 +2452,9 @@ _TYPE_SPEC_SIMPLE = {
     "LONG",
     "FLOAT",
     "DOUBLE",
+    "_DECIMAL32",
+    "_DECIMAL64",
+    "_DECIMAL128",
     "_COMPLEX",
     "SIGNED",
     "UNSIGNED",

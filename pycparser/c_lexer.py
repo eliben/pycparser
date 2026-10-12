@@ -56,6 +56,8 @@ class CLexer:
     ) -> None:
         if dialect not in ("legacy", "c23"):
             raise ValueError(f"Unknown dialect {dialect!r}; expected 'legacy' or 'c23'")
+        # Select keywords once per lexer. input() resets the scanning state
+        # without changing this map or affecting lexers using another dialect.
         self._keyword_map = _keyword_map.copy()
         if dialect == "c23":
             self._keyword_map.update(_c23_keywords)
@@ -533,8 +535,7 @@ _unicode_escape = r"(u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8})"
 # \u followed by 0, 0, e, 9. Incomplete forms retain the permissive behavior
 # of simple escapes.
 _simple_escape = (
-    rf"(?!{_unicode_escape})"
-    r"""([a-wyzA-Z._~!=&\^\-\\?'"]|x(?![0-9a-fA-F]))"""
+    rf"(?!{_unicode_escape})" r"""([a-wyzA-Z._~!=&\^\-\\?'"]|x(?![0-9a-fA-F]))"""
 )
 _decimal_escape = r"""(\d+)(?!\d)"""
 _hex_escape = r"""(x[0-9a-fA-F]+)(?![0-9a-fA-F])"""
@@ -583,15 +584,19 @@ _bad_string_literal = '"' + _string_char + "*" + _bad_escape + _string_char + '*
 # floating constants (K&R2: A.2.5.3)
 _exponent_part = r"""([eE][-+]?[0-9]+)"""
 _fractional_constant = r"""([0-9]*\.[0-9]+)|([0-9]+\.)"""
-_floating_constant = (
-    "(((("
+_unsuffixed_floating_constant = (
+    "((("
     + _fractional_constant
     + ")"
     + _exponent_part
     + "?)|([0-9]+"
     + _exponent_part
-    + "))[FfLl]?)"
+    + "))"
 )
+# Recognize C23 decimal suffixes in every dialect; the parser rejects them
+# outside C23. Each suffix must be entirely lowercase or uppercase.
+# The hexadecimal float pattern below keeps only f/F/l/L.
+_floating_constant = _unsuffixed_floating_constant + "(df|dd|dl|DF|DD|DL|[FfLl])?"
 _binary_exponent_part = r"""([pP][+-]?[0-9]+)"""
 _hex_fractional_constant = (
     "(((" + _hex_digits + r""")?\.""" + _hex_digits + ")|(" + _hex_digits + r"""\.))"""
