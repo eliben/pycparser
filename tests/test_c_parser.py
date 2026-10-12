@@ -3878,6 +3878,252 @@ class TestCParser_c23_grammar(TestCParser_base):
         self.assertIsInstance(func.body.block_items[0], Return)
 
 
+class TestCParser_fixed_enum(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_named_definition(self):
+        enum = self.parse("enum E : unsigned char { A = 1, B, };").ext[0].type
+        self.assertIsInstance(enum, Enum)
+        self.assertEqual(enum.name, "E")
+        self.assertIsInstance(enum.underlying_type, Typename)
+        self.assertIsNone(enum.underlying_type.name)
+        self.assertIsInstance(enum.underlying_type.type, TypeDecl)
+        self.assertEqual(enum.underlying_type.type.type.names, ["unsigned", "char"])
+        self.assertEqual(enum.values.enumerators[0].name, "A")
+        self.assertEqual(enum.values.enumerators[0].value.value, "1")
+        self.assertEqual(enum.values.enumerators[1].name, "B")
+        self.assertIsNone(enum.values.enumerators[1].value)
+
+    def test_forward_declaration_and_reference(self):
+        ast = self.parse("""
+            enum E : unsigned int;
+            enum E : unsigned int { A };
+            enum E value = A;
+        """)
+        forward, definition, variable = ast.ext
+        self.assertIsNone(forward.type.values)
+        self.assertEqual(forward.type.name, "E")
+        self.assertEqual(
+            forward.type.underlying_type.type.type.names, ["unsigned", "int"]
+        )
+        self.assertIsInstance(definition.type.values, EnumeratorList)
+        self.assertEqual(
+            definition.type.underlying_type.type.type.names, ["unsigned", "int"]
+        )
+        self.assertIsNone(variable.type.type.underlying_type)
+        self.assertEqual(variable.type.type.name, "E")
+        self.assertIsInstance(variable.init, ID)
+        self.assertEqual(variable.init.name, "A")
+
+    def test_anonymous_definition_with_declarators(self):
+        ast = self.parse("enum : unsigned short { A } first = A, *second;")
+        first, second = ast.ext
+        enum = first.type.type
+        self.assertIsInstance(enum, Enum)
+        self.assertIsNone(enum.name)
+        self.assertEqual(enum.underlying_type.type.type.names, ["unsigned", "short"])
+        self.assertEqual(first.init.name, "A")
+        self.assertIsInstance(second.type, PtrDecl)
+        self.assertIs(second.type.type.type, enum)
+
+    def test_typedef_underlying_type_and_tag(self):
+        ast = self.parse("""
+            typedef unsigned char Byte;
+            enum Byte : Byte { A };
+            Byte value;
+        """)
+        enum = ast.ext[1].type
+        self.assertEqual(enum.name, "Byte")
+        self.assertEqual(enum.underlying_type.type.type.names, ["Byte"])
+        self.assertEqual(ast.ext[2].type.type.names, ["Byte"])
+
+    def test_typedef_of_fixed_enum(self):
+        ast = self.parse("typedef enum : unsigned short { A } E; E value;")
+        typedef = ast.ext[0]
+        self.assertIsInstance(typedef, Typedef)
+        self.assertEqual(typedef.name, "E")
+        self.assertIsNone(typedef.type.type.name)
+        self.assertEqual(
+            typedef.type.type.underlying_type.type.type.names, ["unsigned", "short"]
+        )
+        self.assertEqual(ast.ext[1].type.type.names, ["E"])
+
+    def test_qualified_underlying_type(self):
+        decl = self.parse(
+            "const enum E : volatile unsigned int const { A } value;"
+        ).ext[0]
+        self.assertEqual(decl.quals, ["const"])
+        underlying = decl.type.type.underlying_type
+        self.assertEqual(underlying.quals, ["volatile", "const"])
+        self.assertEqual(underlying.type.quals, ["volatile", "const"])
+        self.assertEqual(underlying.type.type.names, ["unsigned", "int"])
+
+    def test_typeof_underlying_types(self):
+        ast = self.parse("""
+            enum E : typeof(unsigned int) { A };
+            enum F : typeof_unqual(A + 1) { B };
+        """)
+        first = ast.ext[0].type.underlying_type.type.type
+        self.assertIsInstance(first, TypeOf)
+        self.assertEqual(first.op, "typeof")
+        self.assertIsInstance(first.expr, Typename)
+        self.assertEqual(first.expr.type.type.names, ["unsigned", "int"])
+        second = ast.ext[1].type.underlying_type.type.type
+        self.assertEqual(second.op, "typeof_unqual")
+        self.assertIsInstance(second.expr, BinaryOp)
+        self.assertEqual(second.expr.left.name, "A")
+
+    def test_atomic_underlying_type(self):
+        enum = self.parse("enum E : _Atomic(unsigned int) { A };").ext[0].type
+        self.assertEqual(enum.underlying_type.quals, ["_Atomic"])
+        self.assertEqual(enum.underlying_type.type.quals, ["_Atomic"])
+        self.assertEqual(enum.underlying_type.type.type.names, ["unsigned", "int"])
+
+    def test_enumerator_expressions_are_preserved(self):
+        enum = (
+            self.parse("""
+            enum E : unsigned long long {
+                A = 1ULL << 40, B = 0xffffffffffffffffULL, C
+            };
+        """)
+            .ext[0]
+            .type
+        )
+        a, b, c = enum.values.enumerators
+        self.assertIsInstance(a.value, BinaryOp)
+        self.assertEqual(a.value.op, "<<")
+        self.assertEqual(a.value.left.value, "1ULL")
+        self.assertEqual(a.value.right.value, "40")
+        self.assertEqual(b.value.value, "0xffffffffffffffffULL")
+        self.assertIsNone(c.value)
+
+    def test_definition_in_struct_member(self):
+        struct = (
+            self.parse("struct S { enum E : unsigned char { A } member : 2; };")
+            .ext[0]
+            .type
+        )
+        member = struct.decls[0]
+        self.assertEqual(member.name, "member")
+        self.assertEqual(member.bitsize.value, "2")
+        self.assertEqual(
+            member.type.type.underlying_type.type.type.names, ["unsigned", "char"]
+        )
+
+    def test_definition_in_parameter(self):
+        func = self.parse("void f(enum E : unsigned int { A } value);").ext[0]
+        param = func.type.args.params[0]
+        self.assertEqual(param.name, "value")
+        self.assertEqual(param.type.type.name, "E")
+        self.assertEqual(
+            param.type.type.underlying_type.type.type.names, ["unsigned", "int"]
+        )
+
+    def test_definition_in_type_name(self):
+        func = self.parse("void f(void) { (enum E : unsigned char { A })0; }").ext[0]
+        expr = func.body.block_items[0]
+        self.assertIsInstance(expr, Cast)
+        enum = expr.to_type.type.type
+        self.assertEqual(enum.name, "E")
+        self.assertEqual(enum.underlying_type.type.type.names, ["unsigned", "char"])
+
+    def test_unnamed_enum_bitfields(self):
+        ast = self.parse("""
+            enum E : unsigned int { A, WIDTH = 3 };
+            struct S { enum E : 3; enum E : WIDTH; enum E : sizeof(int); };
+        """)
+        literal, identifier, size = ast.ext[1].type.decls
+        self.assertIsNone(literal.name)
+        self.assertIsNone(literal.type.type.underlying_type)
+        self.assertEqual(literal.bitsize.value, "3")
+        self.assertIsNone(identifier.name)
+        self.assertIsNone(identifier.type.type.underlying_type)
+        self.assertEqual(identifier.bitsize.name, "WIDTH")
+        self.assertIsNone(size.type.type.underlying_type)
+        self.assertEqual(size.bitsize.op, "sizeof")
+
+    def test_legacy_enum_bitfields(self):
+        parser = c_parser.CParser(dialect="legacy")
+        ast = parser.parse("""
+            enum E { A, WIDTH = 3 };
+            struct S { enum E : 3; enum E : WIDTH; enum E member : sizeof(int); };
+        """)
+        self.assertIsNone(ast.ext[0].type.underlying_type)
+        literal, identifier, size = ast.ext[1].type.decls
+        self.assertIsNone(literal.type.type.underlying_type)
+        self.assertEqual(literal.bitsize.value, "3")
+        self.assertEqual(identifier.bitsize.name, "WIDTH")
+        self.assertEqual(size.name, "member")
+        self.assertEqual(size.bitsize.op, "sizeof")
+
+    def test_fixed_enum_rejected_in_legacy(self):
+        parser = c_parser.CParser(dialect="legacy")
+        with self.assertRaisesRegex(
+            ParseError, "Fixed underlying enum types require C23"
+        ):
+            parser.parse("enum E : unsigned int { A };")
+        with self.assertRaisesRegex(
+            ParseError, "Fixed underlying enum types require C23"
+        ):
+            parser.parse("enum E : unsigned int;")
+        with self.assertRaisesRegex(
+            ParseError, "Fixed underlying enum types require C23"
+        ):
+            parser.parse("enum : unsigned int { A } value;")
+        with self.assertRaisesRegex(
+            ParseError, "Fixed underlying enum types require C23"
+        ):
+            parser.parse("typedef int T; enum E : T { A };")
+
+    def test_invalid_underlying_type_syntax(self):
+        self.assertRaises(ParseError, self.parse, "enum E : { A };")
+        self.assertRaises(ParseError, self.parse, "enum E :;")
+        self.assertRaises(ParseError, self.parse, "enum E :")
+        self.assertRaises(ParseError, self.parse, "enum E : unknown { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : const { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : static int { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : int * { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : int [3] { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : int () { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : (int) { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : int { A;")
+        self.assertRaises(ParseError, self.parse, "enum E : int {};")
+        self.assertRaises(ParseError, self.parse, "enum : int;")
+        self.assertRaises(ParseError, self.parse, "enum : int value;")
+        self.assertRaises(
+            ParseError,
+            self.parse,
+            "typedef int T; void f(void) { int T; enum E : T { A }; }",
+        )
+
+    def test_coordinates_and_traversal(self):
+        enum = (
+            self.parse("enum E :\n  unsigned char { A };", filename="enum.c")
+            .ext[0]
+            .type
+        )
+        underlying = enum.underlying_type
+        self.assert_coord(enum, 1, 1, "enum.c")
+        self.assert_coord(underlying, 2, 3, "enum.c")
+        self.assert_coord(underlying.type.type, 2, 3, "enum.c")
+        self.assertEqual(
+            enum.children(), (("values", enum.values), ("underlying_type", underlying))
+        )
+        self.assertEqual(list(enum), [enum.values, underlying])
+
+        class TypeVisitor(NodeVisitor):
+            def __init__(self):
+                self.names = []
+
+            def visit_IdentifierType(self, node):
+                self.names.append(node.names)
+
+        visitor = TypeVisitor()
+        visitor.visit(enum)
+        self.assertEqual(visitor.names, [["unsigned", "char"]])
+
+
 class TestCParser_auto(TestCParser_base):
     def setUp(self):
         self.cparser = c_parser.CParser(dialect="c23")

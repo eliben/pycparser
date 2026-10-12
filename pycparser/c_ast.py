@@ -640,22 +640,27 @@ class EmptyStatement(Node):
 
 
 class Enum(Node):
-    __slots__ = ("name", "values", "coord", "__weakref__")
+    __slots__ = ("name", "values", "underlying_type", "coord", "__weakref__")
 
-    def __init__(self, name, values, coord=None):
+    def __init__(self, name, values, underlying_type, coord=None):
         self.name = name
         self.values = values
+        self.underlying_type = underlying_type
         self.coord = coord
 
     def children(self):
         nodelist = []
         if self.values is not None:
             nodelist.append(("values", self.values))
+        if self.underlying_type is not None:
+            nodelist.append(("underlying_type", self.underlying_type))
         return tuple(nodelist)
 
     def __iter__(self):
         if self.values is not None:
             yield self.values
+        if self.underlying_type is not None:
+            yield self.underlying_type
 
     attr_names = ("name",)
 

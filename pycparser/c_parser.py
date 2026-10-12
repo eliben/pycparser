@@ -1293,23 +1293,46 @@ class CParser:
 
         return {"decl": decl, "init": None, "bitsize": None}
 
-    # BNF: enum_specifier : ENUM ID? '{' enumerator_list? '}'
-    #                     | ENUM ID
+    # BNF: enum_specifier : ENUM ID? enum_type_specifier? '{' enumerator_list '}'
+    #                     | ENUM ID enum_type_specifier?
     def _parse_enum_specifier(self) -> c_ast.Node:
         tok = self._expect("ENUM")
+        name = None
         if self._peek_type() in {"ID", "TYPEID"}:
-            name_tok = self._advance()
-            if self._peek_type() == "LBRACE":
-                self._advance()
-                enums = self._parse_enumerator_list()
-                self._expect("RBRACE")
-                return c_ast.Enum(name_tok.value, enums, self._tok_coord(tok))
-            return c_ast.Enum(name_tok.value, None, self._tok_coord(tok))
+            name = self._advance().value
 
-        self._expect("LBRACE")
-        enums = self._parse_enumerator_list()
-        self._expect("RBRACE")
-        return c_ast.Enum(None, enums, self._tok_coord(tok))
+        underlying_type = None
+        # A colon followed by an expression belongs to an unnamed bit-field,
+        # e.g. struct S { enum E : 3; }, rather than a fixed underlying type.
+        if self._peek_type() == "COLON" and self._starts_declaration(self._peek(2)):
+            underlying_type = self._parse_enum_type_specifier()
+
+        enums = None
+        if name is None or self._peek_type() == "LBRACE":
+            self._expect("LBRACE")
+            enums = self._parse_enumerator_list()
+            self._expect("RBRACE")
+        return c_ast.Enum(name, enums, underlying_type, self._tok_coord(tok))
+
+    # BNF: enum_type_specifier : ':' specifier_qualifier_list (C23)
+    def _parse_enum_type_specifier(self) -> c_ast.Typename:
+        colon = self._expect("COLON")
+        if self._dialect != "c23":
+            self._parse_error(
+                "Fixed underlying enum types require C23", self._tok_coord(colon)
+            )
+        # The base is a specifier-qualifier list, not a full type name: any
+        # following pointer, array, or function declarator belongs to the enum.
+        spec = self._parse_specifier_qualifier_list()
+        coord = spec["type"][0].coord if spec["type"] else self._tok_coord(colon)
+        typename = c_ast.Typename(
+            name=None,
+            quals=spec["qual"][:],
+            align=None,
+            type=c_ast.TypeDecl(None, None, None, None),
+            coord=coord,
+        )
+        return cast(c_ast.Typename, self._fix_decl_name_type(typename, spec["type"]))
 
     # BNF: enumerator_list : enumerator (',' enumerator)* ','?
     def _parse_enumerator_list(self) -> c_ast.Node:

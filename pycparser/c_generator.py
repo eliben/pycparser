@@ -430,6 +430,8 @@ class CGenerator:
             members = None if n.values is None else n.values.enumerators
             body_function = self._generate_enum_body
         s = name + " " + (n.name or "")
+        if isinstance(n, c_ast.Enum) and n.underlying_type is not None:
+            s = s.rstrip() + " : " + self.visit(n.underlying_type)
         if members is not None:
             # None means no members
             # Empty sequence means an empty list of members

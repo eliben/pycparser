@@ -530,6 +530,67 @@ class TestCtoC(unittest.TestCase):
     def test_enum_typedef(self):
         self._assert_ctoc_correct("typedef enum EnumName EnumTypedefName;")
 
+    def test_c23_fixed_enums(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            typedef unsigned char Byte;
+            enum E : unsigned int;
+            enum E : unsigned int { A = 1, B, };
+            enum : Byte { C } first, *second;
+            typedef enum Named : unsigned short { D } Alias;
+            enum Wide : unsigned long long { BIG = 1ULL << 40 };
+            enum E value = B;
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("enum E : unsigned int;", generated)
+        self.assertIn("enum E : unsigned int\n", generated)
+        self.assertIn("enum : Byte\n", generated)
+        self.assertIn("typedef enum Named : unsigned short\n", generated)
+        self.assertIn("BIG = 1ULL << 40", generated)
+        self.assertIn("enum E value = B;", generated)
+
+    def test_c23_fixed_enum_underlying_types(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            enum Qualified : const volatile unsigned int { A };
+            enum Atomic : _Atomic(unsigned int) { B };
+            enum Type : typeof(unsigned char) { C };
+            enum Expr : typeof_unqual(A + 1) { D };
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("enum Qualified : const volatile unsigned int\n", generated)
+        self.assertIn("enum Atomic : _Atomic unsigned int\n", generated)
+        self.assertIn("enum Type : typeof(unsigned char)\n", generated)
+        self.assertIn("enum Expr : typeof_unqual(A + 1)\n", generated)
+
+    def test_c23_fixed_enum_contexts(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            enum E : unsigned int { A, WIDTH = 3 };
+            struct S {
+                enum E : 3;
+                enum E : WIDTH;
+                enum E : sizeof(int);
+                enum Member : unsigned char { B } member : 2;
+            };
+            void f(enum Param : unsigned int { P } p) {
+                enum Local : unsigned short;
+                enum Local : unsigned short { L } local;
+                (enum Cast : unsigned char { C })0;
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("enum E : 3;", generated)
+        self.assertIn("enum E : WIDTH;", generated)
+        self.assertIn("enum E : sizeof(int);", generated)
+        self.assertIn("enum Local : unsigned short;", generated)
+
     def test_generate_struct_union_enum_exception(self):
         generator = c_generator.CGenerator()
         self.assertRaises(
