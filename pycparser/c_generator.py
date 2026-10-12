@@ -205,12 +205,12 @@ class CGenerator:
     def _defined_type(
         self, n: c_ast.Node
     ) -> c_ast.Struct | c_ast.Union | c_ast.Enum | None:
-        """Return a struct, union, or enum body shared by this declarator.
+        """Return the struct, union, or enum body this declarator defines.
 
-        Declarators written together, such as ``struct { int a; } x, *y``,
-        point at one definition node. Emitting that node once keeps them the
-        same type. A reference without a body, such as ``struct Foo x``, is
-        not returned.
+        ``union { struct a b; } u, *uu`` both return that same union node.
+        ``struct Foo x`` has no body, so it returns None. Callers compare
+        the result with ``is``: two anonymous structs that only look alike
+        are different nodes.
         """
         if not isinstance(n, (c_ast.Decl, c_ast.Typedef)):
             return None
@@ -226,6 +226,13 @@ class CGenerator:
         return None
 
     def _same_decl_specs(self, left: c_ast.Node, right: c_ast.Node) -> bool:
+        """Return whether two declarators have the same specifiers.
+
+        ``static struct { int a; } x, y`` matches: both names are
+        ``static``. ``static struct { int a; } x`` followed by
+        ``struct { int a; } y`` does not, because only ``x`` is ``static``.
+        Qualifiers, alignment, and function specifiers are compared too.
+        """
         if type(left) is not type(right):
             return False
         if isinstance(left, c_ast.Decl) and isinstance(right, c_ast.Decl):
@@ -242,7 +249,15 @@ class CGenerator:
     def _coalesce_defined_types(
         self, nodes: list[c_ast.Node]
     ) -> list[c_ast.Node | list[c_ast.Node]]:
-        """Group consecutive declarators that share one type definition."""
+        """Group consecutive declarators that share one type definition.
+
+        ``union { struct a b; } u, *uu = &u`` is one group: both names
+        point at that union and their specifiers match.
+        ``struct { int a; } x; struct { int a; } y;`` stays two items,
+        because those are different definition nodes. One name on its
+        own, or a name whose specifiers differ from the next, is left
+        alone.
+        """
         grouped: list[c_ast.Node | list[c_ast.Node]] = []
         index = 0
         while index < len(nodes):
@@ -265,6 +280,12 @@ class CGenerator:
         return grouped
 
     def _visit_decl_group(self, nodes: list[c_ast.Node]) -> str:
+        """Emit a group as one declaration, with the body on the first name.
+
+        ``typedef struct { int a; } B, C`` keeps a single ``typedef`` and
+        one body. ``struct { int a; } x, *y`` keeps ``*y`` on that same
+        declaration instead of repeating the struct.
+        """
         first = nodes[0]
         if isinstance(first, c_ast.Typedef):
             extras: list[str] = []
