@@ -3706,6 +3706,158 @@ class TestCParser_dialects(unittest.TestCase):
             c_parser.CParser(dialect="c99")  # ty: ignore[invalid-argument-type]
 
 
+class TestCParser_auto(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_inferred_declarations(self):
+        declarations = """
+            auto count = 42;
+            const auto scale = 0.5;
+            static auto enabled = true;
+            constexpr auto limit = 16;
+            auto pointer = &count;
+            auto ((parenthesized)) = 1;
+            alignas(16) auto aligned = 0;
+        """
+        for block_scope in (False, True):
+            with self.subTest(block_scope=block_scope):
+                source = declarations
+                if block_scope:
+                    source = "void f(void) {" + declarations + "}"
+                ast = self.parse(source, filename="auto.c")
+                decls = ast.ext[0].body.block_items if block_scope else ast.ext
+                self.assertEqual(len(decls), 7)
+                for decl in decls:
+                    self.assertIsInstance(decl.type, TypeDecl)
+                    self.assertIsInstance(decl.type.type, InferredType)
+                    self.assertIn("auto", decl.storage)
+                self.assertEqual(expand_init(decls[0].init), ["Constant", "int", "42"])
+                self.assertEqual(decls[1].quals, ["const"])
+                self.assertEqual(decls[1].type.quals, ["const"])
+                self.assertEqual(decls[2].storage, ["static", "auto"])
+                self.assertEqual(decls[3].storage, ["constexpr", "auto"])
+                self.assertIsInstance(decls[4].init, UnaryOp)
+                self.assertEqual(decls[4].init.op, "&")
+                self.assertEqual(decls[5].name, "parenthesized")
+                self.assertEqual(decls[6].align[0].alignment.value, "16")
+
+    def test_expression_initializers(self):
+        ast = self.parse("""
+            typedef int T;
+            int compute(void);
+            void f(void) {
+                int values[3];
+                auto p = values;
+                auto q = &values;
+                auto cast = (T)3;
+                auto literal = (T){4};
+                auto call = compute();
+                auto comma = (compute(), 5);
+                auto string = "text";
+                auto null = nullptr;
+                T after = cast;
+            }
+        """)
+        decls = ast.ext[2].body.block_items
+        expected = (
+            ID,
+            UnaryOp,
+            Cast,
+            CompoundLiteral,
+            FuncCall,
+            ExprList,
+            Constant,
+            Constant,
+        )
+        for decl, init_type in zip(decls[1:-1], expected):
+            self.assertIsInstance(decl.type.type, InferredType)
+            self.assertIsInstance(decl.init, init_type)
+        self.assertEqual(decls[-1].type.type.names, ["T"])
+
+    def test_for_loop_and_typedef_scopes(self):
+        ast = self.parse("""
+            typedef int T;
+            void f(void) {
+                auto start = 0;
+                for (auto i = start; i < 3; ++i) { auto j = i; }
+                { auto int T = 2; auto value = T; }
+                T after;
+            }
+        """)
+        body = ast.ext[1].body.block_items
+        loop = body[1]
+        self.assertIsInstance(loop.init.decls[0].type.type, InferredType)
+        self.assertEqual(loop.init.decls[0].init.name, "start")
+        self.assertIsInstance(loop.stmt.block_items[0].type.type, InferredType)
+        self.assertEqual(body[2].block_items[1].init.name, "T")
+        self.assertEqual(body[3].type.type.names, ["T"])
+
+    def test_explicit_types_and_legacy_mode(self):
+        source = "typedef int T; void f(void) { auto int x; auto T y = 3; }"
+        parsers = (self.cparser, c_parser.CParser(), c_parser.CParser(dialect="legacy"))
+        for _ in range(2):
+            for parser in parsers:
+                ast = parser.parse(source)
+                x, y = ast.ext[1].body.block_items
+                self.assertEqual(x.storage, ["auto"])
+                self.assertEqual(x.type.type.names, ["int"])
+                self.assertEqual(y.type.type.names, ["T"])
+            self.assertIsInstance(
+                self.parse("auto x = 1;").ext[0].type.type, InferredType
+            )
+            for parser in parsers[1:]:
+                for source_without_type in (
+                    "auto x = 1;",
+                    "void f(void) { auto x = 1; }",
+                ):
+                    self.assertRaises(ParseError, parser.parse, source_without_type)
+
+    def test_invalid_inferred_declarations(self):
+        for source in (
+            "auto x;",
+            "auto x = {};",
+            "auto x = {1};",
+            "auto x = 1, y = 2;",
+            "auto *p = &x;",
+            "auto a[3] = x;",
+            "auto f(void) = 0;",
+            "auto f(void) { return 0; }",
+            "auto;",
+            "auto = 1;",
+            "auto x =;",
+            "const x = 1;",
+        ):
+            for block_scope in (False, True):
+                with self.subTest(source=source, block_scope=block_scope):
+                    wrapped = "void f(void) {" + source + "}" if block_scope else source
+                    self.assertRaises(ParseError, self.parse, wrapped)
+        for source in (
+            "void f(auto x);",
+            "void f(const auto);",
+            "typedef int T; void f(void) { auto T = 1; }",
+        ):
+            with self.subTest(source=source):
+                self.assertRaises(ParseError, self.parse, source)
+
+    def test_coordinates_and_visitor(self):
+        ast = self.parse("auto count = 42;", filename="auto.c")
+        decl = ast.ext[0]
+        self.assert_coord(decl.type.type, 1, 6, "auto.c")
+        self.assert_coord(decl.init, 1, 14, "auto.c")
+
+        class InferredVisitor(NodeVisitor):
+            def __init__(self):
+                self.types = []
+
+            def visit_InferredType(self, node):
+                self.types.append(node)
+
+        visitor = InferredVisitor()
+        visitor.visit(ast)
+        self.assertEqual(visitor.types, [decl.type.type])
+
+
 class TestUnmatchedRbrace(unittest.TestCase):
     """Regression for #603: unmatched '}' raises ParseError, not AssertionError."""
 

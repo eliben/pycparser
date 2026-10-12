@@ -171,6 +171,10 @@ class CGenerator:
     def visit_IdentifierType(self, n: c_ast.IdentifierType) -> str:
         return " ".join(n.names)
 
+    def visit_InferredType(self, n: c_ast.InferredType) -> str:
+        # The auto storage specifier is emitted by the enclosing declaration.
+        return ""
+
     def _visit_expr(self, n: c_ast.Node) -> str:
         match n:
             case c_ast.InitList():
@@ -555,7 +559,8 @@ class CGenerator:
                 if not emit_base_type:
                     return nstr
                 if nstr:
-                    s += " " + nstr
+                    s = s.rstrip()
+                    s += (" " if s else "") + nstr
                 return s
             case c_ast.Decl():
                 return self._generate_decl(n.type)

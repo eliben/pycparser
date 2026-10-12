@@ -79,6 +79,7 @@ class CParser:
             type_lookup_func=self._lex_type_lookup_func,
             dialect=dialect,
         )
+        self._dialect = dialect
 
         # Stack of scopes for keeping track of symbols. _scope_stack[-1] is
         # the current (topmost) scope. Each scope is a dictionary that
@@ -694,6 +695,10 @@ class CParser:
         spec, saw_type, spec_coord = self._parse_declaration_specifiers(
             allow_no_type=True
         )
+        if self._is_inferred_auto(spec):
+            decls = self._parse_auto_declaration(spec)
+            self._expect("SEMI")
+            return decls
 
         name_type, _ = self._peek_declarator_name_info()
         if name_type != "ID":
@@ -752,6 +757,9 @@ class CParser:
     def _parse_decl_body_with_spec(
         self, spec: "_DeclSpec", saw_type: bool
     ) -> list[c_ast.Node]:
+        if self._is_inferred_auto(spec):
+            return self._parse_auto_declaration(spec)
+
         # saw_type is True if the specifiers included an actual type (as
         # opposed to only storage/function/qualifiers).
         decl_infos: list[_DeclInfo] | None = None
@@ -792,6 +800,27 @@ class CParser:
             )
 
         return decls
+
+    def _is_inferred_auto(self, spec: "_DeclSpec") -> bool:
+        return self._dialect == "c23" and "auto" in spec["storage"] and not spec["type"]
+
+    # C23 type inference uses one plain (possibly parenthesized) name and an
+    # expression initializer. Preserve its syntax without resolving the type.
+    def _parse_auto_declaration(self, spec: "_DeclSpec") -> list[c_ast.Node]:
+        decl = self._parse_id_declarator()
+        if not isinstance(decl, c_ast.TypeDecl):
+            self._parse_error(
+                "Inferred auto declaration requires a plain identifier", decl.coord
+            )
+        self._expect("EQUALS")
+        init = self._parse_assignment_expression()
+        spec["type"] = [c_ast.InferredType(coord=decl.coord)]
+        # Register the name only after parsing the initializer.
+        return self._build_declarations(
+            spec=spec,
+            decls=[{"decl": decl, "init": init, "bitsize": None}],
+            typedef_namespace=True,
+        )
 
     # BNF: declaration_list : declaration+
     def _parse_declaration_list(self) -> list[c_ast.Node]:
@@ -1424,6 +1453,9 @@ class CParser:
     #                            | declaration_specifiers abstract_declarator_opt
     def _parse_parameter_declaration(self) -> c_ast.Node:
         spec, _, spec_coord = self._parse_declaration_specifiers(allow_no_type=True)
+
+        if self._is_inferred_auto(spec):
+            self._parse_error("Cannot infer the type of a parameter", spec_coord)
 
         if not spec["type"]:
             spec["type"] = [c_ast.IdentifierType(["int"], coord=spec_coord)]

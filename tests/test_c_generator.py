@@ -705,6 +705,33 @@ class TestCtoC(unittest.TestCase):
         self.assertIn("static constexpr double scale = 0.5;", generated)
         self.assertIn("constexpr const int local = next;", generated)
 
+    def test_c23_auto(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            typedef int T;
+            auto count = 42;
+            auto (parenthesized) = 1;
+            static auto scale = 0.5;
+            constexpr auto limit = 16;
+            const auto fixed = 1;
+            alignas(16) auto aligned = 0;
+            void f(void) {
+                auto value = (T){1};
+                auto pointer = &value;
+                auto comma = (value, value + 1);
+                auto _Atomic atomic = value;
+                for (auto i = 0; i < limit; ++i) { auto copy = i; }
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("auto count = 42;", generated)
+        self.assertIn("auto const fixed = 1;", generated)
+        self.assertIn("auto _Alignas(16) aligned = 0;", generated)
+        self.assertIn("for (auto i = 0;", generated)
+        self.assertNotIn("auto auto", generated)
+
     def test_static_assert_semicolons(self):
         self.assertEqual(
             self._assert_ctoc_correct('_Static_assert(1, "file");'),

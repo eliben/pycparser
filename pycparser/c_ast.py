@@ -964,6 +964,22 @@ class If(Node):
     attr_names = ()
 
 
+class InferredType(Node):
+    __slots__ = ("coord", "__weakref__")
+
+    def __init__(self, coord=None):
+        self.coord = coord
+
+    def children(self):
+        return ()
+
+    def __iter__(self):
+        return
+        yield
+
+    attr_names = ()
+
+
 class InitList(Node):
     __slots__ = ("exprs", "coord", "__weakref__")
 
