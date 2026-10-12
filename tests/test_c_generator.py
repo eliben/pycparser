@@ -682,6 +682,65 @@ class TestCtoC(unittest.TestCase):
         self.assertIn("void *p = nullptr;", generated)
         self.assertIn('_Static_assert(true, "member");', generated)
 
+    def test_c23_ellipsis_only_parameter_lists(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            void f(...);
+            int definition(...) { return 0; }
+            void (*callback)(...);
+            void function_parameter(int (...));
+            void pointer_parameter(int (*)(...));
+            void (*converted)(...) = (void (*)(...))0;
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("void f(...);", generated)
+        self.assertIn("int definition(...)", generated)
+        self.assertIn("void (*callback)(...);", generated)
+        self.assertIn("void function_parameter(int (...));", generated)
+        self.assertIn("void pointer_parameter(int (*)(...));", generated)
+        self.assertIn("(void (*)(...)) 0", generated)
+
+    def test_c23_empty_initializers(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            int scalar = {};
+            int array[3] = {};
+            struct S { int value; } object = {};
+            int literal = (int){};
+            int *pointer = (int[3]){};
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("int scalar = {};", generated)
+        self.assertIn("int array[3] = {};", generated)
+        self.assertIn("(int){}", generated)
+        self.assertIn("(int [3]){}", generated)
+
+    def test_c23_labels_before_declarations_and_at_block_end(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            void f(int x) {
+                start: int y = 1;
+                switch (x) { case 1: int z = 2; default: }
+                switch (x) { default: int z = 2; case 1: }
+                end:
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+
+    def test_c23_unnamed_parameters_in_definition(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = "int f(int, const int *, int (*)(int)) { return 0; }"
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("int f(int, const int *, int (*)(int))", generated)
+
     def test_c23_constexpr(self):
         parser = c_parser.CParser(dialect="c23")
         source = """

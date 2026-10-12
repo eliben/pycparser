@@ -1360,8 +1360,8 @@ class TestCParser_fundamentals(TestCParser_base):
         )
 
     def test_empty_compound_literal(self):
-        # C99 allows empty initializer braces in compound literals,
-        # e.g. (int){}. Regression test for #503.
+        # C23 allows empty initializer braces in compound literals, e.g. (int){}.
+        # Also accepted in legacy mode. Regression test for #503.
         ps = self.parse(r"""
             void foo() {
                 x = (int){};
@@ -3689,6 +3689,193 @@ class TestCParser_dialects(unittest.TestCase):
     def test_invalid_dialect(self):
         with self.assertRaisesRegex(ValueError, "Unknown dialect"):
             c_parser.CParser(dialect="c99")  # ty: ignore[invalid-argument-type]
+
+
+class TestCParser_c23_grammar(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_ellipsis_only_declaration(self):
+        decl = self.parse("void f(...);", filename="variadic.c").ext[0]
+        self.assertIsInstance(decl.type, FuncDecl)
+        self.assertIsInstance(decl.type.args, ParamList)
+        self.assertEqual(len(decl.type.args.params), 1)
+        self.assertIsInstance(decl.type.args.params[0], EllipsisParam)
+        self.assert_coord(decl.type.args, 1, 8, "variadic.c")
+        self.assert_coord(decl.type.args.params[0], 1, 8, "variadic.c")
+
+    def test_ellipsis_only_definition(self):
+        ast = self.parse("typedef int T; int f(...) { T value = 0; return value; }")
+        func = ast.ext[1]
+        self.assertIsInstance(func, FuncDef)
+        self.assertEqual(len(func.decl.type.args.params), 1)
+        self.assertIsInstance(func.decl.type.args.params[0], EllipsisParam)
+        self.assertEqual(func.body.block_items[0].type.type.names, ["T"])
+        self.assertIsInstance(func.body.block_items[1], Return)
+
+    def test_ellipsis_only_function_pointer(self):
+        decl = self.parse("void (*callback)(...);").ext[0]
+        self.assertIsInstance(decl.type, PtrDecl)
+        self.assertIsInstance(decl.type.type, FuncDecl)
+        self.assertEqual(len(decl.type.type.args.params), 1)
+        self.assertIsInstance(decl.type.type.args.params[0], EllipsisParam)
+
+    def test_ellipsis_only_abstract_function_parameter(self):
+        decl = self.parse("void f(int (...));").ext[0]
+        param = decl.type.args.params[0]
+        self.assertIsInstance(param, Typename)
+        self.assertIsInstance(param.type, FuncDecl)
+        self.assertEqual(len(param.type.args.params), 1)
+        self.assertIsInstance(param.type.args.params[0], EllipsisParam)
+
+    def test_ellipsis_only_abstract_function_pointer_parameter(self):
+        decl = self.parse("void f(int (*)(...));").ext[0]
+        param = decl.type.args.params[0]
+        self.assertIsInstance(param, Typename)
+        self.assertIsInstance(param.type, PtrDecl)
+        self.assertIsInstance(param.type.type, FuncDecl)
+        self.assertEqual(len(param.type.type.args.params), 1)
+        self.assertIsInstance(param.type.type.args.params[0], EllipsisParam)
+
+    def test_ellipsis_only_function_pointer_cast(self):
+        decl = self.parse("void (*callback)(...) = (void (*)(...))0;").ext[0]
+        self.assertIsInstance(decl.init, Cast)
+        pointer = decl.init.to_type.type
+        self.assertIsInstance(pointer, PtrDecl)
+        self.assertIsInstance(pointer.type, FuncDecl)
+        self.assertEqual(len(pointer.type.args.params), 1)
+        self.assertIsInstance(pointer.type.args.params[0], EllipsisParam)
+
+    def test_ellipsis_only_rejected_in_legacy(self):
+        parser = c_parser.CParser(dialect="legacy")
+        with self.assertRaisesRegex(
+            ParseError, "Ellipsis-only parameter lists require C23"
+        ):
+            parser.parse("void f(...);")
+        with self.assertRaisesRegex(
+            ParseError, "Ellipsis-only parameter lists require C23"
+        ):
+            parser.parse("void f(...) {}")
+        with self.assertRaisesRegex(
+            ParseError, "Ellipsis-only parameter lists require C23"
+        ):
+            parser.parse("void (*callback)(...);")
+        with self.assertRaisesRegex(
+            ParseError, "Ellipsis-only parameter lists require C23"
+        ):
+            parser.parse("void f(int (...));")
+        with self.assertRaisesRegex(
+            ParseError, "Ellipsis-only parameter lists require C23"
+        ):
+            parser.parse("void f(int (*)(...));")
+        with self.assertRaisesRegex(
+            ParseError, "Ellipsis-only parameter lists require C23"
+        ):
+            parser.parse("void f(void) { (void (*)(...))0; }")
+
+    def test_invalid_ellipsis_parameter_lists(self):
+        self.assertRaises(ParseError, self.parse, "void f(, ...);")
+        self.assertRaises(ParseError, self.parse, "void f(...,);")
+        self.assertRaises(ParseError, self.parse, "void f(..., int x);")
+        self.assertRaises(ParseError, self.parse, "void f(... ...);")
+        self.assertRaises(ParseError, self.parse, "void f(int x ...);")
+        self.assertRaises(ParseError, self.parse, "void f(...")
+        self.assertRaises(ParseError, self.parse, "void f(int (...,));")
+        self.assertRaises(ParseError, self.parse, "void f(int (*)(..., int));")
+
+    def test_named_variadic_parameter_list(self):
+        decl = self.parse("void f(int x, ...);").ext[0]
+        self.assertEqual(len(decl.type.args.params), 2)
+        self.assertEqual(decl.type.args.params[0].name, "x")
+        self.assertIsInstance(decl.type.args.params[1], EllipsisParam)
+
+        parser = c_parser.CParser(dialect="legacy")
+        decl = parser.parse("void f(int x, ...);").ext[0]
+        self.assertEqual(len(decl.type.args.params), 2)
+        self.assertEqual(decl.type.args.params[0].name, "x")
+        self.assertIsInstance(decl.type.args.params[1], EllipsisParam)
+
+    def test_empty_initializers(self):
+        ast = self.parse("""
+            int scalar = {};
+            int array[3] = {};
+            struct S { int value; } object = {};
+        """)
+        scalar, array, obj = ast.ext
+        self.assertIsInstance(scalar.init, InitList)
+        self.assertEqual(scalar.init.exprs, [])
+        self.assertIsInstance(array.init, InitList)
+        self.assertEqual(array.init.exprs, [])
+        self.assertIsInstance(obj.init, InitList)
+        self.assertEqual(obj.init.exprs, [])
+
+    def test_empty_compound_literals(self):
+        ast = self.parse("int scalar = (int){}; int *array = (int[3]){};")
+        scalar, array = ast.ext
+        self.assertIsInstance(scalar.init, CompoundLiteral)
+        self.assertEqual(scalar.init.type.type.type.names, ["int"])
+        self.assertEqual(scalar.init.init.exprs, [])
+        self.assertIsInstance(array.init, CompoundLiteral)
+        self.assertIsInstance(array.init.type.type, ArrayDecl)
+        self.assertEqual(array.init.init.exprs, [])
+
+    def test_labels_before_declarations_and_at_block_end(self):
+        func = self.parse("void f(void) { start: int x = 1; end: }").ext[0]
+        start, decl, end = func.body.block_items
+        self.assertIsInstance(start, Label)
+        self.assertEqual(start.name, "start")
+        self.assertIsInstance(start.stmt, EmptyStatement)
+        self.assertIsInstance(decl, Decl)
+        self.assertEqual(decl.name, "x")
+        self.assertIsInstance(end, Label)
+        self.assertEqual(end.name, "end")
+        self.assertIsInstance(end.stmt, EmptyStatement)
+
+    def test_case_before_declaration_and_trailing_default(self):
+        func = self.parse("""
+            void f(int x) {
+                switch (x) { case 1: int y = 2; default: }
+            }
+        """).ext[0]
+        case, default = func.body.block_items[0].stmt.block_items
+        self.assertIsInstance(case, Case)
+        self.assertEqual(case.expr.value, "1")
+        self.assertIsInstance(case.stmts[0], EmptyStatement)
+        self.assertIsInstance(case.stmts[1], Decl)
+        self.assertEqual(case.stmts[1].name, "y")
+        self.assertIsInstance(default, Default)
+        self.assertIsInstance(default.stmts[0], EmptyStatement)
+
+    def test_default_before_declaration_and_trailing_case(self):
+        func = self.parse("""
+            void f(int x) {
+                switch (x) { default: int y = 2; case 1: }
+            }
+        """).ext[0]
+        default, case = func.body.block_items[0].stmt.block_items
+        self.assertIsInstance(default, Default)
+        self.assertIsInstance(default.stmts[0], EmptyStatement)
+        self.assertIsInstance(default.stmts[1], Decl)
+        self.assertEqual(default.stmts[1].name, "y")
+        self.assertIsInstance(case, Case)
+        self.assertEqual(case.expr.value, "1")
+        self.assertIsInstance(case.stmts[0], EmptyStatement)
+
+    def test_unnamed_parameters_in_definition(self):
+        func = self.parse("int f(int, const int *, int (*)(int)) { return 0; }").ext[0]
+        scalar, pointer, callback = func.decl.type.args.params
+        self.assertIsInstance(scalar, Typename)
+        self.assertEqual(scalar.type.type.names, ["int"])
+        self.assertIsNone(scalar.type.declname)
+        self.assertIsInstance(pointer, Typename)
+        self.assertIsInstance(pointer.type, PtrDecl)
+        self.assertEqual(pointer.type.type.quals, ["const"])
+        self.assertIsNone(pointer.type.type.declname)
+        self.assertIsInstance(callback, Typename)
+        self.assertIsInstance(callback.type, PtrDecl)
+        self.assertIsInstance(callback.type.type, FuncDecl)
+        self.assertIsNone(callback.type.type.type.declname)
+        self.assertIsInstance(func.body.block_items[0], Return)
 
 
 class TestCParser_auto(TestCParser_base):

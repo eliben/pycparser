@@ -1472,7 +1472,7 @@ class CParser:
         else:
             args = (
                 self._parse_parameter_type_list()
-                if self._starts_declaration()
+                if self._starts_declaration() or self._peek_type() == "ELLIPSIS"
                 else self._parse_identifier_list_opt()
             )
             self._expect("RPAREN")
@@ -1507,7 +1507,16 @@ class CParser:
         return ptr
 
     # BNF: parameter_type_list : parameter_list (',' ELLIPSIS)?
+    #                           | ELLIPSIS (C23)
     def _parse_parameter_type_list(self) -> c_ast.ParamList:
+        # C23 permits a variadic function with no preceding named parameters.
+        ell_tok = self._accept("ELLIPSIS")
+        if ell_tok:
+            coord = self._tok_coord(ell_tok)
+            if self._dialect != "c23":
+                self._parse_error("Ellipsis-only parameter lists require C23", coord)
+            return c_ast.ParamList([c_ast.EllipsisParam(coord)], coord)
+
         params = self._parse_parameter_list()
         if self._peek_type() == "COMMA" and self._peek_type(2) == "ELLIPSIS":
             self._advance()
@@ -1630,7 +1639,10 @@ class CParser:
     def _parse_direct_abstract_declarator(self) -> c_ast.Node:
         lparen_tok = self._accept("LPAREN")
         if lparen_tok:
-            if self._starts_declaration() or self._peek_type() == "RPAREN":
+            if self._starts_declaration() or self._peek_type() in {
+                "RPAREN",
+                "ELLIPSIS",
+            }:
                 params = self._parse_parameter_type_list_opt()
                 self._expect("RPAREN")
                 decl = c_ast.FuncDecl(
@@ -2003,7 +2015,7 @@ class CParser:
             lbrace_tok = self._accept("LBRACE")
             if lbrace_tok is not None:
                 if self._accept("RBRACE"):
-                    # Empty compound literal, e.g. (int){} (C99 empty braces).
+                    # Empty compound literal, e.g. (int){} (standard in C23).
                     return c_ast.CompoundLiteral(
                         typ, c_ast.InitList([], self._tok_coord(lbrace_tok))
                     )
