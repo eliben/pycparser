@@ -1527,6 +1527,77 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(e3_elist.enumerators[1].name, "blue")
         self.assertEqual(e3_elist.enumerators[2].name, "green")
 
+    def test_enum_leading_pragma(self):
+        enum = self.parse("enum E {\n#pragma before\nA, B };", "enum.c").ext[0].type
+        pragma, a, b = enum.values.enumerators
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "before")
+        self.assertEqual(pragma.coord.file, "enum.c")
+        self.assertEqual(pragma.coord.line, 2)
+        self.assertEqual(a.name, "A")
+        self.assertEqual(b.name, "B")
+        self.assertEqual(enum.values.coord, a.coord)
+
+    def test_enum_intervening_pragma(self):
+        enum = self.parse("enum E { A,\n#pragma between\nB = A + 1 };").ext[0].type
+        a, pragma, b = enum.values.enumerators
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "between")
+        self.assertEqual(b.name, "B")
+        self.assertIsInstance(b.value, BinaryOp)
+        self.assertEqual(b.value.left.name, "A")
+
+    def test_enum_pragma_before_comma(self):
+        enum = self.parse("enum E { A\n#pragma between\n, B };").ext[0].type
+        a, pragma, b = enum.values.enumerators
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "between")
+        self.assertEqual(b.name, "B")
+
+    def test_enum_trailing_pragma(self):
+        enum = self.parse("enum E { A\n#pragma after\n};").ext[0].type
+        a, pragma = enum.values.enumerators
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "after")
+
+    def test_enum_pragma_after_trailing_comma(self):
+        enum = self.parse("enum E { A,\n#pragma after\n};").ext[0].type
+        a, pragma = enum.values.enumerators
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "after")
+
+    def test_enum_pragma_operator(self):
+        enum = (
+            self.parse('enum E { _Pragma("before") A _Pragma("after") };').ext[0].type
+        )
+        before, a, after = enum.values.enumerators
+        self.assertIsInstance(before, Pragma)
+        self.assertIsInstance(before.string, Constant)
+        self.assertEqual(before.string.value, '"before"')
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(after, Pragma)
+        self.assertEqual(after.string.value, '"after"')
+
+    def test_enum_pragmas_require_enumerator(self):
+        with self.assertRaises(ParseError):
+            self.parse('enum E {\n#pragma foo\n_Pragma("bar") };')
+
+    def test_enum_pragma_does_not_replace_comma(self):
+        with self.assertRaises(ParseError):
+            self.parse("enum E { A\n#pragma between\nB };")
+
+    def test_enum_pragma_does_not_allow_duplicate_comma(self):
+        with self.assertRaises(ParseError):
+            self.parse("enum E { A,\n#pragma between\n, B };")
+
+    def test_enum_pragma_does_not_allow_leading_comma(self):
+        with self.assertRaises(ParseError):
+            self.parse("enum E {\n#pragma before\n, A };")
+
     def test_typedef(self):
         # without typedef, error
         s1 = """

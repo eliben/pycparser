@@ -1482,16 +1482,27 @@ class CParser:
             ),
         )
 
-    # BNF: enumerator_list : enumerator (',' enumerator)* ','?
+    # BNF: enumerator_list : pppragma_directive* enumerator pppragma_directive*
+    #                       (',' pppragma_directive* enumerator pppragma_directive*)*
+    #                       (',' pppragma_directive*)?
     def _parse_enumerator_list(self) -> c_ast.Node:
+        members = self._parse_pppragma_directive_list()
+        # Pragmas do not count as enumerators: even with leading directives,
+        # the list must contain at least one enumerator.
         enum = self._parse_enumerator()
-        enum_list = c_ast.EnumeratorList([enum], enum.coord)
-        while self._accept("COMMA"):
+        members.append(enum)
+        coord = enum.coord
+        while True:
+            # Directives may appear on either side of a separating comma, or
+            # after the last enumerator. They never replace the comma itself.
+            members.extend(self._parse_pppragma_directive_list())
+            if not self._accept("COMMA"):
+                break
+            members.extend(self._parse_pppragma_directive_list())
             if self._peek_type() == "RBRACE":
                 break
-            enum = self._parse_enumerator()
-            enum_list.enumerators.append(enum)
-        return enum_list
+            members.append(self._parse_enumerator())
+        return c_ast.EnumeratorList(members, coord)
 
     # BNF: enumerator : ID ('=' constant_expression)?
     def _parse_enumerator(self) -> c_ast.Node:

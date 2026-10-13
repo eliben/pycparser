@@ -722,6 +722,55 @@ class TestCtoC(unittest.TestCase):
             };
         """)
 
+    def test_enum_leading_pragma(self):
+        generated = self._assert_ctoc_correct("enum E {\n#pragma before\nA, B };")
+        self.assertEqual(generated, "enum E\n{\n  #pragma before\n  A,\n  B\n};\n")
+
+    def test_enum_pragmas_around_comma(self):
+        generated = self._assert_ctoc_correct(
+            "enum E { A = 1\n#pragma before_comma\n,\n#pragma after_comma\nB };"
+        )
+        self.assertEqual(
+            generated,
+            "enum E\n{\n  A = 1,\n  #pragma before_comma\n  #pragma after_comma\n  B\n};\n",
+        )
+
+    def test_enum_trailing_pragmas(self):
+        generated = self._assert_ctoc_correct("enum E { A\n#pragma after\n#pragma\n};")
+        self.assertEqual(generated, "enum E\n{\n  A\n  #pragma after\n  #pragma\n};\n")
+
+    def test_enum_pragma_after_trailing_comma(self):
+        generated = self._assert_ctoc_correct("enum E { A,\n#pragma after\n};")
+        self.assertEqual(generated, "enum E\n{\n  A\n  #pragma after\n};\n")
+
+    def test_enum_pragma_operators(self):
+        generated = self._assert_ctoc_correct(
+            'enum E { _Pragma("before") A, _Pragma("between") B _Pragma("after") };'
+        )
+        self.assertEqual(
+            generated,
+            'enum E\n{\n  _Pragma("before")\n  A,\n  _Pragma("between")\n  B\n  _Pragma("after")\n};\n',
+        )
+
+    def test_c23_enum_pragmas(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """enum [[deprecated]] E : unsigned int {
+#pragma before
+    A [[deprecated]] = 1,
+#pragma between
+    B
+#pragma after
+};"""
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertEqual(
+            generated,
+            "enum [[deprecated]] E : unsigned int\n{\n"
+            "  #pragma before\n  A [[deprecated]] = 1,\n"
+            "  #pragma between\n  B\n  #pragma after\n};\n",
+        )
+
     def test_enum_typedef(self):
         self._assert_ctoc_correct("typedef enum EnumName EnumTypedefName;")
 

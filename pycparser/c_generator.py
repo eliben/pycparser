@@ -597,9 +597,22 @@ class CGenerator:
                 parts.append(self._generate_stmt(item))
         return "".join(parts)
 
-    def _generate_enum_body(self, members: list[c_ast.Enumerator]) -> str:
-        # `[:-2] + '\n'` removes the final `,` from the enumerator list
-        return "".join(self.visit(value) for value in members)[:-2] + "\n"
+    def _generate_enum_body(
+        self, members: list[c_ast.Enumerator | c_ast.Pragma]
+    ) -> str:
+        parts = []
+        last_enumerator = None
+        for member in members:
+            if isinstance(member, c_ast.Pragma):
+                parts.append(self._generate_stmt(member))
+            else:
+                last_enumerator = len(parts)
+                parts.append(self.visit(member))
+        # Remove the comma from the last enumerator, which may be followed by
+        # pragmas whose text and newlines must remain intact.
+        if last_enumerator is not None:
+            parts[last_enumerator] = parts[last_enumerator][:-2] + "\n"
+        return "".join(parts)
 
     def _generate_stmt(self, n: c_ast.Node, add_indent: bool = False) -> str:
         """Generation from a statement node. This method exists as a wrapper
