@@ -10,7 +10,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Literal
+from typing import Literal, assert_never
 
 Dialect = Literal["legacy", "c23"]
 
@@ -244,7 +244,7 @@ class CLexer:
                 ):
                     tok_type = "TYPEID"
             case _:
-                raise RuntimeError("unreachable")
+                assert_never(action)
 
         tok = self._make_token(tok_type, value, pos)
         self._pos += length

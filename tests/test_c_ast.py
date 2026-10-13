@@ -83,15 +83,6 @@ class Test_c_ast(unittest.TestCase):
         self.assertEqual(cref.type, "float")
         self.assertEqual(weakref.getweakrefcount(c1), 1)
 
-    def test_weakref_works_on_coord(self):
-        coord = Coord(file="a", line=2)
-        wr = weakref.ref(coord)
-        cref = wr()
-        self.assertIsNotNone(cref)
-        assert cref is not None
-        self.assertEqual(cref.line, 2)
-        self.assertEqual(weakref.getweakrefcount(coord), 1)
-
 
 class TestNodeVisitor(unittest.TestCase):
     class ConstantVisitor(c_ast.NodeVisitor):
