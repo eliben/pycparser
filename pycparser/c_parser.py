@@ -11,6 +11,7 @@ from typing import (
     Any,
     Literal,
     NoReturn,
+    NotRequired,
     Optional,
     TypedDict,
     cast,
@@ -458,7 +459,7 @@ class CParser:
 
         declaration = self._build_declarations(
             spec=spec,
-            decls=[{"decl": decl, "init": None, "bitsize": None}],
+            decls=[{"decl": decl}],
             typedef_namespace=True,
         )[0]
 
@@ -843,7 +844,7 @@ class CParser:
             )
             return [func]
 
-        decl_dict: _DeclInfo = {"decl": decl, "init": None, "bitsize": None}
+        decl_dict: _DeclInfo = {"decl": decl}
         if self._accept("EQUALS"):
             decl_dict["init"] = self._parse_initializer()
         decls = self._parse_init_declarator_list(first=decl_dict)
@@ -916,7 +917,7 @@ class CParser:
             else:
                 decls = self._build_declarations(
                     spec=spec,
-                    decls=[{"decl": None, "init": None, "bitsize": None}],
+                    decls=[{"decl": None}],
                     typedef_namespace=True,
                 )
         else:
@@ -943,7 +944,7 @@ class CParser:
         # Register the name only after parsing the initializer.
         return self._build_declarations(
             spec=spec,
-            decls=[{"decl": decl, "init": init, "bitsize": None}],
+            decls=[{"decl": decl, "init": init}],
             typedef_namespace=True,
         )
 
@@ -1290,10 +1291,9 @@ class CParser:
     # BNF: init_declarator : declarator ('=' initializer)?
     def _parse_init_declarator(self, id_only: bool = False) -> "_DeclInfo":
         decl = self._parse_id_declarator() if id_only else self._parse_declarator()
-        init = None
         if self._accept("EQUALS"):
-            init = self._parse_initializer()
-        return {"decl": decl, "init": init, "bitsize": None}
+            return {"decl": decl, "init": self._parse_initializer()}
+        return {"decl": decl}
 
     # ------------------------------------------------------------------
     # Structs/unions/enums
@@ -1398,13 +1398,11 @@ class CParser:
             self._expect("SEMI")
             return self._build_declarations(
                 spec=spec,
-                decls=[{"decl": decl_type, "init": None, "bitsize": None}],
+                decls=[{"decl": decl_type}],
             )
 
         self._expect("SEMI")
-        return self._build_declarations(
-            spec=spec, decls=[{"decl": None, "init": None, "bitsize": None}]
-        )
+        return self._build_declarations(spec=spec, decls=[{"decl": None}])
 
     # BNF: struct_declarator_list : struct_declarator (',' struct_declarator)*
     def _parse_struct_declarator_list(self) -> list["_DeclInfo"]:
@@ -1420,16 +1418,15 @@ class CParser:
             bitsize = self._parse_constant_expression()
             return {
                 "decl": c_ast.TypeDecl(None, None, None, None),
-                "init": None,
                 "bitsize": bitsize,
             }
 
         decl = self._parse_declarator()
         if self._accept("COLON"):
             bitsize = self._parse_constant_expression()
-            return {"decl": decl, "init": None, "bitsize": bitsize}
+            return {"decl": decl, "bitsize": bitsize}
 
-        return {"decl": decl, "init": None, "bitsize": None}
+        return {"decl": decl}
 
     # BNF: enum_specifier : ENUM ID? enum_type_specifier? '{' enumerator_list '}'
     #                     | ENUM ID enum_type_specifier?
@@ -1750,7 +1747,7 @@ class CParser:
             if is_named:
                 return self._build_declarations(
                     spec=spec,
-                    decls=[{"decl": decl, "init": None, "bitsize": None}],
+                    decls=[{"decl": decl}],
                 )[0]
             return self._build_parameter_declaration(spec, decl, spec_coord)
 
@@ -1766,9 +1763,7 @@ class CParser:
             and len(spec["type"][-1].names) == 1
             and self._is_type_in_scope(spec["type"][-1].names[0])
         ):
-            return self._build_declarations(
-                spec=spec, decls=[{"decl": decl, "init": None, "bitsize": None}]
-            )[0]
+            return self._build_declarations(spec=spec, decls=[{"decl": decl}])[0]
 
         decl = c_ast.Typename(
             name="",
@@ -2871,8 +2866,8 @@ _DeclSpecKind = Literal["qual", "storage", "type", "function", "alignment"]
 class _DeclInfo(TypedDict):
     # Declarator payloads used by declaration/initializer parsing:
     # - decl: the declarator node (may be None for abstract/implicit cases)
-    # - init: optional initializer expression
-    # - bitsize: optional bit-field width expression (for struct declarators)
+    # - init: initializer expression; the key may be omitted when absent
+    # - bitsize: bit-field width expression; the key may be omitted when absent
     decl: c_ast.Node | None
-    init: c_ast.Node | None
-    bitsize: c_ast.Node | None
+    init: NotRequired[c_ast.Node | None]
+    bitsize: NotRequired[c_ast.Node | None]
