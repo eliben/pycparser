@@ -1132,7 +1132,7 @@ class TestCParser_fundamentals(TestCParser_base):
         )
 
     def test_atomic_specifier_rejects_array_and_function(self):
-        # _Atomic cannot wrap an array or function type (C11 6.7.3p3). These
+        # _Atomic cannot wrap an array or function type (C11 6.7.2.4p3). These
         # must raise ParseError rather than crash with AttributeError.
         for s in (
             "_Atomic(char[3]) a;",
@@ -1144,6 +1144,30 @@ class TestCParser_fundamentals(TestCParser_base):
         ):
             with self.assertRaises(ParseError):
                 self.parse(s)
+
+    def test_atomic_specifier_rejects_array_in_sizeof(self):
+        with self.assertRaisesRegex(
+            ParseError, "_Atomic cannot be applied to array or function type"
+        ):
+            self.parse("int n = sizeof(_Atomic(char[3]));")
+
+    def test_atomic_specifier_rejects_function_in_sizeof(self):
+        with self.assertRaisesRegex(
+            ParseError, "_Atomic cannot be applied to array or function type"
+        ):
+            self.parse("int n = sizeof(_Atomic(void(int)));")
+
+    def test_atomic_specifier_rejects_array_in_cast(self):
+        with self.assertRaisesRegex(
+            ParseError, "_Atomic cannot be applied to array or function type"
+        ):
+            self.parse("void f(void) { (_Atomic(char[3]))0; }")
+
+    def test_atomic_specifier_rejects_function_in_cast(self):
+        with self.assertRaisesRegex(
+            ParseError, "_Atomic cannot be applied to array or function type"
+        ):
+            self.parse("void f(void) { (_Atomic(void(int)))0; }")
 
     def test_atomic_specifier_qualifiers(self):
         decl = self.parse("const _Atomic(volatile int *) p;").ext[0]
