@@ -22,7 +22,8 @@ from .ast_transforms import fix_atomic_specifiers, fix_switch_cases
 from .c_lexer import CLexer, Dialect, Token
 
 
-@dataclass
+# ASTs contain many coordinates, so slots reduce their memory overhead.
+@dataclass(slots=True)
 class Coord:
     """Coordinates of a syntactic element. Consists of:
     - File name
