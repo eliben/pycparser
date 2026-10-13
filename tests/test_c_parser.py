@@ -1479,6 +1479,179 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_parenthesized_compounds_binary_operands(self):
+        # Regression for #538: the compound is a binary operand, rather than
+        # the entire right-hand side of an assignment.
+        e = self.parse("""
+            float f(float z) {
+                return z / ({ float a = 1.0; a * 2; });
+            }
+        """)
+        expr = e.ext[0].body.block_items[0].expr
+        self.assertIsInstance(expr, BinaryOp)
+        self.assertEqual(expr.op, "/")
+        self.assertEqual(expr.left.name, "z")
+        self.assertIsInstance(expr.right, Compound)
+        decl, value = expr.right.block_items
+        self.assertEqual(decl.name, "a")
+        self.assertEqual(decl.init.value, "1.0")
+        self.assertEqual(
+            expand_init(value),
+            ["BinaryOp", ["ID", "a"], "*", ["Constant", "int", "2"]],
+        )
+
+        for op in (
+            "+",
+            "-",
+            "*",
+            "/",
+            "%",
+            "<<",
+            ">>",
+            "<",
+            ">",
+            "<=",
+            ">=",
+            "==",
+            "!=",
+            "&",
+            "^",
+            "|",
+            "&&",
+            "||",
+        ):
+            with self.subTest(op=op):
+                e = self.parse(f"void f() {{ ({{ 1; }}) {op} ({{ 2; }}); }}")
+                expr = e.ext[0].body.block_items[0]
+                self.assertIsInstance(expr, BinaryOp)
+                self.assertEqual(expr.op, op)
+                self.assertIsInstance(expr.left, Compound)
+                self.assertIsInstance(expr.right, Compound)
+                self.assertEqual(expr.left.block_items[0].value, "1")
+                self.assertEqual(expr.right.block_items[0].value, "2")
+
+    def test_parenthesized_compounds_precedence(self):
+        e = self.parse("""
+            void f() {
+                ({ 1; }) + 2 * ({ 3; }) - ({ 4; }) / 2;
+            }
+        """)
+        self.assertEqual(
+            expand_init(e.ext[0].body.block_items[0]),
+            [
+                "BinaryOp",
+                [
+                    "BinaryOp",
+                    ["Compound", [["Constant", "int", "1"]]],
+                    "+",
+                    [
+                        "BinaryOp",
+                        ["Constant", "int", "2"],
+                        "*",
+                        ["Compound", [["Constant", "int", "3"]]],
+                    ],
+                ],
+                "-",
+                [
+                    "BinaryOp",
+                    ["Compound", [["Constant", "int", "4"]]],
+                    "/",
+                    ["Constant", "int", "2"],
+                ],
+            ],
+        )
+
+    def test_parenthesized_compounds_unary_and_cast(self):
+        for op in ("+", "-", "!", "~", "*", "&", "++", "--", "sizeof"):
+            with self.subTest(op=op):
+                e = self.parse(f"void f() {{ {op} ({{ x; }}); }}")
+                expr = e.ext[0].body.block_items[0]
+                self.assertIsInstance(expr, UnaryOp)
+                self.assertEqual(expr.op, op)
+                self.assertIsInstance(expr.expr, Compound)
+                self.assertEqual(expr.expr.block_items[0].name, "x")
+
+        e = self.parse("void f() { (int) ({ 1.0; }); }")
+        expr = e.ext[0].body.block_items[0]
+        self.assertIsInstance(expr, Cast)
+        self.assertIsInstance(expr.expr, Compound)
+        self.assertEqual(expr.expr.block_items[0].value, "1.0")
+
+    def test_parenthesized_compounds_postfix(self):
+        for suffix, node_type in (
+            ("[0]", ArrayRef),
+            ("(1)", FuncCall),
+            (".field", StructRef),
+            ("->field", StructRef),
+        ):
+            with self.subTest(suffix=suffix):
+                e = self.parse(f"void f() {{ ({{ x; }}){suffix}; }}")
+                expr = e.ext[0].body.block_items[0]
+                self.assertIsInstance(expr, node_type)
+                self.assertIsInstance(expr.name, Compound)
+                self.assertEqual(expr.name.block_items[0].name, "x")
+
+        for op in ("++", "--"):
+            with self.subTest(op=op):
+                e = self.parse(f"void f() {{ ({{ x; }}){op}; }}")
+                expr = e.ext[0].body.block_items[0]
+                self.assertIsInstance(expr, UnaryOp)
+                self.assertEqual(expr.op, "p" + op)
+                self.assertIsInstance(expr.expr, Compound)
+
+    def test_parenthesized_compounds_conditional_assignment_comma(self):
+        e = self.parse("""
+            void f() {
+                a = ({ c; }) ? ({ 1; }) : ({ 2; });
+                a = ({ x; }) = 3;
+                a = 0, ({ 1; }) + 2;
+            }
+        """)
+        conditional, assignment, comma = e.ext[0].body.block_items
+        expr = conditional.rvalue
+        self.assertIsInstance(expr, TernaryOp)
+        self.assertIsInstance(expr.cond, Compound)
+        self.assertIsInstance(expr.iftrue, Compound)
+        self.assertIsInstance(expr.iffalse, Compound)
+        self.assertIsInstance(assignment.rvalue, Assignment)
+        self.assertIsInstance(assignment.rvalue.lvalue, Compound)
+        self.assertEqual(assignment.rvalue.rvalue.value, "3")
+        self.assertIsInstance(comma, ExprList)
+        self.assertEqual(len(comma.exprs), 2)
+        self.assertIsInstance(comma.exprs[0], Assignment)
+        self.assertIsInstance(comma.exprs[1], BinaryOp)
+        self.assertIsInstance(comma.exprs[1].left, Compound)
+
+    def test_parenthesized_compounds_nested_scope(self):
+        e = self.parse("""
+            typedef int T;
+            void f() {
+                int x = 1 + ({ int T = 2; T + ({ int y = T; y; }); });
+                T y;
+            }
+        """)
+        decl, after = e.ext[1].body.block_items
+        outer = decl.init.right
+        self.assertIsInstance(outer, Compound)
+        self.assertEqual(outer.block_items[0].name, "T")
+        inner_expr = outer.block_items[1]
+        self.assertEqual(inner_expr.left.name, "T")
+        self.assertIsInstance(inner_expr.right, Compound)
+        self.assertEqual(inner_expr.right.block_items[0].init.name, "T")
+        self.assertEqual(after.type.type.names, ["T"])
+
+    def test_parenthesized_compounds_invalid_syntax(self):
+        for expr in (
+            "({ 1; }",  # Missing closing parenthesis.
+            "({ 1 })",  # Missing expression-statement semicolon.
+            "({ 1; }) +",  # Missing binary operand.
+            "({ 1; }) 2",  # Missing operator.
+            "({ 1; })[0",  # Missing closing bracket.
+            "{ 1; }",  # Braces alone are not an expression.
+        ):
+            with self.subTest(expr=expr), self.assertRaises(ParseError):
+                self.parse(f"int f() {{ return {expr}; }}")
+
     def test_enums(self):
         e1 = "enum mycolor op;"
         e1_type = self.parse(e1).ext[0].type.type

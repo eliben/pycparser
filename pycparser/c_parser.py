@@ -2121,12 +2121,6 @@ class CParser:
     # BNF: assignment_expression : conditional_expression
     #                            | unary_expression assignment_op assignment_expression
     def _parse_assignment_expression(self) -> c_ast.Node:
-        if self._peek_type() == "LPAREN" and self._peek_type(2) == "LBRACE":
-            self._advance()
-            comp = self._parse_compound_statement()
-            self._expect("RPAREN")
-            return comp
-
         expr = self._parse_conditional_expression()
         if self._is_assignment_op():
             op = self._advance().value
@@ -2291,6 +2285,7 @@ class CParser:
 
     # BNF: primary_expression : ID | constant | string_literal
     #                        | '(' expression ')' | generic_selection | offsetof
+    #                        | '(' compound_statement ')'
     def _parse_primary_expression(self) -> c_ast.Node:
         tok_type = self._peek_type()
         if tok_type == "ID":
@@ -2306,7 +2301,12 @@ class CParser:
             return self._parse_unified_string_literal()
         if tok_type == "LPAREN":
             self._advance()
-            expr = self._parse_expression()
+            if self._peek_type() == "LBRACE":
+                # GNU statement expressions participate in all expression
+                # operators, including postfix operators.
+                expr = self._parse_compound_statement()
+            else:
+                expr = self._parse_expression()
             self._expect("RPAREN")
             return expr
         if tok_type == "_GENERIC":
