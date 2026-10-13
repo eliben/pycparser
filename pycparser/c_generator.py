@@ -51,6 +51,31 @@ class CGenerator:
     def visit_ID(self, n: c_ast.ID) -> str:
         return n.name
 
+    def _generate_attributes(self, attributes) -> str:
+        return " ".join(self.visit(attribute) for attribute in attributes)
+
+    def visit_Attribute(self, n: c_ast.Attribute) -> str:
+        s = (n.namespace + "::" if n.namespace is not None else "") + n.name
+        if n.arguments is not None:
+            s += "(" + n.arguments + ")"
+        return s
+
+    def visit_AttributeSpecifier(self, n: c_ast.AttributeSpecifier) -> str:
+        return "[[" + ", ".join(self.visit(a) for a in n.attributes) + "]]"
+
+    def visit_AttributeDeclaration(self, n: c_ast.AttributeDeclaration) -> str:
+        return self._generate_attributes(n.attributes)
+
+    def visit_AttributedType(self, n: c_ast.AttributedType) -> str:
+        return self.visit(n.type) + " " + self._generate_attributes(n.attributes)
+
+    def visit_AttributedStatement(self, n: c_ast.AttributedStatement) -> str:
+        return (
+            self._generate_attributes(n.attributes)
+            + " "
+            + self._generate_stmt(n.stmt).lstrip()
+        )
+
     def visit_Pragma(self, n: c_ast.Pragma) -> str:
         ret = "#pragma"
         if n.string:
@@ -214,7 +239,7 @@ class CGenerator:
         return s
 
     def visit_Typedef(self, n: c_ast.Typedef) -> str:
-        s = ""
+        s = self._generate_attributes(n.attributes) + " " if n.attributes else ""
         if n.storage:
             s += " ".join(n.storage) + " "
         s += self._generate_type(n.type)
@@ -243,10 +268,13 @@ class CGenerator:
         return f"_Alignas({self.visit(n.alignment)})"
 
     def visit_Enumerator(self, n: c_ast.Enumerator) -> str:
+        name = n.name
+        if n.attributes:
+            name += " " + self._generate_attributes(n.attributes)
         if not n.value:
-            return f"{self._make_indent()}{n.name},\n"
+            return f"{self._make_indent()}{name},\n"
         else:
-            return f"{self._make_indent()}{n.name} = {self.visit(n.value)},\n"
+            return f"{self._make_indent()}{name} = {self.visit(n.value)},\n"
 
     def visit_FuncDef(self, n: c_ast.FuncDef) -> str:
         decl = self.visit(n.decl)
@@ -280,7 +308,8 @@ class CGenerator:
         return s
 
     def visit_CompoundLiteral(self, n: c_ast.CompoundLiteral) -> str:
-        return "(" + self.visit(n.type) + "){" + self.visit(n.init) + "}"
+        storage = " ".join(n.storage) + " " if n.storage else ""
+        return "(" + storage + self.visit(n.type) + "){" + self.visit(n.init) + "}"
 
     def visit_EmptyStatement(self, n: c_ast.EmptyStatement) -> str:
         return ";"
@@ -363,19 +392,22 @@ class CGenerator:
         return s
 
     def visit_Case(self, n: c_ast.Case) -> str:
-        s = "case " + self.visit(n.expr) + ":\n"
+        s = self._generate_attributes(n.attributes) + " " if n.attributes else ""
+        s += "case " + self.visit(n.expr) + ":\n"
         for stmt in n.stmts:
             s += self._generate_stmt(stmt, add_indent=True)
         return s
 
     def visit_Default(self, n: c_ast.Default) -> str:
-        s = "default:\n"
+        s = self._generate_attributes(n.attributes) + " " if n.attributes else ""
+        s += "default:\n"
         for stmt in n.stmts:
             s += self._generate_stmt(stmt, add_indent=True)
         return s
 
     def visit_Label(self, n: c_ast.Label) -> str:
-        return n.name + ":\n" + self._generate_stmt(n.stmt)
+        s = self._generate_attributes(n.attributes) + " " if n.attributes else ""
+        return s + n.name + ":\n" + self._generate_stmt(n.stmt)
 
     def visit_Goto(self, n: c_ast.Goto) -> str:
         return "goto " + n.name + ";"
@@ -387,7 +419,8 @@ class CGenerator:
         return self._generate_struct_union_enum(n, "struct")
 
     def visit_Typename(self, n: c_ast.Typename) -> str:
-        return self._generate_type(n.type)
+        s = self._generate_attributes(n.attributes) + " " if n.attributes else ""
+        return s + self._generate_type(n.type)
 
     def visit_Union(self, n: c_ast.Union) -> str:
         return self._generate_struct_union_enum(n, "union")
@@ -438,7 +471,10 @@ class CGenerator:
             assert isinstance(n, c_ast.Enum)
             members = None if n.values is None else n.values.enumerators
             body_function = self._generate_enum_body
-        s = name + " " + (n.name or "")
+        attributes = (
+            self._generate_attributes(n.attributes) + " " if n.attributes else ""
+        )
+        s = name + " " + attributes + (n.name or "")
         if isinstance(n, c_ast.Enum) and n.underlying_type is not None:
             s = s.rstrip() + " : " + self.visit(n.underlying_type)
         if members is not None:
@@ -489,6 +525,7 @@ class CGenerator:
                 | c_ast.CompoundLiteral()
                 | c_ast.GenericSelection()
                 | c_ast.StaticAssert()
+                | c_ast.AttributeDeclaration()
             ):
                 # These visitors leave the semicolon to the enclosing context,
                 # so they can also be used in expressions or for clauses.
@@ -499,6 +536,8 @@ class CGenerator:
                 # compute its own indentation.
                 #
                 return self.visit(n)
+            case c_ast.AttributedStatement():
+                return indent + self.visit(n)
             case c_ast.If():
                 return indent + self.visit(n)
             case _:
@@ -506,9 +545,9 @@ class CGenerator:
 
     def _generate_decl(self, n: c_ast.Decl) -> str:
         """Generation from a Decl node."""
-        s = ""
+        s = self._generate_attributes(n.attributes) + " " if n.attributes else ""
         if n.funcspec:
-            s = " ".join(n.funcspec) + " "
+            s += " ".join(n.funcspec) + " "
         if n.storage:
             s += " ".join(n.storage) + " "
         if n.align:
@@ -543,6 +582,8 @@ class CGenerator:
                     s += self.visit(n.type)
 
                 nstr = n.declname if n.declname and emit_declname else ""
+                if n.attributes:
+                    nstr += " " + self._generate_attributes(n.attributes)
                 # Resolve modifiers.
                 # Wrap in parens to distinguish pointer to array and pointer to
                 # function syntax.
@@ -558,6 +599,10 @@ class CGenerator:
                             if modifier.dim is not None:
                                 nstr += self.visit(modifier.dim)
                             nstr += "]"
+                            if modifier.attributes:
+                                nstr += " " + self._generate_attributes(
+                                    modifier.attributes
+                                )
                         case c_ast.FuncDecl():
                             if i != 0 and isinstance(modifiers[i - 1], c_ast.PtrDecl):
                                 nstr = "(" + nstr + ")"
@@ -567,13 +612,24 @@ class CGenerator:
                                 else ""
                             )
                             nstr += "(" + args + ")"
+                            if modifier.attributes:
+                                nstr += " " + self._generate_attributes(
+                                    modifier.attributes
+                                )
                         case c_ast.PtrDecl():
+                            prefix = "*"
+                            if modifier.attributes:
+                                prefix += " " + self._generate_attributes(
+                                    modifier.attributes
+                                )
                             if modifier.quals:
-                                quals = " ".join(modifier.quals)
-                                suffix = f" {nstr}" if nstr else ""
-                                nstr = f"* {quals}{suffix}"
-                            else:
-                                nstr = "*" + nstr
+                                prefix += " " + " ".join(modifier.quals)
+                            separator = (
+                                " "
+                                if nstr and (modifier.attributes or modifier.quals)
+                                else ""
+                            )
+                            nstr = prefix + separator + nstr
                 if not emit_base_type:
                     return nstr
                 if nstr:
@@ -583,7 +639,12 @@ class CGenerator:
             case c_ast.Decl():
                 return self._generate_decl(n.type)
             case c_ast.Typename():
-                return self._generate_type(
+                prefix = (
+                    self._generate_attributes(n.attributes) + " "
+                    if n.attributes
+                    else ""
+                )
+                return prefix + self._generate_type(
                     n.type,
                     emit_declname=emit_declname,
                     emit_base_type=emit_base_type,

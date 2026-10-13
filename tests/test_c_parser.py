@@ -3889,6 +3889,237 @@ class TestCParser_c23_grammar(TestCParser_base):
         self.assertIsInstance(func.body.block_items[0], Return)
 
 
+class TestCParser_c23_compound_literals(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_storage_specifiers(self):
+        ast = self.parse("""
+            int *p = &(static int){1};
+            int value = (constexpr int){42};
+            void f(void) { (register int){2}; }
+        """)
+        static = ast.ext[0].init.expr
+        self.assertIsInstance(static, CompoundLiteral)
+        self.assertEqual(static.storage, ["static"])
+        self.assertEqual(static.type.type.type.names, ["int"])
+        self.assertEqual(static.init.exprs[0].value, "1")
+        constexpr = ast.ext[1].init
+        self.assertEqual(constexpr.storage, ["constexpr"])
+        self.assertEqual(constexpr.init.exprs[0].value, "42")
+        register = ast.ext[2].body.block_items[0]
+        self.assertIsInstance(register, CompoundLiteral)
+        self.assertEqual(register.storage, ["register"])
+
+    def test_thread_local_storage(self):
+        func = self.parse("""
+            void f(void) {
+                (thread_local int){1};
+                (_Thread_local int){2};
+                (static thread_local int){3};
+                (thread_local static int){4};
+            }
+        """).ext[0]
+        thread, old_spelling, static_first, thread_first = func.body.block_items
+        self.assertEqual(thread.storage, ["thread_local"])
+        self.assertEqual(old_spelling.storage, ["_Thread_local"])
+        self.assertEqual(static_first.storage, ["static", "thread_local"])
+        self.assertEqual(thread_first.storage, ["thread_local", "static"])
+
+    def test_storage_and_type_qualifiers(self):
+        literal = (
+            self.parse("int x = (static constexpr const unsigned long){42};")
+            .ext[0]
+            .init
+        )
+        self.assertEqual(literal.storage, ["static", "constexpr"])
+        self.assertEqual(literal.type.quals, ["const"])
+        self.assertEqual(literal.type.type.quals, ["const"])
+        self.assertEqual(literal.type.type.type.names, ["unsigned", "long"])
+
+    def test_typedef_and_abstract_types(self):
+        ast = self.parse("""
+            typedef int T;
+            T *array = (static T[]){1, 2};
+            T *pointer = (static T *){0};
+        """)
+        array = ast.ext[1].init
+        self.assertEqual(array.storage, ["static"])
+        self.assertIsInstance(array.type.type, ArrayDecl)
+        self.assertIsNone(array.type.type.dim)
+        self.assertEqual(array.type.type.type.type.names, ["T"])
+        pointer = ast.ext[2].init
+        self.assertEqual(pointer.storage, ["static"])
+        self.assertIsInstance(pointer.type.type, PtrDecl)
+        self.assertEqual(pointer.type.type.type.type.names, ["T"])
+
+    def test_empty_and_designated_initializers(self):
+        ast = self.parse("""
+            struct S { int value; };
+            struct S empty = (static struct S){};
+            struct S designated = (static struct S){.value = 1,};
+        """)
+        empty = ast.ext[1].init
+        self.assertEqual(empty.storage, ["static"])
+        self.assertIsInstance(empty.init, InitList)
+        self.assertEqual(empty.init.exprs, [])
+        designated = ast.ext[2].init.init.exprs[0]
+        self.assertIsInstance(designated, NamedInitializer)
+        self.assertEqual(designated.name[0].name, "value")
+        self.assertEqual(designated.expr.value, "1")
+
+    def test_member_access(self):
+        ast = self.parse("""
+            struct S { int value; };
+            int value = (static struct S){.value = 2}.value;
+            int zero = (static struct S){}.value;
+        """)
+        member = ast.ext[1].init
+        self.assertIsInstance(member, StructRef)
+        self.assertEqual(member.type, ".")
+        self.assertEqual(member.field.name, "value")
+        self.assertIsInstance(member.name, CompoundLiteral)
+        self.assertEqual(member.name.storage, ["static"])
+        empty_member = ast.ext[2].init
+        self.assertIsInstance(empty_member, StructRef)
+        self.assertEqual(empty_member.name.init.exprs, [])
+
+    def test_array_indexing(self):
+        ast = self.parse("""
+            int value = (static int[]){1, 2}[1];
+            int zero = (static int[2]){}[0];
+        """)
+        indexed = ast.ext[0].init
+        self.assertIsInstance(indexed, ArrayRef)
+        self.assertEqual(indexed.subscript.value, "1")
+        self.assertIsInstance(indexed.name, CompoundLiteral)
+        self.assertEqual(indexed.name.storage, ["static"])
+        self.assertEqual(len(indexed.name.init.exprs), 2)
+        empty_indexed = ast.ext[1].init
+        self.assertIsInstance(empty_indexed, ArrayRef)
+        self.assertEqual(empty_indexed.name.init.exprs, [])
+
+    def test_other_postfix_operators(self):
+        ast = self.parse("""
+            struct S { int value; } object;
+            int callback(void);
+            void f(void) {
+                (static struct S *){&object}->value;
+                (static int (*)(void)){callback}();
+                (register int){1}++;
+                (register int){2}--;
+            }
+        """)
+        arrow, call, increment, decrement = ast.ext[2].body.block_items
+        self.assertIsInstance(arrow, StructRef)
+        self.assertEqual(arrow.type, "->")
+        self.assertIsInstance(arrow.name, CompoundLiteral)
+        self.assertIsInstance(call, FuncCall)
+        self.assertIsInstance(call.name, CompoundLiteral)
+        self.assertEqual(call.name.storage, ["static"])
+        self.assertEqual(increment.op, "p++")
+        self.assertEqual(increment.expr.storage, ["register"])
+        self.assertEqual(decrement.op, "p--")
+        self.assertEqual(decrement.expr.storage, ["register"])
+
+    def test_sizeof_compound_literal(self):
+        ast = self.parse("""
+            int array_size = sizeof (static int[3]){};
+            int element_size = sizeof (static int[]){1, 2}[0];
+            int ordinary = sizeof (int){1};
+            int type_size = sizeof(int);
+        """)
+        array_size = ast.ext[0].init
+        self.assertEqual(array_size.op, "sizeof")
+        self.assertIsInstance(array_size.expr, CompoundLiteral)
+        self.assertEqual(array_size.expr.storage, ["static"])
+        self.assertEqual(array_size.expr.init.exprs, [])
+        element_size = ast.ext[1].init
+        self.assertIsInstance(element_size.expr, ArrayRef)
+        self.assertIsInstance(element_size.expr.name, CompoundLiteral)
+        self.assertIsInstance(ast.ext[2].init.expr, CompoundLiteral)
+        self.assertEqual(ast.ext[2].init.expr.storage, [])
+        self.assertIsInstance(ast.ext[3].init.expr, Typename)
+
+    def test_nested_initializer(self):
+        literal = (
+            self.parse("""
+            struct S { int *values; } object =
+                (static struct S){.values = (static int[]){1, 2}};
+        """)
+            .ext[0]
+            .init
+        )
+        self.assertEqual(literal.storage, ["static"])
+        nested = literal.init.exprs[0].expr
+        self.assertIsInstance(nested, CompoundLiteral)
+        self.assertEqual(nested.storage, ["static"])
+        self.assertIsInstance(nested.type.type, ArrayDecl)
+        self.assertEqual(len(nested.init.exprs), 2)
+
+    def test_cast_of_compound_literal(self):
+        expr = self.parse("int value = (int)(constexpr unsigned int){42};").ext[0].init
+        self.assertIsInstance(expr, Cast)
+        self.assertEqual(expr.to_type.type.type.names, ["int"])
+        self.assertIsInstance(expr.expr, CompoundLiteral)
+        self.assertEqual(expr.expr.storage, ["constexpr"])
+
+    def test_storage_rejected_in_legacy(self):
+        parser = c_parser.CParser(dialect="legacy")
+        with self.assertRaisesRegex(ParseError, "compound literals require C23"):
+            parser.parse("int value = (static int){1};")
+        with self.assertRaisesRegex(ParseError, "compound literals require C23"):
+            parser.parse("void f(void) { (register int){1}; }")
+        with self.assertRaisesRegex(ParseError, "compound literals require C23"):
+            parser.parse("void f(void) { (_Thread_local int){1}; }")
+
+    def test_storage_requires_braced_initializer(self):
+        with self.assertRaisesRegex(
+            ParseError, "require a compound literal initializer"
+        ):
+            self.parse("int value = (static int)1;")
+        with self.assertRaisesRegex(
+            ParseError, "require a compound literal initializer"
+        ):
+            self.parse("int value = sizeof(static int);")
+        with self.assertRaisesRegex(
+            ParseError, "require a compound literal initializer"
+        ):
+            self.parse("int value = (constexpr int);")
+        self.assertRaises(ParseError, self.parse, "int value = alignof(static int);")
+        self.assertRaises(ParseError, self.parse, "typeof(static int) value;")
+
+    def test_invalid_syntax(self):
+        self.assertRaises(ParseError, self.parse, "int value = (static){1};")
+        self.assertRaises(ParseError, self.parse, "int value = (static unknown){1};")
+        self.assertRaises(ParseError, self.parse, "int value = (const static int){1};")
+        self.assertRaises(ParseError, self.parse, "int value = (int static){1};")
+        self.assertRaises(ParseError, self.parse, "int value = (static int name){1};")
+        self.assertRaises(ParseError, self.parse, "int value = (static int){,};")
+        self.assertRaises(ParseError, self.parse, "int value = (static int){1;")
+
+    def test_legacy_compound_literal_postfix(self):
+        parser = c_parser.CParser(dialect="legacy")
+        ast = parser.parse("""
+            struct S { int value; };
+            int member = (struct S){1}.value;
+            int empty_member = (struct S){}.value;
+            int element = (int[]){1, 2}[0];
+            int empty_element = (int[2]){}[0];
+            int size = sizeof (int[]){1, 2};
+        """)
+        member = ast.ext[1].init
+        self.assertIsInstance(member, StructRef)
+        self.assertEqual(member.name.storage, [])
+        self.assertIsInstance(ast.ext[2].init, StructRef)
+        self.assertEqual(ast.ext[2].init.name.init.exprs, [])
+        self.assertIsInstance(ast.ext[3].init, ArrayRef)
+        self.assertEqual(ast.ext[3].init.name.storage, [])
+        self.assertIsInstance(ast.ext[4].init, ArrayRef)
+        self.assertEqual(ast.ext[4].init.name.init.exprs, [])
+        self.assertIsInstance(ast.ext[5].init.expr, CompoundLiteral)
+
+
 class TestCParser_fixed_enum(TestCParser_base):
     def setUp(self):
         self.cparser = c_parser.CParser(dialect="c23")

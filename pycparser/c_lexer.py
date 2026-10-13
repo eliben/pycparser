@@ -86,6 +86,7 @@ class CLexer:
         self._line_start = 0
         self._pending_tok: Token | None = None
         self._lineno = 1
+        self._in_attribute = False
 
     @property
     def filename(self) -> str:
@@ -166,6 +167,18 @@ class CLexer:
         """
         text = self._lexdata
         pos = self._pos
+        # Attribute arguments are balanced token sequences, not C expressions.
+        # Keep them opaque so keyword spellings and braces neither require C
+        # expression syntax nor trigger the parser's scope callbacks.
+        if self._in_attribute:
+            if text[pos] == "(":
+                return self._attribute_arguments()
+            if match := _attribute_end.match(text, pos):
+                self._in_attribute = False
+                return self._attribute_token("ATTRIBUTE_END", match.end())
+        elif match := _attribute_begin.match(text, pos):
+            self._in_attribute = True
+            return self._attribute_token("ATTRIBUTE_BEGIN", match.end())
         # We pick the longest match between:
         # - the master regex (identifiers, literals, error patterns, etc.)
         # - fixed operator/punctuator literals from the bucket for text[pos]
@@ -221,8 +234,14 @@ class CLexer:
                 self._pos += max(1, length)
                 return None
             case _RegexAction.ID:
-                tok_type = self._keyword_map.get(value, "ID")
-                if tok_type == "ID" and self.type_lookup_func(value):
+                tok_type = (
+                    "ID" if self._in_attribute else self._keyword_map.get(value, "ID")
+                )
+                if (
+                    not self._in_attribute
+                    and tok_type == "ID"
+                    and self.type_lookup_func(value)
+                ):
                     tok_type = "TYPEID"
             case _:
                 raise RuntimeError("unreachable")
@@ -230,12 +249,89 @@ class CLexer:
         tok = self._make_token(tok_type, value, pos)
         self._pos += length
 
-        if tok.type == "LBRACE":
+        if tok.type == "LBRACE" and not self._in_attribute:
             self.on_lbrace_func()
-        elif tok.type == "RBRACE":
+        elif tok.type == "RBRACE" and not self._in_attribute:
             self.on_rbrace_func()
 
         return tok
+
+    def _attribute_token(self, kind: str, end: int) -> Token:
+        """Emit the text from _pos up to end and advance lexer state.
+
+        Attribute delimiters can contain whitespace, and argument clauses can
+        span lines. Record the token's starting coordinates before updating
+        line tracking for the entire consumed span.
+        """
+        value = self._lexdata[self._pos : end]
+        tok = self._make_token(kind, value, self._pos)
+        self._lineno += value.count("\n")
+        if "\n" in value:
+            self._line_start = self._pos + value.rfind("\n") + 1
+        self._pos = end
+        return tok
+
+    def _attribute_arguments(self) -> Token | None:
+        """Scan an attribute argument clause with _pos at its opening '('.
+
+        Return one ATTRIBUTE_ARGUMENTS token containing the raw text inside
+        the outer parentheses. A stack tracks the expected closing delimiters
+        for nested (), [], and {}. Comments and quoted literals are skipped
+        while balancing, but preserved in the token value. This bypasses normal
+        token classification and brace callbacks, keeping arbitrary attribute
+        arguments separate from C expressions and scope tracking.
+
+        Report malformed clauses at the opening parenthesis. If the error
+        callback returns, consume the remaining input and return None.
+        """
+        text = self._lexdata
+        start = self._pos
+        pos = start + 1
+        closers = [")"]
+        pairs = {"(": ")", "[": "]", "{": "}"}
+        error = "Unterminated attribute arguments"
+        while pos < len(text):
+            ch = text[pos]
+            if text.startswith("/*", pos):
+                end = text.find("*/", pos + 2)
+                if end < 0:
+                    break
+                pos = end + 2
+                continue
+            if text.startswith("//", pos):
+                end = text.find("\n", pos + 2)
+                pos = len(text) if end < 0 else end
+                continue
+            # Consume whole identifiers and preprocessing numbers first, so
+            # digits in literal prefixes aren't confused with numbers and
+            # digit separators aren't mistaken for character-literal quotes.
+            if match := _attribute_word.match(text, pos):
+                pos = match.end()
+                continue
+            if ch in {"'", '"'}:
+                quote = ch
+                pos += 1
+                while pos < len(text) and text[pos] not in {quote, "\n"}:
+                    pos += 2 if text[pos] == "\\" else 1
+                if pos >= len(text) or text[pos] != quote:
+                    break
+                pos += 1
+                continue
+            if ch in pairs:
+                closers.append(pairs[ch])
+            elif ch in ")]}":
+                if ch != closers[-1]:
+                    error = "Mismatched delimiter in attribute arguments"
+                    break
+                closers.pop()
+                if not closers:
+                    tok = self._attribute_token("ATTRIBUTE_ARGUMENTS", pos + 1)
+                    tok.value = tok.value[1:-1]
+                    return tok
+            pos += 1
+        self._error(error, start)
+        self._pos = len(text)
+        return None
 
     def _make_token(self, tok_type: str, value: str, pos: int) -> Token:
         """Create a Token at an absolute input position.
@@ -488,6 +584,9 @@ _c23_keywords = {
 
 # valid C identifiers (K&R2: A.2.3), plus '$' (supported by some compilers)
 _identifier = r"[a-zA-Z_$][0-9a-zA-Z_$]*"
+_attribute_begin = re.compile(r"\[\s*\[")
+_attribute_end = re.compile(r"\]\s*\]")
+_attribute_word = re.compile(rf"{_identifier}|(?:[0-9]|\.[0-9])(?:[eEpP][+-]|[\w.'])*")
 
 # Accept digit separators in all dialects, retaining them in token values.
 # A quote must be between two digits of the appropriate base; it cannot
@@ -762,6 +861,7 @@ _fixed_tokens: list[_FixedToken] = [
     _FixedToken("PERIOD", "."),
     _FixedToken("SEMI", ";"),
     _FixedToken("COLON", ":"),
+    _FixedToken("COLONCOLON", "::"),
 ]
 
 # To avoid scanning all fixed tokens on every character, we bucket them by the
