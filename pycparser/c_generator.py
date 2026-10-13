@@ -77,6 +77,8 @@ class CGenerator:
         )
 
     def visit_Pragma(self, n: c_ast.Pragma) -> str:
+        if isinstance(n.string, c_ast.Constant):
+            return "_Pragma(" + self.visit(n.string) + ")"
         ret = "#pragma"
         if n.string:
             ret += " " + n.string
