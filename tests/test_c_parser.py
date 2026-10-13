@@ -1640,6 +1640,30 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(inner_expr.right.block_items[0].init.name, "T")
         self.assertEqual(after.type.type.names, ["T"])
 
+    def test_parenthesized_compounds_nested_final_value(self):
+        # Preserve the historical Compound representation when a nested
+        # statement expression is the outer expression's final block item.
+        e = self.parse("""
+            int main(void) {
+                int result = 2 * ({ int y = 1; ({ y + 3; }); });
+                return result == 8 ? 0 : 1;
+            }
+        """)
+        product = e.ext[0].body.block_items[0].init
+        self.assertIsInstance(product, BinaryOp)
+        self.assertEqual(product.op, "*")
+        self.assertEqual(product.left.value, "2")
+        self.assertIsInstance(product.right, Compound)
+        decl, inner = product.right.block_items
+        self.assertEqual(decl.name, "y")
+        self.assertEqual(decl.init.value, "1")
+        self.assertIsInstance(inner, Compound)
+        self.assertEqual(len(inner.block_items), 1)
+        self.assertEqual(
+            expand_init(inner.block_items[0]),
+            ["BinaryOp", ["ID", "y"], "+", ["Constant", "int", "3"]],
+        )
+
     def test_parenthesized_compounds_invalid_syntax(self):
         for expr in (
             "({ 1; }",  # Missing closing parenthesis.
