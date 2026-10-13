@@ -428,11 +428,12 @@ class Compound(Node):
 
 
 class CompoundLiteral(Node):
-    __slots__ = ("type", "init", "coord", "__weakref__")
+    __slots__ = ("type", "init", "storage", "coord", "__weakref__")
 
-    def __init__(self, type, init, coord=None):
+    def __init__(self, type, init, storage, coord=None):
         self.type = type
         self.init = init
+        self.storage = storage
         self.coord = coord
 
     def children(self):
@@ -449,7 +450,7 @@ class CompoundLiteral(Node):
         if self.init is not None:
             yield self.init
 
-    attr_names = ()
+    attr_names = ("storage",)
 
 
 class Constant(Node):

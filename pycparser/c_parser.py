@@ -626,13 +626,15 @@ class CParser:
 
     def _try_parse_paren_type_name(
         self,
-    ) -> tuple[c_ast.Typename, int, Token] | None:
+    ) -> tuple[c_ast.Typename, int, Token, list[str]] | None:
         """Parse and return a parenthesized type name if present.
 
-        Returns (typ, mark, lparen_tok) when the next tokens look like
+        Returns (typ, mark, lparen_tok, storage) when the next tokens look like
         '(' type_name ')', where typ is the parsed type name, mark is the
         token-stream position before parsing, and lparen_tok is the LPAREN
-        token. Returns None if no parenthesized type name is present.
+        token. C23 storage specifiers may precede the type name, but require a
+        following '{' for a compound literal. Returns None if no parenthesized
+        type name is present.
         """
         mark = self._mark()
         lparen_tok = self._accept("LPAREN")
@@ -641,11 +643,25 @@ class CParser:
         if not self._starts_declaration():
             self._reset(mark)
             return None
+        storage = []
+        while self._peek_type() in _STORAGE_CLASS:
+            tok = self._advance()
+            if self._dialect != "c23":
+                self._parse_error(
+                    "Storage class specifiers in compound literals require C23",
+                    self._tok_coord(tok),
+                )
+            storage.append(tok.value)
         typ = self._parse_type_name()
         if self._accept("RPAREN") is None:
             self._reset(mark)
             return None
-        return typ, mark, lparen_tok
+        if storage and self._peek_type() != "LBRACE":
+            self._parse_error(
+                "Storage class specifiers require a compound literal initializer",
+                self._tok_coord(lparen_tok),
+            )
+        return typ, mark, lparen_tok, storage
 
     # ------------------------------------------------------------------
     # Top-level
@@ -1978,7 +1994,7 @@ class CParser:
     def _parse_cast_expression(self) -> c_ast.Node:
         result = self._try_parse_paren_type_name()
         if result is not None:
-            typ, mark, lparen_tok = result
+            typ, mark, lparen_tok, _ = result
             if self._peek_type() == "LBRACE":
                 # (type){...} is a compound literal, not a cast. Examples:
                 #   (int){1}      -> compound literal, handled in postfix
@@ -2012,8 +2028,12 @@ class CParser:
             tok = self._advance()
             result = self._try_parse_paren_type_name()
             if result is not None:
-                typ, _, _ = result
-                return c_ast.UnaryOp(tok.value, typ, self._tok_coord(tok))
+                typ, mark, _, _ = result
+                if self._peek_type() != "LBRACE":
+                    return c_ast.UnaryOp(tok.value, typ, self._tok_coord(tok))
+                # sizeof (type){...} has an expression operand, including
+                # any postfix operators following the compound literal.
+                self._reset(mark)
             expr = self._parse_unary_expression()
             return c_ast.UnaryOp(tok.value, expr, self._tok_coord(tok))
 
@@ -2027,29 +2047,27 @@ class CParser:
         return self._parse_postfix_expression()
 
     # BNF: postfix_expression   : primary_expression postfix_suffix*
-    #                           | '(' type_name ')' '{' initializer_list ','? '}'
+    #                           | compound_literal postfix_suffix*
+    #      compound_literal : '(' storage_class_specifiers? type_name ')'
+    #                         braced_initializer
     def _parse_postfix_expression(self) -> c_ast.Node:
+        expr = None
         result = self._try_parse_paren_type_name()
         if result is not None:
-            typ, mark, _ = result
+            typ, mark, lparen_tok, storage = result
             # Disambiguate between casts and compound literals:
             #   (int) x   -> cast
             #   (int) {1} -> compound literal
-            lbrace_tok = self._accept("LBRACE")
-            if lbrace_tok is not None:
-                if self._accept("RBRACE"):
-                    # Empty compound literal, e.g. (int){} (standard in C23).
-                    return c_ast.CompoundLiteral(
-                        typ, c_ast.InitList([], self._tok_coord(lbrace_tok))
-                    )
-                init = self._parse_initializer_list()
-                self._accept("COMMA")
-                self._expect("RBRACE")
-                return c_ast.CompoundLiteral(typ, init)
+            if self._peek_type() == "LBRACE":
+                init = self._parse_initializer()
+                expr = c_ast.CompoundLiteral(
+                    typ, init, storage, self._tok_coord(lparen_tok)
+                )
             else:
                 self._reset(mark)
 
-        expr = self._parse_primary_expression()
+        if expr is None:
+            expr = self._parse_primary_expression()
         while True:
             if self._accept("LBRACKET"):
                 sub = self._parse_expression()

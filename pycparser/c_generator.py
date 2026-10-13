@@ -280,7 +280,8 @@ class CGenerator:
         return s
 
     def visit_CompoundLiteral(self, n: c_ast.CompoundLiteral) -> str:
-        return "(" + self.visit(n.type) + "){" + self.visit(n.init) + "}"
+        storage = " ".join(n.storage) + " " if n.storage else ""
+        return "(" + storage + self.visit(n.type) + "){" + self.visit(n.init) + "}"
 
     def visit_EmptyStatement(self, n: c_ast.EmptyStatement) -> str:
         return ";"

@@ -509,6 +509,72 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct("int i = ++(int){ 1 };")
         self._assert_ctoc_correct("struct foo_s foo = (struct foo_s){ 1, 2 };")
 
+    def test_c23_compound_literal_storage(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            typedef int T;
+            int *p = &(static T){1};
+            int value = (constexpr int){42};
+            int *array = (static int[]){1, 2};
+            struct S { int *values; } object =
+                (static struct S){.values = (static int[]){1, 2}};
+            void f(void) {
+                (register int){2};
+                (thread_local int){3};
+                (_Thread_local int){4};
+                (static thread_local int){};
+                (thread_local static int){};
+                (static constexpr const unsigned long){42};
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("(static T){1}", generated)
+        self.assertIn("(constexpr int){42}", generated)
+        self.assertIn("(register int){2}", generated)
+        self.assertIn("(thread_local int){3}", generated)
+        self.assertIn("(_Thread_local int){4}", generated)
+        self.assertIn("(static thread_local int){}", generated)
+        self.assertIn("(thread_local static int){}", generated)
+        self.assertIn("(static constexpr const unsigned long){42}", generated)
+
+    def test_c23_compound_literal_postfix(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            struct S { int value; } object;
+            int callback(void);
+            void f(void) {
+                (static struct S){.value = 2}.value++;
+                (static struct S){}.value;
+                (static struct S *){&object}->value;
+                (static int[]){1, 2}[0];
+                (static int[2]){}[0];
+                (static int (*)(void)){callback}();
+                (register int){1}++;
+                (register int){2}--;
+                sizeof (static int[3]){};
+                sizeof (static int[]){1, 2}[0];
+                (int)(constexpr unsigned int){42};
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("((static struct S){.value = 2}).value++", generated)
+        self.assertIn("((static int (*)(void)){callback})()", generated)
+        self.assertIn("sizeof((static int [3]){})", generated)
+
+    def test_legacy_compound_literal_postfix(self):
+        self._assert_ctoc_correct("""
+            struct S { int value; };
+            int member = (struct S){1}.value;
+            int empty_member = (struct S){}.value;
+            int element = (int[]){1, 2}[0];
+            int empty_element = (int[2]){}[0];
+            int size = sizeof (int[]){1, 2};
+        """)
+
     def test_enum(self):
         self._assert_ctoc_correct(r"""
             enum e
