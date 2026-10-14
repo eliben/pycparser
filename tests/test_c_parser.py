@@ -1,5 +1,6 @@
 import os
 import unittest
+from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import cast
 
@@ -114,7 +115,7 @@ class TestCParser_base(unittest.TestCase):
         self.assertEqual(node.coord.line, line)
         if column is not None:
             self.assertEqual(node.coord.column, column)
-        if file:
+        if file is not None:
             self.assertEqual(node.coord.file, file)
 
 
@@ -296,7 +297,7 @@ class TestCParser_fundamentals(TestCParser_base):
                 self.assert_coord(ast.ext[0], 1, 5 if value == "1" else 6, "main.c")
 
     def test_coords_adjacent_strings_across_files(self):
-        for filename in ("first.h", ""):
+        for filename in ("first.h", "", "main.c"):
             with self.subTest(filename=filename):
                 text = (
                     "char *a =\n"
@@ -327,6 +328,10 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assert_coord(ast.ext[0].body.block_items[0], 7, 3, "body.h")
 
     def test_coords_custom_lexer_tokens(self):
+        @dataclass(slots=True)
+        class ExtendedToken(c_parser.Token):
+            lexpos: int
+
         def lexer_class(token_factory):
             class CustomLexer(c_parser.CLexer):
                 def token(self):
@@ -345,11 +350,24 @@ class TestCParser_fundamentals(TestCParser_base):
 
             return CustomLexer
 
-        for token_factory in (c_parser.Token, SimpleNamespace):
+        token_factories = (
+            c_parser.Token,
+            SimpleNamespace,
+            lambda **fields: ExtendedToken(**fields, lexpos=0),
+        )
+        for token_factory in token_factories:
             with self.subTest(token_factory=token_factory):
                 parser = c_parser.CParser(lexer=lexer_class(token_factory))
-                ast = parser.parse("int value;", filename="custom.c")
-                self.assert_coord(ast.ext[0], 1, 5, "custom.c")
+                text = (
+                    'char *value =\n#line 7 "value.h"\n  "value"\n#line 3 "main.c"\n;\n'
+                )
+                ast = parser.parse(text, filename="main.c")
+                self.assert_coord(ast.ext[0].init, 7, 3, "value.h")
+                text = 'int (\n#line 7 "name.h"\n  value\n#line 3 "main.c"\n);\n'
+                ast = parser.parse(text, filename="main.c")
+                self.assert_coord(ast.ext[0], 7, 3, "name.h")
+                ast = parser.parse("int other;", filename="next.c")
+                self.assert_coord(ast.ext[0], 1, 5, "next.c")
 
     def test_forloop_coord(self):
         t = """\

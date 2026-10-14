@@ -520,12 +520,8 @@ class CParser:
         self._tokens.reset(mark)
 
     def _tok_coord(self, tok: Token) -> Coord:
-        # Custom lexers can return tokens without a filename.
-        filename = getattr(tok, "filename", None)
         return Coord(
-            file=self.clex.filename if filename is None else filename,
-            line=tok.lineno,
-            column=tok.column,
+            file=self._tokens.filename(tok), line=tok.lineno, column=tok.column
         )
 
     def _starts_declaration(self, tok: Token | None = None) -> bool:
@@ -2839,6 +2835,8 @@ class _TokenStream:
         self._lexer = lexer
         self._buffer: list[Token | None] = []
         self._index = 0
+        self._initial_filename = lexer.filename
+        self._filenames: dict[int, str] = {}
 
     def peek(self, k: int = 1) -> Token | None:
         """Peek at the k-th next token in the stream, without consuming it.
@@ -2870,9 +2868,18 @@ class _TokenStream:
     def reset(self, mark: int) -> None:
         self._index = mark
 
+    def filename(self, tok: Token) -> str:
+        """Return the filename saved when the lexer produced this token."""
+        return self._filenames.get(id(tok), self._initial_filename)
+
     def _fill(self, n: int) -> None:
         while len(self._buffer) < self._index + n:
             tok = self._lexer.token()
+            if tok is not None:
+                filename = self._lexer.filename
+                if filename != self._initial_filename:
+                    # The buffer keeps each token alive, so its ID cannot be reused.
+                    self._filenames[id(tok)] = filename
             self._buffer.append(tok)
             if tok is None:
                 break

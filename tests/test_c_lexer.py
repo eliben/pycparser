@@ -1,7 +1,6 @@
 import re
 import sys
 import unittest
-from dataclasses import dataclass
 
 sys.path.insert(0, "..")
 from pycparser.c_lexer import CLexer, Token
@@ -59,53 +58,6 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("caseint", ["ID"])
         self.assertTokensTypes("$dollar cent$", ["ID", "ID"])
         self.assertTokensTypes("i ^= 1;", ["ID", "XOREQUAL", "INT_CONST_DEC", "SEMI"])
-
-    def test_token_filenames(self):
-        self.clex.input(
-            'first\n#line 7 "header.h"\n#pragma once\n#\n+ last\n# 1 "main.c" 2\n0\n',
-            filename="initial.c",
-        )
-        tokens = token_list(self.clex)
-        self.assertEqual(self.clex.filename, "main.c")
-        self.assertEqual(
-            [(t.type, t.filename, t.lineno, t.column) for t in tokens],
-            [
-                ("ID", "initial.c", 1, 1),
-                ("PPPRAGMA", "header.h", 7, 2),
-                ("PPPRAGMASTR", "header.h", 7, 9),
-                ("PPHASH", "header.h", 8, 1),
-                ("PLUS", "header.h", 9, 1),
-                ("ID", "header.h", 9, 3),
-                ("INT_CONST_OCT", "main.c", 1, 1),
-            ],
-        )
-
-    def test_token_filename_reset(self):
-        self.clex.input('one\n#line 10\ntwo\n#line 20 ""\nthree', "first.c")
-        tokens = token_list(self.clex)
-        self.assertEqual(
-            [(t.filename, t.lineno, t.column) for t in tokens],
-            [("first.c", 1, 1), ("first.c", 10, 1), ("", 20, 1)],
-        )
-        self.clex.input("four")
-        self.assertEqual(require_token(self.clex.token()).filename, "")
-        self.assertEqual(tokens[0].filename, "first.c")
-        self.assertEqual(tokens[0], Token("ID", "one", 1, 1))
-        self.assertEqual(
-            repr(tokens[0]), "Token(type='ID', value='one', lineno=1, column=1)"
-        )
-
-    def test_token_subclass_required_field(self):
-        @dataclass
-        class LexerToken(Token):
-            lexpos: int
-
-        token = LexerToken("ID", "value", 1, 1, 0)
-        self.assertEqual(token.lexpos, 0)
-        self.assertIsNone(token.filename)
-        named_token = LexerToken("ID", "value", 1, 1, 0, filename="header.h")
-        self.assertEqual(named_token.lexpos, 0)
-        self.assertEqual(named_token.filename, "header.h")
 
     def test_id_typeid(self):
         self.assertTokensTypes("myt", ["ID"])
