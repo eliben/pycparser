@@ -557,11 +557,20 @@ class CGenerator:
 
     def visit_NamedInitializer(self, n: c_ast.NamedInitializer) -> str:
         s = ""
-        for name in n.name:
-            if isinstance(name, c_ast.ID):
+        designator_types = n.designator_types
+        if designator_types is None:
+            designator_types = [
+                "." if isinstance(name, c_ast.ID) else "[" for name in n.name
+            ]
+        if len(designator_types) != len(n.name):
+            raise ValueError("designator_types must have one entry per name")
+        for name, designator_type in zip(n.name, designator_types):
+            if designator_type == ".":
                 s += "." + name.name
-            else:
+            elif designator_type == "[":
                 s += "[" + self._visit_expr(name) + "]"
+            else:
+                raise ValueError(f"Invalid designator type: {designator_type!r}")
         s += " = " + self._visit_expr(n.expr)
         return s
 

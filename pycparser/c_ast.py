@@ -1209,11 +1209,12 @@ class Label(Node):
 
 
 class NamedInitializer(Node):
-    __slots__ = ("name", "expr", "coord", "__weakref__")
+    __slots__ = ("name", "expr", "designator_types", "coord", "__weakref__")
 
-    def __init__(self, name, expr, coord=None):
+    def __init__(self, name, expr, coord=None, *, designator_types=None):
         self.name = name
         self.expr = expr
+        self.designator_types = designator_types
         self.coord = coord
 
     def children(self):
@@ -1229,7 +1230,7 @@ class NamedInitializer(Node):
             yield self.expr
         yield from self.name or []
 
-    attr_names = ()
+    attr_names = ("designator_types",)
 
 
 class ParamList(Node):
