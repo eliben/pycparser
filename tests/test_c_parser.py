@@ -1051,6 +1051,28 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(pdecl, PtrDecl)
         self.assertEqual(pdecl.quals, ["const"])
 
+    def test_restricted_specifier_lists(self):
+        # Sharing specifier parsing must not admit storage classes or function
+        # specifiers in member declarations and type names.
+        with self.assertRaisesRegex(ParseError, "Invalid specifier list"):
+            self.parse("struct S { static int x; };")
+        with self.assertRaisesRegex(ParseError, "Invalid specifier list"):
+            self.parse("struct S { inline int x; };")
+        with self.assertRaisesRegex(ParseError, "Invalid specifier list"):
+            self.parse("int n = sizeof(inline int);")
+
+    def test_specifier_list_missing_type(self):
+        # Qualifiers alone do not supply a type; report the first qualifier's
+        # position in both member declarations and type names.
+        with self.assertRaisesRegex(
+            ParseError, r"^types.c:1:12: Missing type in declaration$"
+        ):
+            self.parse("struct S { const x; };", filename="types.c")
+        with self.assertRaisesRegex(
+            ParseError, r"^types.c:1:16: Missing type in declaration$"
+        ):
+            self.parse("int n = sizeof(const);", filename="types.c")
+
     def test_atomic_specifier(self):
         self.assertEqual(
             self.get_decl("_Atomic(int) ai;"),
@@ -1130,6 +1152,44 @@ class TestCParser_fundamentals(TestCParser_base):
                 ],
             ],
         )
+
+    def test_atomic_specifier_rejects_array_and_function(self):
+        # _Atomic cannot wrap an array or function type (C11 6.7.2.4p3). These
+        # must raise ParseError rather than crash with AttributeError.
+        for s in (
+            "_Atomic(char[3]) a;",
+            "_Atomic(int[]) a;",
+            "_Atomic(char*[3]) a;",
+            "_Atomic(void(int)) f;",
+            "typedef _Atomic(char[3]) t;",
+            "void g(_Atomic(char[3]));",
+        ):
+            with self.assertRaises(ParseError):
+                self.parse(s)
+
+    def test_atomic_specifier_rejects_array_in_sizeof(self):
+        with self.assertRaisesRegex(
+            ParseError, "_Atomic cannot be applied to array or function type"
+        ):
+            self.parse("int n = sizeof(_Atomic(char[3]));")
+
+    def test_atomic_specifier_rejects_function_in_sizeof(self):
+        with self.assertRaisesRegex(
+            ParseError, "_Atomic cannot be applied to array or function type"
+        ):
+            self.parse("int n = sizeof(_Atomic(void(int)));")
+
+    def test_atomic_specifier_rejects_array_in_cast(self):
+        with self.assertRaisesRegex(
+            ParseError, "_Atomic cannot be applied to array or function type"
+        ):
+            self.parse("void f(void) { (_Atomic(char[3]))0; }")
+
+    def test_atomic_specifier_rejects_function_in_cast(self):
+        with self.assertRaisesRegex(
+            ParseError, "_Atomic cannot be applied to array or function type"
+        ):
+            self.parse("void f(void) { (_Atomic(void(int)))0; }")
 
     def test_atomic_specifier_qualifiers(self):
         decl = self.parse("const _Atomic(volatile int *) p;").ext[0]
@@ -1441,6 +1501,89 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_parenthesized_compounds_binary_operands(self):
+        # Regression for #538: the compound is a binary operand, rather than
+        # the entire right-hand side of an assignment.
+        e = self.parse("""
+            float f(float z) {
+                return z / ({ float a = 1.0; a * 2; });
+            }
+        """)
+        expr = e.ext[0].body.block_items[0].expr
+        self.assertIsInstance(expr, BinaryOp)
+        self.assertEqual(expr.op, "/")
+        self.assertEqual(expr.left.name, "z")
+        self.assertIsInstance(expr.right, Compound)
+        decl, value = expr.right.block_items
+        self.assertEqual(decl.name, "a")
+        self.assertEqual(decl.init.value, "1.0")
+        self.assertEqual(
+            expand_init(value),
+            ["BinaryOp", ["ID", "a"], "*", ["Constant", "int", "2"]],
+        )
+
+    def test_parenthesized_compounds_precedence(self):
+        # Multiplication still binds tighter than addition when statement
+        # expressions appear as operands on either side.
+        e = self.parse("void f() { ({ 1; }) + 2 * ({ 3; }); }")
+        expr = e.ext[0].body.block_items[0]
+        self.assertEqual(expr.op, "+")
+        self.assertIsInstance(expr.left, Compound)
+        self.assertEqual(expr.left.block_items[0].value, "1")
+        self.assertEqual(expr.right.op, "*")
+        self.assertEqual(expr.right.left.value, "2")
+        self.assertIsInstance(expr.right.right, Compound)
+        self.assertEqual(expr.right.right.block_items[0].value, "3")
+
+    def test_parenthesized_compounds_unary_and_cast(self):
+        # Unary minus applies to the statement expression before the cast.
+        e = self.parse("void f() { (int) -({ 1.0; }); }")
+        expr = e.ext[0].body.block_items[0]
+        self.assertIsInstance(expr, Cast)
+        self.assertIsInstance(expr.expr, UnaryOp)
+        self.assertEqual(expr.expr.op, "-")
+        self.assertIsInstance(expr.expr.expr, Compound)
+        self.assertEqual(expr.expr.expr.block_items[0].value, "1.0")
+
+    def test_parenthesized_compounds_postfix(self):
+        # A statement expression can be the base of an array subscript.
+        e = self.parse("void f(int *p) { ({ p; })[0]; }")
+        expr = e.ext[0].body.block_items[0]
+        self.assertIsInstance(expr, ArrayRef)
+        self.assertIsInstance(expr.name, Compound)
+        self.assertEqual(expr.name.block_items[0].name, "p")
+        self.assertEqual(expr.subscript.value, "0")
+
+    def test_parenthesized_compounds_nested_scope(self):
+        # The inner expression sees T as a variable; after the outer
+        # expression, T is again a typedef.
+        e = self.parse("""
+            typedef int T;
+            void f() {
+                int x = 1 + ({ int T = 2; ({ T + 3; }); });
+                T y;
+            }
+        """)
+        decl, after = e.ext[1].body.block_items
+        outer = decl.init.right
+        self.assertIsInstance(outer, Compound)
+        self.assertEqual(outer.block_items[0].name, "T")
+        # The final nested statement expression retains its Compound node.
+        inner = outer.block_items[1]
+        self.assertIsInstance(inner, Compound)
+        self.assertEqual(inner.block_items[0].left.name, "T")
+        self.assertEqual(inner.block_items[0].op, "+")
+        self.assertEqual(inner.block_items[0].right.value, "3")
+        self.assertEqual(after.type.type.names, ["T"])
+
+    def test_parenthesized_compounds_invalid_syntax(self):
+        # Missing closing parenthesis.
+        with self.assertRaises(ParseError):
+            self.parse("int f() { return 1 + ({ 2; }; }")
+        # Missing expression-statement semicolon.
+        with self.assertRaises(ParseError):
+            self.parse("int f() { return 1 + ({ 2 }); }")
+
     def test_enums(self):
         e1 = "enum mycolor op;"
         e1_type = self.parse(e1).ext[0].type.type
@@ -1488,6 +1631,77 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(e3_elist.enumerators[0].value, None)
         self.assertEqual(e3_elist.enumerators[1].name, "blue")
         self.assertEqual(e3_elist.enumerators[2].name, "green")
+
+    def test_enum_leading_pragma(self):
+        enum = self.parse("enum E {\n#pragma before\nA, B };", "enum.c").ext[0].type
+        pragma, a, b = enum.values.enumerators
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "before")
+        self.assertEqual(pragma.coord.file, "enum.c")
+        self.assertEqual(pragma.coord.line, 2)
+        self.assertEqual(a.name, "A")
+        self.assertEqual(b.name, "B")
+        self.assertEqual(enum.values.coord, a.coord)
+
+    def test_enum_intervening_pragma(self):
+        enum = self.parse("enum E { A,\n#pragma between\nB = A + 1 };").ext[0].type
+        a, pragma, b = enum.values.enumerators
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "between")
+        self.assertEqual(b.name, "B")
+        self.assertIsInstance(b.value, BinaryOp)
+        self.assertEqual(b.value.left.name, "A")
+
+    def test_enum_pragma_before_comma(self):
+        enum = self.parse("enum E { A\n#pragma between\n, B };").ext[0].type
+        a, pragma, b = enum.values.enumerators
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "between")
+        self.assertEqual(b.name, "B")
+
+    def test_enum_trailing_pragma(self):
+        enum = self.parse("enum E { A\n#pragma after\n};").ext[0].type
+        a, pragma = enum.values.enumerators
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "after")
+
+    def test_enum_pragma_after_trailing_comma(self):
+        enum = self.parse("enum E { A,\n#pragma after\n};").ext[0].type
+        a, pragma = enum.values.enumerators
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "after")
+
+    def test_enum_pragma_operator(self):
+        enum = (
+            self.parse('enum E { _Pragma("before") A _Pragma("after") };').ext[0].type
+        )
+        before, a, after = enum.values.enumerators
+        self.assertIsInstance(before, Pragma)
+        self.assertIsInstance(before.string, Constant)
+        self.assertEqual(before.string.value, '"before"')
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(after, Pragma)
+        self.assertEqual(after.string.value, '"after"')
+
+    def test_enum_pragmas_require_enumerator(self):
+        with self.assertRaises(ParseError):
+            self.parse('enum E {\n#pragma foo\n_Pragma("bar") };')
+
+    def test_enum_pragma_does_not_replace_comma(self):
+        with self.assertRaises(ParseError):
+            self.parse("enum E { A\n#pragma between\nB };")
+
+    def test_enum_pragma_does_not_allow_duplicate_comma(self):
+        with self.assertRaises(ParseError):
+            self.parse("enum E { A,\n#pragma between\n, B };")
+
+    def test_enum_pragma_does_not_allow_leading_comma(self):
+        with self.assertRaises(ParseError):
+            self.parse("enum E {\n#pragma before\n, A };")
 
     def test_typedef(self):
         # without typedef, error
@@ -3108,6 +3322,121 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(s1_ast.ext[3], Pragma)
         self.assertEqual(s1_ast.ext[3].string.value, r'"other \"string\""')
         self.assertEqual(s1_ast.ext[3].coord.line, 15)
+
+    def test_pragma_before_declaration_semicolon_issue_478(self):
+        ast = self.parse(
+            """struct knote;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+struct klist { struct knote *slh_first; }
+#pragma clang diagnostic pop
+;
+""",
+            "event.h",
+        )
+        forward, push, ignored, decl, pop = ast.ext
+        self.assertEqual(forward.type.name, "knote")
+        self.assertIsInstance(push, Pragma)
+        self.assertEqual(push.string, "clang diagnostic push")
+        self.assertEqual(
+            ignored.string, 'clang diagnostic ignored "-Wnullability-completeness"'
+        )
+        self.assertIsInstance(decl.type, Struct)
+        self.assertEqual(decl.type.name, "klist")
+        self.assertEqual(decl.type.decls[0].name, "slh_first")
+        self.assertIsInstance(pop, Pragma)
+        self.assertEqual(pop.string, "clang diagnostic pop")
+        self.assertEqual(pop.coord.file, "event.h")
+        self.assertEqual(pop.coord.line, 5)
+
+    def test_pragma_before_initialized_declaration_semicolon(self):
+        ast = self.parse('int a = 1, b = 2 _Pragma("first")\n#pragma second\n; int c;')
+        a, b, first, second, c = ast.ext
+        self.assertEqual(a.init.value, "1")
+        self.assertEqual(b.init.value, "2")
+        self.assertIsInstance(first, Pragma)
+        self.assertEqual(first.string.value, '"first"')
+        self.assertIsInstance(second, Pragma)
+        self.assertEqual(second.string, "second")
+        self.assertEqual(c.name, "c")
+
+    def test_pragma_before_local_declaration_semicolon(self):
+        ast = self.parse('void f(void) { int x _Pragma("after"); x = 1; }')
+        decl, pragma, assignment = ast.ext[0].body.block_items
+        self.assertEqual(decl.name, "x")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertIsInstance(assignment, Assignment)
+
+    def test_pragma_before_typedef_semicolon(self):
+        ast = self.parse("typedef int T\n#pragma after\n; T value;")
+        typedef, pragma, decl = ast.ext
+        self.assertIsInstance(typedef, Typedef)
+        self.assertEqual(typedef.name, "T")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "after")
+        self.assertEqual(decl.type.type.names, ["T"])
+
+    def test_pragma_before_struct_member_semicolon(self):
+        ast = self.parse('struct S { int x : 3 _Pragma("after"); int y; };')
+        x, pragma, y = ast.ext[0].type.decls
+        self.assertEqual(x.bitsize.value, "3")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertEqual(y.name, "y")
+
+    def test_pragma_before_anonymous_union_member_semicolon(self):
+        ast = self.parse('struct S { union { int x; } _Pragma("after"); int y; };')
+        anonymous, pragma, y = ast.ext[0].type.decls
+        self.assertIsNone(anonymous.name)
+        self.assertIsInstance(anonymous.type, Union)
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertEqual(y.name, "y")
+
+    def test_pragma_before_for_declaration_semicolon(self):
+        ast = self.parse(
+            'void f(void) { for (int i = 0 _Pragma("after"); i < 2; ++i) {} }'
+        )
+        loop = ast.ext[0].body.block_items[0]
+        decl, pragma = loop.init.decls
+        self.assertEqual(decl.name, "i")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertIsInstance(loop.cond, BinaryOp)
+        self.assertEqual(loop.next.op, "++")
+
+    def test_pragma_before_knr_declaration_semicolon(self):
+        ast = self.parse('int f(x, y) int x _Pragma("after"); int y; { return x + y; }')
+        x, pragma, y = ast.ext[0].param_decls
+        self.assertEqual(x.name, "x")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertEqual(y.name, "y")
+
+    def test_declaration_pragma_requires_semicolon(self):
+        with self.assertRaises(ParseError):
+            self.parse('struct S { int x; } _Pragma("after")')
+
+    def test_declaration_pragma_does_not_end_declaration(self):
+        with self.assertRaises(ParseError):
+            self.parse('int x _Pragma("after") int y;')
+
+    def test_c23_attributes_with_trailing_declaration_pragma(self):
+        ast = c_parser.CParser(dialect="c23").parse(
+            '[[deprecated]] auto x = 1 _Pragma("global"); '
+            'void f(void) { [[maybe_unused]] auto y = 2 _Pragma("local"); }'
+        )
+        x, global_pragma, func = ast.ext
+        self.assertEqual(x.attributes[0].attributes[0].name, "deprecated")
+        self.assertEqual(global_pragma.string.value, '"global"')
+        y, local_pragma = func.body.block_items
+        self.assertEqual(y.attributes[0].attributes[0].name, "maybe_unused")
+        self.assertEqual(local_pragma.string.value, '"local"')
+
+    def test_c23_attributes_cannot_prefix_pragma(self):
+        with self.assertRaises(ParseError):
+            c_parser.CParser(dialect="c23").parse('[[deprecated]] _Pragma("after")')
 
     def test_pragmacomp_or_statement(self):
         s1 = r"""

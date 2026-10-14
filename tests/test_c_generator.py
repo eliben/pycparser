@@ -51,6 +51,16 @@ def parse_to_ast(src):
     return _c_parser.parse(src)
 
 
+def declared_type(node):
+    """Return the type specifier under a declaration or typedef."""
+    typ = node.type
+    while isinstance(typ, (c_ast.PtrDecl, c_ast.ArrayDecl, c_ast.FuncDecl)):
+        typ = typ.type
+    if isinstance(typ, c_ast.TypeDecl):
+        typ = typ.type
+    return typ
+
+
 class TestFunctionDeclGeneration(unittest.TestCase):
     class _FuncDeclVisitor(c_ast.NodeVisitor):
         def __init__(self):
@@ -101,6 +111,78 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct("auto int a;")
         self._assert_ctoc_correct("register int a;")
         self._assert_ctoc_correct("_Thread_local int a;")
+        # Plain declarators do not share a type-definition node, so they stay
+        # separate. Joining them is not required for the types to match.
+        self.assertEqual(self._run_c_to_c("int b, a;"), "int b;\nint a;\n")
+
+    def test_multi_declarator_type_definition_is_emitted_once(self):
+        # One definition must be emitted once. Repeating it gives the later
+        # declarator a different type, or redefines a tag.
+        union_src = """
+            struct a { int x; };
+            union {
+                struct a b;
+            } u, *uu = &u;
+            """
+        union_out = self._assert_ctoc_correct(union_src)
+        self.assertEqual(union_out.count("struct a b"), 1)
+        self.assertIn("*uu = &u", union_out)
+        union_ast = parse_to_ast(union_out)
+        self.assertIs(declared_type(union_ast.ext[1]), declared_type(union_ast.ext[2]))
+
+        alias_src = "typedef struct { int a; } B, C;"
+        alias_out = self._assert_ctoc_correct(alias_src)
+        self.assertEqual(alias_out.count("typedef"), 1)
+        self.assertEqual(alias_out.count("int a"), 1)
+        alias_ast = parse_to_ast(alias_out)
+        self.assertIs(declared_type(alias_ast.ext[0]), declared_type(alias_ast.ext[1]))
+
+        typedef_src = """
+            typedef struct MyStruct {
+                int a;
+            } myType, *pMyType;
+            """
+        typedef_out = self._assert_ctoc_correct(typedef_src)
+        self.assertEqual(typedef_out.count("typedef"), 1)
+        self.assertEqual(typedef_out.count("struct MyStruct"), 1)
+        self.assertIn("*pMyType", typedef_out)
+        typedef_ast = parse_to_ast(typedef_out)
+        self.assertIs(
+            declared_type(typedef_ast.ext[0]), declared_type(typedef_ast.ext[1])
+        )
+
+        enum_src = "enum { A, B } x, y;"
+        enum_out = self._assert_ctoc_correct(enum_src)
+        self.assertEqual(enum_out.count("A,"), 1)
+        enum_ast = parse_to_ast(enum_out)
+        self.assertIs(declared_type(enum_ast.ext[0]), declared_type(enum_ast.ext[1]))
+
+        member_src = """
+            struct Outer {
+                struct { int a; } x, *y;
+            };
+            """
+        member_out = self._assert_ctoc_correct(member_src)
+        self.assertEqual(member_out.count("int a"), 1)
+        self.assertIn("x, *y", member_out)
+
+        block_src = """
+            void f(void) {
+                struct { int a; } x, *y;
+            }
+            """
+        block_out = self._assert_ctoc_correct(block_src)
+        self.assertEqual(block_out.count("int a"), 1)
+        self.assertIn("x, *y", block_out)
+
+        # Separate definitions stay separate, even when the text matches.
+        twins_src = "struct { int a; } x; struct { int a; } y;"
+        twins_out = self._assert_ctoc_correct(twins_src)
+        self.assertEqual(twins_out.count("int a"), 2)
+        twins_ast = parse_to_ast(twins_out)
+        self.assertIsNot(
+            declared_type(twins_ast.ext[0]), declared_type(twins_ast.ext[1])
+        )
 
     def test_complex_decls(self):
         self._assert_ctoc_correct("int** (*a)(void);")
@@ -491,6 +573,81 @@ class TestCtoC(unittest.TestCase):
             }
         """)
 
+    def test_statement_expression_return(self):
+        # A returned block needs the parentheses that make it an expression.
+        self._assert_ctoc_correct("int f(void) { return ({ int x = 1; x; }); }")
+
+    def test_statement_expression_subscript(self):
+        # Subscript brackets do not replace statement-expression parentheses.
+        self._assert_ctoc_correct("int f(int *a) { return a[({ 1; })]; }")
+
+    def test_statement_expression_assignment(self):
+        # GNU statement expressions can occur on either side of an assignment.
+        self._assert_ctoc_correct("void f(int x) { ({ x; }) = ({ 2; }); }")
+
+    def test_statement_expression_conditions(self):
+        # The enclosing condition parentheses must surround the complete ({...}).
+        self._assert_ctoc_correct("""
+            void f(int n) {
+                if (({ n; })) n--;
+                while (({ n > 0; })) n--;
+                do { n++; } while (({ n < 0; }));
+                switch (({ n; })) { case 0: break; }
+            }
+        """)
+
+    def test_statement_expression_for_clauses(self):
+        # All three for clauses are expression contexts, including the initializer.
+        source = """
+            void f(void) {
+                int i;
+                for (({ i = 0; }); ({ i < 2; }); ({ i++; })) {}
+            }
+        """
+        self._assert_ctoc_correct(source)
+        self._assert_ctoc_correct(source, reduce_parentheses=True)
+
+    def test_statement_expression_sizeof_and_array_bound(self):
+        # Both array bounds and sizeof operands need expression rendering.
+        self._assert_ctoc_correct("""
+            void f(void) {
+                int a[({ 3; })];
+                int size = sizeof(({ a[0]; }));
+            }
+        """)
+
+    def test_comma_expression_contexts(self):
+        # Bounds, assignment operands, and arguments need comma grouping;
+        # conditions, subscripts, and return expressions allow unwrapped commas.
+        generated = self._assert_ctoc_correct("""
+            int f(int x, int *p) {
+                int a[(1, 2)];
+                x = (1, 2);
+                f((1, 2), p);
+                if (x, p[0]) x = 1;
+                return p[x, 1], x;
+            }
+        """)
+        self.assertIn("a[(1, 2)]", generated)
+        self.assertIn("x = (1, 2);", generated)
+        self.assertIn("f((1, 2), p);", generated)
+        self.assertIn("if (x, p[0])", generated)
+        self.assertIn("return p[x, 1], x;", generated)
+
+    def test_comma_in_constant_expression_contexts(self):
+        # These grammar positions require parentheses around comma expressions,
+        # even though pycparser leaves constant-expression evaluation to callers.
+        self._assert_ctoc_correct("""
+            void f(void) {
+                _Static_assert((0, 1), "ok");
+                enum E { A = (1, 2) };
+                struct S { int bits : (1, 2); };
+                _Alignas((0, 8)) int x;
+                int a[3] = { [(0, 1)] = 1 };
+                switch (x) { case (0, 1): break; }
+            }
+        """)
+
     def test_comma_operator_funcarg(self):
         self._assert_ctoc_correct(r"""
             void f(int x) { return x; }
@@ -529,6 +686,124 @@ class TestCtoC(unittest.TestCase):
             #pragma baz
             } s;
         """)
+
+    def test_pragma_operator_literals(self):
+        literals = [
+            '""',
+            '"foo"',
+            r'"message(\"hello\")"',
+            r'"message(\"C:\\\\tmp\")"',
+            r'"foo\nbar"',
+            'L"foo"',
+            'u8"foo"',
+            'u"foo"',
+            'U"foo"',
+        ]
+        for literal in literals:
+            with self.subTest(literal=literal):
+                source = f"_Pragma(\n{literal}\n)\nint x;"
+                generated = self._assert_ctoc_correct(source)
+                self.assertEqual(generated, f"_Pragma({literal})\nint x;\n")
+
+    def test_pragma_operator_contexts(self):
+        self._assert_ctoc_correct(r"""
+            #pragma foo
+            _Pragma("bar")
+            void f(void) {
+                _Pragma("foo")
+                int x = 0;
+                if (x)
+                    _Pragma("bar")
+                    _Pragma("baz")
+                    x = 1;
+                label:
+                    _Pragma("qux")
+                    x++;
+                _Pragma("")
+            }
+            struct s {
+                _Pragma("foo")
+                int x;
+                _Pragma("bar")
+            };
+            union u {
+                _Pragma("baz")
+                int x;
+            };
+            _Pragma("")
+            #pragma
+        """)
+
+    def test_pragma_before_declaration_semicolon_issue_478(self):
+        generated = self._assert_ctoc_correct("""struct knote;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+struct klist { struct knote *slh_first; }
+#pragma clang diagnostic pop
+;
+""")
+        self.assertEqual(
+            generated,
+            "struct knote;\n#pragma clang diagnostic push\n"
+            '#pragma clang diagnostic ignored "-Wnullability-completeness"\n'
+            "struct klist\n{\n  struct knote *slh_first;\n};\n"
+            "#pragma clang diagnostic pop\n",
+        )
+
+    def test_pragma_before_local_declaration_semicolon(self):
+        generated = self._assert_ctoc_correct("""void f(void) {
+    struct S { int x; } a, *b = &a
+#pragma after
+    ;
+}""")
+        self.assertIn("  } a, *b = &a;\n  #pragma after\n", generated)
+        self.assertEqual(generated.count("struct S"), 1)
+
+    def test_pragma_before_typedef_and_prototype_semicolons(self):
+        generated = self._assert_ctoc_correct(
+            'typedef int T _Pragma("type"); T f(void)\n#pragma function\n;'
+        )
+        self.assertEqual(
+            generated, 'typedef int T;\n_Pragma("type")\nT f(void);\n#pragma function\n'
+        )
+
+    def test_pragma_before_struct_member_semicolons(self):
+        generated = self._assert_ctoc_correct("""struct S {
+    int x : 3
+#pragma field
+    ;
+    union { int y; } _Pragma("anonymous");
+};""")
+        self.assertIn("  int x : 3;\n  #pragma field\n", generated)
+        self.assertIn('  };\n  _Pragma("anonymous")\n', generated)
+
+    def test_pragma_before_for_declaration_semicolon(self):
+        generated = self._assert_ctoc_correct("""void f(void) {
+    for (int i = 0, j = 1 _Pragma("first")
+#pragma second
+    ; i < j; ++i) {}
+}""")
+        self.assertIn(
+            'for (int i = 0, j = 1\n  _Pragma("first")\n  #pragma second\n  ; i < j; ++i)',
+            generated,
+        )
+
+    def test_pragma_before_knr_declaration_semicolon(self):
+        generated = self._assert_ctoc_correct(
+            'int f(x, y) int x _Pragma("first"); int y\n#pragma second\n; { return x + y; }'
+        )
+        self.assertIn('int x;\n_Pragma("first")\nint y;\n#pragma second\n{', generated)
+
+    def test_c23_attributes_with_trailing_declaration_pragmas(self):
+        parser = c_parser.CParser(dialect="c23")
+        ast = parser.parse("""[[deprecated]] auto x = 1 _Pragma("global");
+void f(void) { [[maybe_unused]] auto y = 2 _Pragma("local"); }
+struct S { [[deprecated]] int z _Pragma("member"); };""")
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn('[[deprecated]] auto x = 1;\n_Pragma("global")\n', generated)
+        self.assertIn('[[maybe_unused]] auto y = 2;\n  _Pragma("local")\n', generated)
+        self.assertIn('[[deprecated]] int z;\n  _Pragma("member")\n', generated)
 
     def test_compound_literal_statement(self):
         self._assert_ctoc_correct(
@@ -623,6 +898,55 @@ class TestCtoC(unittest.TestCase):
                 i
             };
         """)
+
+    def test_enum_leading_pragma(self):
+        generated = self._assert_ctoc_correct("enum E {\n#pragma before\nA, B };")
+        self.assertEqual(generated, "enum E\n{\n  #pragma before\n  A,\n  B\n};\n")
+
+    def test_enum_pragmas_around_comma(self):
+        generated = self._assert_ctoc_correct(
+            "enum E { A = 1\n#pragma before_comma\n,\n#pragma after_comma\nB };"
+        )
+        self.assertEqual(
+            generated,
+            "enum E\n{\n  A = 1,\n  #pragma before_comma\n  #pragma after_comma\n  B\n};\n",
+        )
+
+    def test_enum_trailing_pragmas(self):
+        generated = self._assert_ctoc_correct("enum E { A\n#pragma after\n#pragma\n};")
+        self.assertEqual(generated, "enum E\n{\n  A\n  #pragma after\n  #pragma\n};\n")
+
+    def test_enum_pragma_after_trailing_comma(self):
+        generated = self._assert_ctoc_correct("enum E { A,\n#pragma after\n};")
+        self.assertEqual(generated, "enum E\n{\n  A\n  #pragma after\n};\n")
+
+    def test_enum_pragma_operators(self):
+        generated = self._assert_ctoc_correct(
+            'enum E { _Pragma("before") A, _Pragma("between") B _Pragma("after") };'
+        )
+        self.assertEqual(
+            generated,
+            'enum E\n{\n  _Pragma("before")\n  A,\n  _Pragma("between")\n  B\n  _Pragma("after")\n};\n',
+        )
+
+    def test_c23_enum_pragmas(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """enum [[deprecated]] E : unsigned int {
+#pragma before
+    A [[deprecated]] = 1,
+#pragma between
+    B
+#pragma after
+};"""
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertEqual(
+            generated,
+            "enum [[deprecated]] E : unsigned int\n{\n"
+            "  #pragma before\n  A [[deprecated]] = 1,\n"
+            "  #pragma between\n  B\n  #pragma after\n};\n",
+        )
 
     def test_enum_typedef(self):
         self._assert_ctoc_correct("typedef enum EnumName EnumTypedefName;")
