@@ -253,14 +253,22 @@ class CGenerator:
         ``union { struct a b; } u, *uu`` both return that same union node.
         ``struct Foo x`` has no body, so it returns None. Callers compare
         the result with ``is``: two anonymous structs that only look alike
-        are different nodes.
+        are different nodes. Attribute wrappers are skipped too, since
+        each declarator can have its own wrapper around the shared body.
         """
         if not isinstance(n, (c_ast.Decl, c_ast.Typedef)):
             return None
         typ = n.type
-        while isinstance(typ, (c_ast.PtrDecl, c_ast.ArrayDecl, c_ast.FuncDecl)):
-            typ = typ.type
-        if isinstance(typ, c_ast.TypeDecl):
+        while isinstance(
+            typ,
+            (
+                c_ast.PtrDecl,
+                c_ast.ArrayDecl,
+                c_ast.FuncDecl,
+                c_ast.TypeDecl,
+                c_ast.AttributedType,
+            ),
+        ):
             typ = typ.type
         if isinstance(typ, (c_ast.Struct, c_ast.Union)) and typ.decls is not None:
             return typ
