@@ -234,10 +234,15 @@ class CGenerator:
 
     def visit_DeclList(self, n: c_ast.DeclList) -> str:
         s = self.visit(n.decls[0])
-        if len(n.decls) > 1:
-            s += ", " + ", ".join(
-                self.visit_Decl(decl, no_type=True) for decl in n.decls[1:]
-            )
+        for decl in n.decls[1:]:
+            if isinstance(decl, c_ast.Pragma):
+                # A for initializer can have pragmas before its semicolon.
+                # Keep directives on their own lines, without a comma.
+                s += "\n" + self._make_indent() + self.visit(decl)
+            else:
+                s += ", " + self.visit_Decl(decl, no_type=True)
+        if isinstance(n.decls[-1], c_ast.Pragma):
+            s += "\n" + self._make_indent()
         return s
 
     def _defined_type(
@@ -382,8 +387,8 @@ class CGenerator:
         self.indent_level = 0
         body = self.visit(n.body)
         if n.param_decls:
-            knrdecls = ";\n".join(self.visit(p) for p in n.param_decls)
-            return decl + "\n" + knrdecls + ";\n" + body + "\n"
+            knrdecls = "".join(self._generate_stmt(p) for p in n.param_decls)
+            return decl + "\n" + knrdecls + body + "\n"
         else:
             return decl + "\n" + body + "\n"
 

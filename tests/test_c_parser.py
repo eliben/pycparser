@@ -3207,6 +3207,121 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(s1_ast.ext[3].string.value, r'"other \"string\""')
         self.assertEqual(s1_ast.ext[3].coord.line, 15)
 
+    def test_pragma_before_declaration_semicolon_issue_478(self):
+        ast = self.parse(
+            """struct knote;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+struct klist { struct knote *slh_first; }
+#pragma clang diagnostic pop
+;
+""",
+            "event.h",
+        )
+        forward, push, ignored, decl, pop = ast.ext
+        self.assertEqual(forward.type.name, "knote")
+        self.assertIsInstance(push, Pragma)
+        self.assertEqual(push.string, "clang diagnostic push")
+        self.assertEqual(
+            ignored.string, 'clang diagnostic ignored "-Wnullability-completeness"'
+        )
+        self.assertIsInstance(decl.type, Struct)
+        self.assertEqual(decl.type.name, "klist")
+        self.assertEqual(decl.type.decls[0].name, "slh_first")
+        self.assertIsInstance(pop, Pragma)
+        self.assertEqual(pop.string, "clang diagnostic pop")
+        self.assertEqual(pop.coord.file, "event.h")
+        self.assertEqual(pop.coord.line, 5)
+
+    def test_pragma_before_initialized_declaration_semicolon(self):
+        ast = self.parse('int a = 1, b = 2 _Pragma("first")\n#pragma second\n; int c;')
+        a, b, first, second, c = ast.ext
+        self.assertEqual(a.init.value, "1")
+        self.assertEqual(b.init.value, "2")
+        self.assertIsInstance(first, Pragma)
+        self.assertEqual(first.string.value, '"first"')
+        self.assertIsInstance(second, Pragma)
+        self.assertEqual(second.string, "second")
+        self.assertEqual(c.name, "c")
+
+    def test_pragma_before_local_declaration_semicolon(self):
+        ast = self.parse('void f(void) { int x _Pragma("after"); x = 1; }')
+        decl, pragma, assignment = ast.ext[0].body.block_items
+        self.assertEqual(decl.name, "x")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertIsInstance(assignment, Assignment)
+
+    def test_pragma_before_typedef_semicolon(self):
+        ast = self.parse("typedef int T\n#pragma after\n; T value;")
+        typedef, pragma, decl = ast.ext
+        self.assertIsInstance(typedef, Typedef)
+        self.assertEqual(typedef.name, "T")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "after")
+        self.assertEqual(decl.type.type.names, ["T"])
+
+    def test_pragma_before_struct_member_semicolon(self):
+        ast = self.parse('struct S { int x : 3 _Pragma("after"); int y; };')
+        x, pragma, y = ast.ext[0].type.decls
+        self.assertEqual(x.bitsize.value, "3")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertEqual(y.name, "y")
+
+    def test_pragma_before_anonymous_union_member_semicolon(self):
+        ast = self.parse('struct S { union { int x; } _Pragma("after"); int y; };')
+        anonymous, pragma, y = ast.ext[0].type.decls
+        self.assertIsNone(anonymous.name)
+        self.assertIsInstance(anonymous.type, Union)
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertEqual(y.name, "y")
+
+    def test_pragma_before_for_declaration_semicolon(self):
+        ast = self.parse(
+            'void f(void) { for (int i = 0 _Pragma("after"); i < 2; ++i) {} }'
+        )
+        loop = ast.ext[0].body.block_items[0]
+        decl, pragma = loop.init.decls
+        self.assertEqual(decl.name, "i")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertIsInstance(loop.cond, BinaryOp)
+        self.assertEqual(loop.next.op, "++")
+
+    def test_pragma_before_knr_declaration_semicolon(self):
+        ast = self.parse('int f(x, y) int x _Pragma("after"); int y; { return x + y; }')
+        x, pragma, y = ast.ext[0].param_decls
+        self.assertEqual(x.name, "x")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertEqual(y.name, "y")
+
+    def test_declaration_pragma_requires_semicolon(self):
+        with self.assertRaises(ParseError):
+            self.parse('struct S { int x; } _Pragma("after")')
+
+    def test_declaration_pragma_does_not_end_declaration(self):
+        with self.assertRaises(ParseError):
+            self.parse('int x _Pragma("after") int y;')
+
+    def test_c23_attributes_with_trailing_declaration_pragma(self):
+        ast = c_parser.CParser(dialect="c23").parse(
+            '[[deprecated]] auto x = 1 _Pragma("global"); '
+            'void f(void) { [[maybe_unused]] auto y = 2 _Pragma("local"); }'
+        )
+        x, global_pragma, func = ast.ext
+        self.assertEqual(x.attributes[0].attributes[0].name, "deprecated")
+        self.assertEqual(global_pragma.string.value, '"global"')
+        y, local_pragma = func.body.block_items
+        self.assertEqual(y.attributes[0].attributes[0].name, "maybe_unused")
+        self.assertEqual(local_pragma.string.value, '"local"')
+
+    def test_c23_attributes_cannot_prefix_pragma(self):
+        with self.assertRaises(ParseError):
+            c_parser.CParser(dialect="c23").parse('[[deprecated]] _Pragma("after")')
+
     def test_pragmacomp_or_statement(self):
         s1 = r"""
             void main() {

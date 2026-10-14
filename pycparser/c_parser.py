@@ -710,11 +710,15 @@ class CParser:
 
     def _attribute_declarations(self, nodes, attributes):
         """Attach declaration prefixes, shared by comma-separated declarators."""
-        if not nodes:
+        if not nodes or isinstance(nodes[0], c_ast.Pragma):
             self._parse_error(
                 "Expected declaration after attributes", attributes[0].coord
             )
         for node in nodes:
+            # Trailing pragmas belong to the surrounding list, not to the
+            # declaration carrying these attributes.
+            if isinstance(node, c_ast.Pragma):
+                continue
             decl = node.decl if isinstance(node, c_ast.FuncDef) else node
             if not isinstance(decl, (c_ast.Decl, c_ast.Typedef)):
                 self._parse_error(
@@ -818,14 +822,12 @@ class CParser:
         )
         if self._is_inferred_auto(spec):
             decls = self._parse_auto_declaration(spec)
-            self._expect("SEMI")
-            return decls
+            return self._parse_declaration_end(decls)
 
         name_type, _ = self._peek_declarator_name_info()
         if name_type != "ID":
             decls = self._parse_decl_body_with_spec(spec, saw_type)
-            self._expect("SEMI")
-            return decls
+            return self._parse_declaration_end(decls)
 
         decl = self._parse_id_declarator()
 
@@ -850,17 +852,17 @@ class CParser:
             decl_dict["init"] = self._parse_initializer()
         decls = self._parse_init_declarator_list(first=decl_dict)
         decls = self._build_declarations(spec=spec, decls=decls, typedef_namespace=True)
-        self._expect("SEMI")
-        return decls
+        return self._parse_declaration_end(decls)
 
     # ------------------------------------------------------------------
     # Declarations
     #
     # Declarations always come as lists (because they can be several in one
     # line). When returning parsed declarations, a list is always returned -
-    # even if it contains a single element.
+    # even if it contains a single element. Pragmas before the final semicolon
+    # follow the declarations in that list.
     # ------------------------------------------------------------------
-    # BNF: declaration : decl_body ';' | static_assert
+    # BNF: declaration : decl_body pppragma_directive* ';' | static_assert
     def _parse_declaration(self) -> list[c_ast.Node]:
         if self._peek_type() == "ATTRIBUTE_BEGIN":
             attributes = self._parse_attribute_specifier_sequence()
@@ -870,8 +872,18 @@ class CParser:
         if self._peek_type() == "_STATIC_ASSERT":
             return [self._parse_static_assert()]
         decls = self._parse_decl_body()
+        return self._parse_declaration_end(decls)
+
+    def _parse_declaration_end(self, decls: list[c_ast.Node]) -> list[c_ast.Node]:
+        """Consume a declaration's semicolon and retain preceding pragmas.
+
+        Macro expansions can place diagnostic pragmas just before the final
+        semicolon (issue #478). Represent them after the completed declarations
+        in the surrounding list, just like pragmas following the semicolon.
+        """
+        pragmas = self._parse_pppragma_directive_list()
         self._expect("SEMI")
-        return decls
+        return decls + pragmas
 
     # BNF: decl_body : declaration_specifiers decl_body_with_spec
     def _parse_decl_body(self) -> list[c_ast.Node]:
@@ -949,11 +961,14 @@ class CParser:
             typedef_namespace=True,
         )
 
-    # BNF: declaration_list : declaration+
+    # BNF: declaration_list : (declaration pppragma_directive*)+
     def _parse_declaration_list(self) -> list[c_ast.Node]:
         decls = []
         while self._starts_declaration():
             decls.extend(self._parse_declaration())
+            # K&R parameter declarations retain pragmas on either side of
+            # their semicolons, including when reparsing generated code.
+            decls.extend(self._parse_pppragma_directive_list())
         return decls
 
     # BNF: declaration_specifiers   : (storage_class_specifier
@@ -1363,7 +1378,8 @@ class CParser:
             decls.extend(items)
         return decls
 
-    # BNF: struct_declaration   : specifier_qualifier_list struct_declarator_list? ';'
+    # BNF: struct_declaration   : specifier_qualifier_list struct_declarator_list?
+    #                            pppragma_directive* ';'
     #                           | static_assert
     #                           | pppragma_directive
     def _parse_struct_declaration(self) -> list[c_ast.Node] | None:
@@ -1387,8 +1403,9 @@ class CParser:
         if self._starts_declarator() or self._peek_type() == "COLON":
             decls = self._parse_struct_declarator_list()
         if decls is not None:
-            self._expect("SEMI")
-            return self._build_declarations(spec=spec, decls=decls)
+            return self._parse_declaration_end(
+                self._build_declarations(spec=spec, decls=decls)
+            )
 
         if len(spec["type"]) == 1:
             node = spec["type"][0]
@@ -1396,14 +1413,13 @@ class CParser:
                 decl_type = node
             else:
                 decl_type = c_ast.IdentifierType(node)
-            self._expect("SEMI")
-            return self._build_declarations(
-                spec=spec,
-                decls=[{"decl": decl_type}],
+            return self._parse_declaration_end(
+                self._build_declarations(spec=spec, decls=[{"decl": decl_type}])
             )
 
-        self._expect("SEMI")
-        return self._build_declarations(spec=spec, decls=[{"decl": None}])
+        return self._parse_declaration_end(
+            self._build_declarations(spec=spec, decls=[{"decl": None}])
+        )
 
     # BNF: struct_declarator_list : struct_declarator (',' struct_declarator)*
     def _parse_struct_declarator_list(self) -> list["_DeclInfo"]:

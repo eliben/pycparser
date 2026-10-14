@@ -628,6 +628,77 @@ class TestCtoC(unittest.TestCase):
             #pragma
         """)
 
+    def test_pragma_before_declaration_semicolon_issue_478(self):
+        generated = self._assert_ctoc_correct("""struct knote;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+struct klist { struct knote *slh_first; }
+#pragma clang diagnostic pop
+;
+""")
+        self.assertEqual(
+            generated,
+            "struct knote;\n#pragma clang diagnostic push\n"
+            '#pragma clang diagnostic ignored "-Wnullability-completeness"\n'
+            "struct klist\n{\n  struct knote *slh_first;\n};\n"
+            "#pragma clang diagnostic pop\n",
+        )
+
+    def test_pragma_before_local_declaration_semicolon(self):
+        generated = self._assert_ctoc_correct("""void f(void) {
+    struct S { int x; } a, *b = &a
+#pragma after
+    ;
+}""")
+        self.assertIn("  } a, *b = &a;\n  #pragma after\n", generated)
+        self.assertEqual(generated.count("struct S"), 1)
+
+    def test_pragma_before_typedef_and_prototype_semicolons(self):
+        generated = self._assert_ctoc_correct(
+            'typedef int T _Pragma("type"); T f(void)\n#pragma function\n;'
+        )
+        self.assertEqual(
+            generated, 'typedef int T;\n_Pragma("type")\nT f(void);\n#pragma function\n'
+        )
+
+    def test_pragma_before_struct_member_semicolons(self):
+        generated = self._assert_ctoc_correct("""struct S {
+    int x : 3
+#pragma field
+    ;
+    union { int y; } _Pragma("anonymous");
+};""")
+        self.assertIn("  int x : 3;\n  #pragma field\n", generated)
+        self.assertIn('  };\n  _Pragma("anonymous")\n', generated)
+
+    def test_pragma_before_for_declaration_semicolon(self):
+        generated = self._assert_ctoc_correct("""void f(void) {
+    for (int i = 0, j = 1 _Pragma("first")
+#pragma second
+    ; i < j; ++i) {}
+}""")
+        self.assertIn(
+            'for (int i = 0, j = 1\n  _Pragma("first")\n  #pragma second\n  ; i < j; ++i)',
+            generated,
+        )
+
+    def test_pragma_before_knr_declaration_semicolon(self):
+        generated = self._assert_ctoc_correct(
+            'int f(x, y) int x _Pragma("first"); int y\n#pragma second\n; { return x + y; }'
+        )
+        self.assertIn('int x;\n_Pragma("first")\nint y;\n#pragma second\n{', generated)
+
+    def test_c23_attributes_with_trailing_declaration_pragmas(self):
+        parser = c_parser.CParser(dialect="c23")
+        ast = parser.parse("""[[deprecated]] auto x = 1 _Pragma("global");
+void f(void) { [[maybe_unused]] auto y = 2 _Pragma("local"); }
+struct S { [[deprecated]] int z _Pragma("member"); };""")
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn('[[deprecated]] auto x = 1;\n_Pragma("global")\n', generated)
+        self.assertIn('[[maybe_unused]] auto y = 2;\n  _Pragma("local")\n', generated)
+        self.assertIn('[[deprecated]] int z;\n  _Pragma("member")\n', generated)
+
     def test_compound_literal_statement(self):
         self._assert_ctoc_correct(
             "struct S { int x; }; void f(void) { (struct S){1}; }"
