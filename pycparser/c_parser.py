@@ -261,7 +261,7 @@ class CParser:
     def _fix_decl_name_type(
         self,
         decl: c_ast.Decl | c_ast.Typedef | c_ast.Typename,
-        typename: list[Any],
+        typename: list[c_ast.Node],
     ) -> c_ast.Decl | c_ast.Typedef | c_ast.Typename:
         """Fixes a declaration. Modifies decl."""
         # Reach the underlying basic type
@@ -277,6 +277,7 @@ class CParser:
         # be the only type in the list (it's illegal to declare "int enum ..").
         # If all the types are basic, they're collected in the
         # IdentifierType holder.
+        names: list[str] = []
         for tn in typename:
             if isinstance(tn, c_ast.BitIntType):
                 signedness = None
@@ -305,6 +306,7 @@ class CParser:
                     # Normalize atomic specifiers for declarations and type
                     # names alike (casts, sizeof, unnamed parameters, etc.).
                     return fix_atomic_specifiers(decl)
+            names.extend(tn.names)
 
         if not typename:
             # Functions default to returning int
@@ -312,17 +314,13 @@ class CParser:
                 self._parse_error("Missing type in declaration", decl.coord)
             typ.type = c_ast.IdentifierType(["int"], coord=decl.coord)
         else:
-            # At this point, we know that typename is a list of IdentifierType
-            # nodes. Concatenate all the names into a single list.
-            typ.type = c_ast.IdentifierType(
-                [name for id in typename for name in id.names], coord=typename[0].coord
-            )
+            typ.type = c_ast.IdentifierType(names, coord=typename[0].coord)
         return decl
 
     def _add_declaration_specifier(
         self,
         declspec: Optional["_DeclSpec"],
-        newspec: Any,
+        newspec: str | c_ast.Node,
         kind: "_DeclSpecKind",
     ) -> "_DeclSpec":
         """Append a specifier in source order; see _DeclSpec for the layout."""
@@ -338,8 +336,38 @@ class CParser:
         else:
             spec = declspec
 
-        spec[kind].append(newspec)
+        if kind == "type":
+            assert isinstance(newspec, c_ast.Node)
+            spec[kind].append(newspec)
+        elif kind == "alignment":
+            assert isinstance(newspec, c_ast.Alignas)
+            spec[kind].append(newspec)
+        else:
+            assert isinstance(newspec, str)
+            spec[kind].append(newspec)
         return spec
+
+    def _build_type_name(
+        self, spec: "_DeclSpec", decl: c_ast.Node | None, coord: Coord | None
+    ) -> c_ast.Typename:
+        """Build and normalize an abstract type, including its attributes.
+
+        Callers select the coordinate according to their grammar context.
+        The name, if any, is taken from the declarator by _fix_decl_name_type.
+        """
+        typename = c_ast.Typename(
+            name=None,
+            quals=spec["qual"][:],
+            align=None,
+            type=decl or c_ast.TypeDecl(None, None, None, None),
+            coord=coord,
+        )
+        return cast(
+            c_ast.Typename,
+            self._attach_type_attributes(
+                self._fix_decl_name_type(typename, spec["type"]), spec
+            ),
+        )
 
     def _build_declarations(
         self,
@@ -396,7 +424,8 @@ class CParser:
                 while not isinstance(decls_0_tail, c_ast.TypeDecl):
                     decls_0_tail = decls_0_tail.type
                 if decls_0_tail.declname is None:
-                    decls_0_tail.declname = spec["type"][-1].names[0]
+                    type_name = cast(c_ast.IdentifierType, spec["type"][-1])
+                    decls_0_tail.declname = type_name.names[0]
                     del spec["type"][-1]
 
         for decl in decls:
@@ -703,7 +732,9 @@ class CParser:
             )
         return groups
 
-    def _attribute_declarations(self, nodes, attributes):
+    def _attribute_declarations(
+        self, nodes: list[c_ast.Node], attributes: list[c_ast.AttributeSpecifier]
+    ) -> list[c_ast.Node]:
         """Attach declaration prefixes, shared by comma-separated declarators."""
         if not nodes or isinstance(nodes[0], c_ast.Pragma):
             self._parse_error(
@@ -722,13 +753,17 @@ class CParser:
             decl.attributes = attributes
         return nodes
 
-    def _attribute_statement(self, stmt, attributes):
+    def _attribute_statement(
+        self, stmt: c_ast.Node, attributes: list[c_ast.AttributeSpecifier]
+    ) -> c_ast.Node:
         if isinstance(stmt, (c_ast.Label, c_ast.Case, c_ast.Default)):
             stmt.attributes = attributes
             return stmt
         return c_ast.AttributedStatement(attributes, stmt, attributes[0].coord)
 
-    def _attach_type_attributes(self, decl, spec):
+    def _attach_type_attributes(
+        self, decl: c_ast.Decl | c_ast.Typedef | c_ast.Typename, spec: "_DeclSpec"
+    ) -> c_ast.Decl | c_ast.Typedef | c_ast.Typename:
         """Keep attributes after the base type, inside pointer/array modifiers."""
         if spec["type_attributes"]:
             target = decl
@@ -908,20 +943,18 @@ class CParser:
             ty = spec["type"]
             s_u_or_e = (c_ast.Struct, c_ast.Union, c_ast.Enum)
             if len(ty) == 1 and isinstance(ty[0], s_u_or_e):
-                decls = [
-                    c_ast.Decl(
-                        name=None,
-                        quals=spec["qual"],
-                        align=spec["alignment"],
-                        storage=spec["storage"],
-                        funcspec=spec["function"],
-                        type=ty[0],
-                        init=None,
-                        bitsize=None,
-                        coord=ty[0].coord,
-                    )
-                ]
-                self._attach_type_attributes(decls[0], spec)
+                decl = c_ast.Decl(
+                    name=None,
+                    quals=spec["qual"],
+                    align=spec["alignment"],
+                    storage=spec["storage"],
+                    funcspec=spec["function"],
+                    type=ty[0],
+                    init=None,
+                    bitsize=None,
+                    coord=ty[0].coord,
+                )
+                decls = [self._attach_type_attributes(decl, spec)]
             else:
                 decls = self._build_declarations(
                     spec=spec,
@@ -1084,7 +1117,7 @@ class CParser:
         return quals
 
     # BNF: alignment_specifier : _ALIGNAS '(' type_name | constant_expression ')'
-    def _parse_alignment_specifier(self) -> c_ast.Node:
+    def _parse_alignment_specifier(self) -> c_ast.Alignas:
         tok = self._expect("_ALIGNAS")
         self._expect("LPAREN")
 
@@ -1319,19 +1352,7 @@ class CParser:
         # following pointer, array, or function declarator belongs to the enum.
         spec = self._parse_specifier_qualifier_list()
         coord = spec["type"][0].coord if spec["type"] else self._tok_coord(colon)
-        typename = c_ast.Typename(
-            name=None,
-            quals=spec["qual"][:],
-            align=None,
-            type=c_ast.TypeDecl(None, None, None, None),
-            coord=coord,
-        )
-        return cast(
-            c_ast.Typename,
-            self._attach_type_attributes(
-                self._fix_decl_name_type(typename, spec["type"]), spec
-            ),
-        )
+        return self._build_type_name(spec, None, coord)
 
     # BNF: enumerator_list : pppragma_directive* enumerator pppragma_directive*
     #                       (',' pppragma_directive* enumerator pppragma_directive*)*
@@ -1628,16 +1649,7 @@ class CParser:
         ):
             return self._build_declarations(spec=spec, decls=[{"decl": decl}])[0]
 
-        decl = c_ast.Typename(
-            name="",
-            quals=spec["qual"],
-            align=None,
-            type=decl or c_ast.TypeDecl(None, None, None, None),
-            coord=spec_coord,
-        )
-        return self._attach_type_attributes(
-            self._fix_decl_name_type(decl, spec["type"]), spec
-        )
+        return self._build_type_name(spec, decl, spec_coord)
 
     # BNF: identifier_list_opt : identifier_list | empty
     def _parse_identifier_list_opt(self) -> c_ast.Node | None:
@@ -1667,19 +1679,7 @@ class CParser:
         elif spec["type"]:
             coord = spec["type"][0].coord
 
-        typename = c_ast.Typename(
-            name="",
-            quals=spec["qual"][:],
-            align=None,
-            type=decl or c_ast.TypeDecl(None, None, None, None),
-            coord=coord,
-        )
-        return cast(
-            c_ast.Typename,
-            self._attach_type_attributes(
-                self._fix_decl_name_type(typename, spec["type"]), spec
-            ),
-        )
+        return self._build_type_name(spec, decl, coord)
 
     # BNF: abstract_declarator_opt : pointer? direct_abstract_declarator?
     def _parse_abstract_declarator_opt(self) -> c_ast.Node | None:
@@ -2715,11 +2715,11 @@ class _TokenStream:
 # - alignment: a list of alignment specifiers
 # - type_attributes: attribute groups following the specifier sequence
 class _DeclSpec(TypedDict):
-    qual: list[Any]
-    storage: list[Any]
-    type: list[Any]
-    function: list[Any]
-    alignment: list[Any]
+    qual: list[str]
+    storage: list[str]
+    type: list[c_ast.Node]
+    function: list[str]
+    alignment: list[c_ast.Alignas]
     type_attributes: list[c_ast.AttributeSpecifier]
 
 

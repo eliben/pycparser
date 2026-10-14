@@ -51,7 +51,7 @@ class CGenerator:
     def visit_ID(self, n: c_ast.ID) -> str:
         return n.name
 
-    def _generate_attributes(self, attributes) -> str:
+    def _generate_attributes(self, attributes: list[c_ast.AttributeSpecifier]) -> str:
         return " ".join(self.visit(attribute) for attribute in attributes)
 
     def visit_Attribute(self, n: c_ast.Attribute) -> str:
@@ -428,11 +428,7 @@ class CGenerator:
         s = self._make_indent() + "{\n"
         self.indent_level += 2
         if n.block_items:
-            for item in self._coalesce_defined_types(n.block_items):
-                if isinstance(item, list):
-                    s += self._make_indent() + self._visit_decl_group(item) + ";\n"
-                else:
-                    s += self._generate_stmt(item)
+            s += self._generate_body(n.block_items)
         self.indent_level -= 2
         s += self._make_indent() + "}\n"
         return s
@@ -586,7 +582,7 @@ class CGenerator:
         if name in ("struct", "union"):
             assert isinstance(n, (c_ast.Struct, c_ast.Union))
             members = n.decls
-            body_function = self._generate_struct_union_body
+            body_function = self._generate_body
         else:
             assert name == "enum"
             assert isinstance(n, c_ast.Enum)
@@ -610,9 +606,14 @@ class CGenerator:
             s += self._make_indent() + "}"
         return s
 
-    def _generate_struct_union_body(self, members: list[c_ast.Node]) -> str:
+    def _generate_body(self, nodes: list[c_ast.Node]) -> str:
+        """Emit block items or members, grouping shared type definitions.
+
+        Callers handle braces and indentation levels; _generate_stmt supplies the
+        punctuation for individual statements, declarations, and pragmas.
+        """
         parts: list[str] = []
-        for item in self._coalesce_defined_types(members):
+        for item in self._coalesce_defined_types(nodes):
             if isinstance(item, list):
                 parts.append(self._make_indent() + self._visit_decl_group(item) + ";\n")
             else:
