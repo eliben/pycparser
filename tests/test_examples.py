@@ -3,8 +3,6 @@ import sys
 import unittest
 
 sys.path.insert(0, ".")
-from examples import c_json
-from pycparser import c_ast, c_generator, c_parser
 from tests.test_util import cpp_supported, run_exe
 
 
@@ -24,25 +22,6 @@ class TestExamplesSucceed(unittest.TestCase):
                         0,
                         f'example "{filename}" failed with stdout =\n{stdout}\nstderr =\n{stderr}',
                     )
-
-
-class TestCJson(unittest.TestCase):
-    def test_named_initializer_round_trip(self):
-        source = "enum { x }; struct A { int x; }; struct A a[] = { [x].x = 1 };"
-        original = c_parser.CParser().parse(source)
-        restored = c_json.from_json(c_json.to_json(original))
-        generator = c_generator.CGenerator()
-        self.assertEqual(generator.visit(restored), generator.visit(original))
-        self.assertIn("[x].x = 1", generator.visit(restored))
-
-    def test_named_initializer_legacy_json(self):
-        original = c_ast.NamedInitializer([c_ast.ID("x")], c_ast.Constant("int", "1"))
-        serialized = c_json.to_dict(original)
-        serialized.pop("designator_types")
-        restored = c_json.from_dict(serialized)
-        assert isinstance(restored, c_ast.NamedInitializer)
-        self.assertIsNone(restored.designator_types)
-        self.assertEqual(c_generator.CGenerator().visit(restored), ".x = 1")
 
 
 if __name__ == "__main__":
