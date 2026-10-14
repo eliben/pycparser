@@ -1051,6 +1051,28 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(pdecl, PtrDecl)
         self.assertEqual(pdecl.quals, ["const"])
 
+    def test_restricted_specifier_lists(self):
+        # Sharing specifier parsing must not admit storage classes or function
+        # specifiers in member declarations and type names.
+        with self.assertRaisesRegex(ParseError, "Invalid specifier list"):
+            self.parse("struct S { static int x; };")
+        with self.assertRaisesRegex(ParseError, "Invalid specifier list"):
+            self.parse("struct S { inline int x; };")
+        with self.assertRaisesRegex(ParseError, "Invalid specifier list"):
+            self.parse("int n = sizeof(inline int);")
+
+    def test_specifier_list_missing_type(self):
+        # Qualifiers alone do not supply a type; report the first qualifier's
+        # position in both member declarations and type names.
+        with self.assertRaisesRegex(
+            ParseError, r"^types.c:1:12: Missing type in declaration$"
+        ):
+            self.parse("struct S { const x; };", filename="types.c")
+        with self.assertRaisesRegex(
+            ParseError, r"^types.c:1:16: Missing type in declaration$"
+        ):
+            self.parse("int n = sizeof(const);", filename="types.c")
+
     def test_atomic_specifier(self):
         self.assertEqual(
             self.get_decl("_Atomic(int) ai;"),

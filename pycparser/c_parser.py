@@ -324,9 +324,8 @@ class CParser:
         declspec: Optional["_DeclSpec"],
         newspec: Any,
         kind: "_DeclSpecKind",
-        append: bool = False,
     ) -> "_DeclSpec":
-        """See _DeclSpec for the specifier dictionary layout."""
+        """Append a specifier in source order; see _DeclSpec for the layout."""
         if declspec is None:
             spec: _DeclSpec = {
                 "qual": [],
@@ -339,11 +338,7 @@ class CParser:
         else:
             spec = declspec
 
-        if append:
-            spec[kind].append(newspec)
-        else:
-            spec[kind].insert(0, newspec)
-
+        spec[kind].append(newspec)
         return spec
 
     def _build_declarations(
@@ -990,141 +985,38 @@ class CParser:
             if a type specifier was consumed, and first_coord is the coord
             of the first specifier token (used for diagnostics).
         """
-        spec = None
-        saw_type = False
-        first_coord = None
-
-        while True:
-            tok = self._peek()
-            if tok is None:
-                break
-
-            if tok.type == "ATTRIBUTE_BEGIN" and spec is not None:
-                spec["type_attributes"] = self._parse_attribute_specifier_sequence()
-                break
-
-            if tok.type == "_ALIGNAS":
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._parse_alignment_specifier(), "alignment", append=True
-                )
-                continue
-
-            if tok.type == "_ATOMIC" and self._peek_type(2) == "LPAREN":
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._parse_atomic_specifier(), "type", append=True
-                )
-                saw_type = True
-                continue
-
-            if tok.type in _TYPEOF_SPEC:
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._parse_typeof_specifier(), "type", append=True
-                )
-                saw_type = True
-                continue
-
-            if tok.type == "_BITINT":
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._parse_bitint_specifier(), "type", append=True
-                )
-                saw_type = True
-                continue
-
-            if tok.type in _TYPE_QUALIFIER:
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._advance().value, "qual", append=True
-                )
-                continue
-
-            if tok.type in _STORAGE_CLASS:
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._advance().value, "storage", append=True
-                )
-                continue
-
-            if tok.type in _FUNCTION_SPEC:
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._advance().value, "function", append=True
-                )
-                continue
-
-            if tok.type in _TYPE_SPEC_SIMPLE:
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                tok = self._advance()
-                spec = self._add_declaration_specifier(
-                    spec,
-                    c_ast.IdentifierType([tok.value], coord=self._tok_coord(tok)),
-                    "type",
-                    append=True,
-                )
-                saw_type = True
-                continue
-
-            if tok.type == "TYPEID":
-                if saw_type:
-                    break
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                tok = self._advance()
-                spec = self._add_declaration_specifier(
-                    spec,
-                    c_ast.IdentifierType([tok.value], coord=self._tok_coord(tok)),
-                    "type",
-                    append=True,
-                )
-                saw_type = True
-                continue
-
-            if tok.type in {"STRUCT", "UNION"}:
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._parse_struct_or_union_specifier(), "type", append=True
-                )
-                saw_type = True
-                continue
-
-            if tok.type == "ENUM":
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._parse_enum_specifier(), "type", append=True
-                )
-                saw_type = True
-                continue
-
-            break
-
+        spec, saw_type, first_coord = self._parse_specifiers(
+            allow_storage_and_function=True
+        )
         if spec is None:
             self._parse_error("Invalid declaration", self.clex.filename)
-
         if not saw_type and not allow_no_type:
             self._parse_error("Missing type in declaration", first_coord)
-
         return spec, saw_type, first_coord
 
     # BNF: specifier_qualifier_list : (type_specifier
     #                               | type_qualifier
     #                               | alignment_specifier)+
     def _parse_specifier_qualifier_list(self) -> "_DeclSpec":
+        spec, saw_type, first_coord = self._parse_specifiers(
+            allow_storage_and_function=False
+        )
+        if spec is None:
+            self._parse_error("Invalid specifier list", self.clex.filename)
+        if not saw_type and not spec["alignment"]:
+            self._parse_error("Missing type in declaration", first_coord)
+        return spec
+
+    def _parse_specifiers(
+        self, *, allow_storage_and_function: bool
+    ) -> tuple["_DeclSpec | None", bool, Coord | None]:
+        """Consume specifiers shared by declarations, members, and type names.
+
+        Storage classes and function specifiers are only accepted in
+        declarations. Callers handle their own missing-specifier diagnostics.
+        """
         spec = None
         saw_type = False
-        saw_alignment = False
         first_coord = None
 
         while True:
@@ -1136,110 +1028,53 @@ class CParser:
                 spec["type_attributes"] = self._parse_attribute_specifier_sequence()
                 break
 
+            # Once a type has been seen, a typedef name can be the declarator
+            # (e.g. the second T in "T T"), rather than another type specifier.
+            if tok.type == "TYPEID" and saw_type:
+                break
+
+            # _Atomic is a type specifier with parentheses, a qualifier without.
+            is_atomic_specifier = (
+                tok.type == "_ATOMIC" and self._peek_type(2) == "LPAREN"
+            )
+            if first_coord is None:
+                first_coord = self._tok_coord(tok)
+
+            kind: _DeclSpecKind = "type"
+            newspec: str | c_ast.Node
             if tok.type == "_ALIGNAS":
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._parse_alignment_specifier(), "alignment", append=True
-                )
-                saw_alignment = True
-                continue
-
-            if tok.type == "_ATOMIC" and self._peek_type(2) == "LPAREN":
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._parse_atomic_specifier(), "type", append=True
-                )
-                saw_type = True
-                continue
-
-            if tok.type in _TYPEOF_SPEC:
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._parse_typeof_specifier(), "type", append=True
-                )
-                saw_type = True
-                continue
-
-            if tok.type == "_BITINT":
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._parse_bitint_specifier(), "type", append=True
-                )
-                saw_type = True
-                continue
-
-            if tok.type in _TYPE_QUALIFIER:
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._advance().value, "qual", append=True
-                )
-                continue
-
-            if tok.type in _TYPE_SPEC_SIMPLE:
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
+                kind = "alignment"
+                newspec = self._parse_alignment_specifier()
+            elif is_atomic_specifier:
+                newspec = self._parse_atomic_specifier()
+            elif tok.type in _TYPEOF_SPEC:
+                newspec = self._parse_typeof_specifier()
+            elif tok.type == "_BITINT":
+                newspec = self._parse_bitint_specifier()
+            elif tok.type in _TYPE_QUALIFIER:
+                kind = "qual"
+                newspec = self._advance().value
+            elif allow_storage_and_function and tok.type in _STORAGE_CLASS:
+                kind = "storage"
+                newspec = self._advance().value
+            elif allow_storage_and_function and tok.type in _FUNCTION_SPEC:
+                kind = "function"
+                newspec = self._advance().value
+            elif tok.type in _TYPE_SPEC_SIMPLE or tok.type == "TYPEID":
                 tok = self._advance()
-                spec = self._add_declaration_specifier(
-                    spec,
-                    c_ast.IdentifierType([tok.value], coord=self._tok_coord(tok)),
-                    "type",
-                    append=True,
-                )
+                newspec = c_ast.IdentifierType([tok.value], coord=self._tok_coord(tok))
+            elif tok.type in {"STRUCT", "UNION"}:
+                newspec = self._parse_struct_or_union_specifier()
+            elif tok.type == "ENUM":
+                newspec = self._parse_enum_specifier()
+            else:
+                break
+
+            spec = self._add_declaration_specifier(spec, newspec, kind)
+            if kind == "type":
                 saw_type = True
-                continue
 
-            if tok.type == "TYPEID":
-                if saw_type:
-                    break
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                tok = self._advance()
-                spec = self._add_declaration_specifier(
-                    spec,
-                    c_ast.IdentifierType([tok.value], coord=self._tok_coord(tok)),
-                    "type",
-                    append=True,
-                )
-                saw_type = True
-                continue
-
-            if tok.type in {"STRUCT", "UNION"}:
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._parse_struct_or_union_specifier(), "type", append=True
-                )
-                saw_type = True
-                continue
-
-            if tok.type == "ENUM":
-                if first_coord is None:
-                    first_coord = self._tok_coord(tok)
-                spec = self._add_declaration_specifier(
-                    spec, self._parse_enum_specifier(), "type", append=True
-                )
-                saw_type = True
-                continue
-
-            break
-
-        if spec is None:
-            self._parse_error("Invalid specifier list", self.clex.filename)
-
-        if not saw_type and not saw_alignment:
-            self._parse_error("Missing type in declaration", first_coord)
-
-        if spec.get("storage") is None:
-            spec["storage"] = []
-        if spec.get("function") is None:
-            spec["function"] = []
-
-        return spec
+        return spec, saw_type, first_coord
 
     # BNF: type_qualifier_list : type_qualifier+
     def _parse_type_qualifier_list(self) -> list[str]:
