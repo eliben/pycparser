@@ -44,7 +44,7 @@ from typing import Any, TypeVar
 # your site-packages/ with setup.py
 sys.path.extend([".", ".."])
 
-from pycparser import c_ast, parse_file
+from pycparser import c_ast, c_generator, c_parser, parse_file
 from pycparser.c_parser import Coord
 
 RE_CHILD_ARRAY = re.compile(r"(.*)\[(.*)\]")
@@ -122,10 +122,13 @@ def to_dict(node: c_ast.Node) -> dict[str, Any]:
         else:
             result[child_name] = to_dict(child)
 
-    # Any child attributes that were missing need "None" values in the json.
+    # Preserve empty child lists and absent child nodes omitted by children().
     for child_attr in child_attrs_of(klass):
         if child_attr not in result:
-            result[child_attr] = None
+            if isinstance(getattr(node, child_attr), list):
+                result[child_attr] = []
+            else:
+                result[child_attr] = None
 
     return result
 
@@ -210,4 +213,17 @@ if __name__ == "__main__":
         ast = from_dict(ast_dict)
         print(to_json(ast, sort_keys=True, indent=4))
     else:
-        print("Please provide a filename as argument")
+        # Consecutive case labels exercise an empty list of child statements.
+        ast = c_parser.CParser().parse(
+            """
+            void f(int n) {
+                switch (n) {
+                case 0:
+                case 1:
+                    break;
+                }
+            }
+            """
+        )
+        ast = from_json(to_json(ast))
+        print(c_generator.CGenerator().visit(ast))
