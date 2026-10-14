@@ -86,7 +86,7 @@ class CGenerator:
 
     def visit_ArrayRef(self, n: c_ast.ArrayRef) -> str:
         arrref = self._parenthesize_unless_simple(n.name)
-        return arrref + "[" + self.visit(n.subscript) + "]"
+        return arrref + "[" + self._visit_expr(n.subscript, allow_comma=True) + "]"
 
     def visit_StructRef(self, n: c_ast.StructRef) -> str:
         sref = self._parenthesize_unless_simple(n.name)
@@ -94,6 +94,7 @@ class CGenerator:
 
     def visit_FuncCall(self, n: c_ast.FuncCall) -> str:
         fref = self._parenthesize_unless_simple(n.name)
+        # ExprList here separates arguments; visit_ExprList handles each argument.
         args = self.visit(n.args) if n.args is not None else ""
         return fref + "(" + args + ")"
 
@@ -113,7 +114,7 @@ class CGenerator:
             case "sizeof":
                 # Always parenthesize the argument of sizeof since it can be
                 # a name.
-                return f"sizeof({self.visit(n.expr)})"
+                return f"sizeof({self._visit_expr(n.expr, allow_comma=True)})"
             case "p++":
                 operand = self._parenthesize_unless_simple(n.expr)
                 return f"{operand}++"
@@ -193,7 +194,7 @@ class CGenerator:
         rval_str = self._parenthesize_if(
             n.rvalue, lambda n: isinstance(n, c_ast.Assignment)
         )
-        return f"{self.visit(n.lvalue)} {n.op} {rval_str}"
+        return f"{self._visit_expr(n.lvalue)} {n.op} {rval_str}"
 
     def visit_IdentifierType(self, n: c_ast.IdentifierType) -> str:
         return " ".join(n.names)
@@ -209,10 +210,18 @@ class CGenerator:
         sign = n.signedness + " " if n.signedness else ""
         return f"{sign}_BitInt({self._visit_expr(n.width)})"
 
-    def _visit_expr(self, n: c_ast.Node) -> str:
+    def _visit_expr(self, n: c_ast.Node, *, allow_comma: bool = False) -> str:
+        """Render an expression or initializer with its required delimiters.
+
+        Full expression contexts (returns, conditions, subscripts, etc.) allow
+        bare commas. Individual arguments and initializers need comma grouping.
+        Statement expressions always need their own parentheses.
+        """
         match n:
             case c_ast.InitList():
                 return "{" + self.visit(n) + "}"
+            case c_ast.ExprList() if allow_comma:
+                return self.visit(n)
             case c_ast.ExprList() | c_ast.Compound():
                 return "(" + self.visit(n) + ")"
             case _:
@@ -227,7 +236,7 @@ class CGenerator:
             else self._generate_decl(n)
         )
         if n.bitsize:
-            s += " : " + self.visit(n.bitsize)
+            s += " : " + self._visit_expr(n.bitsize)
         if n.init:
             s += " = " + self._visit_expr(n.init)
         return s
@@ -379,7 +388,7 @@ class CGenerator:
         return self._generate_struct_union_enum(n, name="enum")
 
     def visit_Alignas(self, n: c_ast.Alignas) -> str:
-        return f"_Alignas({self.visit(n.alignment)})"
+        return f"_Alignas({self._visit_expr(n.alignment)})"
 
     def visit_Enumerator(self, n: c_ast.Enumerator) -> str:
         name = n.name
@@ -388,7 +397,7 @@ class CGenerator:
         if not n.value:
             return f"{self._make_indent()}{name},\n"
         else:
-            return f"{self._make_indent()}{name} = {self.visit(n.value)},\n"
+            return f"{self._make_indent()}{name} = {self._visit_expr(n.value)},\n"
 
     def visit_FuncDef(self, n: c_ast.FuncDef) -> str:
         decl = self.visit(n.decl)
@@ -441,7 +450,7 @@ class CGenerator:
     def visit_Return(self, n: c_ast.Return) -> str:
         s = "return"
         if n.expr:
-            s += " " + self.visit(n.expr)
+            s += " " + self._visit_expr(n.expr, allow_comma=True)
         return s + ";"
 
     def visit_Break(self, n: c_ast.Break) -> str:
@@ -459,7 +468,7 @@ class CGenerator:
     def visit_If(self, n: c_ast.If) -> str:
         s = "if ("
         if n.cond:
-            s += self.visit(n.cond)
+            s += self._visit_expr(n.cond, allow_comma=True)
         s += ")\n"
         s += self._generate_stmt(n.iftrue, add_indent=True)
         if n.iffalse:
@@ -470,13 +479,13 @@ class CGenerator:
     def visit_For(self, n: c_ast.For) -> str:
         s = "for ("
         if n.init:
-            s += self.visit(n.init)
+            s += self._visit_expr(n.init, allow_comma=True)
         s += ";"
         if n.cond:
-            s += " " + self.visit(n.cond)
+            s += " " + self._visit_expr(n.cond, allow_comma=True)
         s += ";"
         if n.next:
-            s += " " + self.visit(n.next)
+            s += " " + self._visit_expr(n.next, allow_comma=True)
         s += ")\n"
         s += self._generate_stmt(n.stmt, add_indent=True)
         return s
@@ -484,7 +493,7 @@ class CGenerator:
     def visit_While(self, n: c_ast.While) -> str:
         s = "while ("
         if n.cond:
-            s += self.visit(n.cond)
+            s += self._visit_expr(n.cond, allow_comma=True)
         s += ")\n"
         s += self._generate_stmt(n.stmt, add_indent=True)
         return s
@@ -494,13 +503,13 @@ class CGenerator:
         s += self._generate_stmt(n.stmt, add_indent=True)
         s += self._make_indent() + "while ("
         if n.cond:
-            s += self.visit(n.cond)
+            s += self._visit_expr(n.cond, allow_comma=True)
         s += ");"
         return s
 
     def visit_StaticAssert(self, n: c_ast.StaticAssert) -> str:
         s = "_Static_assert("
-        s += self.visit(n.cond)
+        s += self._visit_expr(n.cond)
         if n.message:
             s += ", "
             s += self.visit(n.message)
@@ -508,13 +517,13 @@ class CGenerator:
         return s
 
     def visit_Switch(self, n: c_ast.Switch) -> str:
-        s = "switch (" + self.visit(n.cond) + ")\n"
+        s = "switch (" + self._visit_expr(n.cond, allow_comma=True) + ")\n"
         s += self._generate_stmt(n.stmt, add_indent=True)
         return s
 
     def visit_Case(self, n: c_ast.Case) -> str:
         s = self._generate_attributes(n.attributes) + " " if n.attributes else ""
-        s += "case " + self.visit(n.expr) + ":\n"
+        s += "case " + self._visit_expr(n.expr) + ":\n"
         for stmt in n.stmts:
             s += self._generate_stmt(stmt, add_indent=True)
         return s
@@ -552,7 +561,7 @@ class CGenerator:
             if isinstance(name, c_ast.ID):
                 s += "." + name.name
             else:
-                s += "[" + self.visit(name) + "]"
+                s += "[" + self._visit_expr(name) + "]"
         s += " = " + self._visit_expr(n.expr)
         return s
 
@@ -728,7 +737,7 @@ class CGenerator:
                             if modifier.dim_quals:
                                 nstr += " ".join(modifier.dim_quals) + " "
                             if modifier.dim is not None:
-                                nstr += self.visit(modifier.dim)
+                                nstr += self._visit_expr(modifier.dim)
                             nstr += "]"
                             if modifier.attributes:
                                 nstr += " " + self._generate_attributes(
