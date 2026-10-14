@@ -10,6 +10,9 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Literal, assert_never
+
+Dialect = Literal["legacy", "c23"]
 
 
 @dataclass(slots=True)
@@ -37,6 +40,9 @@ class CLexer:
         type_lookup_func:
             Called with an identifier name; expected to return True if it is
             a typedef name and should be tokenized as TYPEID.
+        dialect:
+            "legacy" preserves the existing keyword set. "c23" also recognizes
+            C23 keywords and predefined constants.
 
     Call input(text) to initialize lexing, and then keep calling token() to
     get the next token, until it returns None (at end of input).
@@ -48,7 +54,17 @@ class CLexer:
         on_lbrace_func: Callable[[], None],
         on_rbrace_func: Callable[[], None],
         type_lookup_func: Callable[[str], bool],
+        *,
+        dialect: Dialect = "legacy",
     ) -> None:
+        if dialect not in ("legacy", "c23"):
+            raise ValueError(f"Unknown dialect {dialect!r}; expected 'legacy' or 'c23'")
+        # Select keywords once per lexer. input() resets the scanning state
+        # without changing this map or affecting lexers using another dialect.
+        self._keyword_map = _keyword_map.copy()
+        if dialect == "c23":
+            self._keyword_map.update(_c23_keywords)
+
         self.error_func = error_func
         self.on_lbrace_func = on_lbrace_func
         self.on_rbrace_func = on_rbrace_func
@@ -73,6 +89,7 @@ class CLexer:
         self._line_start = 0
         self._pending_tok: Token | None = None
         self._lineno = 1
+        self._in_attribute = False
 
     @property
     def filename(self) -> str:
@@ -153,6 +170,18 @@ class CLexer:
         """
         text = self._lexdata
         pos = self._pos
+        # Attribute arguments are balanced token sequences, not C expressions.
+        # Keep them opaque so keyword spellings and braces neither require C
+        # expression syntax nor trigger the parser's scope callbacks.
+        if self._in_attribute:
+            if text[pos] == "(":
+                return self._attribute_arguments()
+            if match := _attribute_end.match(text, pos):
+                self._in_attribute = False
+                return self._attribute_token("ATTRIBUTE_END", match.end())
+        elif match := _attribute_begin.match(text, pos):
+            self._in_attribute = True
+            return self._attribute_token("ATTRIBUTE_BEGIN", match.end())
         # We pick the longest match between:
         # - the master regex (identifiers, literals, error patterns, etc.)
         # - fixed operator/punctuator literals from the bucket for text[pos]
@@ -208,21 +237,104 @@ class CLexer:
                 self._pos += max(1, length)
                 return None
             case _RegexAction.ID:
-                tok_type = _keyword_map.get(value, "ID")
-                if tok_type == "ID" and self.type_lookup_func(value):
+                tok_type = (
+                    "ID" if self._in_attribute else self._keyword_map.get(value, "ID")
+                )
+                if (
+                    not self._in_attribute
+                    and tok_type == "ID"
+                    and self.type_lookup_func(value)
+                ):
                     tok_type = "TYPEID"
             case _:
-                raise RuntimeError("unreachable")
+                assert_never(action)
 
         tok = self._make_token(tok_type, value, pos)
         self._pos += length
 
-        if tok.type == "LBRACE":
+        if tok.type == "LBRACE" and not self._in_attribute:
             self.on_lbrace_func()
-        elif tok.type == "RBRACE":
+        elif tok.type == "RBRACE" and not self._in_attribute:
             self.on_rbrace_func()
 
         return tok
+
+    def _attribute_token(self, kind: str, end: int) -> Token:
+        """Emit the text from _pos up to end and advance lexer state.
+
+        Attribute delimiters can contain whitespace, and argument clauses can
+        span lines. Record the token's starting coordinates before updating
+        line tracking for the entire consumed span.
+        """
+        value = self._lexdata[self._pos : end]
+        tok = self._make_token(kind, value, self._pos)
+        self._lineno += value.count("\n")
+        if "\n" in value:
+            self._line_start = self._pos + value.rfind("\n") + 1
+        self._pos = end
+        return tok
+
+    def _attribute_arguments(self) -> Token | None:
+        """Scan an attribute argument clause with _pos at its opening '('.
+
+        Return one ATTRIBUTE_ARGUMENTS token containing the raw text inside
+        the outer parentheses. A stack tracks the expected closing delimiters
+        for nested (), [], and {}. Comments and quoted literals are skipped
+        while balancing, but preserved in the token value. This bypasses normal
+        token classification and brace callbacks, keeping arbitrary attribute
+        arguments separate from C expressions and scope tracking.
+
+        Report malformed clauses at the opening parenthesis. If the error
+        callback returns, consume the remaining input and return None.
+        """
+        text = self._lexdata
+        start = self._pos
+        pos = start + 1
+        closers = [")"]
+        pairs = {"(": ")", "[": "]", "{": "}"}
+        error = "Unterminated attribute arguments"
+        while pos < len(text):
+            ch = text[pos]
+            if text.startswith("/*", pos):
+                end = text.find("*/", pos + 2)
+                if end < 0:
+                    break
+                pos = end + 2
+                continue
+            if text.startswith("//", pos):
+                end = text.find("\n", pos + 2)
+                pos = len(text) if end < 0 else end
+                continue
+            # Consume whole identifiers and preprocessing numbers first, so
+            # digits in literal prefixes aren't confused with numbers and
+            # digit separators aren't mistaken for character-literal quotes.
+            if match := _attribute_word.match(text, pos):
+                pos = match.end()
+                continue
+            if ch in {"'", '"'}:
+                quote = ch
+                pos += 1
+                while pos < len(text) and text[pos] not in {quote, "\n"}:
+                    pos += 2 if text[pos] == "\\" else 1
+                if pos >= len(text) or text[pos] != quote:
+                    break
+                pos += 1
+                continue
+            if ch in pairs:
+                closers.append(pairs[ch])
+            elif ch in ")]}":
+                if ch != closers[-1]:
+                    error = "Mismatched delimiter in attribute arguments"
+                    break
+                closers.pop()
+                if not closers:
+                    tok = self._attribute_token("ATTRIBUTE_ARGUMENTS", pos + 1)
+                    tok.value = tok.value[1:-1]
+                    return tok
+            pos += 1
+        self._error(error, start)
+        self._pos = len(text)
+        return None
 
     def _make_token(self, tok_type: str, value: str, pos: int) -> Token:
         """Create a Token at an absolute input position.
@@ -282,7 +394,7 @@ class CLexer:
                 self._error("line number missing in #line", self._pos + line_len)
             else:
                 try:
-                    self._lineno = int(pp_line)
+                    self._lineno = int(pp_line.replace("'", ""))
                 except ValueError:
                     self._error("invalid #line directive", self._pos + line_len)
                     return
@@ -304,7 +416,8 @@ class CLexer:
             fail("filename before line number in #line", pos)
             return
 
-        m = re.match(_decimal_constant, line[pos:])
+        # Line numbers allow digit separators, but no integer suffixes.
+        m = re.match(_decimal_digits, line[pos:])
         if not m:
             fail("invalid #line directive", pos)
             return
@@ -333,7 +446,7 @@ class CLexer:
             skip_ws()
             if pos >= line_len:
                 break
-            m = re.match(_decimal_constant, line[pos:])
+            m = re.match(_decimal_digits, line[pos:])
             if not m:
                 fail("invalid #line directive", pos)
                 return
@@ -447,30 +560,62 @@ for keyword in _keywords:
     else:
         _keyword_map[keyword.lower()] = keyword
 
+# Alternate spellings share token types with the existing grammar. The other
+# keywords are reserved even where the parser does not yet support their syntax.
+_c23_keywords = {
+    "alignas": "_ALIGNAS",
+    "alignof": "_ALIGNOF",
+    "bool": "_BOOL",
+    "static_assert": "_STATIC_ASSERT",
+    "thread_local": "_THREAD_LOCAL",
+    "true": "BOOL_CONST",
+    "false": "BOOL_CONST",
+    "nullptr": "NULLPTR",
+    "constexpr": "CONSTEXPR",
+    "typeof": "TYPEOF",
+    "typeof_unqual": "TYPEOF_UNQUAL",
+    "_BitInt": "_BITINT",
+    "_Decimal32": "_DECIMAL32",
+    "_Decimal64": "_DECIMAL64",
+    "_Decimal128": "_DECIMAL128",
+    "_Imaginary": "_IMAGINARY",
+}
+
 ##
 ## Regexes for use in tokens
 ##
 
 # valid C identifiers (K&R2: A.2.3), plus '$' (supported by some compilers)
 _identifier = r"[a-zA-Z_$][0-9a-zA-Z_$]*"
+_attribute_begin = re.compile(r"\[\s*\[")
+_attribute_end = re.compile(r"\]\s*\]")
+_attribute_word = re.compile(rf"{_identifier}|(?:[0-9]|\.[0-9])(?:[eEpP][+-]|[\w.'])*")
 
+# Accept digit separators in all dialects, retaining them in token values.
+# A quote must be between two digits of the appropriate base; it cannot
+# touch a prefix, decimal point, exponent marker/sign, or suffix.
+_decimal_digits = "[0-9](?:'?[0-9])*"
 _hex_prefix = "0[xX]"
-_hex_digits = "[0-9a-fA-F]+"
+_hex_digits = "[0-9a-fA-F](?:'?[0-9a-fA-F])*"
 _bin_prefix = "0[bB]"
-_bin_digits = "[01]+"
+_bin_digits = "[01](?:'?[01])*"
 
 # integer constants (K&R2: A.2.5.1)
+# C23 wb/WB allows u/U before or after it, but no long suffix. Recognize it
+# in every dialect and let the parser enforce C23. Keep these alternatives
+# ahead of bare u/U so that an unsigned bit-precise suffix is consumed whole.
 _integer_suffix_opt = (
-    r"(([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?"
+    r"(([uU](wb|WB))|((wb|WB)[uU]?)|"
+    r"([uU]ll)|([uU]LL)|(ll[uU]?)|(LL[uU]?)|([uU][lL])|([lL][uU]?)|[uU])?"
 )
 _decimal_constant = (
-    "(0" + _integer_suffix_opt + ")|([1-9][0-9]*" + _integer_suffix_opt + ")"
+    "(0" + _integer_suffix_opt + ")|([1-9](?:'?[0-9])*" + _integer_suffix_opt + ")"
 )
-_octal_constant = "0[0-7]*" + _integer_suffix_opt
+_octal_constant = "0(?:'?[0-7])*" + _integer_suffix_opt
 _hex_constant = _hex_prefix + _hex_digits + _integer_suffix_opt
 _bin_constant = _bin_prefix + _bin_digits + _integer_suffix_opt
 
-_bad_octal_constant = "0[0-7]*[89]"
+_bad_octal_constant = "0(?:'?[0-7])*'?[89]"
 
 # comments are not supported
 _unsupported_c_style_comment = r"\/\*"
@@ -501,8 +646,7 @@ _unicode_escape = r"(u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8})"
 # \u followed by 0, 0, e, 9. Incomplete forms retain the permissive behavior
 # of simple escapes.
 _simple_escape = (
-    rf"(?!{_unicode_escape})"
-    r"""([a-wyzA-Z._~!=&\^\-\\?'"]|x(?![0-9a-fA-F]))"""
+    rf"(?!{_unicode_escape})" r"""([a-wyzA-Z._~!=&\^\-\\?'"]|x(?![0-9a-fA-F]))"""
 )
 _decimal_escape = r"""(\d+)(?!\d)"""
 _hex_escape = r"""(x[0-9a-fA-F]+)(?![0-9a-fA-F])"""
@@ -549,18 +693,31 @@ _u32string_literal = "U" + _string_literal
 _bad_string_literal = '"' + _string_char + "*" + _bad_escape + _string_char + '*"'
 
 # floating constants (K&R2: A.2.5.3)
-_exponent_part = r"""([eE][-+]?[0-9]+)"""
-_fractional_constant = r"""([0-9]*\.[0-9]+)|([0-9]+\.)"""
-_floating_constant = (
-    "(((("
+_exponent_part = "([eE][-+]?" + _decimal_digits + ")"
+_fractional_constant = (
+    "(("
+    + _decimal_digits
+    + r")?\."
+    + _decimal_digits
+    + ")|("
+    + _decimal_digits
+    + r"\.)"
+)
+_unsuffixed_floating_constant = (
+    "((("
     + _fractional_constant
     + ")"
     + _exponent_part
-    + "?)|([0-9]+"
+    + "?)|("
+    + _decimal_digits
     + _exponent_part
-    + "))[FfLl]?)"
+    + "))"
 )
-_binary_exponent_part = r"""([pP][+-]?[0-9]+)"""
+# Recognize C23 decimal suffixes in every dialect; the parser rejects them
+# outside C23. Each suffix must be entirely lowercase or uppercase.
+# The hexadecimal float pattern below keeps only f/F/l/L.
+_floating_constant = _unsuffixed_floating_constant + "(df|dd|dl|DF|DD|DL|[FfLl])?"
+_binary_exponent_part = "([pP][+-]?" + _decimal_digits + ")"
 _hex_fractional_constant = (
     "(((" + _hex_digits + r""")?\.""" + _hex_digits + ")|(" + _hex_digits + r"""\.))"""
 )
@@ -707,6 +864,7 @@ _fixed_tokens: list[_FixedToken] = [
     _FixedToken("PERIOD", "."),
     _FixedToken("SEMI", ";"),
     _FixedToken("COLON", ":"),
+    _FixedToken("COLONCOLON", "::"),
 ]
 
 # To avoid scanning all fixed tokens on every character, we bucket them by the

@@ -50,7 +50,8 @@ class ASTCodeGenerator:
                     continue
                 colon_i = line.find(":")
                 lbracket_i = line.find("[")
-                rbracket_i = line.find("]")
+                # A field's default may contain []; find the outer closing bracket.
+                rbracket_i = line.rfind("]")
                 if colon_i < 1 or lbracket_i <= colon_i or rbracket_i <= lbracket_i:
                     raise RuntimeError(f"Invalid line in {filename}:\n{line}\n")
 
@@ -74,10 +75,22 @@ class NodeCfg:
         self.attr = []
         self.child = []
         self.seq_child = []
+        self.defaults = {}
 
         for entry in contents:
+            entry, has_default, default = entry.partition("=")
+            entry = entry.strip()
             clean_entry = entry.rstrip("*")
             self.all_entries.append(clean_entry)
+
+            if has_default:
+                default = default.strip()
+                if default not in ("None", "[]"):
+                    raise RuntimeError(
+                        f"Unsupported default {default!r} for {name}.{clean_entry}; "
+                        "expected None or []"
+                    )
+                self.defaults[clean_entry] = default
 
             if entry.endswith("**"):
                 self.seq_child.append(clean_entry)
@@ -96,22 +109,30 @@ class NodeCfg:
     def _gen_init(self):
         src = f"class {self.name}(Node):\n"
 
-        if self.all_entries:
-            args = ", ".join(self.all_entries)
-            slots = ", ".join(f"'{e}'" for e in self.all_entries)
-            slots += ", 'coord', '__weakref__'"
-            arglist = f"(self, {args}, coord=None)"
-        else:
-            slots = "'coord', '__weakref__'"
-            arglist = "(self, coord=None)"
+        args = ["self"]
+        args.extend(name for name in self.all_entries if name not in self.defaults)
+        args.append("coord=None")
+        # Defaulted fields are keyword-only so adding one doesn't shift coord
+        # in existing positional calls. Both supported defaults use None here;
+        # list defaults are initialized separately for each instance below.
+        if self.defaults:
+            args.append("*")
+            args.extend(f"{name}=None" for name in self.defaults)
+        arglist = f"({', '.join(args)})"
 
         # Keep coord and __weakref__ last: Node.__repr__ relies on their
         # positions when iterating over the node's fields.
+        slots = ", ".join(
+            repr(name) for name in self.all_entries + ["coord", "__weakref__"]
+        )
         src += f"    __slots__ = ({slots})\n"
         src += f"    def __init__{arglist}:\n"
 
         for name in self.all_entries + ["coord"]:
-            src += f"        self.{name} = {name}\n"
+            if self.defaults.get(name) == "[]":
+                src += f"        self.{name} = [] if {name} is None else {name}\n"
+            else:
+                src += f"        self.{name} = {name}\n"
 
         return src
 

@@ -200,12 +200,13 @@ class NodeVisitor:
 
 
 class ArrayDecl(Node):
-    __slots__ = ("type", "dim", "dim_quals", "coord", "__weakref__")
+    __slots__ = ("type", "dim", "dim_quals", "attributes", "coord", "__weakref__")
 
-    def __init__(self, type, dim, dim_quals, coord=None):
+    def __init__(self, type, dim, dim_quals, coord=None, *, attributes=None):
         self.type = type
         self.dim = dim
         self.dim_quals = dim_quals
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
@@ -214,6 +215,8 @@ class ArrayDecl(Node):
             nodelist.append(("type", self.type))
         if self.dim is not None:
             nodelist.append(("dim", self.dim))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -221,6 +224,7 @@ class ArrayDecl(Node):
             yield self.type
         if self.dim is not None:
             yield self.dim
+        yield from self.attributes or []
 
     attr_names = ("dim_quals",)
 
@@ -296,6 +300,116 @@ class Alignas(Node):
     attr_names = ()
 
 
+class Attribute(Node):
+    __slots__ = ("name", "namespace", "arguments", "coord", "__weakref__")
+
+    def __init__(self, name, namespace, arguments, coord=None):
+        self.name = name
+        self.namespace = namespace
+        self.arguments = arguments
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        return tuple(nodelist)
+
+    def __iter__(self):
+        return
+        yield
+
+    attr_names = (
+        "name",
+        "namespace",
+        "arguments",
+    )
+
+
+class AttributeSpecifier(Node):
+    __slots__ = ("attributes", "coord", "__weakref__")
+
+    def __init__(self, attributes, coord=None):
+        self.attributes = attributes
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        yield from self.attributes or []
+
+    attr_names = ()
+
+
+class AttributeDeclaration(Node):
+    __slots__ = ("attributes", "coord", "__weakref__")
+
+    def __init__(self, attributes, coord=None):
+        self.attributes = attributes
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        yield from self.attributes or []
+
+    attr_names = ()
+
+
+class AttributedStatement(Node):
+    __slots__ = ("attributes", "stmt", "coord", "__weakref__")
+
+    def __init__(self, attributes, stmt, coord=None):
+        self.attributes = attributes
+        self.stmt = stmt
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.stmt is not None:
+            nodelist.append(("stmt", self.stmt))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.stmt is not None:
+            yield self.stmt
+        yield from self.attributes or []
+
+    attr_names = ()
+
+
+class AttributedType(Node):
+    __slots__ = ("type", "attributes", "coord", "__weakref__")
+
+    def __init__(self, type, attributes, coord=None):
+        self.type = type
+        self.attributes = attributes
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.type is not None:
+            nodelist.append(("type", self.type))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.type is not None:
+            yield self.type
+        yield from self.attributes or []
+
+    attr_names = ()
+
+
 class BinaryOp(Node):
     __slots__ = ("op", "left", "right", "coord", "__weakref__")
 
@@ -322,6 +436,27 @@ class BinaryOp(Node):
     attr_names = ("op",)
 
 
+class BitIntType(Node):
+    __slots__ = ("width", "signedness", "coord", "__weakref__")
+
+    def __init__(self, width, signedness, coord=None):
+        self.width = width
+        self.signedness = signedness
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.width is not None:
+            nodelist.append(("width", self.width))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.width is not None:
+            yield self.width
+
+    attr_names = ("signedness",)
+
+
 class Break(Node):
     __slots__ = ("coord", "__weakref__")
 
@@ -339,11 +474,12 @@ class Break(Node):
 
 
 class Case(Node):
-    __slots__ = ("expr", "stmts", "coord", "__weakref__")
+    __slots__ = ("expr", "stmts", "attributes", "coord", "__weakref__")
 
-    def __init__(self, expr, stmts, coord=None):
+    def __init__(self, expr, stmts, coord=None, *, attributes=None):
         self.expr = expr
         self.stmts = stmts
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
@@ -352,12 +488,15 @@ class Case(Node):
             nodelist.append(("expr", self.expr))
         for i, child in enumerate(self.stmts or []):
             nodelist.append((f"stmts[{i}]", child))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
         if self.expr is not None:
             yield self.expr
         yield from self.stmts or []
+        yield from self.attributes or []
 
     attr_names = ()
 
@@ -407,11 +546,12 @@ class Compound(Node):
 
 
 class CompoundLiteral(Node):
-    __slots__ = ("type", "init", "coord", "__weakref__")
+    __slots__ = ("type", "init", "storage", "coord", "__weakref__")
 
-    def __init__(self, type, init, coord=None):
+    def __init__(self, type, init, storage, coord=None):
         self.type = type
         self.init = init
+        self.storage = storage
         self.coord = coord
 
     def children(self):
@@ -428,7 +568,7 @@ class CompoundLiteral(Node):
         if self.init is not None:
             yield self.init
 
-    attr_names = ()
+    attr_names = ("storage",)
 
 
 class Constant(Node):
@@ -479,12 +619,24 @@ class Decl(Node):
         "type",
         "init",
         "bitsize",
+        "attributes",
         "coord",
         "__weakref__",
     )
 
     def __init__(
-        self, name, quals, align, storage, funcspec, type, init, bitsize, coord=None
+        self,
+        name,
+        quals,
+        align,
+        storage,
+        funcspec,
+        type,
+        init,
+        bitsize,
+        coord=None,
+        *,
+        attributes=None,
     ):
         self.name = name
         self.quals = quals
@@ -494,6 +646,7 @@ class Decl(Node):
         self.type = type
         self.init = init
         self.bitsize = bitsize
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
@@ -504,6 +657,8 @@ class Decl(Node):
             nodelist.append(("init", self.init))
         if self.bitsize is not None:
             nodelist.append(("bitsize", self.bitsize))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -513,6 +668,7 @@ class Decl(Node):
             yield self.init
         if self.bitsize is not None:
             yield self.bitsize
+        yield from self.attributes or []
 
     attr_names = (
         "name",
@@ -543,20 +699,24 @@ class DeclList(Node):
 
 
 class Default(Node):
-    __slots__ = ("stmts", "coord", "__weakref__")
+    __slots__ = ("stmts", "attributes", "coord", "__weakref__")
 
-    def __init__(self, stmts, coord=None):
+    def __init__(self, stmts, coord=None, *, attributes=None):
         self.stmts = stmts
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
         nodelist = []
         for i, child in enumerate(self.stmts or []):
             nodelist.append((f"stmts[{i}]", child))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
         yield from self.stmts or []
+        yield from self.attributes or []
 
     attr_names = ()
 
@@ -619,43 +779,63 @@ class EmptyStatement(Node):
 
 
 class Enum(Node):
-    __slots__ = ("name", "values", "coord", "__weakref__")
+    __slots__ = (
+        "name",
+        "values",
+        "underlying_type",
+        "attributes",
+        "coord",
+        "__weakref__",
+    )
 
-    def __init__(self, name, values, coord=None):
+    def __init__(self, name, values, underlying_type, coord=None, *, attributes=None):
         self.name = name
         self.values = values
+        self.underlying_type = underlying_type
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
         nodelist = []
         if self.values is not None:
             nodelist.append(("values", self.values))
+        if self.underlying_type is not None:
+            nodelist.append(("underlying_type", self.underlying_type))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
         if self.values is not None:
             yield self.values
+        if self.underlying_type is not None:
+            yield self.underlying_type
+        yield from self.attributes or []
 
     attr_names = ("name",)
 
 
 class Enumerator(Node):
-    __slots__ = ("name", "value", "coord", "__weakref__")
+    __slots__ = ("name", "value", "attributes", "coord", "__weakref__")
 
-    def __init__(self, name, value, coord=None):
+    def __init__(self, name, value, coord=None, *, attributes=None):
         self.name = name
         self.value = value
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
         nodelist = []
         if self.value is not None:
             nodelist.append(("value", self.value))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
         if self.value is not None:
             yield self.value
+        yield from self.attributes or []
 
     attr_names = ("name",)
 
@@ -778,11 +958,12 @@ class FuncCall(Node):
 
 
 class FuncDecl(Node):
-    __slots__ = ("args", "type", "coord", "__weakref__")
+    __slots__ = ("args", "type", "attributes", "coord", "__weakref__")
 
-    def __init__(self, args, type, coord=None):
+    def __init__(self, args, type, coord=None, *, attributes=None):
         self.args = args
         self.type = type
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
@@ -791,6 +972,8 @@ class FuncDecl(Node):
             nodelist.append(("args", self.args))
         if self.type is not None:
             nodelist.append(("type", self.type))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
@@ -798,6 +981,7 @@ class FuncDecl(Node):
             yield self.args
         if self.type is not None:
             yield self.type
+        yield from self.attributes or []
 
     attr_names = ()
 
@@ -964,6 +1148,22 @@ class If(Node):
     attr_names = ()
 
 
+class InferredType(Node):
+    __slots__ = ("coord", "__weakref__")
+
+    def __init__(self, coord=None):
+        self.coord = coord
+
+    def children(self):
+        return ()
+
+    def __iter__(self):
+        return
+        yield
+
+    attr_names = ()
+
+
 class InitList(Node):
     __slots__ = ("exprs", "coord", "__weakref__")
 
@@ -984,22 +1184,26 @@ class InitList(Node):
 
 
 class Label(Node):
-    __slots__ = ("name", "stmt", "coord", "__weakref__")
+    __slots__ = ("name", "stmt", "attributes", "coord", "__weakref__")
 
-    def __init__(self, name, stmt, coord=None):
+    def __init__(self, name, stmt, coord=None, *, attributes=None):
         self.name = name
         self.stmt = stmt
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
         nodelist = []
         if self.stmt is not None:
             nodelist.append(("stmt", self.stmt))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
         if self.stmt is not None:
             yield self.stmt
+        yield from self.attributes or []
 
     attr_names = ("name",)
 
@@ -1048,22 +1252,26 @@ class ParamList(Node):
 
 
 class PtrDecl(Node):
-    __slots__ = ("quals", "type", "coord", "__weakref__")
+    __slots__ = ("quals", "type", "attributes", "coord", "__weakref__")
 
-    def __init__(self, quals, type, coord=None):
+    def __init__(self, quals, type, coord=None, *, attributes=None):
         self.quals = quals
         self.type = type
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
         nodelist = []
         if self.type is not None:
             nodelist.append(("type", self.type))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
         if self.type is not None:
             yield self.type
+        yield from self.attributes or []
 
     attr_names = ("quals",)
 
@@ -1114,21 +1322,25 @@ class StaticAssert(Node):
 
 
 class Struct(Node):
-    __slots__ = ("name", "decls", "coord", "__weakref__")
+    __slots__ = ("name", "decls", "attributes", "coord", "__weakref__")
 
-    def __init__(self, name, decls, coord=None):
+    def __init__(self, name, decls, coord=None, *, attributes=None):
         self.name = name
         self.decls = decls
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
         nodelist = []
         for i, child in enumerate(self.decls or []):
             nodelist.append((f"decls[{i}]", child))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
         yield from self.decls or []
+        yield from self.attributes or []
 
     attr_names = ("name",)
 
@@ -1215,24 +1427,36 @@ class TernaryOp(Node):
 
 
 class TypeDecl(Node):
-    __slots__ = ("declname", "quals", "align", "type", "coord", "__weakref__")
+    __slots__ = (
+        "declname",
+        "quals",
+        "align",
+        "type",
+        "attributes",
+        "coord",
+        "__weakref__",
+    )
 
-    def __init__(self, declname, quals, align, type, coord=None):
+    def __init__(self, declname, quals, align, type, coord=None, *, attributes=None):
         self.declname = declname
         self.quals = quals
         self.align = align
         self.type = type
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
         nodelist = []
         if self.type is not None:
             nodelist.append(("type", self.type))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
         if self.type is not None:
             yield self.type
+        yield from self.attributes or []
 
     attr_names = (
         "declname",
@@ -1242,24 +1466,36 @@ class TypeDecl(Node):
 
 
 class Typedef(Node):
-    __slots__ = ("name", "quals", "storage", "type", "coord", "__weakref__")
+    __slots__ = (
+        "name",
+        "quals",
+        "storage",
+        "type",
+        "attributes",
+        "coord",
+        "__weakref__",
+    )
 
-    def __init__(self, name, quals, storage, type, coord=None):
+    def __init__(self, name, quals, storage, type, coord=None, *, attributes=None):
         self.name = name
         self.quals = quals
         self.storage = storage
         self.type = type
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
         nodelist = []
         if self.type is not None:
             nodelist.append(("type", self.type))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
         if self.type is not None:
             yield self.type
+        yield from self.attributes or []
 
     attr_names = (
         "name",
@@ -1269,30 +1505,55 @@ class Typedef(Node):
 
 
 class Typename(Node):
-    __slots__ = ("name", "quals", "align", "type", "coord", "__weakref__")
+    __slots__ = ("name", "quals", "align", "type", "attributes", "coord", "__weakref__")
 
-    def __init__(self, name, quals, align, type, coord=None):
+    def __init__(self, name, quals, align, type, coord=None, *, attributes=None):
         self.name = name
         self.quals = quals
         self.align = align
         self.type = type
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
         nodelist = []
         if self.type is not None:
             nodelist.append(("type", self.type))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
         if self.type is not None:
             yield self.type
+        yield from self.attributes or []
 
     attr_names = (
         "name",
         "quals",
         "align",
     )
+
+
+class TypeOf(Node):
+    __slots__ = ("op", "expr", "coord", "__weakref__")
+
+    def __init__(self, op, expr, coord=None):
+        self.op = op
+        self.expr = expr
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.expr is not None:
+            nodelist.append(("expr", self.expr))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.expr is not None:
+            yield self.expr
+
+    attr_names = ("op",)
 
 
 class UnaryOp(Node):
@@ -1317,21 +1578,25 @@ class UnaryOp(Node):
 
 
 class Union(Node):
-    __slots__ = ("name", "decls", "coord", "__weakref__")
+    __slots__ = ("name", "decls", "attributes", "coord", "__weakref__")
 
-    def __init__(self, name, decls, coord=None):
+    def __init__(self, name, decls, coord=None, *, attributes=None):
         self.name = name
         self.decls = decls
+        self.attributes = [] if attributes is None else attributes
         self.coord = coord
 
     def children(self):
         nodelist = []
         for i, child in enumerate(self.decls or []):
             nodelist.append((f"decls[{i}]", child))
+        for i, child in enumerate(self.attributes or []):
+            nodelist.append((f"attributes[{i}]", child))
         return tuple(nodelist)
 
     def __iter__(self):
         yield from self.decls or []
+        yield from self.attributes or []
 
     attr_names = ("name",)
 

@@ -51,6 +51,16 @@ def parse_to_ast(src):
     return _c_parser.parse(src)
 
 
+def declared_type(node):
+    """Return the type specifier under a declaration or typedef."""
+    typ = node.type
+    while isinstance(typ, (c_ast.PtrDecl, c_ast.ArrayDecl, c_ast.FuncDecl)):
+        typ = typ.type
+    if isinstance(typ, c_ast.TypeDecl):
+        typ = typ.type
+    return typ
+
+
 class TestFunctionDeclGeneration(unittest.TestCase):
     class _FuncDeclVisitor(c_ast.NodeVisitor):
         def __init__(self):
@@ -101,6 +111,78 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct("auto int a;")
         self._assert_ctoc_correct("register int a;")
         self._assert_ctoc_correct("_Thread_local int a;")
+        # Plain declarators do not share a type-definition node, so they stay
+        # separate. Joining them is not required for the types to match.
+        self.assertEqual(self._run_c_to_c("int b, a;"), "int b;\nint a;\n")
+
+    def test_multi_declarator_type_definition_is_emitted_once(self):
+        # One definition must be emitted once. Repeating it gives the later
+        # declarator a different type, or redefines a tag.
+        union_src = """
+            struct a { int x; };
+            union {
+                struct a b;
+            } u, *uu = &u;
+            """
+        union_out = self._assert_ctoc_correct(union_src)
+        self.assertEqual(union_out.count("struct a b"), 1)
+        self.assertIn("*uu = &u", union_out)
+        union_ast = parse_to_ast(union_out)
+        self.assertIs(declared_type(union_ast.ext[1]), declared_type(union_ast.ext[2]))
+
+        alias_src = "typedef struct { int a; } B, C;"
+        alias_out = self._assert_ctoc_correct(alias_src)
+        self.assertEqual(alias_out.count("typedef"), 1)
+        self.assertEqual(alias_out.count("int a"), 1)
+        alias_ast = parse_to_ast(alias_out)
+        self.assertIs(declared_type(alias_ast.ext[0]), declared_type(alias_ast.ext[1]))
+
+        typedef_src = """
+            typedef struct MyStruct {
+                int a;
+            } myType, *pMyType;
+            """
+        typedef_out = self._assert_ctoc_correct(typedef_src)
+        self.assertEqual(typedef_out.count("typedef"), 1)
+        self.assertEqual(typedef_out.count("struct MyStruct"), 1)
+        self.assertIn("*pMyType", typedef_out)
+        typedef_ast = parse_to_ast(typedef_out)
+        self.assertIs(
+            declared_type(typedef_ast.ext[0]), declared_type(typedef_ast.ext[1])
+        )
+
+        enum_src = "enum { A, B } x, y;"
+        enum_out = self._assert_ctoc_correct(enum_src)
+        self.assertEqual(enum_out.count("A,"), 1)
+        enum_ast = parse_to_ast(enum_out)
+        self.assertIs(declared_type(enum_ast.ext[0]), declared_type(enum_ast.ext[1]))
+
+        member_src = """
+            struct Outer {
+                struct { int a; } x, *y;
+            };
+            """
+        member_out = self._assert_ctoc_correct(member_src)
+        self.assertEqual(member_out.count("int a"), 1)
+        self.assertIn("x, *y", member_out)
+
+        block_src = """
+            void f(void) {
+                struct { int a; } x, *y;
+            }
+            """
+        block_out = self._assert_ctoc_correct(block_src)
+        self.assertEqual(block_out.count("int a"), 1)
+        self.assertIn("x, *y", block_out)
+
+        # Separate definitions stay separate, even when the text matches.
+        twins_src = "struct { int a; } x; struct { int a; } y;"
+        twins_out = self._assert_ctoc_correct(twins_src)
+        self.assertEqual(twins_out.count("int a"), 2)
+        twins_ast = parse_to_ast(twins_out)
+        self.assertIsNot(
+            declared_type(twins_ast.ext[0]), declared_type(twins_ast.ext[1])
+        )
 
     def test_complex_decls(self):
         self._assert_ctoc_correct("int** (*a)(void);")
@@ -499,6 +581,124 @@ class TestCtoC(unittest.TestCase):
             } s;
         """)
 
+    def test_pragma_operator_literals(self):
+        literals = [
+            '""',
+            '"foo"',
+            r'"message(\"hello\")"',
+            r'"message(\"C:\\\\tmp\")"',
+            r'"foo\nbar"',
+            'L"foo"',
+            'u8"foo"',
+            'u"foo"',
+            'U"foo"',
+        ]
+        for literal in literals:
+            with self.subTest(literal=literal):
+                source = f"_Pragma(\n{literal}\n)\nint x;"
+                generated = self._assert_ctoc_correct(source)
+                self.assertEqual(generated, f"_Pragma({literal})\nint x;\n")
+
+    def test_pragma_operator_contexts(self):
+        self._assert_ctoc_correct(r"""
+            #pragma foo
+            _Pragma("bar")
+            void f(void) {
+                _Pragma("foo")
+                int x = 0;
+                if (x)
+                    _Pragma("bar")
+                    _Pragma("baz")
+                    x = 1;
+                label:
+                    _Pragma("qux")
+                    x++;
+                _Pragma("")
+            }
+            struct s {
+                _Pragma("foo")
+                int x;
+                _Pragma("bar")
+            };
+            union u {
+                _Pragma("baz")
+                int x;
+            };
+            _Pragma("")
+            #pragma
+        """)
+
+    def test_pragma_before_declaration_semicolon_issue_478(self):
+        generated = self._assert_ctoc_correct("""struct knote;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+struct klist { struct knote *slh_first; }
+#pragma clang diagnostic pop
+;
+""")
+        self.assertEqual(
+            generated,
+            "struct knote;\n#pragma clang diagnostic push\n"
+            '#pragma clang diagnostic ignored "-Wnullability-completeness"\n'
+            "struct klist\n{\n  struct knote *slh_first;\n};\n"
+            "#pragma clang diagnostic pop\n",
+        )
+
+    def test_pragma_before_local_declaration_semicolon(self):
+        generated = self._assert_ctoc_correct("""void f(void) {
+    struct S { int x; } a, *b = &a
+#pragma after
+    ;
+}""")
+        self.assertIn("  } a, *b = &a;\n  #pragma after\n", generated)
+        self.assertEqual(generated.count("struct S"), 1)
+
+    def test_pragma_before_typedef_and_prototype_semicolons(self):
+        generated = self._assert_ctoc_correct(
+            'typedef int T _Pragma("type"); T f(void)\n#pragma function\n;'
+        )
+        self.assertEqual(
+            generated, 'typedef int T;\n_Pragma("type")\nT f(void);\n#pragma function\n'
+        )
+
+    def test_pragma_before_struct_member_semicolons(self):
+        generated = self._assert_ctoc_correct("""struct S {
+    int x : 3
+#pragma field
+    ;
+    union { int y; } _Pragma("anonymous");
+};""")
+        self.assertIn("  int x : 3;\n  #pragma field\n", generated)
+        self.assertIn('  };\n  _Pragma("anonymous")\n', generated)
+
+    def test_pragma_before_for_declaration_semicolon(self):
+        generated = self._assert_ctoc_correct("""void f(void) {
+    for (int i = 0, j = 1 _Pragma("first")
+#pragma second
+    ; i < j; ++i) {}
+}""")
+        self.assertIn(
+            'for (int i = 0, j = 1\n  _Pragma("first")\n  #pragma second\n  ; i < j; ++i)',
+            generated,
+        )
+
+    def test_pragma_before_knr_declaration_semicolon(self):
+        generated = self._assert_ctoc_correct(
+            'int f(x, y) int x _Pragma("first"); int y\n#pragma second\n; { return x + y; }'
+        )
+        self.assertIn('int x;\n_Pragma("first")\nint y;\n#pragma second\n{', generated)
+
+    def test_c23_attributes_with_trailing_declaration_pragmas(self):
+        parser = c_parser.CParser(dialect="c23")
+        ast = parser.parse("""[[deprecated]] auto x = 1 _Pragma("global");
+void f(void) { [[maybe_unused]] auto y = 2 _Pragma("local"); }
+struct S { [[deprecated]] int z _Pragma("member"); };""")
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn('[[deprecated]] auto x = 1;\n_Pragma("global")\n', generated)
+        self.assertIn('[[maybe_unused]] auto y = 2;\n  _Pragma("local")\n', generated)
+        self.assertIn('[[deprecated]] int z;\n  _Pragma("member")\n', generated)
+
     def test_compound_literal_statement(self):
         self._assert_ctoc_correct(
             "struct S { int x; }; void f(void) { (struct S){1}; }"
@@ -508,6 +708,72 @@ class TestCtoC(unittest.TestCase):
         self._assert_ctoc_correct('char **foo = (char *[]){ "x", "y", "z" };')
         self._assert_ctoc_correct("int i = ++(int){ 1 };")
         self._assert_ctoc_correct("struct foo_s foo = (struct foo_s){ 1, 2 };")
+
+    def test_c23_compound_literal_storage(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            typedef int T;
+            int *p = &(static T){1};
+            int value = (constexpr int){42};
+            int *array = (static int[]){1, 2};
+            struct S { int *values; } object =
+                (static struct S){.values = (static int[]){1, 2}};
+            void f(void) {
+                (register int){2};
+                (thread_local int){3};
+                (_Thread_local int){4};
+                (static thread_local int){};
+                (thread_local static int){};
+                (static constexpr const unsigned long){42};
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("(static T){1}", generated)
+        self.assertIn("(constexpr int){42}", generated)
+        self.assertIn("(register int){2}", generated)
+        self.assertIn("(thread_local int){3}", generated)
+        self.assertIn("(_Thread_local int){4}", generated)
+        self.assertIn("(static thread_local int){}", generated)
+        self.assertIn("(thread_local static int){}", generated)
+        self.assertIn("(static constexpr const unsigned long){42}", generated)
+
+    def test_c23_compound_literal_postfix(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            struct S { int value; } object;
+            int callback(void);
+            void f(void) {
+                (static struct S){.value = 2}.value++;
+                (static struct S){}.value;
+                (static struct S *){&object}->value;
+                (static int[]){1, 2}[0];
+                (static int[2]){}[0];
+                (static int (*)(void)){callback}();
+                (register int){1}++;
+                (register int){2}--;
+                sizeof (static int[3]){};
+                sizeof (static int[]){1, 2}[0];
+                (int)(constexpr unsigned int){42};
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("((static struct S){.value = 2}).value++", generated)
+        self.assertIn("((static int (*)(void)){callback})()", generated)
+        self.assertIn("sizeof((static int [3]){})", generated)
+
+    def test_legacy_compound_literal_postfix(self):
+        self._assert_ctoc_correct("""
+            struct S { int value; };
+            int member = (struct S){1}.value;
+            int empty_member = (struct S){}.value;
+            int element = (int[]){1, 2}[0];
+            int empty_element = (int[2]){}[0];
+            int size = sizeof (int[]){1, 2};
+        """)
 
     def test_enum(self):
         self._assert_ctoc_correct(r"""
@@ -527,8 +793,118 @@ class TestCtoC(unittest.TestCase):
             };
         """)
 
+    def test_enum_leading_pragma(self):
+        generated = self._assert_ctoc_correct("enum E {\n#pragma before\nA, B };")
+        self.assertEqual(generated, "enum E\n{\n  #pragma before\n  A,\n  B\n};\n")
+
+    def test_enum_pragmas_around_comma(self):
+        generated = self._assert_ctoc_correct(
+            "enum E { A = 1\n#pragma before_comma\n,\n#pragma after_comma\nB };"
+        )
+        self.assertEqual(
+            generated,
+            "enum E\n{\n  A = 1,\n  #pragma before_comma\n  #pragma after_comma\n  B\n};\n",
+        )
+
+    def test_enum_trailing_pragmas(self):
+        generated = self._assert_ctoc_correct("enum E { A\n#pragma after\n#pragma\n};")
+        self.assertEqual(generated, "enum E\n{\n  A\n  #pragma after\n  #pragma\n};\n")
+
+    def test_enum_pragma_after_trailing_comma(self):
+        generated = self._assert_ctoc_correct("enum E { A,\n#pragma after\n};")
+        self.assertEqual(generated, "enum E\n{\n  A\n  #pragma after\n};\n")
+
+    def test_enum_pragma_operators(self):
+        generated = self._assert_ctoc_correct(
+            'enum E { _Pragma("before") A, _Pragma("between") B _Pragma("after") };'
+        )
+        self.assertEqual(
+            generated,
+            'enum E\n{\n  _Pragma("before")\n  A,\n  _Pragma("between")\n  B\n  _Pragma("after")\n};\n',
+        )
+
+    def test_c23_enum_pragmas(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """enum [[deprecated]] E : unsigned int {
+#pragma before
+    A [[deprecated]] = 1,
+#pragma between
+    B
+#pragma after
+};"""
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertEqual(
+            generated,
+            "enum [[deprecated]] E : unsigned int\n{\n"
+            "  #pragma before\n  A [[deprecated]] = 1,\n"
+            "  #pragma between\n  B\n  #pragma after\n};\n",
+        )
+
     def test_enum_typedef(self):
         self._assert_ctoc_correct("typedef enum EnumName EnumTypedefName;")
+
+    def test_c23_fixed_enums(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            typedef unsigned char Byte;
+            enum E : unsigned int;
+            enum E : unsigned int { A = 1, B, };
+            enum : Byte { C } first, *second;
+            typedef enum Named : unsigned short { D } Alias;
+            enum Wide : unsigned long long { BIG = 1ULL << 40 };
+            enum E value = B;
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("enum E : unsigned int;", generated)
+        self.assertIn("enum E : unsigned int\n", generated)
+        self.assertIn("enum : Byte\n", generated)
+        self.assertIn("typedef enum Named : unsigned short\n", generated)
+        self.assertIn("BIG = 1ULL << 40", generated)
+        self.assertIn("enum E value = B;", generated)
+
+    def test_c23_fixed_enum_underlying_types(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            enum Qualified : const volatile unsigned int { A };
+            enum Atomic : _Atomic(unsigned int) { B };
+            enum Type : typeof(unsigned char) { C };
+            enum Expr : typeof_unqual(A + 1) { D };
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("enum Qualified : const volatile unsigned int\n", generated)
+        self.assertIn("enum Atomic : _Atomic unsigned int\n", generated)
+        self.assertIn("enum Type : typeof(unsigned char)\n", generated)
+        self.assertIn("enum Expr : typeof_unqual(A + 1)\n", generated)
+
+    def test_c23_fixed_enum_contexts(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            enum E : unsigned int { A, WIDTH = 3 };
+            struct S {
+                enum E : 3;
+                enum E : WIDTH;
+                enum E : sizeof(int);
+                enum Member : unsigned char { B } member : 2;
+            };
+            void f(enum Param : unsigned int { P } p) {
+                enum Local : unsigned short;
+                enum Local : unsigned short { L } local;
+                (enum Cast : unsigned char { C })0;
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("enum E : 3;", generated)
+        self.assertIn("enum E : WIDTH;", generated)
+        self.assertIn("enum E : sizeof(int);", generated)
+        self.assertIn("enum Local : unsigned short;", generated)
 
     def test_generate_struct_union_enum_exception(self):
         generator = c_generator.CGenerator()
@@ -660,6 +1036,297 @@ class TestCtoC(unittest.TestCase):
             'int main() { _Static_assert(sizeof(int) == sizeof(int), "123"); } '
         )
         self._assert_ctoc_correct("_Static_assert(sizeof(int) == sizeof(int));")
+
+    def test_c23_keywords(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            alignas(16) thread_local bool flag = true;
+            _Thread_local _Bool old_flag = 0;
+            bool flags[2] = {true, false};
+            void *p = nullptr;
+            static_assert(alignof(bool) == _Alignof(_Bool));
+            struct S { static_assert(true, "member"); bool value; };
+            bool f(bool x) {
+                static_assert(!false);
+                return x ? true : false;
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("thread_local _Alignas(16) bool flag = true;", generated)
+        self.assertIn("void *p = nullptr;", generated)
+        self.assertIn('_Static_assert(true, "member");', generated)
+
+    def test_c23_ellipsis_only_parameter_lists(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            void f(...);
+            int definition(...) { return 0; }
+            void (*callback)(...);
+            void function_parameter(int (...));
+            void pointer_parameter(int (*)(...));
+            void (*converted)(...) = (void (*)(...))0;
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("void f(...);", generated)
+        self.assertIn("int definition(...)", generated)
+        self.assertIn("void (*callback)(...);", generated)
+        self.assertIn("void function_parameter(int (...));", generated)
+        self.assertIn("void pointer_parameter(int (*)(...));", generated)
+        self.assertIn("(void (*)(...)) 0", generated)
+
+    def test_c23_empty_initializers(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            int scalar = {};
+            int array[3] = {};
+            struct S { int value; } object = {};
+            int literal = (int){};
+            int *pointer = (int[3]){};
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("int scalar = {};", generated)
+        self.assertIn("int array[3] = {};", generated)
+        self.assertIn("(int){}", generated)
+        self.assertIn("(int [3]){}", generated)
+
+    def test_c23_labels_before_declarations_and_at_block_end(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            void f(int x) {
+                start: int y = 1;
+                switch (x) { case 1: int z = 2; default: }
+                switch (x) { default: int z = 2; case 1: }
+                end:
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+
+    def test_c23_unnamed_parameters_in_definition(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = "int f(int, const int *, int (*)(int)) { return 0; }"
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("int f(int, const int *, int (*)(int))", generated)
+
+    def test_c23_constexpr(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            typedef int T;
+            constexpr T limit = 16;
+            int constexpr next = limit + 1;
+            static constexpr double scale = 0.5;
+            constexpr int values[] = {1, 2};
+            struct S { int x; };
+            constexpr struct S s = {.x = limit};
+            void f(void) {
+                constexpr bool enabled = true;
+                constexpr void *p = nullptr;
+                constexpr const int local = next;
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("constexpr T limit = 16;", generated)
+        self.assertIn("static constexpr double scale = 0.5;", generated)
+        self.assertIn("constexpr const int local = next;", generated)
+
+    def test_c23_auto(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            typedef int T;
+            auto count = 42;
+            auto (parenthesized) = 1;
+            static auto scale = 0.5;
+            constexpr auto limit = 16;
+            const auto fixed = 1;
+            alignas(16) auto aligned = 0;
+            void f(void) {
+                auto value = (T){1};
+                auto pointer = &value;
+                auto comma = (value, value + 1);
+                auto _Atomic atomic = value;
+                for (auto i = 0; i < limit; ++i) { auto copy = i; }
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("auto count = 42;", generated)
+        self.assertIn("auto const fixed = 1;", generated)
+        self.assertIn("auto _Alignas(16) aligned = 0;", generated)
+        self.assertIn("for (auto i = 0;", generated)
+        self.assertNotIn("auto auto", generated)
+
+    def test_c23_typeof(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            typedef typeof(1) T;
+            typeof_unqual(const int *) pointer;
+            typeof(int (*)(int)) callback;
+            typeof(int [3]) array;
+            typeof(typeof_unqual(const int)) nested;
+            typeof(_Atomic(int)) inner_atomic;
+            _Atomic(typeof(int)) outer_atomic;
+            const typeof_unqual(volatile int) qualified;
+            struct S { typeof(T) member; };
+            typeof(int) f(typeof(int) arg, typeof_unqual(const int)) {
+                typeof(T) before;
+                typeof(int) T = 1;
+                typeof(T) after;
+                typeof(arg, f(arg, 2)) comma;
+                typeof(({ int x = 1; x; })) statement_expression;
+                auto cast = (typeof(arg))2;
+                auto literal = (typeof(int)){3};
+                auto size = sizeof(typeof(int));
+                auto generic = _Generic(arg, typeof(int): 1, default: 0);
+                for (typeof(arg) i = 0; i < 3; ++i) {}
+                return arg;
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("typeof_unqual(const int *) pointer;", generated)
+        self.assertIn("typeof(int (*)(int)) callback;", generated)
+        self.assertIn("typeof(typeof_unqual(const int)) nested;", generated)
+        self.assertIn("typeof(_Atomic int) inner_atomic;", generated)
+        self.assertIn("_Atomic typeof(int) outer_atomic;", generated)
+
+    def test_c23_bitint(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            constexpr int WIDTH = 17;
+            typedef unsigned _BitInt(WIDTH) T;
+            _BitInt(17) plain;
+            signed _BitInt(17) explicit_signed;
+            _BitInt(17) unsigned reversed;
+            const unsigned _BitInt(8 * sizeof(int)) value = 1, *pointer, array[3];
+            _BitInt(WIDTH > 8 ? WIDTH : 8) conditional;
+            _Atomic(unsigned _BitInt(17)) atomic;
+            typeof_unqual(const _BitInt(17)) unqualified;
+            struct S { unsigned _BitInt(3) bits : 3; };
+            _BitInt(17) (*callback)(unsigned _BitInt(8));
+            _BitInt(17) f(_BitInt(8) arg) {
+                auto cast = (unsigned _BitInt(17))arg;
+                auto literal = (_BitInt(17)){3};
+                auto size = sizeof(_BitInt(17));
+                auto selection = _Generic(arg, _BitInt(8): 1, default: 0);
+                for (unsigned _BitInt(8) i = 0, j = 1; i < j; ++i) {}
+                return arg;
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("_BitInt(17) plain;", generated)
+        self.assertIn("signed _BitInt(17) explicit_signed;", generated)
+        self.assertIn("unsigned _BitInt(17) reversed;", generated)
+        self.assertIn("_Atomic unsigned _BitInt(17) atomic;", generated)
+        self.assertIn("for (unsigned _BitInt(8) i = 0, j = 1;", generated)
+
+    def test_digit_separators(self):
+        generated = self._assert_ctoc_correct("""
+            unsigned long long count = 1'000'000ULL;
+            int octal = 0'7'7;
+            int hex = 0xAB'CD;
+            int binary = 0b1010'0101;
+            float fraction = 1'234.56'78F;
+            double exponent = 1'2e-3'4;
+            long double hex_float = 0xA'B.C'Dp+1'0L;
+            int values[1'000];
+            void f(void) {
+                int sum = 1'000 + 2'000;
+                char quote = '\\'';
+                char *text = "1'000";
+            }
+        """)
+        self.assertIn("unsigned long long count = 1'000'000ULL;", generated)
+        self.assertIn("float fraction = 1'234.56'78F;", generated)
+        self.assertIn("long double hex_float = 0xA'B.C'Dp+1'0L;", generated)
+        self.assertIn("int values[1'000];", generated)
+
+    def test_c23_digit_separators(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            auto count = 1'000wb;
+            auto bits = 0b1010'0101UWB;
+            _Decimal32 price = 1'234.56'78df;
+            _Decimal64 scale = 1'0e-1'0DD;
+            _Decimal128 fraction = .1'25DL;
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("auto count = 1'000wb;", generated)
+        self.assertIn("auto bits = 0b1010'0101UWB;", generated)
+        self.assertIn("_Decimal32 price = 1'234.56'78df;", generated)
+
+    def test_c23_bitint_literals(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            constexpr auto count = 42wb;
+            unsigned _BitInt(8) zero = 0uwb;
+            _BitInt(17) value = 42WB;
+            auto octal = 077uWB;
+            auto hex = 0xffWBu;
+            auto binary = 0B101wbU;
+            auto huge = 340282366920938463463374607431768211456wb;
+            void f(void) {
+                auto negative = -3wb;
+                auto sum = 1Uwb + 2WBU;
+                static_assert(3uwb > 0wb);
+                for (auto i = 0wb; i < 3WB; ++i) {}
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("constexpr auto count = 42wb;", generated)
+        self.assertIn("unsigned _BitInt(8) zero = 0uwb;", generated)
+        self.assertIn("_BitInt(17) value = 42WB;", generated)
+        self.assertIn("auto octal = 077uWB;", generated)
+        self.assertIn("auto hex = 0xffWBu;", generated)
+        self.assertIn("auto binary = 0B101wbU;", generated)
+
+    def test_c23_decimal_float(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            typedef _Decimal64 Money;
+            constexpr _Decimal32 price = 1.25df;
+            const _Decimal64 total = 100.00DD;
+            _Decimal128 precise = .1dl;
+            _Decimal32 values[] = {1.DF, 2e-1df};
+            _Decimal64 *pointer, array[2];
+            _Atomic(_Decimal32) atomic;
+            typeof_unqual(const _Decimal128) unqualified;
+            struct S { _Decimal64 amount; };
+            _Decimal128 f(_Decimal32 input) {
+                auto sum = 1.0df + 2.0DF;
+                Money result = (_Decimal64)input + 1e+2dd;
+                auto literal = (_Decimal128){3.00DL};
+                auto selection = _Generic(input, _Decimal32: 1, default: 0);
+                auto size = sizeof(_Decimal64);
+                return 0.5DL;
+            }
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parser.parse(generated)))
+        self.assertIn("constexpr _Decimal32 price = 1.25df;", generated)
+        self.assertIn("const _Decimal64 total = 100.00DD;", generated)
+        self.assertIn("_Decimal128 precise = .1dl;", generated)
+        self.assertIn("_Decimal32 values[] = {1.DF, 2e-1df};", generated)
+        self.assertIn("_Atomic _Decimal32 atomic;", generated)
 
     def test_static_assert_semicolons(self):
         self.assertEqual(

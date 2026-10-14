@@ -1203,6 +1203,44 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_atomic_specifier_rejects_array_and_function(self):
+        # _Atomic cannot wrap an array or function type (C11 6.7.2.4p3). These
+        # must raise ParseError rather than crash with AttributeError.
+        for s in (
+            "_Atomic(char[3]) a;",
+            "_Atomic(int[]) a;",
+            "_Atomic(char*[3]) a;",
+            "_Atomic(void(int)) f;",
+            "typedef _Atomic(char[3]) t;",
+            "void g(_Atomic(char[3]));",
+        ):
+            with self.assertRaises(ParseError):
+                self.parse(s)
+
+    def test_atomic_specifier_rejects_array_in_sizeof(self):
+        with self.assertRaisesRegex(
+            ParseError, "_Atomic cannot be applied to array or function type"
+        ):
+            self.parse("int n = sizeof(_Atomic(char[3]));")
+
+    def test_atomic_specifier_rejects_function_in_sizeof(self):
+        with self.assertRaisesRegex(
+            ParseError, "_Atomic cannot be applied to array or function type"
+        ):
+            self.parse("int n = sizeof(_Atomic(void(int)));")
+
+    def test_atomic_specifier_rejects_array_in_cast(self):
+        with self.assertRaisesRegex(
+            ParseError, "_Atomic cannot be applied to array or function type"
+        ):
+            self.parse("void f(void) { (_Atomic(char[3]))0; }")
+
+    def test_atomic_specifier_rejects_function_in_cast(self):
+        with self.assertRaisesRegex(
+            ParseError, "_Atomic cannot be applied to array or function type"
+        ):
+            self.parse("void f(void) { (_Atomic(void(int)))0; }")
+
     def test_atomic_specifier_qualifiers(self):
         decl = self.parse("const _Atomic(volatile int *) p;").ext[0]
         # The outer const qualifies the atomic pointer, while volatile stays
@@ -1432,8 +1470,8 @@ class TestCParser_fundamentals(TestCParser_base):
         )
 
     def test_empty_compound_literal(self):
-        # C99 allows empty initializer braces in compound literals,
-        # e.g. (int){}. Regression test for #503.
+        # C23 allows empty initializer braces in compound literals, e.g. (int){}.
+        # Also accepted in legacy mode. Regression test for #503.
         ps = self.parse(r"""
             void foo() {
                 x = (int){};
@@ -1513,6 +1551,203 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_parenthesized_compounds_binary_operands(self):
+        # Regression for #538: the compound is a binary operand, rather than
+        # the entire right-hand side of an assignment.
+        e = self.parse("""
+            float f(float z) {
+                return z / ({ float a = 1.0; a * 2; });
+            }
+        """)
+        expr = e.ext[0].body.block_items[0].expr
+        self.assertIsInstance(expr, BinaryOp)
+        self.assertEqual(expr.op, "/")
+        self.assertEqual(expr.left.name, "z")
+        self.assertIsInstance(expr.right, Compound)
+        decl, value = expr.right.block_items
+        self.assertEqual(decl.name, "a")
+        self.assertEqual(decl.init.value, "1.0")
+        self.assertEqual(
+            expand_init(value),
+            ["BinaryOp", ["ID", "a"], "*", ["Constant", "int", "2"]],
+        )
+
+        for op in (
+            "+",
+            "-",
+            "*",
+            "/",
+            "%",
+            "<<",
+            ">>",
+            "<",
+            ">",
+            "<=",
+            ">=",
+            "==",
+            "!=",
+            "&",
+            "^",
+            "|",
+            "&&",
+            "||",
+        ):
+            with self.subTest(op=op):
+                e = self.parse(f"void f() {{ ({{ 1; }}) {op} ({{ 2; }}); }}")
+                expr = e.ext[0].body.block_items[0]
+                self.assertIsInstance(expr, BinaryOp)
+                self.assertEqual(expr.op, op)
+                self.assertIsInstance(expr.left, Compound)
+                self.assertIsInstance(expr.right, Compound)
+                self.assertEqual(expr.left.block_items[0].value, "1")
+                self.assertEqual(expr.right.block_items[0].value, "2")
+
+    def test_parenthesized_compounds_precedence(self):
+        e = self.parse("""
+            void f() {
+                ({ 1; }) + 2 * ({ 3; }) - ({ 4; }) / 2;
+            }
+        """)
+        self.assertEqual(
+            expand_init(e.ext[0].body.block_items[0]),
+            [
+                "BinaryOp",
+                [
+                    "BinaryOp",
+                    ["Compound", [["Constant", "int", "1"]]],
+                    "+",
+                    [
+                        "BinaryOp",
+                        ["Constant", "int", "2"],
+                        "*",
+                        ["Compound", [["Constant", "int", "3"]]],
+                    ],
+                ],
+                "-",
+                [
+                    "BinaryOp",
+                    ["Compound", [["Constant", "int", "4"]]],
+                    "/",
+                    ["Constant", "int", "2"],
+                ],
+            ],
+        )
+
+    def test_parenthesized_compounds_unary_and_cast(self):
+        for op in ("+", "-", "!", "~", "*", "&", "++", "--", "sizeof"):
+            with self.subTest(op=op):
+                e = self.parse(f"void f() {{ {op} ({{ x; }}); }}")
+                expr = e.ext[0].body.block_items[0]
+                self.assertIsInstance(expr, UnaryOp)
+                self.assertEqual(expr.op, op)
+                self.assertIsInstance(expr.expr, Compound)
+                self.assertEqual(expr.expr.block_items[0].name, "x")
+
+        e = self.parse("void f() { (int) ({ 1.0; }); }")
+        expr = e.ext[0].body.block_items[0]
+        self.assertIsInstance(expr, Cast)
+        self.assertIsInstance(expr.expr, Compound)
+        self.assertEqual(expr.expr.block_items[0].value, "1.0")
+
+    def test_parenthesized_compounds_postfix(self):
+        for suffix, node_type in (
+            ("[0]", ArrayRef),
+            ("(1)", FuncCall),
+            (".field", StructRef),
+            ("->field", StructRef),
+        ):
+            with self.subTest(suffix=suffix):
+                e = self.parse(f"void f() {{ ({{ x; }}){suffix}; }}")
+                expr = e.ext[0].body.block_items[0]
+                self.assertIsInstance(expr, node_type)
+                self.assertIsInstance(expr.name, Compound)
+                self.assertEqual(expr.name.block_items[0].name, "x")
+
+        for op in ("++", "--"):
+            with self.subTest(op=op):
+                e = self.parse(f"void f() {{ ({{ x; }}){op}; }}")
+                expr = e.ext[0].body.block_items[0]
+                self.assertIsInstance(expr, UnaryOp)
+                self.assertEqual(expr.op, "p" + op)
+                self.assertIsInstance(expr.expr, Compound)
+
+    def test_parenthesized_compounds_conditional_assignment_comma(self):
+        e = self.parse("""
+            void f() {
+                a = ({ c; }) ? ({ 1; }) : ({ 2; });
+                a = ({ x; }) = 3;
+                a = 0, ({ 1; }) + 2;
+            }
+        """)
+        conditional, assignment, comma = e.ext[0].body.block_items
+        expr = conditional.rvalue
+        self.assertIsInstance(expr, TernaryOp)
+        self.assertIsInstance(expr.cond, Compound)
+        self.assertIsInstance(expr.iftrue, Compound)
+        self.assertIsInstance(expr.iffalse, Compound)
+        self.assertIsInstance(assignment.rvalue, Assignment)
+        self.assertIsInstance(assignment.rvalue.lvalue, Compound)
+        self.assertEqual(assignment.rvalue.rvalue.value, "3")
+        self.assertIsInstance(comma, ExprList)
+        self.assertEqual(len(comma.exprs), 2)
+        self.assertIsInstance(comma.exprs[0], Assignment)
+        self.assertIsInstance(comma.exprs[1], BinaryOp)
+        self.assertIsInstance(comma.exprs[1].left, Compound)
+
+    def test_parenthesized_compounds_nested_scope(self):
+        e = self.parse("""
+            typedef int T;
+            void f() {
+                int x = 1 + ({ int T = 2; T + ({ int y = T; y; }); });
+                T y;
+            }
+        """)
+        decl, after = e.ext[1].body.block_items
+        outer = decl.init.right
+        self.assertIsInstance(outer, Compound)
+        self.assertEqual(outer.block_items[0].name, "T")
+        inner_expr = outer.block_items[1]
+        self.assertEqual(inner_expr.left.name, "T")
+        self.assertIsInstance(inner_expr.right, Compound)
+        self.assertEqual(inner_expr.right.block_items[0].init.name, "T")
+        self.assertEqual(after.type.type.names, ["T"])
+
+    def test_parenthesized_compounds_nested_final_value(self):
+        # Preserve the historical Compound representation when a nested
+        # statement expression is the outer expression's final block item.
+        e = self.parse("""
+            int main(void) {
+                int result = 2 * ({ int y = 1; ({ y + 3; }); });
+                return result == 8 ? 0 : 1;
+            }
+        """)
+        product = e.ext[0].body.block_items[0].init
+        self.assertIsInstance(product, BinaryOp)
+        self.assertEqual(product.op, "*")
+        self.assertEqual(product.left.value, "2")
+        self.assertIsInstance(product.right, Compound)
+        decl, inner = product.right.block_items
+        self.assertEqual(decl.name, "y")
+        self.assertEqual(decl.init.value, "1")
+        self.assertIsInstance(inner, Compound)
+        self.assertEqual(len(inner.block_items), 1)
+        self.assertEqual(
+            expand_init(inner.block_items[0]),
+            ["BinaryOp", ["ID", "y"], "+", ["Constant", "int", "3"]],
+        )
+
+    def test_parenthesized_compounds_invalid_syntax(self):
+        for expr in (
+            "({ 1; }",  # Missing closing parenthesis.
+            "({ 1 })",  # Missing expression-statement semicolon.
+            "({ 1; }) +",  # Missing binary operand.
+            "({ 1; }) 2",  # Missing operator.
+            "({ 1; })[0",  # Missing closing bracket.
+            "{ 1; }",  # Braces alone are not an expression.
+        ):
+            with self.subTest(expr=expr), self.assertRaises(ParseError):
+                self.parse(f"int f() {{ return {expr}; }}")
+
     def test_enums(self):
         e1 = "enum mycolor op;"
         e1_type = self.parse(e1).ext[0].type.type
@@ -1560,6 +1795,77 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(e3_elist.enumerators[0].value, None)
         self.assertEqual(e3_elist.enumerators[1].name, "blue")
         self.assertEqual(e3_elist.enumerators[2].name, "green")
+
+    def test_enum_leading_pragma(self):
+        enum = self.parse("enum E {\n#pragma before\nA, B };", "enum.c").ext[0].type
+        pragma, a, b = enum.values.enumerators
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "before")
+        self.assertEqual(pragma.coord.file, "enum.c")
+        self.assertEqual(pragma.coord.line, 2)
+        self.assertEqual(a.name, "A")
+        self.assertEqual(b.name, "B")
+        self.assertEqual(enum.values.coord, a.coord)
+
+    def test_enum_intervening_pragma(self):
+        enum = self.parse("enum E { A,\n#pragma between\nB = A + 1 };").ext[0].type
+        a, pragma, b = enum.values.enumerators
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "between")
+        self.assertEqual(b.name, "B")
+        self.assertIsInstance(b.value, BinaryOp)
+        self.assertEqual(b.value.left.name, "A")
+
+    def test_enum_pragma_before_comma(self):
+        enum = self.parse("enum E { A\n#pragma between\n, B };").ext[0].type
+        a, pragma, b = enum.values.enumerators
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "between")
+        self.assertEqual(b.name, "B")
+
+    def test_enum_trailing_pragma(self):
+        enum = self.parse("enum E { A\n#pragma after\n};").ext[0].type
+        a, pragma = enum.values.enumerators
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "after")
+
+    def test_enum_pragma_after_trailing_comma(self):
+        enum = self.parse("enum E { A,\n#pragma after\n};").ext[0].type
+        a, pragma = enum.values.enumerators
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "after")
+
+    def test_enum_pragma_operator(self):
+        enum = (
+            self.parse('enum E { _Pragma("before") A _Pragma("after") };').ext[0].type
+        )
+        before, a, after = enum.values.enumerators
+        self.assertIsInstance(before, Pragma)
+        self.assertIsInstance(before.string, Constant)
+        self.assertEqual(before.string.value, '"before"')
+        self.assertEqual(a.name, "A")
+        self.assertIsInstance(after, Pragma)
+        self.assertEqual(after.string.value, '"after"')
+
+    def test_enum_pragmas_require_enumerator(self):
+        with self.assertRaises(ParseError):
+            self.parse('enum E {\n#pragma foo\n_Pragma("bar") };')
+
+    def test_enum_pragma_does_not_replace_comma(self):
+        with self.assertRaises(ParseError):
+            self.parse("enum E { A\n#pragma between\nB };")
+
+    def test_enum_pragma_does_not_allow_duplicate_comma(self):
+        with self.assertRaises(ParseError):
+            self.parse("enum E { A,\n#pragma between\n, B };")
+
+    def test_enum_pragma_does_not_allow_leading_comma(self):
+        with self.assertRaises(ParseError):
+            self.parse("enum E {\n#pragma before\n, A };")
 
     def test_typedef(self):
         # without typedef, error
@@ -3170,6 +3476,121 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(s1_ast.ext[3].string.value, r'"other \"string\""')
         self.assertEqual(s1_ast.ext[3].coord.line, 15)
 
+    def test_pragma_before_declaration_semicolon_issue_478(self):
+        ast = self.parse(
+            """struct knote;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+struct klist { struct knote *slh_first; }
+#pragma clang diagnostic pop
+;
+""",
+            "event.h",
+        )
+        forward, push, ignored, decl, pop = ast.ext
+        self.assertEqual(forward.type.name, "knote")
+        self.assertIsInstance(push, Pragma)
+        self.assertEqual(push.string, "clang diagnostic push")
+        self.assertEqual(
+            ignored.string, 'clang diagnostic ignored "-Wnullability-completeness"'
+        )
+        self.assertIsInstance(decl.type, Struct)
+        self.assertEqual(decl.type.name, "klist")
+        self.assertEqual(decl.type.decls[0].name, "slh_first")
+        self.assertIsInstance(pop, Pragma)
+        self.assertEqual(pop.string, "clang diagnostic pop")
+        self.assertEqual(pop.coord.file, "event.h")
+        self.assertEqual(pop.coord.line, 5)
+
+    def test_pragma_before_initialized_declaration_semicolon(self):
+        ast = self.parse('int a = 1, b = 2 _Pragma("first")\n#pragma second\n; int c;')
+        a, b, first, second, c = ast.ext
+        self.assertEqual(a.init.value, "1")
+        self.assertEqual(b.init.value, "2")
+        self.assertIsInstance(first, Pragma)
+        self.assertEqual(first.string.value, '"first"')
+        self.assertIsInstance(second, Pragma)
+        self.assertEqual(second.string, "second")
+        self.assertEqual(c.name, "c")
+
+    def test_pragma_before_local_declaration_semicolon(self):
+        ast = self.parse('void f(void) { int x _Pragma("after"); x = 1; }')
+        decl, pragma, assignment = ast.ext[0].body.block_items
+        self.assertEqual(decl.name, "x")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertIsInstance(assignment, Assignment)
+
+    def test_pragma_before_typedef_semicolon(self):
+        ast = self.parse("typedef int T\n#pragma after\n; T value;")
+        typedef, pragma, decl = ast.ext
+        self.assertIsInstance(typedef, Typedef)
+        self.assertEqual(typedef.name, "T")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string, "after")
+        self.assertEqual(decl.type.type.names, ["T"])
+
+    def test_pragma_before_struct_member_semicolon(self):
+        ast = self.parse('struct S { int x : 3 _Pragma("after"); int y; };')
+        x, pragma, y = ast.ext[0].type.decls
+        self.assertEqual(x.bitsize.value, "3")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertEqual(y.name, "y")
+
+    def test_pragma_before_anonymous_union_member_semicolon(self):
+        ast = self.parse('struct S { union { int x; } _Pragma("after"); int y; };')
+        anonymous, pragma, y = ast.ext[0].type.decls
+        self.assertIsNone(anonymous.name)
+        self.assertIsInstance(anonymous.type, Union)
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertEqual(y.name, "y")
+
+    def test_pragma_before_for_declaration_semicolon(self):
+        ast = self.parse(
+            'void f(void) { for (int i = 0 _Pragma("after"); i < 2; ++i) {} }'
+        )
+        loop = ast.ext[0].body.block_items[0]
+        decl, pragma = loop.init.decls
+        self.assertEqual(decl.name, "i")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertIsInstance(loop.cond, BinaryOp)
+        self.assertEqual(loop.next.op, "++")
+
+    def test_pragma_before_knr_declaration_semicolon(self):
+        ast = self.parse('int f(x, y) int x _Pragma("after"); int y; { return x + y; }')
+        x, pragma, y = ast.ext[0].param_decls
+        self.assertEqual(x.name, "x")
+        self.assertIsInstance(pragma, Pragma)
+        self.assertEqual(pragma.string.value, '"after"')
+        self.assertEqual(y.name, "y")
+
+    def test_declaration_pragma_requires_semicolon(self):
+        with self.assertRaises(ParseError):
+            self.parse('struct S { int x; } _Pragma("after")')
+
+    def test_declaration_pragma_does_not_end_declaration(self):
+        with self.assertRaises(ParseError):
+            self.parse('int x _Pragma("after") int y;')
+
+    def test_c23_attributes_with_trailing_declaration_pragma(self):
+        ast = c_parser.CParser(dialect="c23").parse(
+            '[[deprecated]] auto x = 1 _Pragma("global"); '
+            'void f(void) { [[maybe_unused]] auto y = 2 _Pragma("local"); }'
+        )
+        x, global_pragma, func = ast.ext
+        self.assertEqual(x.attributes[0].attributes[0].name, "deprecated")
+        self.assertEqual(global_pragma.string.value, '"global"')
+        y, local_pragma = func.body.block_items
+        self.assertEqual(y.attributes[0].attributes[0].name, "maybe_unused")
+        self.assertEqual(local_pragma.string.value, '"local"')
+
+    def test_c23_attributes_cannot_prefix_pragma(self):
+        with self.assertRaises(ParseError):
+            c_parser.CParser(dialect="c23").parse('[[deprecated]] _Pragma("after")')
+
     def test_pragmacomp_or_statement(self):
         s1 = r"""
             void main() {
@@ -3580,6 +4001,1941 @@ class TestCParser_generic_selection(TestCParser_base):
         ):
             with self.subTest(source=source):
                 self.assertRaises(ParseError, self.parse, source)
+
+
+class TestCParser_dialects(unittest.TestCase):
+    def test_legacy_identifiers(self):
+        source = """
+            typedef int bool;
+            bool true = 1, false = 0;
+            int alignas, alignof, static_assert, thread_local;
+            int constexpr, typeof, typeof_unqual;
+            void *nullptr;
+            _Bool b = true;
+            void *p = nullptr;
+        """
+        for parser in (c_parser.CParser(), c_parser.CParser(dialect="legacy")):
+            ast = parser.parse(source)
+            self.assertIsInstance(ast.ext[0], Typedef)
+            self.assertEqual(ast.ext[1].type.type.names, ["bool"])
+            self.assertIsInstance(ast.ext[-2].init, ID)
+            self.assertEqual(ast.ext[-2].init.name, "true")
+            self.assertIsInstance(ast.ext[-1].init, ID)
+            self.assertEqual(ast.ext[-1].init.name, "nullptr")
+
+    def test_c23_keyword_aliases(self):
+        parser = c_parser.CParser(dialect="c23")
+        ast = parser.parse("""
+            alignas(16) thread_local bool flag = false;
+            int alignment = alignof(bool);
+            _Alignas(16) _Thread_local _Bool old_flag = 0;
+            int old_alignment = _Alignof(_Bool);
+        """)
+        flag, alignment, old_flag, old_alignment = ast.ext
+        self.assertEqual(flag.type.type.names, ["bool"])
+        self.assertEqual(flag.storage, ["thread_local"])
+        self.assertEqual(flag.align[0].alignment.value, "16")
+        self.assertEqual(alignment.init.op, "alignof")
+        self.assertEqual(alignment.init.expr.type.type.names, ["bool"])
+        self.assertEqual(old_flag.type.type.names, ["_Bool"])
+        self.assertEqual(old_flag.storage, ["_Thread_local"])
+        self.assertEqual(old_alignment.init.op, "_Alignof")
+
+    def test_c23_constexpr(self):
+        parser = c_parser.CParser(dialect="c23")
+        declarations = """
+            constexpr T limit = 16;
+            int constexpr next = limit + 1;
+            static constexpr double scale = 0.5;
+            constexpr bool enabled = true;
+            constexpr int values[] = {1, 2};
+        """
+        for block_scope in (False, True):
+            with self.subTest(block_scope=block_scope):
+                source = declarations
+                if block_scope:
+                    source = "void f(void) {" + declarations + "}"
+                ast = parser.parse("typedef int T;" + source)
+                decls = ast.ext[1].body.block_items if block_scope else ast.ext[1:]
+                limit, next_value, scale, enabled, values = decls
+                for decl in (limit, next_value, enabled, values):
+                    self.assertEqual(decl.storage, ["constexpr"])
+                self.assertEqual(scale.storage, ["static", "constexpr"])
+                self.assertEqual(limit.type.type.names, ["T"])
+                self.assertEqual(expand_init(limit.init), ["Constant", "int", "16"])
+                self.assertIsInstance(next_value.init, BinaryOp)
+                self.assertEqual(next_value.init.left.name, "limit")
+                self.assertEqual(scale.init.value, "0.5")
+                self.assertEqual(
+                    expand_init(enabled.init), ["Constant", "bool", "true"]
+                )
+                self.assertIsInstance(values.type, ArrayDecl)
+                self.assertEqual([expr.value for expr in values.init.exprs], ["1", "2"])
+
+    def test_constexpr_dialect(self):
+        for parser in (c_parser.CParser(), c_parser.CParser(dialect="legacy")):
+            ast = parser.parse("int constexpr = 1; int x = constexpr;")
+            self.assertEqual(ast.ext[0].name, "constexpr")
+            self.assertIsInstance(ast.ext[1].init, ID)
+            self.assertEqual(ast.ext[1].init.name, "constexpr")
+            self.assertRaises(ParseError, parser.parse, "constexpr int x = 1;")
+
+    def test_c23_static_assert_contexts(self):
+        parser = c_parser.CParser(dialect="c23")
+        ast = parser.parse("""
+            static_assert(true);
+            struct S { static_assert(true, "member"); bool value; };
+            void f(void) { static_assert(!false); _Static_assert(true); }
+        """)
+        assertions = [
+            ast.ext[0],
+            ast.ext[1].type.decls[0],
+            *ast.ext[2].body.block_items,
+        ]
+        for node in assertions:
+            self.assertIsInstance(node, StaticAssert)
+        self.assertIsNone(assertions[0].message)
+        self.assertEqual(assertions[1].message.value, '"member"')
+
+    def test_c23_predefined_constants(self):
+        parser = c_parser.CParser(dialect="c23")
+        ast = parser.parse(
+            "bool t = true;\nbool f = false;\nvoid *p = nullptr;", "c23.c"
+        )
+        expected = [
+            ("bool", "true", 10),
+            ("bool", "false", 10),
+            ("nullptr_t", "nullptr", 11),
+        ]
+        for line, (decl, (typ, value, column)) in enumerate(
+            zip(ast.ext, expected), start=1
+        ):
+            node = decl.init
+            self.assertIsInstance(node, Constant)
+            self.assertEqual((node.type, node.value), (typ, value))
+            self.assertEqual(str(node.coord), f"c23.c:{line}:{column}")
+
+    def test_c23_constants_start_statements(self):
+        parser = c_parser.CParser(dialect="c23")
+        ast = parser.parse("""
+            void f(void) {
+                true; false; nullptr;
+                label: true;
+                if (true) false;
+                while (false) nullptr;
+            }
+        """)
+        stmts = ast.ext[0].body.block_items
+        for node, value in zip(stmts[:3], ("true", "false", "nullptr")):
+            self.assertIsInstance(node, Constant)
+            self.assertEqual(node.value, value)
+        self.assertIsInstance(stmts[3].stmt, Constant)
+        self.assertIsInstance(stmts[4].iftrue, Constant)
+        self.assertIsInstance(stmts[5].stmt, Constant)
+
+    def test_c23_reserved_identifiers(self):
+        parser = c_parser.CParser(dialect="c23")
+        for source in (
+            "typedef int bool; bool x;",
+            "int true;",
+            "int false;",
+            "void *nullptr;",
+            "int *alignas;",
+            "int *alignof;",
+            "int *static_assert;",
+            "int *thread_local;",
+            "int *constexpr;",
+            "int *typeof;",
+            "int *typeof_unqual;",
+            "int *_BitInt;",
+            "int *_Decimal32;",
+            "int *_Decimal64;",
+            "int *_Decimal128;",
+        ):
+            with self.subTest(source=source):
+                self.assertRaises(ParseError, parser.parse, source)
+
+    def test_c23_unsupported_keywords_are_reserved(self):
+        parser = c_parser.CParser(dialect="c23")
+        legacy = c_parser.CParser()
+        self.assertEqual(legacy.parse("int _Imaginary;").ext[0].name, "_Imaginary")
+        self.assertRaises(ParseError, parser.parse, "int _Imaginary;")
+        self.assertRaises(ParseError, parser.parse, "_Imaginary double x;")
+
+    def test_dialect_isolation_and_parser_reuse(self):
+        legacy = c_parser.CParser()
+        c23 = c_parser.CParser(dialect="c23")
+        another_legacy = c_parser.CParser(dialect="legacy")
+        for _ in range(2):
+            for parser, expected_type in (
+                (legacy, ID),
+                (c23, Constant),
+                (another_legacy, ID),
+            ):
+                with self.subTest(expected_type=expected_type):
+                    ast = parser.parse("_Bool b = true; void *p = nullptr;")
+                    for decl in ast.ext:
+                        self.assertIsInstance(decl.init, expected_type)
+            legacy.parse("typedef int bool; bool x;")
+            self.assertRaises(ParseError, c23.parse, "typedef int bool;")
+
+    def test_invalid_dialect(self):
+        with self.assertRaisesRegex(ValueError, "Unknown dialect"):
+            c_parser.CParser(dialect="c99")  # ty: ignore[invalid-argument-type]
+
+
+class TestCParser_c23_grammar(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_ellipsis_only_declaration(self):
+        decl = self.parse("void f(...);", filename="variadic.c").ext[0]
+        self.assertIsInstance(decl.type, FuncDecl)
+        self.assertIsInstance(decl.type.args, ParamList)
+        self.assertEqual(len(decl.type.args.params), 1)
+        self.assertIsInstance(decl.type.args.params[0], EllipsisParam)
+        self.assert_coord(decl.type.args, 1, 8, "variadic.c")
+        self.assert_coord(decl.type.args.params[0], 1, 8, "variadic.c")
+
+    def test_ellipsis_only_definition(self):
+        ast = self.parse("typedef int T; int f(...) { T value = 0; return value; }")
+        func = ast.ext[1]
+        self.assertIsInstance(func, FuncDef)
+        self.assertEqual(len(func.decl.type.args.params), 1)
+        self.assertIsInstance(func.decl.type.args.params[0], EllipsisParam)
+        self.assertEqual(func.body.block_items[0].type.type.names, ["T"])
+        self.assertIsInstance(func.body.block_items[1], Return)
+
+    def test_ellipsis_only_function_pointer(self):
+        decl = self.parse("void (*callback)(...);").ext[0]
+        self.assertIsInstance(decl.type, PtrDecl)
+        self.assertIsInstance(decl.type.type, FuncDecl)
+        self.assertEqual(len(decl.type.type.args.params), 1)
+        self.assertIsInstance(decl.type.type.args.params[0], EllipsisParam)
+
+    def test_ellipsis_only_abstract_function_parameter(self):
+        decl = self.parse("void f(int (...));").ext[0]
+        param = decl.type.args.params[0]
+        self.assertIsInstance(param, Typename)
+        self.assertIsInstance(param.type, FuncDecl)
+        self.assertEqual(len(param.type.args.params), 1)
+        self.assertIsInstance(param.type.args.params[0], EllipsisParam)
+
+    def test_ellipsis_only_abstract_function_pointer_parameter(self):
+        decl = self.parse("void f(int (*)(...));").ext[0]
+        param = decl.type.args.params[0]
+        self.assertIsInstance(param, Typename)
+        self.assertIsInstance(param.type, PtrDecl)
+        self.assertIsInstance(param.type.type, FuncDecl)
+        self.assertEqual(len(param.type.type.args.params), 1)
+        self.assertIsInstance(param.type.type.args.params[0], EllipsisParam)
+
+    def test_ellipsis_only_function_pointer_cast(self):
+        decl = self.parse("void (*callback)(...) = (void (*)(...))0;").ext[0]
+        self.assertIsInstance(decl.init, Cast)
+        pointer = decl.init.to_type.type
+        self.assertIsInstance(pointer, PtrDecl)
+        self.assertIsInstance(pointer.type, FuncDecl)
+        self.assertEqual(len(pointer.type.args.params), 1)
+        self.assertIsInstance(pointer.type.args.params[0], EllipsisParam)
+
+    def test_ellipsis_only_rejected_in_legacy(self):
+        parser = c_parser.CParser(dialect="legacy")
+        with self.assertRaisesRegex(
+            ParseError, "Ellipsis-only parameter lists require C23"
+        ):
+            parser.parse("void f(...);")
+        with self.assertRaisesRegex(
+            ParseError, "Ellipsis-only parameter lists require C23"
+        ):
+            parser.parse("void f(...) {}")
+        with self.assertRaisesRegex(
+            ParseError, "Ellipsis-only parameter lists require C23"
+        ):
+            parser.parse("void (*callback)(...);")
+        with self.assertRaisesRegex(
+            ParseError, "Ellipsis-only parameter lists require C23"
+        ):
+            parser.parse("void f(int (...));")
+        with self.assertRaisesRegex(
+            ParseError, "Ellipsis-only parameter lists require C23"
+        ):
+            parser.parse("void f(int (*)(...));")
+        with self.assertRaisesRegex(
+            ParseError, "Ellipsis-only parameter lists require C23"
+        ):
+            parser.parse("void f(void) { (void (*)(...))0; }")
+
+    def test_invalid_ellipsis_parameter_lists(self):
+        self.assertRaises(ParseError, self.parse, "void f(, ...);")
+        self.assertRaises(ParseError, self.parse, "void f(...,);")
+        self.assertRaises(ParseError, self.parse, "void f(..., int x);")
+        self.assertRaises(ParseError, self.parse, "void f(... ...);")
+        self.assertRaises(ParseError, self.parse, "void f(int x ...);")
+        self.assertRaises(ParseError, self.parse, "void f(...")
+        self.assertRaises(ParseError, self.parse, "void f(int (...,));")
+        self.assertRaises(ParseError, self.parse, "void f(int (*)(..., int));")
+
+    def test_named_variadic_parameter_list(self):
+        decl = self.parse("void f(int x, ...);").ext[0]
+        self.assertEqual(len(decl.type.args.params), 2)
+        self.assertEqual(decl.type.args.params[0].name, "x")
+        self.assertIsInstance(decl.type.args.params[1], EllipsisParam)
+
+        parser = c_parser.CParser(dialect="legacy")
+        decl = parser.parse("void f(int x, ...);").ext[0]
+        self.assertEqual(len(decl.type.args.params), 2)
+        self.assertEqual(decl.type.args.params[0].name, "x")
+        self.assertIsInstance(decl.type.args.params[1], EllipsisParam)
+
+    def test_empty_initializers(self):
+        ast = self.parse("""
+            int scalar = {};
+            int array[3] = {};
+            struct S { int value; } object = {};
+        """)
+        scalar, array, obj = ast.ext
+        self.assertIsInstance(scalar.init, InitList)
+        self.assertEqual(scalar.init.exprs, [])
+        self.assertIsInstance(array.init, InitList)
+        self.assertEqual(array.init.exprs, [])
+        self.assertIsInstance(obj.init, InitList)
+        self.assertEqual(obj.init.exprs, [])
+
+    def test_empty_compound_literals(self):
+        ast = self.parse("int scalar = (int){}; int *array = (int[3]){};")
+        scalar, array = ast.ext
+        self.assertIsInstance(scalar.init, CompoundLiteral)
+        self.assertEqual(scalar.init.type.type.type.names, ["int"])
+        self.assertEqual(scalar.init.init.exprs, [])
+        self.assertIsInstance(array.init, CompoundLiteral)
+        self.assertIsInstance(array.init.type.type, ArrayDecl)
+        self.assertEqual(array.init.init.exprs, [])
+
+    def test_labels_before_declarations_and_at_block_end(self):
+        func = self.parse("void f(void) { start: int x = 1; end: }").ext[0]
+        start, decl, end = func.body.block_items
+        self.assertIsInstance(start, Label)
+        self.assertEqual(start.name, "start")
+        self.assertIsInstance(start.stmt, EmptyStatement)
+        self.assertIsInstance(decl, Decl)
+        self.assertEqual(decl.name, "x")
+        self.assertIsInstance(end, Label)
+        self.assertEqual(end.name, "end")
+        self.assertIsInstance(end.stmt, EmptyStatement)
+
+    def test_case_before_declaration_and_trailing_default(self):
+        func = self.parse("""
+            void f(int x) {
+                switch (x) { case 1: int y = 2; default: }
+            }
+        """).ext[0]
+        case, default = func.body.block_items[0].stmt.block_items
+        self.assertIsInstance(case, Case)
+        self.assertEqual(case.expr.value, "1")
+        self.assertIsInstance(case.stmts[0], EmptyStatement)
+        self.assertIsInstance(case.stmts[1], Decl)
+        self.assertEqual(case.stmts[1].name, "y")
+        self.assertIsInstance(default, Default)
+        self.assertIsInstance(default.stmts[0], EmptyStatement)
+
+    def test_default_before_declaration_and_trailing_case(self):
+        func = self.parse("""
+            void f(int x) {
+                switch (x) { default: int y = 2; case 1: }
+            }
+        """).ext[0]
+        default, case = func.body.block_items[0].stmt.block_items
+        self.assertIsInstance(default, Default)
+        self.assertIsInstance(default.stmts[0], EmptyStatement)
+        self.assertIsInstance(default.stmts[1], Decl)
+        self.assertEqual(default.stmts[1].name, "y")
+        self.assertIsInstance(case, Case)
+        self.assertEqual(case.expr.value, "1")
+        self.assertIsInstance(case.stmts[0], EmptyStatement)
+
+    def test_unnamed_parameters_in_definition(self):
+        func = self.parse("int f(int, const int *, int (*)(int)) { return 0; }").ext[0]
+        scalar, pointer, callback = func.decl.type.args.params
+        self.assertIsInstance(scalar, Typename)
+        self.assertEqual(scalar.type.type.names, ["int"])
+        self.assertIsNone(scalar.type.declname)
+        self.assertIsInstance(pointer, Typename)
+        self.assertIsInstance(pointer.type, PtrDecl)
+        self.assertEqual(pointer.type.type.quals, ["const"])
+        self.assertIsNone(pointer.type.type.declname)
+        self.assertIsInstance(callback, Typename)
+        self.assertIsInstance(callback.type, PtrDecl)
+        self.assertIsInstance(callback.type.type, FuncDecl)
+        self.assertIsNone(callback.type.type.type.declname)
+        self.assertIsInstance(func.body.block_items[0], Return)
+
+
+class TestCParser_c23_compound_literals(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_storage_specifiers(self):
+        ast = self.parse("""
+            int *p = &(static int){1};
+            int value = (constexpr int){42};
+            void f(void) { (register int){2}; }
+        """)
+        static = ast.ext[0].init.expr
+        self.assertIsInstance(static, CompoundLiteral)
+        self.assertEqual(static.storage, ["static"])
+        self.assertEqual(static.type.type.type.names, ["int"])
+        self.assertEqual(static.init.exprs[0].value, "1")
+        constexpr = ast.ext[1].init
+        self.assertEqual(constexpr.storage, ["constexpr"])
+        self.assertEqual(constexpr.init.exprs[0].value, "42")
+        register = ast.ext[2].body.block_items[0]
+        self.assertIsInstance(register, CompoundLiteral)
+        self.assertEqual(register.storage, ["register"])
+
+    def test_thread_local_storage(self):
+        func = self.parse("""
+            void f(void) {
+                (thread_local int){1};
+                (_Thread_local int){2};
+                (static thread_local int){3};
+                (thread_local static int){4};
+            }
+        """).ext[0]
+        thread, old_spelling, static_first, thread_first = func.body.block_items
+        self.assertEqual(thread.storage, ["thread_local"])
+        self.assertEqual(old_spelling.storage, ["_Thread_local"])
+        self.assertEqual(static_first.storage, ["static", "thread_local"])
+        self.assertEqual(thread_first.storage, ["thread_local", "static"])
+
+    def test_storage_and_type_qualifiers(self):
+        literal = (
+            self.parse("int x = (static constexpr const unsigned long){42};")
+            .ext[0]
+            .init
+        )
+        self.assertEqual(literal.storage, ["static", "constexpr"])
+        self.assertEqual(literal.type.quals, ["const"])
+        self.assertEqual(literal.type.type.quals, ["const"])
+        self.assertEqual(literal.type.type.type.names, ["unsigned", "long"])
+
+    def test_typedef_and_abstract_types(self):
+        ast = self.parse("""
+            typedef int T;
+            T *array = (static T[]){1, 2};
+            T *pointer = (static T *){0};
+        """)
+        array = ast.ext[1].init
+        self.assertEqual(array.storage, ["static"])
+        self.assertIsInstance(array.type.type, ArrayDecl)
+        self.assertIsNone(array.type.type.dim)
+        self.assertEqual(array.type.type.type.type.names, ["T"])
+        pointer = ast.ext[2].init
+        self.assertEqual(pointer.storage, ["static"])
+        self.assertIsInstance(pointer.type.type, PtrDecl)
+        self.assertEqual(pointer.type.type.type.type.names, ["T"])
+
+    def test_empty_and_designated_initializers(self):
+        ast = self.parse("""
+            struct S { int value; };
+            struct S empty = (static struct S){};
+            struct S designated = (static struct S){.value = 1,};
+        """)
+        empty = ast.ext[1].init
+        self.assertEqual(empty.storage, ["static"])
+        self.assertIsInstance(empty.init, InitList)
+        self.assertEqual(empty.init.exprs, [])
+        designated = ast.ext[2].init.init.exprs[0]
+        self.assertIsInstance(designated, NamedInitializer)
+        self.assertEqual(designated.name[0].name, "value")
+        self.assertEqual(designated.expr.value, "1")
+
+    def test_member_access(self):
+        ast = self.parse("""
+            struct S { int value; };
+            int value = (static struct S){.value = 2}.value;
+            int zero = (static struct S){}.value;
+        """)
+        member = ast.ext[1].init
+        self.assertIsInstance(member, StructRef)
+        self.assertEqual(member.type, ".")
+        self.assertEqual(member.field.name, "value")
+        self.assertIsInstance(member.name, CompoundLiteral)
+        self.assertEqual(member.name.storage, ["static"])
+        empty_member = ast.ext[2].init
+        self.assertIsInstance(empty_member, StructRef)
+        self.assertEqual(empty_member.name.init.exprs, [])
+
+    def test_array_indexing(self):
+        ast = self.parse("""
+            int value = (static int[]){1, 2}[1];
+            int zero = (static int[2]){}[0];
+        """)
+        indexed = ast.ext[0].init
+        self.assertIsInstance(indexed, ArrayRef)
+        self.assertEqual(indexed.subscript.value, "1")
+        self.assertIsInstance(indexed.name, CompoundLiteral)
+        self.assertEqual(indexed.name.storage, ["static"])
+        self.assertEqual(len(indexed.name.init.exprs), 2)
+        empty_indexed = ast.ext[1].init
+        self.assertIsInstance(empty_indexed, ArrayRef)
+        self.assertEqual(empty_indexed.name.init.exprs, [])
+
+    def test_other_postfix_operators(self):
+        ast = self.parse("""
+            struct S { int value; } object;
+            int callback(void);
+            void f(void) {
+                (static struct S *){&object}->value;
+                (static int (*)(void)){callback}();
+                (register int){1}++;
+                (register int){2}--;
+            }
+        """)
+        arrow, call, increment, decrement = ast.ext[2].body.block_items
+        self.assertIsInstance(arrow, StructRef)
+        self.assertEqual(arrow.type, "->")
+        self.assertIsInstance(arrow.name, CompoundLiteral)
+        self.assertIsInstance(call, FuncCall)
+        self.assertIsInstance(call.name, CompoundLiteral)
+        self.assertEqual(call.name.storage, ["static"])
+        self.assertEqual(increment.op, "p++")
+        self.assertEqual(increment.expr.storage, ["register"])
+        self.assertEqual(decrement.op, "p--")
+        self.assertEqual(decrement.expr.storage, ["register"])
+
+    def test_sizeof_compound_literal(self):
+        ast = self.parse("""
+            int array_size = sizeof (static int[3]){};
+            int element_size = sizeof (static int[]){1, 2}[0];
+            int ordinary = sizeof (int){1};
+            int type_size = sizeof(int);
+        """)
+        array_size = ast.ext[0].init
+        self.assertEqual(array_size.op, "sizeof")
+        self.assertIsInstance(array_size.expr, CompoundLiteral)
+        self.assertEqual(array_size.expr.storage, ["static"])
+        self.assertEqual(array_size.expr.init.exprs, [])
+        element_size = ast.ext[1].init
+        self.assertIsInstance(element_size.expr, ArrayRef)
+        self.assertIsInstance(element_size.expr.name, CompoundLiteral)
+        self.assertIsInstance(ast.ext[2].init.expr, CompoundLiteral)
+        self.assertEqual(ast.ext[2].init.expr.storage, [])
+        self.assertIsInstance(ast.ext[3].init.expr, Typename)
+
+    def test_nested_initializer(self):
+        literal = (
+            self.parse("""
+            struct S { int *values; } object =
+                (static struct S){.values = (static int[]){1, 2}};
+        """)
+            .ext[0]
+            .init
+        )
+        self.assertEqual(literal.storage, ["static"])
+        nested = literal.init.exprs[0].expr
+        self.assertIsInstance(nested, CompoundLiteral)
+        self.assertEqual(nested.storage, ["static"])
+        self.assertIsInstance(nested.type.type, ArrayDecl)
+        self.assertEqual(len(nested.init.exprs), 2)
+
+    def test_cast_of_compound_literal(self):
+        expr = self.parse("int value = (int)(constexpr unsigned int){42};").ext[0].init
+        self.assertIsInstance(expr, Cast)
+        self.assertEqual(expr.to_type.type.type.names, ["int"])
+        self.assertIsInstance(expr.expr, CompoundLiteral)
+        self.assertEqual(expr.expr.storage, ["constexpr"])
+
+    def test_storage_rejected_in_legacy(self):
+        parser = c_parser.CParser(dialect="legacy")
+        with self.assertRaisesRegex(ParseError, "compound literals require C23"):
+            parser.parse("int value = (static int){1};")
+        with self.assertRaisesRegex(ParseError, "compound literals require C23"):
+            parser.parse("void f(void) { (register int){1}; }")
+        with self.assertRaisesRegex(ParseError, "compound literals require C23"):
+            parser.parse("void f(void) { (_Thread_local int){1}; }")
+
+    def test_storage_requires_braced_initializer(self):
+        with self.assertRaisesRegex(
+            ParseError, "require a compound literal initializer"
+        ):
+            self.parse("int value = (static int)1;")
+        with self.assertRaisesRegex(
+            ParseError, "require a compound literal initializer"
+        ):
+            self.parse("int value = sizeof(static int);")
+        with self.assertRaisesRegex(
+            ParseError, "require a compound literal initializer"
+        ):
+            self.parse("int value = (constexpr int);")
+        self.assertRaises(ParseError, self.parse, "int value = alignof(static int);")
+        self.assertRaises(ParseError, self.parse, "typeof(static int) value;")
+
+    def test_invalid_syntax(self):
+        self.assertRaises(ParseError, self.parse, "int value = (static){1};")
+        self.assertRaises(ParseError, self.parse, "int value = (static unknown){1};")
+        self.assertRaises(ParseError, self.parse, "int value = (const static int){1};")
+        self.assertRaises(ParseError, self.parse, "int value = (int static){1};")
+        self.assertRaises(ParseError, self.parse, "int value = (static int name){1};")
+        self.assertRaises(ParseError, self.parse, "int value = (static int){,};")
+        self.assertRaises(ParseError, self.parse, "int value = (static int){1;")
+
+    def test_legacy_compound_literal_postfix(self):
+        parser = c_parser.CParser(dialect="legacy")
+        ast = parser.parse("""
+            struct S { int value; };
+            int member = (struct S){1}.value;
+            int empty_member = (struct S){}.value;
+            int element = (int[]){1, 2}[0];
+            int empty_element = (int[2]){}[0];
+            int size = sizeof (int[]){1, 2};
+        """)
+        member = ast.ext[1].init
+        self.assertIsInstance(member, StructRef)
+        self.assertEqual(member.name.storage, [])
+        self.assertIsInstance(ast.ext[2].init, StructRef)
+        self.assertEqual(ast.ext[2].init.name.init.exprs, [])
+        self.assertIsInstance(ast.ext[3].init, ArrayRef)
+        self.assertEqual(ast.ext[3].init.name.storage, [])
+        self.assertIsInstance(ast.ext[4].init, ArrayRef)
+        self.assertEqual(ast.ext[4].init.name.init.exprs, [])
+        self.assertIsInstance(ast.ext[5].init.expr, CompoundLiteral)
+
+
+class TestCParser_fixed_enum(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_named_definition(self):
+        enum = self.parse("enum E : unsigned char { A = 1, B, };").ext[0].type
+        self.assertIsInstance(enum, Enum)
+        self.assertEqual(enum.name, "E")
+        self.assertIsInstance(enum.underlying_type, Typename)
+        self.assertIsNone(enum.underlying_type.name)
+        self.assertIsInstance(enum.underlying_type.type, TypeDecl)
+        self.assertEqual(enum.underlying_type.type.type.names, ["unsigned", "char"])
+        self.assertEqual(enum.values.enumerators[0].name, "A")
+        self.assertEqual(enum.values.enumerators[0].value.value, "1")
+        self.assertEqual(enum.values.enumerators[1].name, "B")
+        self.assertIsNone(enum.values.enumerators[1].value)
+
+    def test_forward_declaration_and_reference(self):
+        ast = self.parse("""
+            enum E : unsigned int;
+            enum E : unsigned int { A };
+            enum E value = A;
+        """)
+        forward, definition, variable = ast.ext
+        self.assertIsNone(forward.type.values)
+        self.assertEqual(forward.type.name, "E")
+        self.assertEqual(
+            forward.type.underlying_type.type.type.names, ["unsigned", "int"]
+        )
+        self.assertIsInstance(definition.type.values, EnumeratorList)
+        self.assertEqual(
+            definition.type.underlying_type.type.type.names, ["unsigned", "int"]
+        )
+        self.assertIsNone(variable.type.type.underlying_type)
+        self.assertEqual(variable.type.type.name, "E")
+        self.assertIsInstance(variable.init, ID)
+        self.assertEqual(variable.init.name, "A")
+
+    def test_anonymous_definition_with_declarators(self):
+        ast = self.parse("enum : unsigned short { A } first = A, *second;")
+        first, second = ast.ext
+        enum = first.type.type
+        self.assertIsInstance(enum, Enum)
+        self.assertIsNone(enum.name)
+        self.assertEqual(enum.underlying_type.type.type.names, ["unsigned", "short"])
+        self.assertEqual(first.init.name, "A")
+        self.assertIsInstance(second.type, PtrDecl)
+        self.assertIs(second.type.type.type, enum)
+
+    def test_typedef_underlying_type_and_tag(self):
+        ast = self.parse("""
+            typedef unsigned char Byte;
+            enum Byte : Byte { A };
+            Byte value;
+        """)
+        enum = ast.ext[1].type
+        self.assertEqual(enum.name, "Byte")
+        self.assertEqual(enum.underlying_type.type.type.names, ["Byte"])
+        self.assertEqual(ast.ext[2].type.type.names, ["Byte"])
+
+    def test_typedef_of_fixed_enum(self):
+        ast = self.parse("typedef enum : unsigned short { A } E; E value;")
+        typedef = ast.ext[0]
+        self.assertIsInstance(typedef, Typedef)
+        self.assertEqual(typedef.name, "E")
+        self.assertIsNone(typedef.type.type.name)
+        self.assertEqual(
+            typedef.type.type.underlying_type.type.type.names, ["unsigned", "short"]
+        )
+        self.assertEqual(ast.ext[1].type.type.names, ["E"])
+
+    def test_qualified_underlying_type(self):
+        decl = self.parse(
+            "const enum E : volatile unsigned int const { A } value;"
+        ).ext[0]
+        self.assertEqual(decl.quals, ["const"])
+        underlying = decl.type.type.underlying_type
+        self.assertEqual(underlying.quals, ["volatile", "const"])
+        self.assertEqual(underlying.type.quals, ["volatile", "const"])
+        self.assertEqual(underlying.type.type.names, ["unsigned", "int"])
+
+    def test_typeof_underlying_types(self):
+        ast = self.parse("""
+            enum E : typeof(unsigned int) { A };
+            enum F : typeof_unqual(A + 1) { B };
+        """)
+        first = ast.ext[0].type.underlying_type.type.type
+        self.assertIsInstance(first, TypeOf)
+        self.assertEqual(first.op, "typeof")
+        self.assertIsInstance(first.expr, Typename)
+        self.assertEqual(first.expr.type.type.names, ["unsigned", "int"])
+        second = ast.ext[1].type.underlying_type.type.type
+        self.assertEqual(second.op, "typeof_unqual")
+        self.assertIsInstance(second.expr, BinaryOp)
+        self.assertEqual(second.expr.left.name, "A")
+
+    def test_atomic_underlying_type(self):
+        enum = self.parse("enum E : _Atomic(unsigned int) { A };").ext[0].type
+        self.assertEqual(enum.underlying_type.quals, ["_Atomic"])
+        self.assertEqual(enum.underlying_type.type.quals, ["_Atomic"])
+        self.assertEqual(enum.underlying_type.type.type.names, ["unsigned", "int"])
+
+    def test_enumerator_expressions_are_preserved(self):
+        enum = (
+            self.parse("""
+            enum E : unsigned long long {
+                A = 1ULL << 40, B = 0xffffffffffffffffULL, C
+            };
+        """)
+            .ext[0]
+            .type
+        )
+        a, b, c = enum.values.enumerators
+        self.assertIsInstance(a.value, BinaryOp)
+        self.assertEqual(a.value.op, "<<")
+        self.assertEqual(a.value.left.value, "1ULL")
+        self.assertEqual(a.value.right.value, "40")
+        self.assertEqual(b.value.value, "0xffffffffffffffffULL")
+        self.assertIsNone(c.value)
+
+    def test_definition_in_struct_member(self):
+        struct = (
+            self.parse("struct S { enum E : unsigned char { A } member : 2; };")
+            .ext[0]
+            .type
+        )
+        member = struct.decls[0]
+        self.assertEqual(member.name, "member")
+        self.assertEqual(member.bitsize.value, "2")
+        self.assertEqual(
+            member.type.type.underlying_type.type.type.names, ["unsigned", "char"]
+        )
+
+    def test_definition_in_parameter(self):
+        func = self.parse("void f(enum E : unsigned int { A } value);").ext[0]
+        param = func.type.args.params[0]
+        self.assertEqual(param.name, "value")
+        self.assertEqual(param.type.type.name, "E")
+        self.assertEqual(
+            param.type.type.underlying_type.type.type.names, ["unsigned", "int"]
+        )
+
+    def test_definition_in_type_name(self):
+        func = self.parse("void f(void) { (enum E : unsigned char { A })0; }").ext[0]
+        expr = func.body.block_items[0]
+        self.assertIsInstance(expr, Cast)
+        enum = expr.to_type.type.type
+        self.assertEqual(enum.name, "E")
+        self.assertEqual(enum.underlying_type.type.type.names, ["unsigned", "char"])
+
+    def test_unnamed_enum_bitfields(self):
+        ast = self.parse("""
+            enum E : unsigned int { A, WIDTH = 3 };
+            struct S { enum E : 3; enum E : WIDTH; enum E : sizeof(int); };
+        """)
+        literal, identifier, size = ast.ext[1].type.decls
+        self.assertIsNone(literal.name)
+        self.assertIsNone(literal.type.type.underlying_type)
+        self.assertEqual(literal.bitsize.value, "3")
+        self.assertIsNone(identifier.name)
+        self.assertIsNone(identifier.type.type.underlying_type)
+        self.assertEqual(identifier.bitsize.name, "WIDTH")
+        self.assertIsNone(size.type.type.underlying_type)
+        self.assertEqual(size.bitsize.op, "sizeof")
+
+    def test_legacy_enum_bitfields(self):
+        parser = c_parser.CParser(dialect="legacy")
+        ast = parser.parse("""
+            enum E { A, WIDTH = 3 };
+            struct S { enum E : 3; enum E : WIDTH; enum E member : sizeof(int); };
+        """)
+        self.assertIsNone(ast.ext[0].type.underlying_type)
+        literal, identifier, size = ast.ext[1].type.decls
+        self.assertIsNone(literal.type.type.underlying_type)
+        self.assertEqual(literal.bitsize.value, "3")
+        self.assertEqual(identifier.bitsize.name, "WIDTH")
+        self.assertEqual(size.name, "member")
+        self.assertEqual(size.bitsize.op, "sizeof")
+
+    def test_fixed_enum_rejected_in_legacy(self):
+        parser = c_parser.CParser(dialect="legacy")
+        with self.assertRaisesRegex(
+            ParseError, "Fixed underlying enum types require C23"
+        ):
+            parser.parse("enum E : unsigned int { A };")
+        with self.assertRaisesRegex(
+            ParseError, "Fixed underlying enum types require C23"
+        ):
+            parser.parse("enum E : unsigned int;")
+        with self.assertRaisesRegex(
+            ParseError, "Fixed underlying enum types require C23"
+        ):
+            parser.parse("enum : unsigned int { A } value;")
+        with self.assertRaisesRegex(
+            ParseError, "Fixed underlying enum types require C23"
+        ):
+            parser.parse("typedef int T; enum E : T { A };")
+
+    def test_invalid_underlying_type_syntax(self):
+        self.assertRaises(ParseError, self.parse, "enum E : { A };")
+        self.assertRaises(ParseError, self.parse, "enum E :;")
+        self.assertRaises(ParseError, self.parse, "enum E :")
+        self.assertRaises(ParseError, self.parse, "enum E : unknown { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : const { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : static int { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : int * { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : int [3] { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : int () { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : (int) { A };")
+        self.assertRaises(ParseError, self.parse, "enum E : int { A;")
+        self.assertRaises(ParseError, self.parse, "enum E : int {};")
+        self.assertRaises(ParseError, self.parse, "enum : int;")
+        self.assertRaises(ParseError, self.parse, "enum : int value;")
+        self.assertRaises(
+            ParseError,
+            self.parse,
+            "typedef int T; void f(void) { int T; enum E : T { A }; }",
+        )
+
+    def test_coordinates_and_traversal(self):
+        enum = (
+            self.parse("enum E :\n  unsigned char { A };", filename="enum.c")
+            .ext[0]
+            .type
+        )
+        underlying = enum.underlying_type
+        self.assert_coord(enum, 1, 1, "enum.c")
+        self.assert_coord(underlying, 2, 3, "enum.c")
+        self.assert_coord(underlying.type.type, 2, 3, "enum.c")
+        self.assertEqual(
+            enum.children(), (("values", enum.values), ("underlying_type", underlying))
+        )
+        self.assertEqual(list(enum), [enum.values, underlying])
+
+        class TypeVisitor(NodeVisitor):
+            def __init__(self):
+                self.names = []
+
+            def visit_IdentifierType(self, node):
+                self.names.append(node.names)
+
+        visitor = TypeVisitor()
+        visitor.visit(enum)
+        self.assertEqual(visitor.names, [["unsigned", "char"]])
+
+
+class TestCParser_auto(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_inferred_declarations(self):
+        declarations = """
+            auto count = 42;
+            const auto scale = 0.5;
+            static auto enabled = true;
+            constexpr auto limit = 16;
+            auto pointer = &count;
+            auto ((parenthesized)) = 1;
+            alignas(16) auto aligned = 0;
+        """
+        for block_scope in (False, True):
+            with self.subTest(block_scope=block_scope):
+                source = declarations
+                if block_scope:
+                    source = "void f(void) {" + declarations + "}"
+                ast = self.parse(source, filename="auto.c")
+                decls = ast.ext[0].body.block_items if block_scope else ast.ext
+                self.assertEqual(len(decls), 7)
+                for decl in decls:
+                    self.assertIsInstance(decl.type, TypeDecl)
+                    self.assertIsInstance(decl.type.type, InferredType)
+                    self.assertIn("auto", decl.storage)
+                self.assertEqual(expand_init(decls[0].init), ["Constant", "int", "42"])
+                self.assertEqual(decls[1].quals, ["const"])
+                self.assertEqual(decls[1].type.quals, ["const"])
+                self.assertEqual(decls[2].storage, ["static", "auto"])
+                self.assertEqual(decls[3].storage, ["constexpr", "auto"])
+                self.assertIsInstance(decls[4].init, UnaryOp)
+                self.assertEqual(decls[4].init.op, "&")
+                self.assertEqual(decls[5].name, "parenthesized")
+                self.assertEqual(decls[6].align[0].alignment.value, "16")
+
+    def test_expression_initializers(self):
+        ast = self.parse("""
+            typedef int T;
+            int compute(void);
+            void f(void) {
+                int values[3];
+                auto p = values;
+                auto q = &values;
+                auto cast = (T)3;
+                auto literal = (T){4};
+                auto call = compute();
+                auto comma = (compute(), 5);
+                auto string = "text";
+                auto null = nullptr;
+                T after = cast;
+            }
+        """)
+        decls = ast.ext[2].body.block_items
+        expected = (
+            ID,
+            UnaryOp,
+            Cast,
+            CompoundLiteral,
+            FuncCall,
+            ExprList,
+            Constant,
+            Constant,
+        )
+        for decl, init_type in zip(decls[1:-1], expected):
+            self.assertIsInstance(decl.type.type, InferredType)
+            self.assertIsInstance(decl.init, init_type)
+        self.assertEqual(decls[-1].type.type.names, ["T"])
+
+    def test_for_loop_and_typedef_scopes(self):
+        ast = self.parse("""
+            typedef int T;
+            void f(void) {
+                auto start = 0;
+                for (auto i = start; i < 3; ++i) { auto j = i; }
+                { auto int T = 2; auto value = T; }
+                T after;
+            }
+        """)
+        body = ast.ext[1].body.block_items
+        loop = body[1]
+        self.assertIsInstance(loop.init.decls[0].type.type, InferredType)
+        self.assertEqual(loop.init.decls[0].init.name, "start")
+        self.assertIsInstance(loop.stmt.block_items[0].type.type, InferredType)
+        self.assertEqual(body[2].block_items[1].init.name, "T")
+        self.assertEqual(body[3].type.type.names, ["T"])
+
+    def test_explicit_types_and_legacy_mode(self):
+        source = "typedef int T; void f(void) { auto int x; auto T y = 3; }"
+        parsers = (self.cparser, c_parser.CParser(), c_parser.CParser(dialect="legacy"))
+        for _ in range(2):
+            for parser in parsers:
+                ast = parser.parse(source)
+                x, y = ast.ext[1].body.block_items
+                self.assertEqual(x.storage, ["auto"])
+                self.assertEqual(x.type.type.names, ["int"])
+                self.assertEqual(y.type.type.names, ["T"])
+            self.assertIsInstance(
+                self.parse("auto x = 1;").ext[0].type.type, InferredType
+            )
+            for parser in parsers[1:]:
+                for source_without_type in (
+                    "auto x = 1;",
+                    "void f(void) { auto x = 1; }",
+                ):
+                    self.assertRaises(ParseError, parser.parse, source_without_type)
+
+    def test_invalid_inferred_declarations(self):
+        for source in (
+            "auto x;",
+            "auto x = {};",
+            "auto x = {1};",
+            "auto x = 1, y = 2;",
+            "auto *p = &x;",
+            "auto a[3] = x;",
+            "auto f(void) = 0;",
+            "auto f(void) { return 0; }",
+            "auto;",
+            "auto = 1;",
+            "auto x =;",
+            "const x = 1;",
+        ):
+            for block_scope in (False, True):
+                with self.subTest(source=source, block_scope=block_scope):
+                    wrapped = "void f(void) {" + source + "}" if block_scope else source
+                    self.assertRaises(ParseError, self.parse, wrapped)
+        for source in (
+            "void f(auto x);",
+            "void f(const auto);",
+            "typedef int T; void f(void) { auto T = 1; }",
+        ):
+            with self.subTest(source=source):
+                self.assertRaises(ParseError, self.parse, source)
+
+    def test_coordinates_and_visitor(self):
+        ast = self.parse("auto count = 42;", filename="auto.c")
+        decl = ast.ext[0]
+        self.assert_coord(decl.type.type, 1, 6, "auto.c")
+        self.assert_coord(decl.init, 1, 14, "auto.c")
+
+        class InferredVisitor(NodeVisitor):
+            def __init__(self):
+                self.types = []
+
+            def visit_InferredType(self, node):
+                self.types.append(node)
+
+        visitor = InferredVisitor()
+        visitor.visit(ast)
+        self.assertEqual(visitor.types, [decl.type.type])
+
+
+class TestCParser_typeof(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_typeof_type_operands(self):
+        typ = self.parse("typeof(int) value;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertEqual(
+            expand_decl(typ.expr),
+            ["Typename", ["TypeDecl", ["IdentifierType", ["int"]]]],
+        )
+
+        typ = self.parse("typeof(const int *) value;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertEqual(
+            expand_decl(typ.expr),
+            [
+                "Typename",
+                ["const"],
+                ["PtrDecl", ["TypeDecl", ["IdentifierType", ["int"]]]],
+            ],
+        )
+
+        typ = self.parse("typeof(int [3]) value;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertEqual(
+            expand_decl(typ.expr),
+            [
+                "Typename",
+                ["ArrayDecl", "3", [], ["TypeDecl", ["IdentifierType", ["int"]]]],
+            ],
+        )
+
+        typ = self.parse("typeof(int (*)(int)) callback;").ext[0].type.type
+        self.assertIsInstance(typ.expr.type, PtrDecl)
+        self.assertIsInstance(typ.expr.type.type, FuncDecl)
+        self.assertEqual(typ.expr.type.type.args.params[0].type.type.names, ["int"])
+
+    def test_typeof_unqual_type_operands(self):
+        typ = self.parse("typeof_unqual(int) value;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertEqual(
+            expand_decl(typ.expr),
+            ["Typename", ["TypeDecl", ["IdentifierType", ["int"]]]],
+        )
+
+        typ = self.parse("typeof_unqual(const int *) value;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertEqual(
+            expand_decl(typ.expr),
+            [
+                "Typename",
+                ["const"],
+                ["PtrDecl", ["TypeDecl", ["IdentifierType", ["int"]]]],
+            ],
+        )
+
+        typ = self.parse("typeof_unqual(int [3]) value;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertEqual(
+            expand_decl(typ.expr),
+            [
+                "Typename",
+                ["ArrayDecl", "3", [], ["TypeDecl", ["IdentifierType", ["int"]]]],
+            ],
+        )
+
+        typ = self.parse("typeof_unqual(int (*)(int)) callback;").ext[0].type.type
+        self.assertIsInstance(typ.expr.type, PtrDecl)
+        self.assertIsInstance(typ.expr.type.type, FuncDecl)
+        self.assertEqual(typ.expr.type.type.args.params[0].type.type.names, ["int"])
+
+    def test_typeof_expression_operands(self):
+        typ = self.parse("typeof(value) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, ID)
+
+        typ = self.parse("typeof(value + 1) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, BinaryOp)
+
+        typ = self.parse("typeof(value++) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, UnaryOp)
+
+        typ = self.parse("typeof(f(value)) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, FuncCall)
+
+        typ = self.parse("typeof((int)value) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, Cast)
+
+        typ = self.parse("typeof((int){1}) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, CompoundLiteral)
+
+        typ = self.parse("typeof(value, f()) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof")
+        self.assertIsInstance(typ.expr, ExprList)
+
+    def test_typeof_unqual_expression_operands(self):
+        typ = self.parse("typeof_unqual(value) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, ID)
+
+        typ = self.parse("typeof_unqual(value + 1) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, BinaryOp)
+
+        typ = self.parse("typeof_unqual(value++) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, UnaryOp)
+
+        typ = self.parse("typeof_unqual(f(value)) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, FuncCall)
+
+        typ = self.parse("typeof_unqual((int)value) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, Cast)
+
+        typ = self.parse("typeof_unqual((int){1}) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, CompoundLiteral)
+
+        typ = self.parse("typeof_unqual(value, f()) copy;").ext[0].type.type
+        self.assertIsInstance(typ, TypeOf)
+        self.assertEqual(typ.op, "typeof_unqual")
+        self.assertIsInstance(typ.expr, ExprList)
+
+    def test_typedef_scopes(self):
+        ast = self.parse("""
+            typedef int T;
+            typeof(T) outer;
+            void f(void) {
+                typeof(T) before;
+                typeof(int) T = 0;
+                typeof(T) after;
+                { typedef char T; typeof_unqual(T) inner; }
+                typeof(T) last;
+            }
+            typeof(T) restored;
+        """)
+        before, shadow, after, block, last = ast.ext[2].body.block_items
+        for decl in (ast.ext[1], before, block.block_items[1], ast.ext[3]):
+            self.assertIsInstance(decl.type.type.expr, Typename)
+            self.assertEqual(decl.type.type.expr.type.type.names, ["T"])
+        self.assertEqual(shadow.name, "T")
+        for decl in (after, last):
+            self.assertIsInstance(decl.type.type.expr, ID)
+            self.assertEqual(decl.type.type.expr.name, "T")
+
+    def test_nested_types_and_qualifiers(self):
+        ast = self.parse("""
+            typeof(typeof_unqual(const int)) nested;
+            typeof(_Atomic(int)) inner_atomic;
+            _Atomic(typeof(int)) outer_atomic;
+            const typeof_unqual(volatile int) qualified;
+        """)
+        nested, inner, outer, qualified = ast.ext
+        self.assertEqual(nested.type.type.expr.type.type.op, "typeof_unqual")
+        self.assertEqual(nested.type.type.expr.type.type.expr.quals, ["const"])
+        self.assertEqual(inner.quals, [])
+        self.assertEqual(inner.type.type.expr.quals, ["_Atomic"])
+        self.assertEqual(outer.quals, ["_Atomic"])
+        self.assertEqual(outer.type.type.expr.quals, [])
+        self.assertEqual(qualified.quals, ["const"])
+        self.assertEqual(qualified.type.type.expr.quals, ["volatile"])
+
+    def test_declaration_contexts(self):
+        ast = self.parse("""
+            typedef typeof(1) T;
+            struct S { typeof(T) member; typeof_unqual(unsigned int) bits : 3; };
+            typeof(int) f(typeof(int) arg, typeof_unqual(const int)) {
+                typeof(arg) local = arg;
+                for (typeof(arg) i = 0; i < 3; ++i) {}
+                return local;
+            }
+        """)
+        typedef, struct, func = ast.ext
+        self.assertIsInstance(typedef.type.type, TypeOf)
+        for member in struct.type.decls:
+            self.assertIsInstance(member.type.type, TypeOf)
+        self.assertEqual(struct.type.decls[1].bitsize.value, "3")
+        self.assertIsInstance(func.decl.type.type.type, TypeOf)
+        for param in func.decl.type.args.params:
+            self.assertIsInstance(param.type.type, TypeOf)
+        local, loop, _ = func.body.block_items
+        self.assertIsInstance(local.type.type, TypeOf)
+        self.assertIsInstance(loop.init.decls[0].type.type, TypeOf)
+
+    def test_type_name_contexts(self):
+        ast = self.parse("""
+            alignas(typeof(int)) int aligned;
+            void f(void) {
+                sizeof(typeof(int));
+                alignof(typeof_unqual(const int));
+                (typeof(1))2;
+                (typeof(int)){3};
+                _Generic(1, typeof(int): 1, default: 0);
+            }
+        """)
+        self.assertIsInstance(ast.ext[0].align[0].alignment.type.type, TypeOf)
+        size, align, cast, literal, generic = ast.ext[1].body.block_items
+        for expr in (size, align):
+            self.assertIsInstance(expr.expr.type.type, TypeOf)
+        self.assertIsInstance(cast.to_type.type.type, TypeOf)
+        self.assertIsInstance(literal.type.type.type, TypeOf)
+        self.assertIsInstance(generic.associations[0].type.type.type, TypeOf)
+
+    def test_invalid_typeof_specifiers(self):
+        self.assertRaises(ParseError, self.parse, "typeof() x;")
+        self.assertRaises(ParseError, self.parse, "typeof int x;")
+        self.assertRaises(ParseError, self.parse, "typeof(int x;")
+        self.assertRaises(ParseError, self.parse, "typeof(int x) y;")
+        self.assertRaises(ParseError, self.parse, "typeof(value,) x;")
+        self.assertRaises(ParseError, self.parse, "typeof(int);")
+        self.assertRaises(ParseError, self.parse, "int typeof(int);")
+        self.assertRaises(ParseError, self.parse, "int typeof(int) x;")
+        self.assertRaises(ParseError, self.parse, "typeof(int) int x;")
+        self.assertRaises(ParseError, self.parse, "typeof(int) typeof(int) x;")
+        self.assertRaises(ParseError, self.parse, "void f(int typeof(int));")
+        self.assertRaises(ParseError, self.parse, "void f(void) { int x = typeof(1); }")
+
+    def test_invalid_typeof_unqual_specifiers(self):
+        self.assertRaises(ParseError, self.parse, "typeof_unqual() x;")
+        self.assertRaises(ParseError, self.parse, "typeof_unqual int x;")
+        self.assertRaises(ParseError, self.parse, "typeof_unqual(int x;")
+        self.assertRaises(ParseError, self.parse, "typeof_unqual(int x) y;")
+        self.assertRaises(ParseError, self.parse, "typeof_unqual(value,) x;")
+        self.assertRaises(ParseError, self.parse, "typeof_unqual(int);")
+        self.assertRaises(ParseError, self.parse, "int typeof_unqual(int);")
+        self.assertRaises(ParseError, self.parse, "int typeof_unqual(int) x;")
+        self.assertRaises(ParseError, self.parse, "typeof_unqual(int) int x;")
+        self.assertRaises(
+            ParseError, self.parse, "typeof_unqual(int) typeof_unqual(int) x;"
+        )
+        self.assertRaises(ParseError, self.parse, "void f(int typeof_unqual(int));")
+        self.assertRaises(
+            ParseError, self.parse, "void f(void) { int x = typeof_unqual(1); }"
+        )
+
+    def test_legacy_mode(self):
+        for parser in (c_parser.CParser(), c_parser.CParser(dialect="legacy")):
+            ast = parser.parse("""
+                int typeof(int x) { return x; }
+                int typeof_unqual(int x) { return typeof(x); }
+            """)
+            self.assertEqual(ast.ext[0].decl.name, "typeof")
+            self.assertEqual(ast.ext[1].decl.name, "typeof_unqual")
+            self.assertEqual(ast.ext[1].body.block_items[0].expr.name.name, "typeof")
+            self.assertRaises(ParseError, parser.parse, "typeof(int) x;")
+            self.assertRaises(ParseError, parser.parse, "typeof_unqual(const int) x;")
+
+    def test_coordinates_and_visitor(self):
+        ast = self.parse("typeof(x + 1) y;", filename="typeof.c")
+        typ = ast.ext[0].type.type
+        self.assert_coord(typ, 1, 1, "typeof.c")
+        self.assert_coord(typ.expr, 1, 8, "typeof.c")
+
+        class TypeOfVisitor(NodeVisitor):
+            def __init__(self):
+                self.operators = []
+                self.ids = []
+
+            def visit_TypeOf(self, node):
+                self.operators.append(node.op)
+                self.generic_visit(node)
+
+            def visit_ID(self, node):
+                self.ids.append(node.name)
+
+        visitor = TypeOfVisitor()
+        visitor.visit(ast)
+        self.assertEqual(visitor.operators, ["typeof"])
+        self.assertEqual(visitor.ids, ["x"])
+
+
+class TestCParser_bitint(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_plain_type(self):
+        decl = self.parse("_BitInt(17) value;").ext[0]
+        self.assertEqual(decl.name, "value")
+        self.assertIsInstance(decl.type.type, BitIntType)
+        self.assertIsNone(decl.type.type.signedness)
+        self.assertEqual(expand_init(decl.type.type.width), ["Constant", "int", "17"])
+
+    def test_signed_type(self):
+        typ = self.parse("signed _BitInt(17) value;").ext[0].type.type
+        self.assertIsInstance(typ, BitIntType)
+        self.assertEqual(typ.signedness, "signed")
+        self.assertEqual(typ.width.value, "17")
+
+        typ = self.parse("_BitInt(17) signed value;").ext[0].type.type
+        self.assertIsInstance(typ, BitIntType)
+        self.assertEqual(typ.signedness, "signed")
+        self.assertEqual(typ.width.value, "17")
+
+    def test_unsigned_type(self):
+        typ = self.parse("unsigned _BitInt(1) flag;").ext[0].type.type
+        self.assertIsInstance(typ, BitIntType)
+        self.assertEqual(typ.signedness, "unsigned")
+        self.assertEqual(typ.width.value, "1")
+
+        typ = self.parse("_BitInt(17) unsigned value;").ext[0].type.type
+        self.assertIsInstance(typ, BitIntType)
+        self.assertEqual(typ.signedness, "unsigned")
+        self.assertEqual(typ.width.value, "17")
+
+    def test_width_expressions(self):
+        width = self.parse("_BitInt(WIDTH) value;").ext[0].type.type.width
+        self.assertIsInstance(width, ID)
+        self.assertEqual(width.name, "WIDTH")
+
+        width = self.parse("_BitInt(8 * sizeof(int)) value;").ext[0].type.type.width
+        self.assertIsInstance(width, BinaryOp)
+        self.assertEqual(width.op, "*")
+        self.assertEqual(width.left.value, "8")
+        self.assertIsInstance(width.right, UnaryOp)
+        self.assertEqual(width.right.op, "sizeof")
+        self.assertEqual(width.right.expr.type.type.names, ["int"])
+
+        width = (
+            self.parse("_BitInt(WIDTH > 8 ? WIDTH : 8) value;").ext[0].type.type.width
+        )
+        self.assertIsInstance(width, TernaryOp)
+        self.assertEqual(width.cond.op, ">")
+        self.assertEqual(width.iftrue.name, "WIDTH")
+        self.assertEqual(width.iffalse.value, "8")
+
+    def test_qualifiers_and_declarators(self):
+        value, pointer, array = self.parse(
+            "static const unsigned _BitInt(17) value = 1, *pointer, array[3];"
+        ).ext
+        self.assertEqual(value.storage, ["static"])
+        self.assertEqual(value.quals, ["const"])
+        self.assertEqual(value.type.quals, ["const"])
+        self.assertEqual(value.type.type.signedness, "unsigned")
+        self.assertEqual(value.type.type.width.value, "17")
+        self.assertEqual(value.init.value, "1")
+        self.assertIsInstance(pointer.type, PtrDecl)
+        self.assertEqual(pointer.type.type.quals, ["const"])
+        self.assertEqual(pointer.type.type.type.signedness, "unsigned")
+        self.assertEqual(pointer.type.type.type.width.value, "17")
+        self.assertIsInstance(array.type, ArrayDecl)
+        self.assertEqual(array.type.dim.value, "3")
+        self.assertEqual(array.type.type.type.signedness, "unsigned")
+        self.assertEqual(array.type.type.type.width.value, "17")
+
+    def test_atomic_and_typeof(self):
+        atomic, qualified, typeof = self.parse("""
+            _Atomic(unsigned _BitInt(17)) atomic;
+            _Atomic _BitInt(17) qualified;
+            typeof_unqual(const unsigned _BitInt(17)) value;
+        """).ext
+        self.assertEqual(atomic.quals, ["_Atomic"])
+        self.assertIsInstance(atomic.type.type, BitIntType)
+        self.assertEqual(atomic.type.type.signedness, "unsigned")
+        self.assertEqual(qualified.quals, ["_Atomic"])
+        self.assertIsInstance(qualified.type.type, BitIntType)
+        self.assertIsNone(qualified.type.type.signedness)
+        self.assertEqual(typeof.type.type.op, "typeof_unqual")
+        self.assertEqual(typeof.type.type.expr.quals, ["const"])
+        self.assertIsInstance(typeof.type.type.expr.type.type, BitIntType)
+        self.assertEqual(typeof.type.type.expr.type.type.signedness, "unsigned")
+
+    def test_declaration_contexts(self):
+        ast = self.parse("""
+            typedef unsigned _BitInt(17) T;
+            struct S { _BitInt(8) member; unsigned _BitInt(3) bits : 3; };
+            _BitInt(17) f(unsigned _BitInt(8) arg, _BitInt(17)) {
+                T from_typedef;
+                _BitInt(8) T = 0;
+                for (unsigned _BitInt(8) i = 0; i < 3; ++i) {}
+                return T;
+            }
+            T after;
+        """)
+        typedef, struct, func, after = ast.ext
+        self.assertIsInstance(typedef, Typedef)
+        self.assertIsInstance(typedef.type.type, BitIntType)
+        self.assertEqual(typedef.type.type.signedness, "unsigned")
+        member, bits = struct.type.decls
+        self.assertIsInstance(member.type.type, BitIntType)
+        self.assertIsInstance(bits.type.type, BitIntType)
+        self.assertEqual(bits.type.type.signedness, "unsigned")
+        self.assertEqual(bits.bitsize.value, "3")
+        self.assertIsInstance(func.decl.type.type.type, BitIntType)
+        named, unnamed = func.decl.type.args.params
+        self.assertEqual(named.name, "arg")
+        self.assertIsInstance(named.type.type, BitIntType)
+        self.assertIsInstance(unnamed, Typename)
+        self.assertIsInstance(unnamed.type.type, BitIntType)
+        from_typedef, shadow, loop, _ = func.body.block_items
+        self.assertEqual(from_typedef.type.type.names, ["T"])
+        self.assertEqual(shadow.name, "T")
+        self.assertIsInstance(shadow.type.type, BitIntType)
+        self.assertEqual(loop.init.decls[0].type.type.signedness, "unsigned")
+        self.assertEqual(after.type.type.names, ["T"])
+
+    def test_type_name_contexts(self):
+        ast = self.parse("""
+            alignas(_BitInt(8)) int aligned;
+            void f(void) {
+                sizeof(_BitInt(17));
+                alignof(unsigned _BitInt(8));
+                (_BitInt(17))2;
+                (unsigned _BitInt(8)){3};
+                _Generic(1, _BitInt(17): 1, default: 0);
+            }
+        """)
+        self.assertIsInstance(ast.ext[0].align[0].alignment.type.type, BitIntType)
+        size, align, cast, literal, generic = ast.ext[1].body.block_items
+        self.assertIsInstance(size.expr.type.type, BitIntType)
+        self.assertEqual(align.expr.type.type.signedness, "unsigned")
+        self.assertIsInstance(cast.to_type.type.type, BitIntType)
+        self.assertEqual(literal.type.type.type.signedness, "unsigned")
+        self.assertIsInstance(generic.associations[0].type.type.type, BitIntType)
+
+    def test_invalid_width_syntax(self):
+        self.assertRaises(ParseError, self.parse, "_BitInt() x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt 17 x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(17 x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(int) x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(8, 17) x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(WIDTH = 17) x;")
+
+    def test_invalid_type_combinations(self):
+        self.assertRaises(ParseError, self.parse, "int _BitInt(17) x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(17) int x;")
+        self.assertRaises(ParseError, self.parse, "long _BitInt(17) x;")
+        self.assertRaises(ParseError, self.parse, "unsigned signed _BitInt(17) x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(17) unsigned unsigned x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(8) _BitInt(17) x;")
+        self.assertRaises(ParseError, self.parse, "_BitInt(17) typeof(int) x;")
+        self.assertRaises(ParseError, self.parse, "typeof(int) _BitInt(17) x;")
+        self.assertRaises(ParseError, self.parse, "int _BitInt(17);")
+        self.assertRaises(ParseError, self.parse, "void f(int _BitInt(17));")
+
+    def test_legacy_mode(self):
+        parser = c_parser.CParser()
+        ast = parser.parse("int _BitInt = 1; int f(void) { return _BitInt; }")
+        self.assertEqual(ast.ext[0].name, "_BitInt")
+        self.assertEqual(ast.ext[1].body.block_items[0].expr.name, "_BitInt")
+        self.assertRaises(ParseError, parser.parse, "_BitInt(17) x;")
+        self.assertRaises(ParseError, parser.parse, "unsigned _BitInt(17) x;")
+
+    def test_coordinates_and_visitor(self):
+        ast = self.parse("unsigned _BitInt(WIDTH + 1) x;", filename="bitint.c")
+        typ = ast.ext[0].type.type
+        self.assert_coord(typ, 1, 10, "bitint.c")
+        self.assert_coord(typ.width, 1, 18, "bitint.c")
+
+        class BitIntVisitor(NodeVisitor):
+            def __init__(self):
+                self.types = []
+                self.ids = []
+
+            def visit_BitIntType(self, node):
+                self.types.append(node)
+                self.generic_visit(node)
+
+            def visit_ID(self, node):
+                self.ids.append(node.name)
+
+        visitor = BitIntVisitor()
+        visitor.visit(ast)
+        self.assertEqual(visitor.types, [typ])
+        self.assertEqual(visitor.ids, ["WIDTH"])
+
+
+class TestCParser_digit_separators(TestCParser_base):
+    def test_integer_constants_in_default_mode(self):
+        init = self.parse("int x = 1'000'000;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "int", "1'000'000"])
+
+        init = self.parse("int x = 0'7'7;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "int", "0'7'7"])
+
+        init = self.parse("int x = 0xAB'CD;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "int", "0xAB'CD"])
+
+        init = self.parse("int x = 0b1010'0101;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "int", "0b1010'0101"])
+
+    def test_floating_constants_in_default_mode(self):
+        init = self.parse("double x = 1'234.56'78;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "double", "1'234.56'78"])
+
+        init = self.parse("double x = .1'25;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "double", ".1'25"])
+
+        init = self.parse("double x = 1'000.;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "double", "1'000."])
+
+        init = self.parse("double x = 1'2e-3'4;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "double", "1'2e-3'4"])
+
+        init = self.parse("double x = 0xAB'CD.EF'01p+1'0;").ext[0].init
+        self.assertEqual(
+            expand_init(init), ["Constant", "double", "0xAB'CD.EF'01p+1'0"]
+        )
+
+    def test_suffixes(self):
+        init = self.parse("unsigned x = 1'000U;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned int", "1'000U"])
+
+        init = self.parse("long x = 1'000L;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "long int", "1'000L"])
+
+        init = self.parse("unsigned long long x = 0xFF'FFuLL;").ext[0].init
+        self.assertEqual(
+            expand_init(init), ["Constant", "unsigned long long int", "0xFF'FFuLL"]
+        )
+
+        init = self.parse("float x = 1.2'5F;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "float", "1.2'5F"])
+
+        init = self.parse("long double x = 0xA'B.p1'0L;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "long double", "0xA'B.p1'0L"])
+
+    def test_c23_constants(self):
+        parser = c_parser.CParser(dialect="c23")
+        init = parser.parse("auto x = 1'000;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "int", "1'000"])
+
+        init = parser.parse("auto x = 1'000wb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_BitInt", "1'000wb"])
+
+        init = parser.parse("auto x = 0b1010'0101UWB;").ext[0].init
+        self.assertEqual(
+            expand_init(init), ["Constant", "unsigned _BitInt", "0b1010'0101UWB"]
+        )
+
+        init = parser.parse("_Decimal32 x = 1'2.3'4e+1'0DF;").ext[0].init
+        self.assertEqual(
+            expand_init(init), ["Constant", "_Decimal32", "1'2.3'4e+1'0DF"]
+        )
+
+        init = parser.parse("_Decimal64 x = 1'000.00dd;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_Decimal64", "1'000.00dd"])
+
+        init = parser.parse("_Decimal128 x = .1'25DL;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_Decimal128", ".1'25DL"])
+
+    def test_separators_do_not_enable_c23_suffixes_in_legacy_mode(self):
+        self.assertRaises(ParseError, self.parse, "int x = 1'000wb;")
+        self.assertRaises(ParseError, self.parse, "int x = 1'000uwb;")
+        self.assertRaises(ParseError, self.parse, "double x = 1'000.0df;")
+        self.assertRaises(ParseError, self.parse, "double x = 1'000.0dd;")
+        self.assertRaises(ParseError, self.parse, "double x = 1'000.0dl;")
+
+    def test_invalid_separator_positions(self):
+        self.assertRaises(ParseError, self.parse, "int x = 1''000;")
+        self.assertRaises(ParseError, self.parse, "int x = 1'000';")
+        self.assertRaises(ParseError, self.parse, "int x = 0x'FF;")
+        self.assertRaises(ParseError, self.parse, "int x = 0b'10;")
+        self.assertRaises(ParseError, self.parse, "int x = 1'U;")
+        self.assertRaises(ParseError, self.parse, "int x = 0'8;")
+        self.assertRaises(ParseError, self.parse, "double x = 1'.0;")
+        self.assertRaises(ParseError, self.parse, "double x = 1.'0;")
+        self.assertRaises(ParseError, self.parse, "double x = 1'e2;")
+        self.assertRaises(ParseError, self.parse, "double x = 1e'2;")
+        self.assertRaises(ParseError, self.parse, "double x = 1e+'2;")
+        self.assertRaises(ParseError, self.parse, "double x = 0x1'p2;")
+        self.assertRaises(ParseError, self.parse, "double x = 0x1p'2;")
+
+    def test_coordinates_and_line_directives(self):
+        ast = self.parse("int x = 1'000, y = 2'000;", filename="digits.c")
+        self.assert_coord(ast.ext[0].init, 1, 9, "digits.c")
+        self.assert_coord(ast.ext[1].init, 1, 20, "digits.c")
+
+        ast = self.parse("#line 1'000\nint x = 2'000;", filename="digits.c")
+        self.assert_coord(ast.ext[0].init, 1000, 9, "digits.c")
+
+
+class TestCParser_bitint_literals(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_signed_suffixes(self):
+        init = self.parse("auto x = 42wb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_BitInt", "42wb"])
+
+        init = self.parse("auto x = 42WB;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_BitInt", "42WB"])
+
+    def test_unsigned_prefixes(self):
+        init = self.parse("auto x = 42uwb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42uwb"])
+
+        init = self.parse("auto x = 42uWB;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42uWB"])
+
+        init = self.parse("auto x = 42Uwb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42Uwb"])
+
+        init = self.parse("auto x = 42UWB;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42UWB"])
+
+    def test_unsigned_suffixes(self):
+        init = self.parse("auto x = 42wbu;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42wbu"])
+
+        init = self.parse("auto x = 42wbU;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42wbU"])
+
+        init = self.parse("auto x = 42WBu;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42WBu"])
+
+        init = self.parse("auto x = 42WBU;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "42WBU"])
+
+    def test_integer_bases(self):
+        init = self.parse("auto x = 0wb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_BitInt", "0wb"])
+
+        init = self.parse("auto x = 077uwb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "077uwb"])
+
+        init = self.parse("auto x = 0x1bwb;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_BitInt", "0x1bwb"])
+
+        init = self.parse("auto x = 0XffUWB;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned _BitInt", "0XffUWB"])
+
+        init = self.parse("auto x = 0b101wbu;").ext[0].init
+        self.assertEqual(
+            expand_init(init), ["Constant", "unsigned _BitInt", "0b101wbu"]
+        )
+
+        init = self.parse("auto x = 0B101WB;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_BitInt", "0B101WB"])
+
+    def test_large_value_and_negation(self):
+        init = (
+            self.parse("auto x = 340282366920938463463374607431768211456wb;")
+            .ext[0]
+            .init
+        )
+        self.assertEqual(init.type, "_BitInt")
+        self.assertEqual(init.value, "340282366920938463463374607431768211456wb")
+
+        init = self.parse("auto x = -3wb;").ext[0].init
+        self.assertIsInstance(init, UnaryOp)
+        self.assertEqual(init.op, "-")
+        self.assertEqual(expand_init(init.expr), ["Constant", "_BitInt", "3wb"])
+
+    def test_expression_contexts(self):
+        ast = self.parse("""
+            _BitInt(8wb) value = 42wb;
+            void f(void) {
+                1wb;
+                auto sum = 1uwb + 2WBU;
+                consume(3WB);
+                if (1wb) 2uwb; else 3WB;
+                _Generic(1wb, _BitInt(2): 1, default: 0);
+            }
+        """)
+        self.assertEqual(ast.ext[0].type.type.width.type, "_BitInt")
+        self.assertEqual(ast.ext[0].init.type, "_BitInt")
+        constant, sum_decl, call, conditional, generic = ast.ext[1].body.block_items
+        self.assertEqual(expand_init(constant), ["Constant", "_BitInt", "1wb"])
+        self.assertEqual(sum_decl.init.op, "+")
+        self.assertEqual(sum_decl.init.left.type, "unsigned _BitInt")
+        self.assertEqual(sum_decl.init.right.type, "unsigned _BitInt")
+        self.assertEqual(call.args.exprs[0].type, "_BitInt")
+        self.assertEqual(conditional.cond.type, "_BitInt")
+        self.assertEqual(conditional.iftrue.type, "unsigned _BitInt")
+        self.assertEqual(conditional.iffalse.type, "_BitInt")
+        self.assertEqual(generic.expr.type, "_BitInt")
+
+    def test_invalid_suffixes(self):
+        self.assertRaises(ParseError, self.parse, "auto x = 42wB;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42Wb;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42uwB;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42Wbu;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42uwbu;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42wbwb;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42wbl;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42Lwb;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42llwb;")
+        self.assertRaises(ParseError, self.parse, "auto x = 42WBUL;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0wb;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1e2wb;")
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1p0wb;")
+
+    def test_ordinary_integer_and_character_constants(self):
+        init = self.parse("auto x = 42U;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "unsigned int", "42U"])
+
+        init = self.parse("auto x = 42uLL;").ext[0].init
+        self.assertEqual(
+            expand_init(init), ["Constant", "unsigned long long int", "42uLL"]
+        )
+
+        init = self.parse("auto x = 'wb';").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "int", "'wb'"])
+
+    def test_legacy_mode_and_reuse(self):
+        parser = c_parser.CParser()
+        with self.assertRaisesRegex(
+            ParseError, "Bit-precise integer constants require C23"
+        ):
+            parser.parse("int x = 42wb;")
+        self.assertRaises(ParseError, parser.parse, "int x = 42WB;")
+        self.assertRaises(ParseError, parser.parse, "int x = 42uwb;")
+        self.assertRaises(ParseError, parser.parse, "int x = 42UWB;")
+        self.assertRaises(ParseError, parser.parse, "int x = 42wbu;")
+        self.assertRaises(ParseError, parser.parse, "int x = 42WBU;")
+        self.assertEqual(self.parse("auto x = 42wb;").ext[0].init.type, "_BitInt")
+        self.assertEqual(parser.parse("int x = 42;").ext[0].init.type, "int")
+        self.assertEqual(
+            self.parse("auto x = 42uwb;").ext[0].init.type, "unsigned _BitInt"
+        )
+        self.assertRaises(ParseError, parser.parse, "int x = 42uwb;")
+
+    def test_coordinates(self):
+        init = self.parse("auto x = 42uwb;", filename="bitint.c").ext[0].init
+        self.assert_coord(init, 1, 10, "bitint.c")
+
+
+class TestCParser_decimal_float(TestCParser_base):
+    def setUp(self):
+        self.cparser = c_parser.CParser(dialect="c23")
+
+    def test_decimal32(self):
+        decl = self.parse("_Decimal32 price = 1.25df;").ext[0]
+        self.assertEqual(decl.type.type.names, ["_Decimal32"])
+        self.assertEqual(expand_init(decl.init), ["Constant", "_Decimal32", "1.25df"])
+
+    def test_decimal64(self):
+        decl = self.parse("_Decimal64 total = 100.00dd;").ext[0]
+        self.assertEqual(decl.type.type.names, ["_Decimal64"])
+        self.assertEqual(expand_init(decl.init), ["Constant", "_Decimal64", "100.00dd"])
+
+    def test_decimal128(self):
+        decl = self.parse("_Decimal128 precise = 0.1dl;").ext[0]
+        self.assertEqual(decl.type.type.names, ["_Decimal128"])
+        self.assertEqual(expand_init(decl.init), ["Constant", "_Decimal128", "0.1dl"])
+
+    def test_uppercase_suffixes(self):
+        init = self.parse("_Decimal32 x = 1.25DF;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_Decimal32", "1.25DF"])
+
+        init = self.parse("_Decimal64 x = 100.00DD;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_Decimal64", "100.00DD"])
+
+        init = self.parse("_Decimal128 x = 0.1DL;").ext[0].init
+        self.assertEqual(expand_init(init), ["Constant", "_Decimal128", "0.1DL"])
+
+    def test_fractional_and_exponent_forms(self):
+        zero, fraction, exponent, combined = self.parse("""
+            auto zero = 0.dd;
+            auto fraction = .5df;
+            auto exponent = 12e-2dl;
+            auto combined = 1.5e+2DF;
+        """).ext
+        self.assertEqual(expand_init(zero.init), ["Constant", "_Decimal64", "0.dd"])
+        self.assertEqual(expand_init(fraction.init), ["Constant", "_Decimal32", ".5df"])
+        self.assertEqual(
+            expand_init(exponent.init), ["Constant", "_Decimal128", "12e-2dl"]
+        )
+        self.assertEqual(
+            expand_init(combined.init), ["Constant", "_Decimal32", "1.5e+2DF"]
+        )
+
+    def test_declaration_contexts(self):
+        ast = self.parse("""
+            typedef _Decimal64 Money;
+            const _Decimal32 *pointer;
+            _Decimal128 array[2];
+            struct S { _Decimal64 amount; };
+            _Decimal64 f(_Decimal32 arg, _Decimal128) {
+                constexpr _Decimal64 rate = 0.05dd;
+                Money result = rate;
+                return result;
+            }
+        """)
+        typedef, pointer, array, struct, func = ast.ext
+        self.assertEqual(typedef.type.type.names, ["_Decimal64"])
+        self.assertIsInstance(pointer.type, PtrDecl)
+        self.assertEqual(pointer.type.type.quals, ["const"])
+        self.assertEqual(pointer.type.type.type.names, ["_Decimal32"])
+        self.assertIsInstance(array.type, ArrayDecl)
+        self.assertEqual(array.type.type.type.names, ["_Decimal128"])
+        self.assertEqual(struct.type.decls[0].type.type.names, ["_Decimal64"])
+        self.assertEqual(func.decl.type.type.type.names, ["_Decimal64"])
+        named, unnamed = func.decl.type.args.params
+        self.assertEqual(named.type.type.names, ["_Decimal32"])
+        self.assertEqual(unnamed.type.type.names, ["_Decimal128"])
+        rate, result, _ = func.body.block_items
+        self.assertEqual(rate.storage, ["constexpr"])
+        self.assertEqual(rate.init.type, "_Decimal64")
+        self.assertEqual(result.type.type.names, ["Money"])
+
+    def test_type_name_contexts(self):
+        ast = self.parse("""
+            alignas(_Decimal64) int aligned;
+            _Atomic(_Decimal32) atomic;
+            typeof_unqual(const _Decimal128) value;
+            void f(void) {
+                sizeof(_Decimal32);
+                alignof(_Decimal64);
+                (_Decimal128)1;
+                (_Decimal64){2.dd};
+                _Generic(1.df, _Decimal32: 1, default: 0);
+            }
+        """)
+        self.assertEqual(ast.ext[0].align[0].alignment.type.type.names, ["_Decimal64"])
+        self.assertEqual(ast.ext[1].quals, ["_Atomic"])
+        self.assertEqual(ast.ext[1].type.type.names, ["_Decimal32"])
+        self.assertEqual(ast.ext[2].type.type.expr.type.type.names, ["_Decimal128"])
+        size, align, cast, literal, generic = ast.ext[3].body.block_items
+        self.assertEqual(size.expr.type.type.names, ["_Decimal32"])
+        self.assertEqual(align.expr.type.type.names, ["_Decimal64"])
+        self.assertEqual(cast.to_type.type.type.names, ["_Decimal128"])
+        self.assertEqual(literal.type.type.type.names, ["_Decimal64"])
+        self.assertEqual(generic.associations[0].type.type.type.names, ["_Decimal32"])
+
+    def test_literals_in_expressions_and_statements(self):
+        ast = self.parse("""
+            void f(void) {
+                1.25df;
+                -2.5dd;
+                auto sum = 1.df + 2.df;
+                consume(3.dl);
+                if (1.DF) 2.DD; else 3.DL;
+            }
+        """)
+        constant, negative, sum_decl, call, conditional = ast.ext[0].body.block_items
+        self.assertEqual(expand_init(constant), ["Constant", "_Decimal32", "1.25df"])
+        self.assertEqual(negative.op, "-")
+        self.assertEqual(
+            expand_init(negative.expr), ["Constant", "_Decimal64", "2.5dd"]
+        )
+        self.assertEqual(sum_decl.init.op, "+")
+        self.assertEqual(sum_decl.init.left.type, "_Decimal32")
+        self.assertEqual(sum_decl.init.right.type, "_Decimal32")
+        self.assertEqual(call.args.exprs[0].type, "_Decimal128")
+        self.assertEqual(conditional.cond.type, "_Decimal32")
+        self.assertEqual(conditional.iftrue.type, "_Decimal64")
+        self.assertEqual(conditional.iffalse.type, "_Decimal128")
+
+    def test_binary_floating_constants(self):
+        double, float_decl, long_double, hex_float = self.parse("""
+            double x = 1.25;
+            float y = 1.25f;
+            long double z = 1.25L;
+            float h = 0x1.fp2F;
+        """).ext
+        self.assertEqual(double.init.type, "double")
+        self.assertEqual(float_decl.init.type, "float")
+        self.assertEqual(long_double.init.type, "long double")
+        self.assertEqual(hex_float.init.type, "float")
+
+    def test_invalid_suffixes(self):
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0dF;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0Df;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0dD;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0Dd;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0dL;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0Dl;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0fdf;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0ddL;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1.0ddextra;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1df;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1dd;")
+        self.assertRaises(ParseError, self.parse, "auto x = 1dl;")
+
+    def test_hexadecimal_decimal_suffixes(self):
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1p0df;")
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1p0dd;")
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1p0dl;")
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1.fp+2DF;")
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1.fp+2DD;")
+        self.assertRaises(ParseError, self.parse, "auto x = 0x1.fp+2DL;")
+
+    def test_legacy_mode_and_reuse(self):
+        parser = c_parser.CParser()
+        names = parser.parse("int _Decimal32, _Decimal64, _Decimal128;").ext
+        self.assertEqual(names[0].name, "_Decimal32")
+        self.assertEqual(names[1].name, "_Decimal64")
+        self.assertEqual(names[2].name, "_Decimal128")
+        self.assertRaises(ParseError, parser.parse, "_Decimal32 x;")
+        self.assertRaises(ParseError, parser.parse, "_Decimal64 x;")
+        self.assertRaises(ParseError, parser.parse, "_Decimal128 x;")
+        self.assertRaises(ParseError, parser.parse, "double x = 1.25df;")
+        self.assertRaises(ParseError, parser.parse, "double x = 1.25dd;")
+        self.assertRaises(ParseError, parser.parse, "double x = 1.25dl;")
+        self.assertRaises(ParseError, parser.parse, "double x = 1.25DF;")
+        self.assertRaises(ParseError, parser.parse, "double x = 1.25DD;")
+        self.assertRaises(ParseError, parser.parse, "double x = 1.25DL;")
+
+        self.assertEqual(
+            self.parse("_Decimal32 x = 1.df;").ext[0].init.type, "_Decimal32"
+        )
+        self.assertEqual(parser.parse("double x = 1.;").ext[0].init.type, "double")
+        self.assertEqual(
+            self.parse("_Decimal64 x = 1.dd;").ext[0].init.type, "_Decimal64"
+        )
+        self.assertRaises(ParseError, parser.parse, "double x = 1.dd;")
+
+    def test_coordinates(self):
+        ast = self.parse("_Decimal64 x = 1.25dd;", filename="decimal.c")
+        self.assert_coord(ast.ext[0].type.type, 1, 1, "decimal.c")
+        self.assert_coord(ast.ext[0].init, 1, 16, "decimal.c")
+
+    def test_legacy_literal_diagnostic(self):
+        parser = c_parser.CParser(dialect="legacy")
+        with self.assertRaisesRegex(
+            ParseError, "decimal.c:1:12: Decimal floating constants require C23"
+        ):
+            parser.parse("double x = 1.25dd;", filename="decimal.c")
 
 
 class TestUnmatchedRbrace(unittest.TestCase):

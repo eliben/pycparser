@@ -49,9 +49,12 @@ simple to install and deploy.
 Which version of C does pycparser support?
 ------------------------------------------
 
-**pycparser** aims to support the full C99 language (according to the standard
-ISO/IEC 9899). Some features from C11 are also supported, and patches to support
-more are welcome.
+**pycparser** aims to support the full C11 language, including earlier
+revisions like C99.
+
+C23 support is conditional on a ``dialect="c23"`` setting, since this revision
+introduces new keywords like ``bool`` that would conflict with existing C code
+if not handled properly.
 
 **pycparser** supports very few GCC extensions, but it's fairly easy to set
 things up so that it parses code with a lot of GCC-isms successfully. See the
@@ -148,6 +151,20 @@ of using **pycparser**. These should be enough to get you started. Please note
 that most realistic C code samples would require running the C preprocessor
 before passing the code to **pycparser**; see the previous sections for more
 details.
+
+For example, to parse C23 source with a preprocessor that supports ``-std=c23``::
+
+    from pycparser import CParser, parse_file
+
+    ast = parse_file(
+        "example.c",
+        use_cpp=True,
+        cpp_args=["-std=c23"],
+        parser=CParser(dialect="c23"),
+    )
+
+The parser's dialect does not configure the external preprocessor; select its
+language mode separately through ``cpp_args``.
 
 .. |examples| replace:: ``examples``
 .. _examples: examples
