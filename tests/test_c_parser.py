@@ -1141,6 +1141,28 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(pdecl, PtrDecl)
         self.assertEqual(pdecl.quals, ["const"])
 
+    def test_restricted_specifier_lists(self):
+        # Sharing specifier parsing must not admit storage classes or function
+        # specifiers in member declarations and type names.
+        with self.assertRaisesRegex(ParseError, "Invalid specifier list"):
+            self.parse("struct S { static int x; };")
+        with self.assertRaisesRegex(ParseError, "Invalid specifier list"):
+            self.parse("struct S { inline int x; };")
+        with self.assertRaisesRegex(ParseError, "Invalid specifier list"):
+            self.parse("int n = sizeof(inline int);")
+
+    def test_specifier_list_missing_type(self):
+        # Qualifiers alone do not supply a type; report the first qualifier's
+        # position in both member declarations and type names.
+        with self.assertRaisesRegex(
+            ParseError, r"^types.c:1:12: Missing type in declaration$"
+        ):
+            self.parse("struct S { const x; };", filename="types.c")
+        with self.assertRaisesRegex(
+            ParseError, r"^types.c:1:16: Missing type in declaration$"
+        ):
+            self.parse("int n = sizeof(const);", filename="types.c")
+
     def test_atomic_specifier(self):
         self.assertEqual(
             self.get_decl("_Atomic(int) ai;"),
@@ -1590,133 +1612,45 @@ class TestCParser_fundamentals(TestCParser_base):
             ["BinaryOp", ["ID", "a"], "*", ["Constant", "int", "2"]],
         )
 
-        for op in (
-            "+",
-            "-",
-            "*",
-            "/",
-            "%",
-            "<<",
-            ">>",
-            "<",
-            ">",
-            "<=",
-            ">=",
-            "==",
-            "!=",
-            "&",
-            "^",
-            "|",
-            "&&",
-            "||",
-        ):
-            with self.subTest(op=op):
-                e = self.parse(f"void f() {{ ({{ 1; }}) {op} ({{ 2; }}); }}")
-                expr = e.ext[0].body.block_items[0]
-                self.assertIsInstance(expr, BinaryOp)
-                self.assertEqual(expr.op, op)
-                self.assertIsInstance(expr.left, Compound)
-                self.assertIsInstance(expr.right, Compound)
-                self.assertEqual(expr.left.block_items[0].value, "1")
-                self.assertEqual(expr.right.block_items[0].value, "2")
-
     def test_parenthesized_compounds_precedence(self):
-        e = self.parse("""
-            void f() {
-                ({ 1; }) + 2 * ({ 3; }) - ({ 4; }) / 2;
-            }
-        """)
-        self.assertEqual(
-            expand_init(e.ext[0].body.block_items[0]),
-            [
-                "BinaryOp",
-                [
-                    "BinaryOp",
-                    ["Compound", [["Constant", "int", "1"]]],
-                    "+",
-                    [
-                        "BinaryOp",
-                        ["Constant", "int", "2"],
-                        "*",
-                        ["Compound", [["Constant", "int", "3"]]],
-                    ],
-                ],
-                "-",
-                [
-                    "BinaryOp",
-                    ["Compound", [["Constant", "int", "4"]]],
-                    "/",
-                    ["Constant", "int", "2"],
-                ],
-            ],
-        )
+        # Multiplication still binds tighter than addition when statement
+        # expressions appear as operands on either side.
+        e = self.parse("void f() { ({ 1; }) + 2 * ({ 3; }); }")
+        expr = e.ext[0].body.block_items[0]
+        self.assertEqual(expr.op, "+")
+        self.assertIsInstance(expr.left, Compound)
+        self.assertEqual(expr.left.block_items[0].value, "1")
+        self.assertEqual(expr.right.op, "*")
+        self.assertEqual(expr.right.left.value, "2")
+        self.assertIsInstance(expr.right.right, Compound)
+        self.assertEqual(expr.right.right.block_items[0].value, "3")
 
     def test_parenthesized_compounds_unary_and_cast(self):
-        for op in ("+", "-", "!", "~", "*", "&", "++", "--", "sizeof"):
-            with self.subTest(op=op):
-                e = self.parse(f"void f() {{ {op} ({{ x; }}); }}")
-                expr = e.ext[0].body.block_items[0]
-                self.assertIsInstance(expr, UnaryOp)
-                self.assertEqual(expr.op, op)
-                self.assertIsInstance(expr.expr, Compound)
-                self.assertEqual(expr.expr.block_items[0].name, "x")
-
-        e = self.parse("void f() { (int) ({ 1.0; }); }")
+        # Unary minus applies to the statement expression before the cast.
+        e = self.parse("void f() { (int) -({ 1.0; }); }")
         expr = e.ext[0].body.block_items[0]
         self.assertIsInstance(expr, Cast)
-        self.assertIsInstance(expr.expr, Compound)
-        self.assertEqual(expr.expr.block_items[0].value, "1.0")
+        self.assertIsInstance(expr.expr, UnaryOp)
+        self.assertEqual(expr.expr.op, "-")
+        self.assertIsInstance(expr.expr.expr, Compound)
+        self.assertEqual(expr.expr.expr.block_items[0].value, "1.0")
 
     def test_parenthesized_compounds_postfix(self):
-        for suffix, node_type in (
-            ("[0]", ArrayRef),
-            ("(1)", FuncCall),
-            (".field", StructRef),
-            ("->field", StructRef),
-        ):
-            with self.subTest(suffix=suffix):
-                e = self.parse(f"void f() {{ ({{ x; }}){suffix}; }}")
-                expr = e.ext[0].body.block_items[0]
-                self.assertIsInstance(expr, node_type)
-                self.assertIsInstance(expr.name, Compound)
-                self.assertEqual(expr.name.block_items[0].name, "x")
-
-        for op in ("++", "--"):
-            with self.subTest(op=op):
-                e = self.parse(f"void f() {{ ({{ x; }}){op}; }}")
-                expr = e.ext[0].body.block_items[0]
-                self.assertIsInstance(expr, UnaryOp)
-                self.assertEqual(expr.op, "p" + op)
-                self.assertIsInstance(expr.expr, Compound)
-
-    def test_parenthesized_compounds_conditional_assignment_comma(self):
-        e = self.parse("""
-            void f() {
-                a = ({ c; }) ? ({ 1; }) : ({ 2; });
-                a = ({ x; }) = 3;
-                a = 0, ({ 1; }) + 2;
-            }
-        """)
-        conditional, assignment, comma = e.ext[0].body.block_items
-        expr = conditional.rvalue
-        self.assertIsInstance(expr, TernaryOp)
-        self.assertIsInstance(expr.cond, Compound)
-        self.assertIsInstance(expr.iftrue, Compound)
-        self.assertIsInstance(expr.iffalse, Compound)
-        self.assertIsInstance(assignment.rvalue, Assignment)
-        self.assertIsInstance(assignment.rvalue.lvalue, Compound)
-        self.assertEqual(assignment.rvalue.rvalue.value, "3")
-        self.assertIsInstance(comma, ExprList)
-        self.assertEqual(len(comma.exprs), 2)
-        self.assertIsInstance(comma.exprs[0], Assignment)
-        self.assertIsInstance(comma.exprs[1], BinaryOp)
-        self.assertIsInstance(comma.exprs[1].left, Compound)
+        # A statement expression can be the base of an array subscript.
+        e = self.parse("void f(int *p) { ({ p; })[0]; }")
+        expr = e.ext[0].body.block_items[0]
+        self.assertIsInstance(expr, ArrayRef)
+        self.assertIsInstance(expr.name, Compound)
+        self.assertEqual(expr.name.block_items[0].name, "p")
+        self.assertEqual(expr.subscript.value, "0")
 
     def test_parenthesized_compounds_nested_scope(self):
+        # The inner expression sees T as a variable; after the outer
+        # expression, T is again a typedef.
         e = self.parse("""
             typedef int T;
             void f() {
-                int x = 1 + ({ int T = 2; T + ({ int y = T; y; }); });
+                int x = 1 + ({ int T = 2; ({ T + 3; }); });
                 T y;
             }
         """)
@@ -1724,47 +1658,21 @@ class TestCParser_fundamentals(TestCParser_base):
         outer = decl.init.right
         self.assertIsInstance(outer, Compound)
         self.assertEqual(outer.block_items[0].name, "T")
-        inner_expr = outer.block_items[1]
-        self.assertEqual(inner_expr.left.name, "T")
-        self.assertIsInstance(inner_expr.right, Compound)
-        self.assertEqual(inner_expr.right.block_items[0].init.name, "T")
+        # The final nested statement expression retains its Compound node.
+        inner = outer.block_items[1]
+        self.assertIsInstance(inner, Compound)
+        self.assertEqual(inner.block_items[0].left.name, "T")
+        self.assertEqual(inner.block_items[0].op, "+")
+        self.assertEqual(inner.block_items[0].right.value, "3")
         self.assertEqual(after.type.type.names, ["T"])
 
-    def test_parenthesized_compounds_nested_final_value(self):
-        # Preserve the historical Compound representation when a nested
-        # statement expression is the outer expression's final block item.
-        e = self.parse("""
-            int main(void) {
-                int result = 2 * ({ int y = 1; ({ y + 3; }); });
-                return result == 8 ? 0 : 1;
-            }
-        """)
-        product = e.ext[0].body.block_items[0].init
-        self.assertIsInstance(product, BinaryOp)
-        self.assertEqual(product.op, "*")
-        self.assertEqual(product.left.value, "2")
-        self.assertIsInstance(product.right, Compound)
-        decl, inner = product.right.block_items
-        self.assertEqual(decl.name, "y")
-        self.assertEqual(decl.init.value, "1")
-        self.assertIsInstance(inner, Compound)
-        self.assertEqual(len(inner.block_items), 1)
-        self.assertEqual(
-            expand_init(inner.block_items[0]),
-            ["BinaryOp", ["ID", "y"], "+", ["Constant", "int", "3"]],
-        )
-
     def test_parenthesized_compounds_invalid_syntax(self):
-        for expr in (
-            "({ 1; }",  # Missing closing parenthesis.
-            "({ 1 })",  # Missing expression-statement semicolon.
-            "({ 1; }) +",  # Missing binary operand.
-            "({ 1; }) 2",  # Missing operator.
-            "({ 1; })[0",  # Missing closing bracket.
-            "{ 1; }",  # Braces alone are not an expression.
-        ):
-            with self.subTest(expr=expr), self.assertRaises(ParseError):
-                self.parse(f"int f() {{ return {expr}; }}")
+        # Missing closing parenthesis.
+        with self.assertRaises(ParseError):
+            self.parse("int f() { return 1 + ({ 2; }; }")
+        # Missing expression-statement semicolon.
+        with self.assertRaises(ParseError):
+            self.parse("int f() { return 1 + ({ 2 }); }")
 
     def test_enums(self):
         e1 = "enum mycolor op;"

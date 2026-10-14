@@ -358,6 +358,45 @@ class TestAttributeGeneration(unittest.TestCase):
         )
         self.assertIn("B [[vendor::enumerator()]]", generated)
 
+    def test_shared_attributed_definition(self):
+        # The shared type's attributes are emitted once; name attributes
+        # still belong to their individual declarators.
+        generated = self.round_trip("""
+            [[maybe_unused]] struct S { int x; } [[vendor::type]]
+                a [[vendor::first]], b [[vendor::second]];
+        """)
+        self.assertEqual(generated.count("struct S"), 1)
+        self.assertEqual(generated.count("[[maybe_unused]]"), 1)
+        self.assertEqual(generated.count("[[vendor::type]]"), 1)
+        self.assertIn("a [[vendor::first]], b [[vendor::second]];", generated)
+        first, second = c_parser.CParser(dialect="c23").parse(generated).ext
+        self.assertIs(first.type.type.type, second.type.type.type)
+
+    def test_shared_attributed_typedef(self):
+        # A pointer typedef must reuse the same union definition and retain
+        # its own pointer attribute when the declarations are grouped.
+        generated = self.round_trip("""
+            typedef union U { int x; } [[vendor::type]]
+                Value, * [[vendor::ptr]] Pointer;
+        """)
+        self.assertEqual(generated.count("union U"), 1)
+        self.assertEqual(generated.count("[[vendor::type]]"), 1)
+        self.assertIn("Value, * [[vendor::ptr]] Pointer;", generated)
+        value, pointer = c_parser.CParser(dialect="c23").parse(generated).ext
+        self.assertIs(value.type.type.type, pointer.type.type.type.type)
+
+    def test_separate_attributed_definitions(self):
+        # Identical anonymous definitions remain distinct types, even when
+        # their attributes also match.
+        generated = self.round_trip("""
+            struct { int x; } [[vendor::type]] a;
+            struct { int x; } [[vendor::type]] b;
+        """)
+        self.assertEqual(generated.count("struct"), 2)
+        self.assertEqual(generated.count("[[vendor::type]]"), 2)
+        first, second = c_parser.CParser(dialect="c23").parse(generated).ext
+        self.assertIsNot(first.type.type.type, second.type.type.type)
+
     def test_functions_and_type_operands(self):
         generated = self.round_trip("""
             [[nodiscard]] int f([[maybe_unused]] int x, [[vendor::arg]] int) [[unsequenced]] { return x; }

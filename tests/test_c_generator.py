@@ -542,6 +542,81 @@ class TestCtoC(unittest.TestCase):
             }
         """)
 
+    def test_statement_expression_return(self):
+        # A returned block needs the parentheses that make it an expression.
+        self._assert_ctoc_correct("int f(void) { return ({ int x = 1; x; }); }")
+
+    def test_statement_expression_subscript(self):
+        # Subscript brackets do not replace statement-expression parentheses.
+        self._assert_ctoc_correct("int f(int *a) { return a[({ 1; })]; }")
+
+    def test_statement_expression_assignment(self):
+        # GNU statement expressions can occur on either side of an assignment.
+        self._assert_ctoc_correct("void f(int x) { ({ x; }) = ({ 2; }); }")
+
+    def test_statement_expression_conditions(self):
+        # The enclosing condition parentheses must surround the complete ({...}).
+        self._assert_ctoc_correct("""
+            void f(int n) {
+                if (({ n; })) n--;
+                while (({ n > 0; })) n--;
+                do { n++; } while (({ n < 0; }));
+                switch (({ n; })) { case 0: break; }
+            }
+        """)
+
+    def test_statement_expression_for_clauses(self):
+        # All three for clauses are expression contexts, including the initializer.
+        source = """
+            void f(void) {
+                int i;
+                for (({ i = 0; }); ({ i < 2; }); ({ i++; })) {}
+            }
+        """
+        self._assert_ctoc_correct(source)
+        self._assert_ctoc_correct(source, reduce_parentheses=True)
+
+    def test_statement_expression_sizeof_and_array_bound(self):
+        # Both array bounds and sizeof operands need expression rendering.
+        self._assert_ctoc_correct("""
+            void f(void) {
+                int a[({ 3; })];
+                int size = sizeof(({ a[0]; }));
+            }
+        """)
+
+    def test_comma_expression_contexts(self):
+        # Bounds, assignment operands, and arguments need comma grouping;
+        # conditions, subscripts, and return expressions allow unwrapped commas.
+        generated = self._assert_ctoc_correct("""
+            int f(int x, int *p) {
+                int a[(1, 2)];
+                x = (1, 2);
+                f((1, 2), p);
+                if (x, p[0]) x = 1;
+                return p[x, 1], x;
+            }
+        """)
+        self.assertIn("a[(1, 2)]", generated)
+        self.assertIn("x = (1, 2);", generated)
+        self.assertIn("f((1, 2), p);", generated)
+        self.assertIn("if (x, p[0])", generated)
+        self.assertIn("return p[x, 1], x;", generated)
+
+    def test_comma_in_constant_expression_contexts(self):
+        # These grammar positions require parentheses around comma expressions,
+        # even though pycparser leaves constant-expression evaluation to callers.
+        self._assert_ctoc_correct("""
+            void f(void) {
+                _Static_assert((0, 1), "ok");
+                enum E { A = (1, 2) };
+                struct S { int bits : (1, 2); };
+                _Alignas((0, 8)) int x;
+                int a[3] = { [(0, 1)] = 1 };
+                switch (x) { case (0, 1): break; }
+            }
+        """)
+
     def test_comma_operator_funcarg(self):
         self._assert_ctoc_correct(r"""
             void f(int x) { return x; }
