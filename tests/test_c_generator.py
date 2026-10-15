@@ -1453,6 +1453,26 @@ struct S { [[deprecated]] int z _Pragma("member"); };""")
                     f'_Static_assert(1, {prefix}"hello world");\n',
                 )
 
+    def test_reduce_parentheses_unary_binary_operands(self):
+        snippets = [
+            "int x = a && !b && (!c || d);",
+            "int x = !a + !b;",
+            "int x = -a * +b;",
+            "int x = ~a | ~b;",
+            "int x = *p + sizeof(a);",
+            "int x = ++a + b--;",
+        ]
+        for src in snippets:
+            with self.subTest(src=src):
+                generated = self._assert_ctoc_correct(src, reduce_parentheses=True)
+                self.assertEqual(generated.count("("), src.count("("))
+
+        # Unary operators must not become simple in every context: postfix
+        # increment and address-of bind differently, and minus tokens can merge.
+        for src in ("void f() { (*p)++; }", "int x = -(-a);", "int x = -(a + b);"):
+            with self.subTest(src=src):
+                self._assert_ctoc_correct(src, reduce_parentheses=True)
+
     def test_reduce_parentheses_binaryops(self):
         c1 = "int x = a + b + c + d;"
         self.assertEqual(self._run_c_to_c(c1), "int x = ((a + b) + c) + d;\n")

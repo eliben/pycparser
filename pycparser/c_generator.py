@@ -165,8 +165,11 @@ class CGenerator:
                 not (
                     self._is_simple_node(d)
                     or self.reduce_parentheses
-                    and isinstance(d, c_ast.BinaryOp)
-                    and self.precedence_map[d.op] >= self.precedence_map[n.op]
+                    and (
+                        isinstance(d, c_ast.UnaryOp)
+                        or isinstance(d, c_ast.BinaryOp)
+                        and self.precedence_map[d.op] >= self.precedence_map[n.op]
+                    )
                 )
             ),
         )
@@ -183,8 +186,11 @@ class CGenerator:
                 not (
                     self._is_simple_node(d)
                     or self.reduce_parentheses
-                    and isinstance(d, c_ast.BinaryOp)
-                    and self.precedence_map[d.op] > self.precedence_map[n.op]
+                    and (
+                        isinstance(d, c_ast.UnaryOp)
+                        or isinstance(d, c_ast.BinaryOp)
+                        and self.precedence_map[d.op] > self.precedence_map[n.op]
+                    )
                 )
             ),
         )
