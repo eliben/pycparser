@@ -520,16 +520,12 @@ class CGenerator:
     def visit_Case(self, n: c_ast.Case) -> str:
         s = self._generate_attributes(n.attributes) + " " if n.attributes else ""
         s += "case " + self._visit_expr(n.expr) + ":\n"
-        for stmt in n.stmts:
-            s += self._generate_stmt(stmt, add_indent=True)
-        return s
+        return s + self._generate_body(n.stmts, add_indent=True)
 
     def visit_Default(self, n: c_ast.Default) -> str:
         s = self._generate_attributes(n.attributes) + " " if n.attributes else ""
         s += "default:\n"
-        for stmt in n.stmts:
-            s += self._generate_stmt(stmt, add_indent=True)
-        return s
+        return s + self._generate_body(n.stmts, add_indent=True)
 
     def visit_Label(self, n: c_ast.Label) -> str:
         s = self._generate_attributes(n.attributes) + " " if n.attributes else ""
@@ -606,18 +602,21 @@ class CGenerator:
             s += self._make_indent() + "}"
         return s
 
-    def _generate_body(self, nodes: list[c_ast.Node]) -> str:
-        """Emit block items or members, grouping shared type definitions.
+    def _generate_body(self, nodes: list[c_ast.Node], add_indent: bool = False) -> str:
+        """Emit statements or members, grouping shared type definitions.
 
         Callers handle braces and indentation levels; _generate_stmt supplies the
         punctuation for individual statements, declarations, and pragmas.
         """
+        indent = self._make_indent()
+        if add_indent:
+            indent += "  "
         parts: list[str] = []
         for item in self._coalesce_defined_types(nodes):
             if isinstance(item, list):
-                parts.append(self._make_indent() + self._visit_decl_group(item) + ";\n")
+                parts.append(indent + self._visit_decl_group(item) + ";\n")
             else:
-                parts.append(self._generate_stmt(item))
+                parts.append(self._generate_stmt(item, add_indent=add_indent))
         return "".join(parts)
 
     def _generate_enum_body(
