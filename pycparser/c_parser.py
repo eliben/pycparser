@@ -1453,15 +1453,29 @@ class CParser:
 
     def _parse_decl_suffixes(self, decl: c_ast.Node) -> c_ast.Node:
         """Parse a chain of array/function suffixes and attach them to decl."""
+        # Each suffix is spliced in just above the innermost TypeDecl, the way
+        # _type_modify_decl does it. Remember the splice point instead of
+        # walking the whole chain for every suffix, which is quadratic in the
+        # number of suffixes.
+        tail: Any = None
+        if not isinstance(decl, c_ast.TypeDecl):
+            tail = cast(Any, decl)
+            while not isinstance(tail.type, c_ast.TypeDecl):
+                tail = tail.type
         while True:
             if self._peek_type() == "LBRACKET":
-                decl = self._type_modify_decl(decl, self._parse_array_decl(decl))
-                continue
-            if self._peek_type() == "LPAREN":
-                func = self._parse_function_decl(decl)
-                decl = self._type_modify_decl(decl, func)
-                continue
-            break
+                modifier = cast(Any, self._parse_array_decl(decl))
+            elif self._peek_type() == "LPAREN":
+                modifier = cast(Any, self._parse_function_decl(decl))
+            else:
+                break
+            if tail is None:
+                modifier.type = decl
+                decl = modifier
+            else:
+                modifier.type = tail.type
+                tail.type = modifier
+            tail = modifier
         return decl
 
     # BNF: array_decl : '[' array_specifiers? assignment_expression? ']'
