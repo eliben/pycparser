@@ -59,6 +59,33 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("$dollar cent$", ["ID", "ID"])
         self.assertTokensTypes("i ^= 1;", ["ID", "XOREQUAL", "INT_CONST_DEC", "SEMI"])
 
+    def test_form_feed_and_vertical_tab_whitespace(self):
+        for whitespace in ("\f", "\v", " \t\f\v"):
+            with self.subTest(whitespace=repr(whitespace)):
+                self.clex.input(f"{whitespace}int{whitespace}x;{whitespace}\ny;")
+                tokens = token_list(self.clex)
+                self.assertEqual(
+                    [t.type for t in tokens], ["INT", "ID", "SEMI", "ID", "SEMI"]
+                )
+                self.assertEqual([t.value for t in tokens], ["int", "x", ";", "y", ";"])
+                self.assertEqual([t.lineno for t in tokens], [1, 1, 1, 2, 2])
+                self.assertEqual(tokens[0].column, len(whitespace) + 1)
+                self.assertEqual(tokens[1].column, 2 * len(whitespace) + 4)
+                self.assertEqual(tokens[3].column, 1)
+                self.assertTokensTypes(whitespace, [])
+
+    def test_form_feed_and_vertical_tab_in_literals(self):
+        for whitespace in ("\f", "\v"):
+            with self.subTest(whitespace=repr(whitespace)):
+                self.clex.input(f"\"a{whitespace}b\" '{whitespace}'")
+                tokens = token_list(self.clex)
+                self.assertEqual(
+                    [t.type for t in tokens], ["STRING_LITERAL", "CHAR_CONST"]
+                )
+                self.assertEqual(
+                    [t.value for t in tokens], [f'"a{whitespace}b"', f"'{whitespace}'"]
+                )
+
     def test_id_typeid(self):
         self.assertTokensTypes("myt", ["ID"])
         self.assertTokensTypes("mytype", ["TYPEID"])

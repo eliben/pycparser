@@ -130,7 +130,7 @@ class CLexer:
 
         while self._pos < n:
             match text[self._pos]:
-                case " " | "\t":
+                case " " | "\t" | "\f" | "\v":
                     self._pos += 1
                 case "\n":
                     self._lineno += 1
