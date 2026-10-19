@@ -121,9 +121,6 @@ class CParser:
     # ------------------------------------------------------------------
     # Scope and declaration helpers
     # ------------------------------------------------------------------
-    def _coord(self, lineno: int, column: int | None = None) -> Coord:
-        return Coord(file=self.clex.filename, line=lineno, column=column)
-
     def _parse_error(self, msg: str, coord: Coord | str | None) -> NoReturn:
         raise ParseError(f"{coord}: {msg}")
 
@@ -165,7 +162,7 @@ class CParser:
         return False
 
     def _lex_error_func(self, msg: str, line: int, column: int) -> None:
-        self._parse_error(msg, self._coord(line, column))
+        self._parse_error(msg, Coord(file=self.clex.filename, line=line, column=column))
 
     def _lex_on_lbrace_func(self) -> None:
         self._push_scope()
