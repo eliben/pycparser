@@ -62,13 +62,13 @@ class TestCLexerNoErrors(unittest.TestCase):
     def test_form_feed_and_vertical_tab_whitespace(self):
         self.clex.input("\fint\vx;\n \t\f\vy;")
         self.assertEqual(
-            token_list(self.clex),
+            [(t.type, t.value, t.lineno, t.column) for t in token_list(self.clex)],
             [
-                Token("INT", "int", 1, 2),
-                Token("ID", "x", 1, 6),
-                Token("SEMI", ";", 1, 7),
-                Token("ID", "y", 2, 5),
-                Token("SEMI", ";", 2, 6),
+                ("INT", "int", 1, 2),
+                ("ID", "x", 1, 6),
+                ("SEMI", ";", 1, 7),
+                ("ID", "y", 2, 5),
+                ("SEMI", ";", 2, 6),
             ],
         )
         self.assertTokensTypes(" \t\f\v", [])
@@ -76,10 +76,10 @@ class TestCLexerNoErrors(unittest.TestCase):
     def test_form_feed_and_vertical_tab_in_literals(self):
         self.clex.input("\"a\fb\" '\v'")
         self.assertEqual(
-            token_list(self.clex),
+            [(t.type, t.value, t.lineno, t.column) for t in token_list(self.clex)],
             [
-                Token("STRING_LITERAL", '"a\fb"', 1, 1),
-                Token("CHAR_CONST", "'\v'", 1, 7),
+                ("STRING_LITERAL", '"a\fb"', 1, 1),
+                ("CHAR_CONST", "'\v'", 1, 7),
             ],
         )
 
