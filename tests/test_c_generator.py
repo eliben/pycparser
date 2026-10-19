@@ -184,6 +184,98 @@ class TestCtoC(unittest.TestCase):
             declared_type(twins_ast.ext[0]), declared_type(twins_ast.ext[1])
         )
 
+    def test_switch_shared_type_definitions(self):
+        declarations = [
+            ("struct { int x; } a = {1}, b; b = a;", ["a", "b"]),
+            ("struct S { int x; } a = {1}, b; b = a;", ["a", "b"]),
+            ("union { int x; double y; } a = {1}, b; b = a;", ["a", "b"]),
+            ("union U { int x; double y; } a = {1}, b; b = a;", ["a", "b"]),
+            ("enum { ZERO, ONE } a = ONE, b = ZERO; b = a;", ["a", "b"]),
+            ("enum E { ZERO, ONE } a = ONE, b = ZERO; b = a;", ["a", "b"]),
+            (
+                (
+                    "typedef struct { int x; } A, *P, ARR[2]; "
+                    "A a = {1}; P p = &a; ARR arr; arr[0] = a;"
+                ),
+                ["A", "P", "ARR"],
+            ),
+            (
+                (
+                    "struct { int x; } a = {1}, *p = &a, arr[2] = {{2}}, "
+                    "(*fn)(void) = 0; p = &arr[0];"
+                ),
+                ["a", "p", "arr", "fn"],
+            ),
+            (
+                "_Alignas(16) const struct { int x; } a = {1}, *p = &a;",
+                ["a", "p"],
+            ),
+        ]
+        for label in ("case 0", "default"):
+            for declaration, names in declarations:
+                with self.subTest(label=label, declaration=declaration):
+                    # The null statement makes declarations after the label
+                    # valid before C23 too.
+                    src = (
+                        f"void f(int n) {{ switch (n) {{ {label}:; "
+                        f"{declaration} break; }} }}"
+                    )
+                    generated = self._assert_ctoc_correct(src)
+                    # Structural AST equality does not check whether the
+                    # declarators still share the same type-definition node.
+                    for text in (src, generated):
+                        ast = parse_to_ast(text)
+                        stmts = ast.ext[0].body.block_items[0].stmt.block_items[0].stmts
+                        decls = [
+                            stmt
+                            for stmt in stmts
+                            if isinstance(stmt, (c_ast.Decl, c_ast.Typedef))
+                            and stmt.name in names
+                        ]
+                        self.assertEqual([decl.name for decl in decls], names)
+                        for decl in decls[1:]:
+                            self.assertIs(declared_type(decls[0]), declared_type(decl))
+
+    def test_switch_separate_type_definitions(self):
+        for label in ("case 0", "default"):
+            with self.subTest(label=label):
+                src = (
+                    f"void f(int n) {{ switch (n) {{ {label}:; "
+                    "struct { int x; } a; struct { int x; } b; break; } }"
+                )
+                generated = self._assert_ctoc_correct(src)
+                ast = parse_to_ast(generated)
+                stmts = ast.ext[0].body.block_items[0].stmt.block_items[0].stmts
+                decls = [stmt for stmt in stmts if isinstance(stmt, c_ast.Decl)]
+                self.assertEqual([decl.name for decl in decls], ["a", "b"])
+                self.assertIsNot(declared_type(decls[0]), declared_type(decls[1]))
+
+    def test_switch_shared_type_definitions_after_fallthrough(self):
+        src = """
+            void f(int n) {
+                switch (n) {
+                case 0:
+                case 1:;
+                    struct { int x; } a = {1}, b;
+                    b = a;
+                    break;
+                default:;
+                    union { int x; } c = {2}, d;
+                    d = c;
+                    break;
+                }
+            }
+        """
+        generated = self._assert_ctoc_correct(src)
+        ast = parse_to_ast(generated)
+        labels = ast.ext[0].body.block_items[0].stmt.block_items
+        self.assertEqual(len(labels), 3)
+        self.assertEqual(labels[0].stmts, [])
+        for label in labels[1:]:
+            decls = [stmt for stmt in label.stmts if isinstance(stmt, c_ast.Decl)]
+            self.assertEqual(len(decls), 2)
+            self.assertIs(declared_type(decls[0]), declared_type(decls[1]))
+
     def test_complex_decls(self):
         self._assert_ctoc_correct("int** (*a)(void);")
         self._assert_ctoc_correct("int** (*a)(void*, int);")
