@@ -2472,6 +2472,24 @@ class TestCParser_fundamentals(TestCParser_base):
         # just make sure this doesn't raise ParseError
         self.parse(s4)
 
+    def test_struct_member_without_declarator(self):
+        # A lone type specifier is kept as the member's type, like float in
+        # s4 above. Specifiers that aren't IdentifierType nodes used to raise
+        # AttributeError out of parse().
+        decl = self.parse("struct s { _Atomic(int); };").ext[0]
+        (member,) = decl.type.decls
+        self.assertIsNone(member.name)
+        self.assertIsInstance(member.type, Typename)
+        self.assertEqual(member.type.quals, ["_Atomic"])
+
+        c23 = c_parser.CParser(dialect="c23")
+        decl = c23.parse("struct s { _BitInt(8); typeof(int); };").ext[0]
+        bitint, typeof = decl.type.decls
+        self.assertIsNone(bitint.name)
+        self.assertIsInstance(bitint.type, BitIntType)
+        self.assertIsNone(typeof.name)
+        self.assertIsInstance(typeof.type, TypeOf)
+
     def test_struct_members_namespace(self):
         """Tests that structure/union member names reside in a separate
         namespace and can be named after existing types.
