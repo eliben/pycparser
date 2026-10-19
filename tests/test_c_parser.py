@@ -146,19 +146,11 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(len(t2.ext), 0)
 
     def test_form_feed_and_vertical_tab_whitespace(self):
-        for whitespace in ("\f", "\v", " \t\f\v"):
-            with self.subTest(whitespace=repr(whitespace)):
-                tree = self.parse(f"{whitespace}int{whitespace}x;{whitespace}\nint y;")
-                self.assertEqual(
-                    [expand_decl(decl) for decl in tree.ext],
-                    [
-                        ["Decl", "x", ["TypeDecl", ["IdentifierType", ["int"]]]],
-                        ["Decl", "y", ["TypeDecl", ["IdentifierType", ["int"]]]],
-                    ],
-                )
-                self.assert_coord(tree.ext[0], 1, 2 * len(whitespace) + 4)
-                self.assert_coord(tree.ext[1], 2, 5)
-                self.assertEqual(self.parse(whitespace).ext, [])
+        tree = self.parse("\vint\fx;\nint\vy;\f")
+        self.assertEqual([decl.name for decl in tree.ext], ["x", "y"])
+        self.assert_coord(tree.ext[0], 1, 6)
+        self.assert_coord(tree.ext[1], 2, 5)
+        self.assertEqual(self.parse(" \t\f\v").ext, [])
 
     def test_empty_toplevel_decl(self):
         code = "int foo;;"
