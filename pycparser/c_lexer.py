@@ -21,6 +21,7 @@ class Token:
     value: str
     lineno: int
     column: int
+    filename: str
 
 
 class CLexer:
@@ -338,10 +339,10 @@ class CLexer:
 
         Expects tok_type/value and the absolute byte offset pos in the current
         input. Does not advance lexer state; callers manage _pos themselves.
-        Returns a Token with lineno/column computed from current line tracking.
+        Returns a Token with the current filename and line/column coordinates.
         """
         column = pos - self._line_start + 1
-        tok = Token(tok_type, value, self._lineno, column)
+        tok = Token(tok_type, value, self._lineno, column, self._filename)
         return tok
 
     def _error(self, msg: str, pos: int) -> None:

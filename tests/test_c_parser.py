@@ -112,7 +112,7 @@ class TestCParser_base(unittest.TestCase):
         self.assertEqual(node.coord.line, line)
         if column is not None:
             self.assertEqual(node.coord.column, column)
-        if file:
+        if file is not None:
             self.assertEqual(node.coord.file, file)
 
 
@@ -278,6 +278,53 @@ class TestCParser_fundamentals(TestCParser_base):
         """
         self.assert_coord(self.parse(t7).ext[0], 2, 31)
         self.assert_coord(self.parse(t7).ext[0].type, 2, 31)
+
+    def test_coords_included_initializers(self):
+        for value in ("1", '"value"', 'L"value"', 'u8"value"', 'u"value"', 'U"value"'):
+            with self.subTest(value=value):
+                declaration = "int a" if value == "1" else "char *a"
+                text = (
+                    f'# 1 "main.c"\n{declaration} =\n'
+                    '# 7 "value.h" 1\n'
+                    f"  {value}\n"
+                    '# 3 "main.c" 2\n;\n'
+                )
+                ast = self.parse(text)
+                self.assert_coord(ast.ext[0].init, 7, 3, "value.h")
+                self.assert_coord(ast.ext[0], 1, 5 if value == "1" else 6, "main.c")
+
+    def test_coords_adjacent_strings_across_files(self):
+        for filename in ("first.h", "", "main.c"):
+            with self.subTest(filename=filename):
+                text = (
+                    "char *a =\n"
+                    f'#line 7 "{filename}"\n  "first"\n'
+                    '#line 12 "second.h"\n    "second"\n'
+                    '#line 3 "main.c"\n;\n'
+                )
+                ast = self.parse(text, filename="main.c")
+                self.assertEqual(ast.ext[0].init.value, '"firstsecond"')
+                self.assert_coord(ast.ext[0].init, 7, 3, filename)
+
+    def test_coords_declarator_lookahead(self):
+        text = 'int (\n#line 7 "name.h"\n  value\n#line 3 "main.c"\n);\n'
+        ast = self.parse(text, filename="main.c")
+        self.assert_coord(ast.ext[0], 7, 3, "name.h")
+        self.assert_coord(ast.ext[0].type, 7, 3, "name.h")
+
+    def test_coords_error_after_declarator_lookahead(self):
+        text = 'int (\n#line 7 "name.h"\n  value unexpected\n#line 3 "main.c"\n);\n'
+        with self.assertRaises(ParseError) as error:
+            self.parse(text, filename="main.c")
+        self.assertEqual(str(error.exception), "name.h:7:9: before: unexpected")
+
+    def test_coords_compound_across_files(self):
+        text = 'void f(void) {\n#line 7 "body.h"\n  return;\n}\n'
+        ast = self.parse(text, filename="main.c")
+        self.assert_coord(ast.ext[0].body, 1, 14, "main.c")
+        self.assert_coord(ast.ext[0].body.block_items[0], 7, 3, "body.h")
+        ast = self.parse("int other;", filename="next.c")
+        self.assert_coord(ast.ext[0], 1, 5, "next.c")
 
     def test_forloop_coord(self):
         t = """\

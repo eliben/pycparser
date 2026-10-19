@@ -544,7 +544,7 @@ class CParser:
         self._tokens.reset(mark)
 
     def _tok_coord(self, tok: Token) -> Coord:
-        return self._coord(tok.lineno, tok.column)
+        return Coord(file=tok.filename, line=tok.lineno, column=tok.column)
 
     def _starts_declaration(self, tok: Token | None = None) -> bool:
         tok = tok or self._peek()

@@ -64,6 +64,24 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("mytype", ["TYPEID"])
         self.assertTokensTypes("mytype6 var", ["TYPEID", "ID"])
 
+    def test_token_filenames(self):
+        self.clex.input(
+            'int a;\n#line 7 "included.h"\n#pragma once\n#line 1 ""\nint b;',
+            filename="main.c",
+        )
+        tokens = token_list(self.clex)
+        self.assertEqual(
+            [tok.filename for tok in tokens],
+            ["main.c"] * 3 + ["included.h"] * 2 + [""] * 3,
+        )
+        self.assertEqual(tokens[3].type, "PPPRAGMA")
+        self.assertEqual(tokens[4].type, "PPPRAGMASTR")
+        self.assertIs(tokens[3].filename, tokens[4].filename)
+
+        self.clex.input("int c;", filename="next.c")
+        self.assertEqual(require_token(self.clex.token()).filename, "next.c")
+        self.assertEqual(tokens[0].filename, "main.c")
+
     def test_integer_constants(self):
         self.assertTokensTypes("12", ["INT_CONST_DEC"])
         self.assertTokensTypes("12u", ["INT_CONST_DEC"])
@@ -105,10 +123,10 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(
             token_list(self.clex),
             [
-                Token("INT_CONST_DEC", "1'000", 1, 1),
-                Token("PLUS", "+", 1, 6),
-                Token("INT_CONST_DEC", "2'000", 1, 7),
-                Token("INT_CONST_HEX", "0xAB'CD", 2, 1),
+                Token("INT_CONST_DEC", "1'000", 1, 1, filename=""),
+                Token("PLUS", "+", 1, 6, filename=""),
+                Token("INT_CONST_DEC", "2'000", 1, 7, filename=""),
+                Token("INT_CONST_HEX", "0xAB'CD", 2, 1, filename=""),
             ],
         )
 
@@ -127,7 +145,7 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(
             token_list(self.clex),
             [
-                Token("FLOAT_CONST", "1'2.3'4e-5'6DF", 1, 1),
+                Token("FLOAT_CONST", "1'2.3'4e-5'6DF", 1, 1, filename=""),
             ],
         )
 
@@ -136,20 +154,24 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(
             token_list(self.clex),
             [
-                Token("CHAR_CONST", "'1'", 1, 1),
-                Token("INT_CONST_DEC", "2", 1, 4),
-                Token("INT_CONST_DEC", "1'2", 1, 6),
-                Token("STRING_LITERAL", '"1\'2"', 1, 10),
+                Token("CHAR_CONST", "'1'", 1, 1, filename=""),
+                Token("INT_CONST_DEC", "2", 1, 4, filename=""),
+                Token("INT_CONST_DEC", "1'2", 1, 6, filename=""),
+                Token("STRING_LITERAL", '"1\'2"', 1, 10, filename=""),
             ],
         )
 
     def test_line_directive_digit_separators(self):
         self.clex.input('#line 1\'000 "file.c"\nvalue')
-        self.assertEqual(token_list(self.clex), [Token("ID", "value", 1000, 1)])
+        self.assertEqual(
+            token_list(self.clex), [Token("ID", "value", 1000, 1, filename="file.c")]
+        )
         self.assertEqual(self.clex.filename, "file.c")
 
         self.clex.input("#line 0'010\nvalue")
-        self.assertEqual(token_list(self.clex), [Token("ID", "value", 10, 1)])
+        self.assertEqual(
+            token_list(self.clex), [Token("ID", "value", 10, 1, filename="")]
+        )
 
     def test_bitint_constants(self):
         # Numeric regexes are shared, so even the legacy lexer recognizes
@@ -173,9 +195,9 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(
             token_list(self.clex),
             [
-                Token("INT_CONST_DEC", "42wb", 1, 1),
-                Token("PLUS", "+", 1, 5),
-                Token("INT_CONST_HEX", "0xffUWB", 1, 6),
+                Token("INT_CONST_DEC", "42wb", 1, 1, filename=""),
+                Token("PLUS", "+", 1, 5, filename=""),
+                Token("INT_CONST_HEX", "0xffUWB", 1, 6, filename=""),
             ],
         )
 
@@ -272,12 +294,12 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(
             token_list(c23),
             [
-                Token("FLOAT_CONST", "1.25df", 1, 1),
-                Token("FLOAT_CONST", "2.50dd", 2, 1),
-                Token("FLOAT_CONST", ".3dl", 3, 1),
-                Token("FLOAT_CONST", "4e+2DF", 4, 1),
-                Token("FLOAT_CONST", "5e-1DD", 5, 1),
-                Token("FLOAT_CONST", "6.DL", 6, 1),
+                Token("FLOAT_CONST", "1.25df", 1, 1, filename=""),
+                Token("FLOAT_CONST", "2.50dd", 2, 1, filename=""),
+                Token("FLOAT_CONST", ".3dl", 3, 1, filename=""),
+                Token("FLOAT_CONST", "4e+2DF", 4, 1, filename=""),
+                Token("FLOAT_CONST", "5e-1DD", 5, 1, filename=""),
+                Token("FLOAT_CONST", "6.DL", 6, 1, filename=""),
             ],
         )
 
@@ -285,9 +307,9 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(
             token_list(c23),
             [
-                Token("FLOAT_CONST", "1.25df", 1, 1),
-                Token("PLUS", "+", 1, 7),
-                Token("FLOAT_CONST", "2.50dd", 1, 8),
+                Token("FLOAT_CONST", "1.25df", 1, 1, filename=""),
+                Token("PLUS", "+", 1, 7, filename=""),
+                Token("FLOAT_CONST", "2.50dd", 1, 8, filename=""),
             ],
         )
 
@@ -297,14 +319,16 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(
             token_list(self.clex),
             [
-                Token("FLOAT_CONST", "1.25df", 1, 1),
-                Token("FLOAT_CONST", "2.dd", 1, 8),
-                Token("FLOAT_CONST", "3e1DL", 1, 13),
+                Token("FLOAT_CONST", "1.25df", 1, 1, filename=""),
+                Token("FLOAT_CONST", "2.dd", 1, 8, filename=""),
+                Token("FLOAT_CONST", "3e1DL", 1, 13, filename=""),
             ],
         )
 
         self.clex.input(".5DD")
-        self.assertEqual(token_list(self.clex), [Token("FLOAT_CONST", ".5DD", 1, 1)])
+        self.assertEqual(
+            token_list(self.clex), [Token("FLOAT_CONST", ".5DD", 1, 1, filename="")]
+        )
 
     def test_c23_binary_floating_constants(self):
         c23 = CLexer(
@@ -318,12 +342,12 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(
             token_list(c23),
             [
-                Token("FLOAT_CONST", "1.5", 1, 1),
-                Token("FLOAT_CONST", "1.5f", 2, 1),
-                Token("FLOAT_CONST", ".5L", 3, 1),
-                Token("HEX_FLOAT_CONST", "0x1.fp+2F", 4, 1),
-                Token("HEX_FLOAT_CONST", "0x1p0", 5, 1),
-                Token("ID", "dd", 5, 6),
+                Token("FLOAT_CONST", "1.5", 1, 1, filename=""),
+                Token("FLOAT_CONST", "1.5f", 2, 1, filename=""),
+                Token("FLOAT_CONST", ".5L", 3, 1, filename=""),
+                Token("HEX_FLOAT_CONST", "0x1.fp+2F", 4, 1, filename=""),
+                Token("HEX_FLOAT_CONST", "0x1p0", 5, 1, filename=""),
+                Token("ID", "dd", 5, 6, filename=""),
             ],
         )
 
@@ -362,8 +386,8 @@ class TestCLexerNoErrors(unittest.TestCase):
                     self.assertEqual(
                         token_list(self.clex),
                         [
-                            Token(token_type, literal, 2, 3),
-                            Token("SEMI", ";", 2, 3 + len(literal)),
+                            Token(token_type, literal, 2, 3, filename=""),
+                            Token("SEMI", ";", 2, 3 + len(literal), filename=""),
                         ],
                     )
 
