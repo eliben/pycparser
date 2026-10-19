@@ -151,6 +151,7 @@ class CGenerator:
 
     def visit_BinaryOp(self, n: c_ast.BinaryOp) -> str:
         # Note: all binary operators are left-to-right associative
+        # Unary expressions bind more tightly than every binary operator.
         #
         # If `n.left.op` has a stronger or equally binding precedence in
         # comparison to `n.op`, no parenthesis are needed for the left:
@@ -165,8 +166,11 @@ class CGenerator:
                 not (
                     self._is_simple_node(d)
                     or self.reduce_parentheses
-                    and isinstance(d, c_ast.BinaryOp)
-                    and self.precedence_map[d.op] >= self.precedence_map[n.op]
+                    and (
+                        isinstance(d, c_ast.UnaryOp)
+                        or isinstance(d, c_ast.BinaryOp)
+                        and self.precedence_map[d.op] >= self.precedence_map[n.op]
+                    )
                 )
             ),
         )
@@ -183,8 +187,11 @@ class CGenerator:
                 not (
                     self._is_simple_node(d)
                     or self.reduce_parentheses
-                    and isinstance(d, c_ast.BinaryOp)
-                    and self.precedence_map[d.op] > self.precedence_map[n.op]
+                    and (
+                        isinstance(d, c_ast.UnaryOp)
+                        or isinstance(d, c_ast.BinaryOp)
+                        and self.precedence_map[d.op] > self.precedence_map[n.op]
+                    )
                 )
             ),
         )

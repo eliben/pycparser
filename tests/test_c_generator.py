@@ -1453,6 +1453,62 @@ struct S { [[deprecated]] int z _Pragma("member"); };""")
                     f'_Static_assert(1, {prefix}"hello world");\n',
                 )
 
+    def test_reduce_parentheses_logical_not(self):
+        # Issue #425: keep the grouping of ||, but omit parentheses around !.
+        src = "void f(void) { if (a && !b && (!c || d)) {} }"
+        generated = self._assert_ctoc_correct(src, reduce_parentheses=True)
+        self.assertIn("if (a && !b && (!c || d))", generated)
+
+    def test_reduce_parentheses_unary_operands(self):
+        operands = (
+            "!a",
+            "~a",
+            "+a",
+            "-a",
+            "*p",
+            "&a",
+            "++a",
+            "--a",
+            "a++",
+            "a--",
+            "sizeof(a)",
+            "sizeof(int)",
+            "_Alignof(int)",
+        )
+        for operand in operands:
+            for left, right in ((operand, "b"), ("b", operand)):
+                with self.subTest(left=left, right=right):
+                    src = f"int x = {left} + {right};"
+                    generated = self._assert_ctoc_correct(src, reduce_parentheses=True)
+                    self.assertEqual(generated, src + "\n")
+                    default_left = f"({left})" if left == operand else left
+                    default_right = f"({right})" if right == operand else right
+                    self.assertEqual(
+                        self._run_c_to_c(src),
+                        f"int x = {default_left} + {default_right};\n",
+                    )
+
+    def test_reduce_parentheses_unary_grouping(self):
+        snippets = (
+            "int x = !(a && b) && c;",
+            "int x = ~(a | b) & c;",
+            "int x = -(a + b) * c;",
+            "int x = a - -b;",
+            "int x = a & &b;",
+            "int x = -(-a);",
+            "int x = +(+a);",
+            "int x = (*p)++;",
+            "int x = (*p)--;",
+            "int x = (*p)[i];",
+            "int x = (*p).field;",
+            "int x = (*fp)();",
+        )
+        for src in snippets:
+            with self.subTest(src=src):
+                self._assert_ctoc_correct(src)
+                generated = self._assert_ctoc_correct(src, reduce_parentheses=True)
+                self.assertEqual(generated, src + "\n")
+
     def test_reduce_parentheses_binaryops(self):
         c1 = "int x = a + b + c + d;"
         self.assertEqual(self._run_c_to_c(c1), "int x = ((a + b) + c) + d;\n")
