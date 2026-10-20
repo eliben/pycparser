@@ -166,7 +166,9 @@ class CLexer:
             if match := _attribute_end.match(text, pos):
                 self._in_attribute = False
                 return self._attribute_token("ATTRIBUTE_END", match.end())
-        elif match := _attribute_begin.match(text, pos):
+        # Only run regexp check if we are starting an attribute, to avoid
+        # costly regex matching for every token.
+        elif text[pos] == "[" and (match := _attribute_begin.match(text, pos)):
             self._in_attribute = True
             return self._attribute_token("ATTRIBUTE_BEGIN", match.end())
         # We pick the longest match between:
