@@ -132,6 +132,24 @@ class CParser:
             raise ParseError("Unmatched '}'")
         self._scope_stack.pop()
 
+    def _pop_for_scope(self, scope: dict[str, bool]) -> None:
+        """Pop the scope of a for loop's declaration.
+
+        Block scopes are popped by the lexer when it sees the '}', but a for
+        loop ends with its statement, and the parser may already have peeked
+        one token past it (e.g. looking for an 'else'). That token was lexed
+        while the loop's names were visible, so classify it again. If it was
+        a brace, the lexer already pushed or popped a scope on top of ours.
+        """
+        if any(s is scope for s in self._scope_stack):
+            self._scope_stack = [s for s in self._scope_stack if s is not scope]
+        else:
+            # A peeked '}' popped this scope instead of its own block's
+            self._pop_scope()
+        for tok in self._tokens.lookahead():
+            if tok is not None and tok.type in ("ID", "TYPEID") and tok.value in scope:
+                tok.type = "TYPEID" if self._is_type_in_scope(tok.value) else "ID"
+
     def _add_typedef_name(self, name: str, coord: Coord | None) -> None:
         """Add a new typedef name (ie a TYPEID) to the current scope"""
         if not self._scope_stack[-1].get(name, True):
@@ -1895,6 +1913,9 @@ class CParser:
             case "FOR":
                 self._expect("LPAREN")
                 if self._peek_type() == "_STATIC_ASSERT" or self._starts_declaration():
+                    # Names declared here are scoped to the loop (C11 6.8.5p5)
+                    self._push_scope()
+                    scope = self._scope_stack[-1]
                     decls = self._parse_declaration()
                     init = c_ast.DeclList(decls, self._tok_coord(tok))
                     cond = self._parse_expression_opt()
@@ -1902,6 +1923,7 @@ class CParser:
                     next_expr = self._parse_expression_opt()
                     self._expect("RPAREN")
                     stmt = self._parse_pragmacomp_or_statement()
+                    self._pop_for_scope(scope)
                     return c_ast.For(init, cond, next_expr, stmt, self._tok_coord(tok))
 
                 init = self._parse_expression_opt()
@@ -2677,6 +2699,10 @@ class _TokenStream:
             return None
         self._fill(k)
         return self._buffer[self._index + k - 1]
+
+    def lookahead(self) -> list[Token | None]:
+        """Return the tokens that were peeked at but not consumed yet."""
+        return self._buffer[self._index :]
 
     def next(self) -> Token | None:
         """Consume a single token and return it."""
