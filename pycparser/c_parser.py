@@ -663,10 +663,12 @@ class CParser:
         following '{' for a compound literal. Returns None if no parenthesized
         type name is present.
         """
-        mark = self._mark()
-        lparen_tok = self._accept("LPAREN")
-        if lparen_tok is None:
+        lparen_tok = self._peek()
+        # Avoid saving a backtracking position when there's no '(' to parse.
+        if lparen_tok is None or lparen_tok.type != "LPAREN":
             return None
+        mark = self._mark()
+        self._advance()
         if not self._starts_declaration():
             self._reset(mark)
             return None
