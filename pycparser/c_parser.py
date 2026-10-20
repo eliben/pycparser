@@ -1618,6 +1618,9 @@ class CParser:
         if self._is_inferred_auto(spec):
             self._parse_error("Cannot infer the type of a parameter", spec_coord)
 
+        if "typedef" in spec["storage"]:
+            self._parse_error("Invalid storage class for a parameter", spec_coord)
+
         if not spec["type"]:
             spec["type"] = [c_ast.IdentifierType(["int"], coord=spec_coord)]
 
