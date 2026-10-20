@@ -1192,8 +1192,6 @@ class TestCParser_fundamentals(TestCParser_base):
             self.parse("void f(void) { (_Atomic(void(int)))0; }")
 
     def test_typedef_parameter_declaration(self):
-        # Only register is a valid storage class for a parameter; typedef must
-        # raise ParseError instead of tripping an internal assertion.
         self.assertRaises(ParseError, self.parse, "void f(typedef int x);")
         self.assertRaises(ParseError, self.parse, "void f(typedef int);")
         self.assertRaises(ParseError, self.parse, "void f(int a, typedef int *p);")
