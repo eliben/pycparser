@@ -6527,10 +6527,8 @@ class TestCParser_typenames(TestCParser_base):
         #     ['UnaryOp', 'sizeof', ['ID', 'TT']])
 
     def test_parameter_reuse_typedef_name(self):
-        # identifiers can be reused as parameter names; parameter name scope
-        # begins and ends with the function body; it's important that TT is
-        # used immediately before the LBRACE or after the RBRACE, to test
-        # a corner case
+        # Parameter names shadow typedef names inside the body; the outer
+        # typedef is visible again immediately after the function.
         s1 = r"""
             typedef char TT;
             void foo(unsigned TT, TT bar) {
@@ -6555,10 +6553,8 @@ class TestCParser_typenames(TestCParser_base):
             ],
         )
 
-        # the scope of a parameter name in a function declaration ends at the
-        # end of the declaration...so it is effectively never used; it's
-        # important that TT is used immediately after the declaration, to
-        # test a corner case
+        # Parameter names in a prototype must not hide typedef names in
+        # subsequent declarations.
         s2 = r"""
             typedef char TT;
             void foo(unsigned TT, TT bar);

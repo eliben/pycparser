@@ -442,8 +442,8 @@ class CParser:
             else:
                 fixed_decl = self._fix_decl_name_type(declaration, spec["type"])
 
-            # Add the type name defined by typedef to a
-            # symbol table (for usage in the lexer)
+            # Record the declared name in the current scope so the parser can
+            # distinguish identifiers from typedef names.
             if typedef_namespace:
                 if is_typedef:
                     self._add_typedef_name(fixed_decl.name, fixed_decl.coord)
@@ -866,8 +866,8 @@ class CParser:
     def _parse_function_definition(
         self, spec: "_DeclSpec", decl: c_ast.Node
     ) -> c_ast.Node:
-        # Parameters, old-style parameter declarations, and the outermost body
-        # share a scope. Opening it here does not depend on lexing the '{'.
+        # Open the scope shared by parameters, old-style parameter declarations,
+        # and the outermost body.
         self._push_scope()
         if isinstance(decl, c_ast.FuncDecl) and decl.args is not None:
             for param in decl.args.params:
