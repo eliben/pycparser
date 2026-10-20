@@ -6603,6 +6603,33 @@ class TestCParser_typenames(TestCParser_base):
             """
         self.assertIsInstance(self.parse(s1), FileAST)
 
+    def test_for_loop_reuse_typedef_name(self):
+        # the scope of a name declared in a for loop's init clause ends with
+        # the loop; the 'if' and the block test the corner case where the
+        # parser has already peeked at the token after the loop
+        for stmt in ("TT++;", "if (TT) TT++;", "{ TT++; }", "if (TT) TT++; {}"):
+            with self.subTest(stmt=stmt):
+                s = rf"""
+                    typedef char TT;
+                    void foo(void) {{
+                      for (unsigned TT = 0; TT < 3; TT++) {stmt}
+                      TT * x;
+                    }}
+                    """
+                items = self.parse(s).ext[1].body.block_items
+                self.assertEqual(
+                    expand_decl(items[0].init.decls[0]),
+                    ["Decl", "TT", ["TypeDecl", ["IdentifierType", ["unsigned"]]]],
+                )
+                self.assertEqual(
+                    expand_decl(items[-1]),
+                    [
+                        "Decl",
+                        "x",
+                        ["PtrDecl", ["TypeDecl", ["IdentifierType", ["TT"]]]],
+                    ],
+                )
+
     def test_samescope_reuse_name(self):
         # a typedef name cannot be reused as an object name in the same scope
         s1 = r"""
