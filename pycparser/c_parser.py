@@ -2675,12 +2675,15 @@ class _TokenStream:
         """
         if k <= 0:
             return None
-        self._fill(k)
-        return self._buffer[self._index + k - 1]
+        pos = self._index + k - 1
+        if pos >= len(self._buffer):
+            self._fill(k)
+        return self._buffer[pos]
 
     def next(self) -> Token | None:
         """Consume a single token and return it."""
-        self._fill(1)
+        if self._index >= len(self._buffer):
+            self._fill(1)
         tok = self._buffer[self._index]
         self._index += 1
         return tok
