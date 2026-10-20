@@ -6,6 +6,7 @@
 # Eli Bendersky [https://eli.thegreenplace.net/]
 # License: BSD
 # ------------------------------------------------------------------------------
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import (
     Any,
@@ -76,8 +77,8 @@ class CParser:
     ) -> None:
         self.clex: CLexer = lexer(
             error_func=self._lex_error_func,
-            on_lbrace_func=self._lex_on_lbrace_func,
-            on_rbrace_func=self._lex_on_rbrace_func,
+            on_lbrace_func=lambda: None,
+            on_rbrace_func=lambda: None,
             type_lookup_func=self._lex_type_lookup_func,
             dialect=dialect,
         )
@@ -92,7 +93,8 @@ class CParser:
         # If 'name' is not a key in _scope_stack[n] then 'name' was not defined
         # in this scope at all.
         self._scope_stack: list[dict[str, bool]] = [{}]
-        self._tokens: _TokenStream = _TokenStream(self.clex)
+        self._in_attribute = False
+        self._tokens: _TokenStream = _TokenStream(self._read_token)
 
     def parse(
         self, text: str, filename: str = "", debug: bool = False
@@ -109,8 +111,9 @@ class CParser:
             Deprecated debug flag (unused); for backwards compatibility.
         """
         self._scope_stack = [{}]
+        self._in_attribute = False
         self.clex.input(text, filename)
-        self._tokens = _TokenStream(self.clex)
+        self._tokens = _TokenStream(self._read_token)
 
         ast = self._parse_translation_unit_or_empty()
         tok = self._peek()
@@ -135,11 +138,11 @@ class CParser:
     def _pop_for_scope(self, scope: dict[str, bool]) -> None:
         """Pop the scope of a for loop's declaration.
 
-        Block scopes are popped by the lexer when it sees the '}', but a for
+        Block scopes are popped by the token reader when it sees '}', but a for
         loop ends with its statement, and the parser may already have peeked
         one token past it (e.g. looking for an 'else'). That token was lexed
         while the loop's names were visible, so classify it again. If it was
-        a brace, the lexer already pushed or popped a scope on top of ours.
+        a brace, the reader already pushed or popped a scope on top of ours.
         """
         if any(s is scope for s in self._scope_stack):
             self._scope_stack = [s for s in self._scope_stack if s is not scope]
@@ -181,12 +184,6 @@ class CParser:
 
     def _lex_error_func(self, msg: str, line: int, column: int) -> None:
         self._parse_error(msg, Coord(file=self.clex.filename, line=line, column=column))
-
-    def _lex_on_lbrace_func(self) -> None:
-        self._push_scope()
-
-    def _lex_on_rbrace_func(self) -> None:
-        self._pop_scope()
 
     def _lex_type_lookup_func(self, name: str) -> bool:
         """Looks up types that were previously defined with typedef.
@@ -513,6 +510,26 @@ class CParser:
     # ------------------------------------------------------------------
     # Token helpers
     # ------------------------------------------------------------------
+    def _read_token(self) -> Token | None:
+        """Read a fresh token and apply brace scope changes.
+
+        Scope changes still happen when filling lookahead, before tokens are
+        consumed. Keeping them here transfers ownership from the lexer without
+        changing that timing.
+        """
+        tok = self.clex.token()
+        if tok is not None:
+            if tok.type == "ATTRIBUTE_BEGIN":
+                self._in_attribute = True
+            elif tok.type == "ATTRIBUTE_END":
+                self._in_attribute = False
+            elif not self._in_attribute:
+                if tok.type == "LBRACE":
+                    self._push_scope()
+                elif tok.type == "RBRACE":
+                    self._pop_scope()
+        return tok
+
     def _peek(self, k: int = 1) -> Token | None:
         """Return the k-th next token without consuming it (1-based)."""
         return self._tokens.peek(k)
@@ -2678,13 +2695,10 @@ _STARTS_STATEMENT = {
 
 
 class _TokenStream:
-    """Wraps a lexer to provide convenient, buffered access to the underlying
-    token stream. The lexer is expected to be initialized with the input
-    string already.
-    """
+    """Provides buffered access to tokens supplied by a reader."""
 
-    def __init__(self, lexer: CLexer) -> None:
-        self._lexer = lexer
+    def __init__(self, read_token: Callable[[], Token | None]) -> None:
+        self._read_token = read_token
         self._buffer: list[Token | None] = []
         self._index = 0
 
@@ -2724,7 +2738,7 @@ class _TokenStream:
 
     def _fill(self, n: int) -> None:
         while len(self._buffer) < self._index + n:
-            tok = self._lexer.token()
+            tok = self._read_token()
             self._buffer.append(tok)
             if tok is None:
                 break
