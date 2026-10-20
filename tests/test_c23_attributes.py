@@ -6,19 +6,11 @@ from tests.test_c_generator import compare_asts
 
 
 class TestAttributeLexer(unittest.TestCase):
-    def test_opaque_arguments_and_scope_callbacks(self):
-        scopes = []
-
+    def test_opaque_arguments(self):
         def error(msg, line, column):
             self.fail(msg)
 
-        lexer = CLexer(
-            error,
-            lambda: scopes.append("{"),
-            lambda: scopes.append("}"),
-            lambda name: True,
-            dialect="c23",
-        )
+        lexer = CLexer(error, dialect="c23")
         lexer.input('[[int::return({if (x) [y];}, 1\'000, "[)]")]] {}')
         tokens = list(iter(lexer.token, None))
         self.assertEqual(
@@ -37,15 +29,9 @@ class TestAttributeLexer(unittest.TestCase):
         self.assertEqual(tokens[1].value, "int")
         self.assertEqual(tokens[3].value, "return")
         self.assertEqual(tokens[4].value, '{if (x) [y];}, 1\'000, "[)]"')
-        self.assertEqual(scopes, ["{", "}"])
 
     def test_multiline_coordinates_and_input_reset(self):
-        lexer = CLexer(
-            lambda msg, line, column: self.fail(msg),
-            lambda: None,
-            lambda: None,
-            lambda name: False,
-        )
+        lexer = CLexer(lambda msg, line, column: self.fail(msg))
         lexer.input('[\n[deprecated(\n"old"\n)]\n] int x;')
         tokens = list(iter(lexer.token, None))
         self.assertEqual((tokens[0].lineno, tokens[0].column), (1, 1))

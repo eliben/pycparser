@@ -30,19 +30,8 @@ class TestCLexerNoErrors(unittest.TestCase):
     def error_func(self, msg, line, column):
         self.fail(msg)
 
-    def on_lbrace_func(self):
-        pass
-
-    def on_rbrace_func(self):
-        pass
-
-    def type_lookup_func(self, typ):
-        return typ.startswith("mytype")
-
     def setUp(self):
-        self.clex = CLexer(
-            self.error_func, lambda: None, lambda: None, self.type_lookup_func
-        )
+        self.clex = CLexer(self.error_func)
 
     def assertTokensTypes(self, str, types):
         self.clex.input(str)
@@ -59,10 +48,11 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("$dollar cent$", ["ID", "ID"])
         self.assertTokensTypes("i ^= 1;", ["ID", "XOREQUAL", "INT_CONST_DEC", "SEMI"])
 
-    def test_id_typeid(self):
-        self.assertTokensTypes("myt", ["ID"])
-        self.assertTokensTypes("mytype", ["TYPEID"])
-        self.assertTokensTypes("mytype6 var", ["TYPEID", "ID"])
+    def test_typedef_names_are_identifiers(self):
+        self.assertTokensTypes(
+            "typedef int T; T value;",
+            ["TYPEDEF", "INT", "ID", "SEMI", "ID", "ID", "SEMI"],
+        )
 
     def test_token_filenames(self):
         self.clex.input(
@@ -211,19 +201,13 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("_Generic", ["_GENERIC"])
         self.assertTokensTypes("_Generic_value _generic", ["ID", "ID"])
 
-    def test_c23_keywords_and_typedef_lookup(self):
+    def test_c23_keywords(self):
         source = (
             "bool alignas alignof static_assert thread_local true false nullptr "
             "constexpr typeof typeof_unqual _BitInt _Decimal32 _Decimal64 "
             "_Decimal128 _Imaginary bool_value True nullptr_t"
         )
-        c23 = CLexer(
-            self.error_func,
-            lambda: None,
-            lambda: None,
-            lambda name: True,
-            dialect="c23",
-        )
+        c23 = CLexer(self.error_func, dialect="c23")
         expected = [
             "_BOOL",
             "_ALIGNAS",
@@ -241,9 +225,9 @@ class TestCLexerNoErrors(unittest.TestCase):
             "_DECIMAL64",
             "_DECIMAL128",
             "_IMAGINARY",
-            "TYPEID",
-            "TYPEID",
-            "TYPEID",
+            "ID",
+            "ID",
+            "ID",
         ]
         # input() must preserve the dialect, and selecting it must not affect
         # another lexer's keyword map.
@@ -258,9 +242,6 @@ class TestCLexerNoErrors(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unknown dialect"):
             CLexer(
                 self.error_func,
-                lambda: None,
-                lambda: None,
-                self.type_lookup_func,
                 dialect="c99",  # ty: ignore[invalid-argument-type]
             )
 
@@ -283,13 +264,7 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("0x0666e+3", ["INT_CONST_HEX", "PLUS", "INT_CONST_DEC"])
 
     def test_c23_decimal_floating_constants(self):
-        c23 = CLexer(
-            self.error_func,
-            lambda: None,
-            lambda: None,
-            self.type_lookup_func,
-            dialect="c23",
-        )
+        c23 = CLexer(self.error_func, dialect="c23")
         c23.input("1.25df\n2.50dd\n.3dl\n4e+2DF\n5e-1DD\n6.DL")
         self.assertEqual(
             token_list(c23),
@@ -331,13 +306,7 @@ class TestCLexerNoErrors(unittest.TestCase):
         )
 
     def test_c23_binary_floating_constants(self):
-        c23 = CLexer(
-            self.error_func,
-            lambda: None,
-            lambda: None,
-            self.type_lookup_func,
-            dialect="c23",
-        )
+        c23 = CLexer(self.error_func, dialect="c23")
         c23.input("1.5\n1.5f\n.5L\n0x1.fp+2F\n0x1p0dd")
         self.assertEqual(
             token_list(c23),
@@ -407,20 +376,6 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes(
             r"'\u' '\U' '\u123'", ["CHAR_CONST", "CHAR_CONST", "INT_CONST_CHAR"]
         )
-
-    def test_on_rbrace_lbrace(self):
-        braces = []
-
-        def on_lbrace():
-            braces.append("{")
-
-        def on_rbrace():
-            braces.append("}")
-
-        clex = CLexer(self.error_func, on_lbrace, on_rbrace, self.type_lookup_func)
-        clex.input("hello { there } } and again }}{")
-        token_list(clex)
-        self.assertEqual(braces, ["{", "}", "}", "}", "}", "{"])
 
     def test_string_literal(self):
         self.assertTokensTypes('"a string"', ["STRING_LITERAL"])
@@ -753,22 +708,8 @@ class TestCLexerErrors(unittest.TestCase):
     def error_func(self, msg, line, column):
         self.error = msg
 
-    def on_lbrace_func(self):
-        pass
-
-    def on_rbrace_func(self):
-        pass
-
-    def type_lookup_func(self, typ):
-        return False
-
     def setUp(self):
-        self.clex = CLexer(
-            self.error_func,
-            self.on_lbrace_func,
-            self.on_rbrace_func,
-            self.type_lookup_func,
-        )
+        self.clex = CLexer(self.error_func)
         self.error = ""
 
     def assertLexerError(self, str, error_like):

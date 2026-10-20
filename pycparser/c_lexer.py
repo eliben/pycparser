@@ -27,31 +27,23 @@ class Token:
 class CLexer:
     """A standalone lexer for C.
 
-    The lexer takes the following callback functions as parameters during
-    construction:
+    Constructor parameters:
         error_func:
             Called with (msg, line, column) on lexing errors.
-        on_lbrace_func:
-            Called when an LBRACE token is produced (used for scope tracking).
-        on_rbrace_func:
-            Called when an RBRACE token is produced (used for scope tracking).
-        type_lookup_func:
-            Called with an identifier name; expected to return True if it is
-            a typedef name and should be tokenized as TYPEID.
         dialect:
             "legacy" preserves the existing keyword set. "c23" also recognizes
             C23 keywords and predefined constants.
 
     Call input(text) to initialize lexing, and then keep calling token() to
     get the next token, until it returns None (at end of input).
+
+    Non-keyword identifiers are emitted as ID tokens. The parser handles
+    scopes and classifies typedef names as TYPEID.
     """
 
     def __init__(
         self,
         error_func: Callable[[str, int, int], None],
-        on_lbrace_func: Callable[[], None],
-        on_rbrace_func: Callable[[], None],
-        type_lookup_func: Callable[[str], bool],
         *,
         dialect: Dialect = "legacy",
     ) -> None:
@@ -64,9 +56,6 @@ class CLexer:
             self._keyword_map.update(_c23_keywords)
 
         self.error_func = error_func
-        self.on_lbrace_func = on_lbrace_func
-        self.on_rbrace_func = on_rbrace_func
-        self.type_lookup_func = type_lookup_func
         self._init_state()
 
     def input(self, text: str, filename: str = "") -> None:
@@ -169,8 +158,8 @@ class CLexer:
         text = self._lexdata
         pos = self._pos
         # Attribute arguments are balanced token sequences, not C expressions.
-        # Keep them opaque so keyword spellings and braces neither require C
-        # expression syntax nor trigger the parser's scope callbacks.
+        # Keep them opaque so the parser does not interpret their contents as
+        # C expressions or declarations.
         if self._in_attribute:
             if text[pos] == "(":
                 return self._attribute_arguments()
@@ -238,22 +227,11 @@ class CLexer:
                 tok_type = (
                     "ID" if self._in_attribute else self._keyword_map.get(value, "ID")
                 )
-                if (
-                    not self._in_attribute
-                    and tok_type == "ID"
-                    and self.type_lookup_func(value)
-                ):
-                    tok_type = "TYPEID"
             case _:
                 assert_never(action)
 
         tok = self._make_token(tok_type, value, pos)
         self._pos += length
-
-        if tok.type == "LBRACE" and not self._in_attribute:
-            self.on_lbrace_func()
-        elif tok.type == "RBRACE" and not self._in_attribute:
-            self.on_rbrace_func()
 
         return tok
 
@@ -279,8 +257,8 @@ class CLexer:
         the outer parentheses. A stack tracks the expected closing delimiters
         for nested (), [], and {}. Comments and quoted literals are skipped
         while balancing, but preserved in the token value. This bypasses normal
-        token classification and brace callbacks, keeping arbitrary attribute
-        arguments separate from C expressions and scope tracking.
+        token classification, keeping arbitrary attribute arguments separate
+        from C expressions and scope tracking.
 
         Report malformed clauses at the opening parenthesis. If the error
         callback returns, consume the remaining input and return None.

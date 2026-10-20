@@ -77,9 +77,6 @@ class CParser:
     ) -> None:
         self.clex: CLexer = lexer(
             error_func=self._lex_error_func,
-            on_lbrace_func=lambda: None,
-            on_rbrace_func=lambda: None,
-            type_lookup_func=lambda name: False,
             dialect=dialect,
         )
         self._dialect = dialect
@@ -94,7 +91,7 @@ class CParser:
         # in this scope at all.
         self._scope_stack: list[dict[str, bool]] = [{}]
         self._last_classified_token: Token | None = None
-        self._tokens: _TokenStream = _TokenStream(self._read_token)
+        self._tokens: _TokenStream = _TokenStream(self.clex.token)
 
     def parse(
         self, text: str, filename: str = "", debug: bool = False
@@ -113,7 +110,7 @@ class CParser:
         self._scope_stack = [{}]
         self._last_classified_token = None
         self.clex.input(text, filename)
-        self._tokens = _TokenStream(self._read_token)
+        self._tokens = _TokenStream(self.clex.token)
 
         ast = self._parse_translation_unit_or_empty()
         tok = self._peek()
@@ -132,28 +129,9 @@ class CParser:
         self._last_classified_token = None
 
     def _pop_scope(self) -> None:
-        if len(self._scope_stack) <= 1:
-            raise ParseError("Unmatched '}'")
+        assert len(self._scope_stack) > 1, "Cannot pop the global scope"
         self._scope_stack.pop()
         self._last_classified_token = None
-
-    def _pop_for_scope(self, scope: dict[str, bool]) -> None:
-        """Pop the scope of a for loop's declaration.
-
-        Block scopes are popped by the token reader when it sees '}', but a for
-        loop ends with its statement, and the parser may already have peeked
-        one token past it (e.g. looking for an 'else'). That token was lexed
-        while the loop's names were visible, so classify it again. If it was
-        a brace, the reader already pushed or popped a scope on top of ours.
-        """
-        if any(s is scope for s in self._scope_stack):
-            self._scope_stack = [s for s in self._scope_stack if s is not scope]
-        else:
-            # A peeked '}' popped this scope instead of its own block's
-            self._pop_scope()
-        for tok in self._tokens.lookahead():
-            if tok is not None and tok.type in ("ID", "TYPEID") and tok.value in scope:
-                tok.type = "TYPEID" if self._is_type_in_scope(tok.value) else "ID"
 
     def _add_typedef_name(self, name: str, coord: Coord | None) -> None:
         """Add a new typedef name (ie a TYPEID) to the current scope"""
@@ -188,13 +166,6 @@ class CParser:
 
     def _lex_error_func(self, msg: str, line: int, column: int) -> None:
         self._parse_error(msg, Coord(file=self.clex.filename, line=line, column=column))
-
-    def _lex_type_lookup_func(self, name: str) -> bool:
-        """Looks up types that were previously defined with typedef.
-
-        Passed to the lexer for recognizing identifiers that are types.
-        """
-        return self._is_type_in_scope(name)
 
     # To understand what's going on here, read sections A.8.5 and
     # A.8.6 of K&R2 very carefully.
@@ -514,10 +485,6 @@ class CParser:
     # ------------------------------------------------------------------
     # Token helpers
     # ------------------------------------------------------------------
-    def _read_token(self) -> Token | None:
-        """Read a fresh token without changing parser scopes."""
-        return self.clex.token()
-
     def _peek(self, k: int = 1) -> Token | None:
         """Return the k-th next token without consuming it (1-based)."""
         tok = self._tokens.peek(k)
@@ -2706,10 +2673,6 @@ class _TokenStream:
             return None
         self._fill(k)
         return self._buffer[self._index + k - 1]
-
-    def lookahead(self) -> list[Token | None]:
-        """Return the tokens that were peeked at but not consumed yet."""
-        return self._buffer[self._index :]
 
     def next(self) -> Token | None:
         """Consume a single token and return it."""
