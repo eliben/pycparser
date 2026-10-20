@@ -699,8 +699,30 @@ class CGenerator:
             s += " ".join(n.storage) + " "
         if n.align:
             s += " ".join(self.visit(align) for align in n.align) + " "
-        s += self._generate_type(n.type)
+        if isinstance(
+            n.type, (c_ast.TypeDecl, c_ast.PtrDecl, c_ast.ArrayDecl, c_ast.FuncDecl)
+        ):
+            s += self._generate_type(n.type)
+        else:
+            # Members without declarators carry their specifier directly;
+            # their qualifiers have not been copied onto a TypeDecl.
+            if n.quals:
+                s += " ".join(n.quals) + " "
+            s += self._generate_type_specifier(n.type)
         return s
+
+    def _generate_type_specifier(self, n: c_ast.Node) -> str:
+        if isinstance(n, c_ast.AttributedType):
+            return (
+                self._generate_type_specifier(n.type).rstrip()
+                + " "
+                + self._generate_attributes(n.attributes)
+            )
+        if isinstance(n, c_ast.Typename) and "_Atomic" in n.quals:
+            # A bare _Atomic(T) still has its Typename wrapper. Preserve the
+            # specifier syntax, which also keeps atomic pointers unambiguous.
+            return "_Atomic(" + self.visit(n) + ")"
+        return self._generate_type(n)
 
     def _generate_type(
         self,

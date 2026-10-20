@@ -1095,6 +1095,22 @@ struct S { [[deprecated]] int z _Pragma("member"); };""")
             } node;
             """)
 
+    def test_atomic_members_without_declarators(self):
+        parser = c_parser.CParser(dialect="c23")
+        source = """
+            struct s {
+                _Atomic(int);
+                const _Atomic(volatile int *);
+                _Atomic(int) [[deprecated]];
+            };
+        """
+        ast = parser.parse(source)
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(
+            compare_asts(ast, parser.parse(generated)),
+            f"{source!r} != {generated!r}",
+        )
+
     def test_atomic_specifier_qualifiers(self):
         # Issue #433: qualifiers outside _Atomic(T) apply to T itself.
         cases = [
