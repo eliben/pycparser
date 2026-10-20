@@ -90,7 +90,9 @@ class CParser:
         # If 'name' is not a key in _scope_stack[n] then 'name' was not defined
         # in this scope at all.
         self._scope_stack: list[dict[str, bool]] = [{}]
-        self._last_classified_token: Token | None = None
+        # Cache the token already checked for typedef-name status to avoid repeated
+        # lookups when peeking or consuming. Cleared when scopes or bindings change.
+        self._typedef_checked_token: Token | None = None
         self._tokens: _TokenStream = _TokenStream(self.clex.token)
 
     def parse(
@@ -108,7 +110,7 @@ class CParser:
             Deprecated debug flag (unused); for backwards compatibility.
         """
         self._scope_stack = [{}]
-        self._last_classified_token = None
+        self._typedef_checked_token = None
         self.clex.input(text, filename)
         self._tokens = _TokenStream(self.clex.token)
 
@@ -126,12 +128,12 @@ class CParser:
 
     def _push_scope(self) -> None:
         self._scope_stack.append({})
-        self._last_classified_token = None
+        self._typedef_checked_token = None
 
     def _pop_scope(self) -> None:
         assert len(self._scope_stack) > 1, "Cannot pop the global scope"
         self._scope_stack.pop()
-        self._last_classified_token = None
+        self._typedef_checked_token = None
 
     def _add_typedef_name(self, name: str, coord: Coord | None) -> None:
         """Add a new typedef name (ie a TYPEID) to the current scope"""
@@ -141,7 +143,7 @@ class CParser:
                 coord,
             )
         self._scope_stack[-1][name] = True
-        self._last_classified_token = None
+        self._typedef_checked_token = None
 
     def _add_identifier(self, name: str, coord: Coord | None) -> None:
         """Add a new object, function, or enum member name (ie an ID) to the
@@ -153,7 +155,7 @@ class CParser:
                 coord,
             )
         self._scope_stack[-1][name] = False
-        self._last_classified_token = None
+        self._typedef_checked_token = None
 
     def _is_type_in_scope(self, name: str) -> bool:
         """Is *name* a typedef-name in the current scope?"""
@@ -488,17 +490,17 @@ class CParser:
     def _peek(self, k: int = 1) -> Token | None:
         """Return the k-th next token without consuming it (1-based)."""
         tok = self._tokens.peek(k)
-        if tok is not self._last_classified_token:
-            self._classify_token(tok)
+        if tok is not self._typedef_checked_token:
+            self._classify_identifier(tok)
         return tok
 
-    def _classify_token(self, tok: Token | None) -> None:
+    def _classify_identifier(self, tok: Token | None) -> None:
         # Buffered identifiers are interpreted in the current scope, including
         # after backtracking. Peeking and consuming can reuse the classification
         # until a scope or binding changes.
         if tok is not None and tok.type in {"ID", "TYPEID"}:
             tok.type = "TYPEID" if self._is_type_in_scope(tok.value) else "ID"
-        self._last_classified_token = tok
+        self._typedef_checked_token = tok
 
     def _peek_type(self, k: int = 1) -> str | None:
         """Return the type of the k-th next token, or None if absent (1-based)."""
@@ -509,8 +511,8 @@ class CParser:
         tok = self._tokens.next()
         if tok is None:
             self._parse_error("At end of input", self.clex.filename)
-        if tok is not self._last_classified_token:
-            self._classify_token(tok)
+        if tok is not self._typedef_checked_token:
+            self._classify_identifier(tok)
         return tok
 
     def _accept(self, token_type: str) -> Token | None:
