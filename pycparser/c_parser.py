@@ -79,7 +79,7 @@ class CParser:
             error_func=self._lex_error_func,
             on_lbrace_func=lambda: None,
             on_rbrace_func=lambda: None,
-            type_lookup_func=self._lex_type_lookup_func,
+            type_lookup_func=lambda name: False,
             dialect=dialect,
         )
         self._dialect = dialect
@@ -93,7 +93,7 @@ class CParser:
         # If 'name' is not a key in _scope_stack[n] then 'name' was not defined
         # in this scope at all.
         self._scope_stack: list[dict[str, bool]] = [{}]
-        self._in_attribute = False
+        self._last_classified_token: Token | None = None
         self._tokens: _TokenStream = _TokenStream(self._read_token)
 
     def parse(
@@ -111,7 +111,7 @@ class CParser:
             Deprecated debug flag (unused); for backwards compatibility.
         """
         self._scope_stack = [{}]
-        self._in_attribute = False
+        self._last_classified_token = None
         self.clex.input(text, filename)
         self._tokens = _TokenStream(self._read_token)
 
@@ -129,11 +129,13 @@ class CParser:
 
     def _push_scope(self) -> None:
         self._scope_stack.append({})
+        self._last_classified_token = None
 
     def _pop_scope(self) -> None:
         if len(self._scope_stack) <= 1:
             raise ParseError("Unmatched '}'")
         self._scope_stack.pop()
+        self._last_classified_token = None
 
     def _pop_for_scope(self, scope: dict[str, bool]) -> None:
         """Pop the scope of a for loop's declaration.
@@ -161,6 +163,7 @@ class CParser:
                 coord,
             )
         self._scope_stack[-1][name] = True
+        self._last_classified_token = None
 
     def _add_identifier(self, name: str, coord: Coord | None) -> None:
         """Add a new object, function, or enum member name (ie an ID) to the
@@ -172,6 +175,7 @@ class CParser:
                 coord,
             )
         self._scope_stack[-1][name] = False
+        self._last_classified_token = None
 
     def _is_type_in_scope(self, name: str) -> bool:
         """Is *name* a typedef-name in the current scope?"""
@@ -511,28 +515,20 @@ class CParser:
     # Token helpers
     # ------------------------------------------------------------------
     def _read_token(self) -> Token | None:
-        """Read a fresh token and apply brace scope changes.
-
-        Scope changes still happen when filling lookahead, before tokens are
-        consumed. Keeping them here transfers ownership from the lexer without
-        changing that timing.
-        """
-        tok = self.clex.token()
-        if tok is not None:
-            if tok.type == "ATTRIBUTE_BEGIN":
-                self._in_attribute = True
-            elif tok.type == "ATTRIBUTE_END":
-                self._in_attribute = False
-            elif not self._in_attribute:
-                if tok.type == "LBRACE":
-                    self._push_scope()
-                elif tok.type == "RBRACE":
-                    self._pop_scope()
-        return tok
+        """Read a fresh token without changing parser scopes."""
+        return self.clex.token()
 
     def _peek(self, k: int = 1) -> Token | None:
         """Return the k-th next token without consuming it (1-based)."""
-        return self._tokens.peek(k)
+        tok = self._tokens.peek(k)
+        # Buffered identifiers are interpreted in the current scope, including
+        # after backtracking. Repeated peeks can reuse the classification until
+        # a scope or binding changes.
+        if tok is not self._last_classified_token:
+            if tok is not None and tok.type in {"ID", "TYPEID"}:
+                tok.type = "TYPEID" if self._is_type_in_scope(tok.value) else "ID"
+            self._last_classified_token = tok
+        return tok
 
     def _peek_type(self, k: int = 1) -> str | None:
         """Return the type of the k-th next token, or None if absent (1-based)."""
@@ -540,11 +536,11 @@ class CParser:
         return tok.type if tok is not None else None
 
     def _advance(self) -> Token:
-        tok = self._tokens.next()
+        tok = self._peek()
         if tok is None:
             self._parse_error("At end of input", self.clex.filename)
-        else:
-            return tok
+        self._tokens.next()
+        return tok
 
     def _accept(self, token_type: str) -> Token | None:
         """Conditionally consume next token, only if it's of token_type.
@@ -736,18 +732,18 @@ class CParser:
             while self._peek_type() != "ATTRIBUTE_END":
                 if self._accept("COMMA"):
                     continue
-                name = self._expect("ID")
+                name = self._parse_identifier_or_typeid()
                 namespace = None
                 if self._accept("COLONCOLON"):
-                    namespace = name.value
-                    name = self._expect("ID")
+                    namespace = name.name
+                    name = self._parse_identifier_or_typeid()
                 arguments = self._accept("ATTRIBUTE_ARGUMENTS")
                 attributes.append(
                     c_ast.Attribute(
-                        name.value,
+                        name.name,
                         namespace,
                         arguments.value if arguments is not None else None,
-                        self._tok_coord(name),
+                        name.coord,
                     )
                 )
                 if not self._accept("COMMA"):
@@ -853,7 +849,6 @@ class CParser:
             #
             # These get an implicit 'int' return type.
             decl = self._parse_id_declarator()
-            param_decls = None
             if self._peek_type() != "LBRACE":
                 self._parse_error("Invalid function definition", decl.coord)
             spec: _DeclSpec = {
@@ -864,13 +859,7 @@ class CParser:
                 "function": [],
                 "type_attributes": [],
             }
-            func = self._build_function_definition(
-                spec=spec,
-                decl=decl,
-                param_decls=param_decls,
-                body=self._parse_compound_statement(),
-            )
-            return [func]
+            return [self._parse_function_definition(spec, decl)]
 
         # From here on, parsing a standard declatation/definition.
         spec, saw_type, spec_coord = self._parse_declaration_specifiers(
@@ -888,20 +877,9 @@ class CParser:
         decl = self._parse_id_declarator()
 
         if self._peek_type() == "LBRACE" or self._starts_declaration():
-            param_decls = None
-            if self._starts_declaration():
-                param_decls = self._parse_declaration_list()
-            if self._peek_type() != "LBRACE":
-                self._parse_error("Invalid function definition", decl.coord)
             if not spec["type"]:
                 spec["type"] = [c_ast.IdentifierType(["int"], coord=spec_coord)]
-            func = self._build_function_definition(
-                spec=spec,
-                decl=decl,
-                param_decls=param_decls,
-                body=self._parse_compound_statement(),
-            )
-            return [func]
+            return [self._parse_function_definition(spec, decl)]
 
         decl_dict: _DeclInfo = {"decl": decl}
         if self._accept("EQUALS"):
@@ -909,6 +887,26 @@ class CParser:
         decls = self._parse_init_declarator_list(first=decl_dict)
         decls = self._build_declarations(spec=spec, decls=decls, typedef_namespace=True)
         return self._parse_declaration_end(decls)
+
+    def _parse_function_definition(
+        self, spec: "_DeclSpec", decl: c_ast.Node
+    ) -> c_ast.Node:
+        # Parameters, old-style parameter declarations, and the outermost body
+        # share a scope. Opening it here does not depend on lexing the '{'.
+        self._push_scope()
+        if isinstance(decl, c_ast.FuncDecl) and decl.args is not None:
+            for param in decl.args.params:
+                name = getattr(param, "name", None)
+                if name:
+                    self._add_identifier(name, param.coord)
+        param_decls = (
+            self._parse_declaration_list() if self._starts_declaration() else None
+        )
+        if self._peek_type() != "LBRACE":
+            self._parse_error("Invalid function definition", decl.coord)
+        body = self._parse_compound_statement(new_scope=False)
+        self._pop_scope()
+        return self._build_function_definition(spec, decl, param_decls, body)
 
     # ------------------------------------------------------------------
     # Declarations
@@ -1575,14 +1573,6 @@ class CParser:
             attributes=self._parse_attribute_specifier_sequence(),
         )
 
-        if self._peek_type() == "LBRACE" and func.args is not None:
-            for param in func.args.params:
-                if isinstance(param, c_ast.EllipsisParam):
-                    break
-                name = getattr(param, "name", None)
-                if name:
-                    self._add_identifier(name, param.coord)
-
         return func
 
     # BNF: pointer : '*' type_qualifier_list? pointer?
@@ -1836,12 +1826,16 @@ class CParser:
         return items
 
     # BNF: compound_statement : '{' block_item_list? '}'
-    def _parse_compound_statement(self) -> c_ast.Node:
+    def _parse_compound_statement(self, *, new_scope: bool = True) -> c_ast.Node:
         lbrace_tok = self._expect("LBRACE")
-        if self._accept("RBRACE"):
-            return c_ast.Compound(block_items=None, coord=self._tok_coord(lbrace_tok))
-        block_items = self._parse_block_item_list()
-        self._expect("RBRACE")
+        if new_scope:
+            self._push_scope()
+        block_items = None
+        if not self._accept("RBRACE"):
+            block_items = self._parse_block_item_list()
+            self._expect("RBRACE")
+        if new_scope:
+            self._pop_scope()
         return c_ast.Compound(
             block_items=block_items, coord=self._tok_coord(lbrace_tok)
         )
@@ -1929,7 +1923,6 @@ class CParser:
                 if self._peek_type() == "_STATIC_ASSERT" or self._starts_declaration():
                     # Names declared here are scoped to the loop (C11 6.8.5p5)
                     self._push_scope()
-                    scope = self._scope_stack[-1]
                     decls = self._parse_declaration()
                     init = c_ast.DeclList(decls, self._tok_coord(tok))
                     cond = self._parse_expression_opt()
@@ -1937,7 +1930,7 @@ class CParser:
                     next_expr = self._parse_expression_opt()
                     self._expect("RPAREN")
                     stmt = self._parse_pragmacomp_or_statement()
-                    self._pop_for_scope(scope)
+                    self._pop_scope()
                     return c_ast.For(init, cond, next_expr, stmt, self._tok_coord(tok))
 
                 init = self._parse_expression_opt()
@@ -2273,7 +2266,7 @@ class CParser:
         return c_ast.ID(tok.value, self._tok_coord(tok))
 
     # BNF: identifier_or_typeid : ID | TYPEID
-    def _parse_identifier_or_typeid(self) -> c_ast.Node:
+    def _parse_identifier_or_typeid(self) -> c_ast.ID:
         tok = self._advance()
         if tok.type not in {"ID", "TYPEID"}:
             self._parse_error("Expected identifier", self._tok_coord(tok))

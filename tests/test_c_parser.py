@@ -6619,6 +6619,53 @@ class TestCParser_typenames(TestCParser_base):
             ["Decl", "x", ["PtrDecl", ["TypeDecl", ["IdentifierType", ["TT"]]]]],
         )
 
+    def test_buffered_identifiers_across_statement_expression_scope(self):
+        # Scanning the parenthesized declarator reads through the inner block
+        # before parsing it. Its T must still be interpreted in the right scope.
+        tree = self.parse("""
+            typedef char T;
+            void f(void) {
+                int (a[sizeof(({ int T = 0; T++; T; }))]);
+                T *x;
+            }
+        """)
+        array, pointer = tree.ext[1].body.block_items
+        inner = array.type.dim.expr.block_items
+        self.assertEqual(inner[1].expr.name, "T")
+        self.assertEqual(
+            expand_decl(pointer),
+            ["Decl", "x", ["PtrDecl", ["TypeDecl", ["IdentifierType", ["T"]]]]],
+        )
+
+    def test_function_returning_function_pointer_parameter_scope(self):
+        tree = self.parse("""
+            typedef int T;
+            typedef int U;
+            int (*f(int T))(int U) {
+                T++;
+                U value = 0;
+                return 0;
+            }
+            T x;
+        """)
+        body = tree.ext[2].body.block_items
+        self.assertEqual(body[0].expr.name, "T")
+        self.assertEqual(body[1].type.type.names, ["U"])
+        self.assertEqual(tree.ext[-1].type.type.names, ["T"])
+
+    def test_old_style_parameter_scope(self):
+        tree = self.parse("""
+            int f(x)
+                int x;
+            {
+                return x;
+            }
+            typedef int x;
+        """)
+        self.assertEqual(tree.ext[0].param_decls[0].name, "x")
+        self.assertIsInstance(tree.ext[1], Typedef)
+        self.assertEqual(tree.ext[1].name, "x")
+
     def test_for_loop_scope_before_closing_brace(self):
         # Looking for an else peeks at the function's closing brace. Both the
         # loop's TT and the function's TT must go out of scope.
