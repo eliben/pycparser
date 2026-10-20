@@ -488,14 +488,17 @@ class CParser:
     def _peek(self, k: int = 1) -> Token | None:
         """Return the k-th next token without consuming it (1-based)."""
         tok = self._tokens.peek(k)
-        # Buffered identifiers are interpreted in the current scope, including
-        # after backtracking. Repeated peeks can reuse the classification until
-        # a scope or binding changes.
         if tok is not self._last_classified_token:
-            if tok is not None and tok.type in {"ID", "TYPEID"}:
-                tok.type = "TYPEID" if self._is_type_in_scope(tok.value) else "ID"
-            self._last_classified_token = tok
+            self._classify_token(tok)
         return tok
+
+    def _classify_token(self, tok: Token | None) -> None:
+        # Buffered identifiers are interpreted in the current scope, including
+        # after backtracking. Peeking and consuming can reuse the classification
+        # until a scope or binding changes.
+        if tok is not None and tok.type in {"ID", "TYPEID"}:
+            tok.type = "TYPEID" if self._is_type_in_scope(tok.value) else "ID"
+        self._last_classified_token = tok
 
     def _peek_type(self, k: int = 1) -> str | None:
         """Return the type of the k-th next token, or None if absent (1-based)."""
@@ -503,10 +506,11 @@ class CParser:
         return tok.type if tok is not None else None
 
     def _advance(self) -> Token:
-        tok = self._peek()
+        tok = self._tokens.next()
         if tok is None:
             self._parse_error("At end of input", self.clex.filename)
-        self._tokens.next()
+        if tok is not self._last_classified_token:
+            self._classify_token(tok)
         return tok
 
     def _accept(self, token_type: str) -> Token | None:
