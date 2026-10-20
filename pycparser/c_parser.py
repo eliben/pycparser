@@ -2100,12 +2100,15 @@ class CParser:
         if expr is None:
             expr = self._parse_primary_expression()
         while True:
-            if self._accept("LBRACKET"):
+            tok_type = self._peek_type()
+            if tok_type == "LBRACKET":
+                self._advance()
                 sub = self._parse_expression()
                 self._expect("RBRACKET")
                 expr = c_ast.ArrayRef(expr, sub, expr.coord)
                 continue
-            if self._accept("LPAREN"):
+            if tok_type == "LPAREN":
+                self._advance()
                 if self._peek_type() == "RPAREN":
                     self._advance()
                     args = None
@@ -2114,7 +2117,7 @@ class CParser:
                     self._expect("RPAREN")
                 expr = c_ast.FuncCall(expr, args, expr.coord)
                 continue
-            if self._peek_type() in {"PERIOD", "ARROW"}:
+            if tok_type in {"PERIOD", "ARROW"}:
                 op_tok = self._advance()
                 name_tok = self._advance()
                 if name_tok.type not in {"ID", "TYPEID"}:
@@ -2124,7 +2127,7 @@ class CParser:
                 field = c_ast.ID(name_tok.value, self._tok_coord(name_tok))
                 expr = c_ast.StructRef(expr, op_tok.value, field, expr.coord)
                 continue
-            if self._peek_type() in {"PLUSPLUS", "MINUSMINUS"}:
+            if tok_type in {"PLUSPLUS", "MINUSMINUS"}:
                 tok = self._advance()
                 expr = c_ast.UnaryOp("p" + tok.value, expr, expr.coord)
                 continue
