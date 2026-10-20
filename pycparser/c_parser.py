@@ -413,10 +413,7 @@ class CParser:
             # A similar problem can occur where the declaration ends up
             # looking like an abstract declarator.  Give it a name if this is
             # the case.
-            elif not isinstance(
-                decls[0]["decl"],
-                (c_ast.Enum, c_ast.Struct, c_ast.Union, c_ast.IdentifierType),
-            ):
+            elif isinstance(decls[0]["decl"], _DECLARATOR_NODES):
                 decls_0_tail = cast(Any, decls[0]["decl"])
                 while not isinstance(decls_0_tail, c_ast.TypeDecl):
                     decls_0_tail = decls_0_tail.type
@@ -448,10 +445,7 @@ class CParser:
                     coord=decl["decl"].coord,
                 )
 
-            if isinstance(
-                declaration.type,
-                (c_ast.Enum, c_ast.Struct, c_ast.Union, c_ast.IdentifierType),
-            ):
+            if not isinstance(declaration.type, _DECLARATOR_NODES):
                 fixed_decl = declaration
             else:
                 fixed_decl = self._fix_decl_name_type(declaration, spec["type"])
@@ -2566,6 +2560,9 @@ _TYPE_SPEC_SIMPLE = {
     "UNSIGNED",
     "__INT128",
 }
+
+# Struct members without declarators carry a type specifier directly instead.
+_DECLARATOR_NODES = (c_ast.TypeDecl, c_ast.PtrDecl, c_ast.ArrayDecl, c_ast.FuncDecl)
 
 _DECL_START = (
     _STORAGE_CLASS
