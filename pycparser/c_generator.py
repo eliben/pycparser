@@ -554,13 +554,16 @@ class CGenerator:
     def visit_Union(self, n: c_ast.Union) -> str:
         return self._generate_struct_union_enum(n, "union")
 
+    def visit_ArrayDesignator(self, n: c_ast.ArrayDesignator) -> str:
+        return "[" + self._visit_expr(n.expr) + "]"
+
     def visit_NamedInitializer(self, n: c_ast.NamedInitializer) -> str:
         s = ""
         for name in n.name:
             if isinstance(name, c_ast.ID):
                 s += "." + name.name
             else:
-                s += "[" + self._visit_expr(name) + "]"
+                s += self.visit(name)
         s += " = " + self._visit_expr(n.expr)
         return s
 

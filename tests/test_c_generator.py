@@ -524,6 +524,16 @@ class TestCtoC(unittest.TestCase):
             struct test test_var = {.i = 0, .test_i = {.k = 1}, .j = 2};
         """)
 
+    def test_field_and_array_designators(self):
+        # Issue #466: an identifier in brackets is an array index, not a field.
+        self._assert_ctoc_correct("""
+            enum { x };
+            struct A { int x; };
+            struct A a = {.x = 1};
+            int b[] = {[x] = 2};
+            struct A c[] = {[x].x = 3};
+        """)
+
     def test_expr_list_in_initializer_list(self):
         self._assert_ctoc_correct(r"""
         int main()

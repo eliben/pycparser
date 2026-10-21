@@ -77,6 +77,8 @@ def expand_init(init):
     if typ == NamedInitializer:
         des = [expand_init(dp) for dp in init.name]
         return (des, expand_init(init.expr))
+    elif typ == ArrayDesignator:
+        return ["ArrayDesignator", expand_init(init.expr)]
     elif typ in (InitList, ExprList):
         return [expand_init(expr) for expr in init.exprs]
     elif typ == Constant:
@@ -1474,7 +1476,10 @@ class TestCParser_fundamentals(TestCParser_base):
             expand_init(compound.init),
             [
                 ([["ID", "a"]], [["Constant", "int", "1"], ["Constant", "int", "2"]]),
-                ([["ID", "b"], ["Constant", "int", "0"]], ["ID", "t"]),
+                (
+                    [["ID", "b"], ["ArrayDesignator", ["Constant", "int", "0"]]],
+                    ["ID", "t"],
+                ),
             ],
         )
 
@@ -2957,9 +2962,16 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertEqual(
             self.get_decl_init(d2),
             [
-                ([["Constant", "int", "0"], ["ID", "a"]], [["Constant", "int", "1"]]),
                 (
-                    [["Constant", "int", "1"], ["ID", "a"], ["Constant", "int", "0"]],
+                    [["ArrayDesignator", ["Constant", "int", "0"]], ["ID", "a"]],
+                    [["Constant", "int", "1"]],
+                ),
+                (
+                    [
+                        ["ArrayDesignator", ["Constant", "int", "1"]],
+                        ["ID", "a"],
+                        ["ArrayDesignator", ["Constant", "int", "0"]],
+                    ],
                     ["Constant", "int", "2"],
                 ),
             ],
@@ -2975,6 +2987,22 @@ class TestCParser_fundamentals(TestCParser_base):
                 ([["ID", "b"]], ["Constant", "int", "5"]),
             ],
         )
+
+    def test_field_and_array_designators(self):
+        # Issue #466: .x and [x] must have distinct AST representations.
+        tree = self.parse("""
+            enum { x };
+            struct A { int x; };
+            struct A a = {.x = 1};
+            int b[] = {[x] = 2};
+        """)
+        field = tree.ext[2].init.exprs[0].name[0]
+        index = tree.ext[3].init.exprs[0].name[0]
+        self.assertIsInstance(field, ID)
+        self.assertEqual(field.name, "x")
+        self.assertIsInstance(index, ArrayDesignator)
+        self.assertIsInstance(index.expr, ID)
+        self.assertEqual(index.expr.name, "x")
 
     def test_designated_initializer_with_typedef_name(self):
         # Issue #215: a field designator can have the same name as a typedef.

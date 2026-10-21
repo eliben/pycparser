@@ -2442,10 +2442,10 @@ class CParser:
     # BNF: designator : '[' constant_expression ']'
     #                | '.' identifier_or_typeid
     def _parse_designator(self) -> c_ast.Node:
-        if self._accept("LBRACKET"):
+        if tok := self._accept("LBRACKET"):
             expr = self._parse_constant_expression()
             self._expect("RBRACKET")
-            return expr
+            return c_ast.ArrayDesignator(expr, self._tok_coord(tok))
         if self._accept("PERIOD"):
             return self._parse_identifier_or_typeid()
         self._parse_error("Invalid designator", self.clex.filename)
