@@ -1,0 +1,8827 @@
+# 0 "linux-uapi.c"
+# 0 "<built-in>"
+# 0 "<command-line>"
+# 1 "linux-uapi.c"
+
+# 1 "headers/include/linux/bpf.h" 1
+# 11 "headers/include/linux/bpf.h"
+# 1 "headers/include/linux/types.h" 1
+
+
+
+
+# 1 "headers/include/asm/types.h" 1
+# 1 "headers/include/asm-generic/types.h" 1
+
+
+
+
+
+
+# 1 "headers/include/asm-generic/int-ll64.h" 1
+# 12 "headers/include/asm-generic/int-ll64.h"
+# 1 "headers/include/asm/bitsperlong.h" 1
+# 11 "headers/include/asm/bitsperlong.h"
+# 1 "headers/include/asm-generic/bitsperlong.h" 1
+# 12 "headers/include/asm/bitsperlong.h" 2
+# 13 "headers/include/asm-generic/int-ll64.h" 2
+
+
+
+
+
+
+
+typedef signed char __s8;
+typedef unsigned char __u8;
+
+typedef signed short __s16;
+typedef unsigned short __u16;
+
+typedef signed int __s32;
+typedef unsigned int __u32;
+
+
+ typedef signed long long __s64;
+ typedef unsigned long long __u64;
+# 8 "headers/include/asm-generic/types.h" 2
+# 2 "headers/include/asm/types.h" 2
+# 6 "headers/include/linux/types.h" 2
+
+
+
+# 1 "headers/include/linux/posix_types.h" 1
+
+
+
+
+# 1 "headers/include/linux/stddef.h" 1
+# 6 "headers/include/linux/posix_types.h" 2
+# 25 "headers/include/linux/posix_types.h"
+typedef struct {
+ unsigned long fds_bits[1024 / (8 * sizeof(long))];
+} __kernel_fd_set;
+
+
+typedef void (*__kernel_sighandler_t)(int);
+
+
+typedef int __kernel_key_t;
+typedef int __kernel_mqd_t;
+
+# 1 "headers/include/asm/posix_types.h" 1
+
+
+
+
+
+
+# 1 "headers/include/asm/posix_types_64.h" 1
+# 11 "headers/include/asm/posix_types_64.h"
+typedef unsigned short __kernel_old_uid_t;
+typedef unsigned short __kernel_old_gid_t;
+
+
+typedef unsigned long __kernel_old_dev_t;
+
+
+# 1 "headers/include/asm-generic/posix_types.h" 1
+# 15 "headers/include/asm-generic/posix_types.h"
+typedef long __kernel_long_t;
+typedef unsigned long __kernel_ulong_t;
+
+
+
+typedef __kernel_ulong_t __kernel_ino_t;
+
+
+
+typedef unsigned int __kernel_mode_t;
+
+
+
+typedef int __kernel_pid_t;
+
+
+
+typedef int __kernel_ipc_pid_t;
+
+
+
+typedef unsigned int __kernel_uid_t;
+typedef unsigned int __kernel_gid_t;
+
+
+
+typedef __kernel_long_t __kernel_suseconds_t;
+
+
+
+typedef int __kernel_daddr_t;
+
+
+
+typedef unsigned int __kernel_uid32_t;
+typedef unsigned int __kernel_gid32_t;
+# 72 "headers/include/asm-generic/posix_types.h"
+typedef __kernel_ulong_t __kernel_size_t;
+typedef __kernel_long_t __kernel_ssize_t;
+typedef __kernel_long_t __kernel_ptrdiff_t;
+
+
+
+
+typedef struct {
+ int val[2];
+} __kernel_fsid_t;
+
+
+
+
+
+typedef __kernel_long_t __kernel_off_t;
+typedef long long __kernel_loff_t;
+typedef unsigned long long __kernel_uoff_t;
+typedef __kernel_long_t __kernel_old_time_t;
+typedef __kernel_long_t __kernel_time_t;
+typedef long long __kernel_time64_t;
+typedef __kernel_long_t __kernel_clock_t;
+typedef int __kernel_timer_t;
+typedef int __kernel_clockid_t;
+typedef char * __kernel_caddr_t;
+typedef unsigned short __kernel_uid16_t;
+typedef unsigned short __kernel_gid16_t;
+# 19 "headers/include/asm/posix_types_64.h" 2
+# 8 "headers/include/asm/posix_types.h" 2
+# 37 "headers/include/linux/posix_types.h" 2
+# 10 "headers/include/linux/types.h" 2
+
+
+typedef signed __int128 __s128 ;
+typedef unsigned __int128 __u128 ;
+# 31 "headers/include/linux/types.h"
+typedef __u16 __le16;
+typedef __u16 __be16;
+typedef __u32 __le32;
+typedef __u32 __be32;
+typedef __u64 __le64;
+typedef __u64 __be64;
+
+typedef __u16 __sum16;
+typedef __u32 __wsum;
+# 55 "headers/include/linux/types.h"
+typedef unsigned __poll_t;
+# 12 "headers/include/linux/bpf.h" 2
+# 1 "headers/include/linux/bpf_common.h" 1
+# 13 "headers/include/linux/bpf.h" 2
+# 57 "headers/include/linux/bpf.h"
+enum bpf_cond_pseudo_jmp {
+ BPF_MAY_GOTO = 0,
+};
+
+
+enum {
+ BPF_REG_0 = 0,
+ BPF_REG_1,
+ BPF_REG_2,
+ BPF_REG_3,
+ BPF_REG_4,
+ BPF_REG_5,
+ BPF_REG_6,
+ BPF_REG_7,
+ BPF_REG_8,
+ BPF_REG_9,
+ BPF_REG_10,
+ __MAX_BPF_REG,
+};
+
+
+
+
+struct bpf_insn {
+ __u8 code;
+ __u8 dst_reg:4;
+ __u8 src_reg:4;
+ __s16 off;
+ __s32 imm;
+};
+
+
+
+
+
+struct bpf_lpm_trie_key {
+ __u32 prefixlen;
+ __u8 data[0];
+};
+
+
+struct bpf_lpm_trie_key_hdr {
+ __u32 prefixlen;
+};
+
+
+struct bpf_lpm_trie_key_u8 {
+ union {
+  struct bpf_lpm_trie_key_hdr hdr;
+  __u32 prefixlen;
+ };
+ __u8 data[];
+};
+
+struct bpf_cgroup_storage_key {
+ __u64 cgroup_inode_id;
+ __u32 attach_type;
+};
+
+enum bpf_cgroup_iter_order {
+ BPF_CGROUP_ITER_ORDER_UNSPEC = 0,
+ BPF_CGROUP_ITER_SELF_ONLY,
+ BPF_CGROUP_ITER_DESCENDANTS_PRE,
+ BPF_CGROUP_ITER_DESCENDANTS_POST,
+ BPF_CGROUP_ITER_ANCESTORS_UP,
+
+
+
+
+
+
+
+ BPF_CGROUP_ITER_CHILDREN,
+};
+
+union bpf_iter_link_info {
+ struct {
+  __u32 map_fd;
+ } map;
+ struct {
+  enum bpf_cgroup_iter_order order;
+
+
+
+
+
+
+  __u32 cgroup_fd;
+  __u64 cgroup_id;
+ } cgroup;
+
+ struct {
+  __u32 tid;
+  __u32 pid;
+  __u32 pid_fd;
+ } task;
+};
+# 955 "headers/include/linux/bpf.h"
+enum bpf_cmd {
+ BPF_MAP_CREATE,
+ BPF_MAP_LOOKUP_ELEM,
+ BPF_MAP_UPDATE_ELEM,
+ BPF_MAP_DELETE_ELEM,
+ BPF_MAP_GET_NEXT_KEY,
+ BPF_PROG_LOAD,
+ BPF_OBJ_PIN,
+ BPF_OBJ_GET,
+ BPF_PROG_ATTACH,
+ BPF_PROG_DETACH,
+ BPF_PROG_TEST_RUN,
+ BPF_PROG_RUN = BPF_PROG_TEST_RUN,
+ BPF_PROG_GET_NEXT_ID,
+ BPF_MAP_GET_NEXT_ID,
+ BPF_PROG_GET_FD_BY_ID,
+ BPF_MAP_GET_FD_BY_ID,
+ BPF_OBJ_GET_INFO_BY_FD,
+ BPF_PROG_QUERY,
+ BPF_RAW_TRACEPOINT_OPEN,
+ BPF_BTF_LOAD,
+ BPF_BTF_GET_FD_BY_ID,
+ BPF_TASK_FD_QUERY,
+ BPF_MAP_LOOKUP_AND_DELETE_ELEM,
+ BPF_MAP_FREEZE,
+ BPF_BTF_GET_NEXT_ID,
+ BPF_MAP_LOOKUP_BATCH,
+ BPF_MAP_LOOKUP_AND_DELETE_BATCH,
+ BPF_MAP_UPDATE_BATCH,
+ BPF_MAP_DELETE_BATCH,
+ BPF_LINK_CREATE,
+ BPF_LINK_UPDATE,
+ BPF_LINK_GET_FD_BY_ID,
+ BPF_LINK_GET_NEXT_ID,
+ BPF_ENABLE_STATS,
+ BPF_ITER_CREATE,
+ BPF_LINK_DETACH,
+ BPF_PROG_BIND_MAP,
+ BPF_TOKEN_CREATE,
+ BPF_PROG_STREAM_READ_BY_FD,
+ BPF_PROG_ASSOC_STRUCT_OPS,
+ __MAX_BPF_CMD,
+ BPF_COMMON_ATTRS = 1 << 16,
+};
+
+enum bpf_map_type {
+ BPF_MAP_TYPE_UNSPEC,
+ BPF_MAP_TYPE_HASH,
+ BPF_MAP_TYPE_ARRAY,
+ BPF_MAP_TYPE_PROG_ARRAY,
+ BPF_MAP_TYPE_PERF_EVENT_ARRAY,
+ BPF_MAP_TYPE_PERCPU_HASH,
+ BPF_MAP_TYPE_PERCPU_ARRAY,
+ BPF_MAP_TYPE_STACK_TRACE,
+ BPF_MAP_TYPE_CGROUP_ARRAY,
+ BPF_MAP_TYPE_LRU_HASH,
+ BPF_MAP_TYPE_LRU_PERCPU_HASH,
+ BPF_MAP_TYPE_LPM_TRIE,
+ BPF_MAP_TYPE_ARRAY_OF_MAPS,
+ BPF_MAP_TYPE_HASH_OF_MAPS,
+ BPF_MAP_TYPE_DEVMAP,
+ BPF_MAP_TYPE_SOCKMAP,
+ BPF_MAP_TYPE_CPUMAP,
+ BPF_MAP_TYPE_XSKMAP,
+ BPF_MAP_TYPE_SOCKHASH,
+ BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED,
+
+
+
+
+
+
+ BPF_MAP_TYPE_CGROUP_STORAGE = BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED,
+ BPF_MAP_TYPE_REUSEPORT_SOCKARRAY,
+ BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE_DEPRECATED,
+
+
+
+
+
+
+ BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE = BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE_DEPRECATED,
+ BPF_MAP_TYPE_QUEUE,
+ BPF_MAP_TYPE_STACK,
+ BPF_MAP_TYPE_SK_STORAGE,
+ BPF_MAP_TYPE_DEVMAP_HASH,
+ BPF_MAP_TYPE_STRUCT_OPS,
+ BPF_MAP_TYPE_RINGBUF,
+ BPF_MAP_TYPE_INODE_STORAGE,
+ BPF_MAP_TYPE_TASK_STORAGE,
+ BPF_MAP_TYPE_BLOOM_FILTER,
+ BPF_MAP_TYPE_USER_RINGBUF,
+ BPF_MAP_TYPE_CGRP_STORAGE,
+ BPF_MAP_TYPE_ARENA,
+ BPF_MAP_TYPE_INSN_ARRAY,
+ BPF_MAP_TYPE_RHASH,
+ __MAX_BPF_MAP_TYPE
+};
+# 1062 "headers/include/linux/bpf.h"
+enum bpf_prog_type {
+ BPF_PROG_TYPE_UNSPEC,
+ BPF_PROG_TYPE_SOCKET_FILTER,
+ BPF_PROG_TYPE_KPROBE,
+ BPF_PROG_TYPE_SCHED_CLS,
+ BPF_PROG_TYPE_SCHED_ACT,
+ BPF_PROG_TYPE_TRACEPOINT,
+ BPF_PROG_TYPE_XDP,
+ BPF_PROG_TYPE_PERF_EVENT,
+ BPF_PROG_TYPE_CGROUP_SKB,
+ BPF_PROG_TYPE_CGROUP_SOCK,
+ BPF_PROG_TYPE_LWT_IN,
+ BPF_PROG_TYPE_LWT_OUT,
+ BPF_PROG_TYPE_LWT_XMIT,
+ BPF_PROG_TYPE_SOCK_OPS,
+ BPF_PROG_TYPE_SK_SKB,
+ BPF_PROG_TYPE_CGROUP_DEVICE,
+ BPF_PROG_TYPE_SK_MSG,
+ BPF_PROG_TYPE_RAW_TRACEPOINT,
+ BPF_PROG_TYPE_CGROUP_SOCK_ADDR,
+ BPF_PROG_TYPE_LWT_SEG6LOCAL,
+ BPF_PROG_TYPE_LIRC_MODE2,
+ BPF_PROG_TYPE_SK_REUSEPORT,
+ BPF_PROG_TYPE_FLOW_DISSECTOR,
+ BPF_PROG_TYPE_CGROUP_SYSCTL,
+ BPF_PROG_TYPE_RAW_TRACEPOINT_WRITABLE,
+ BPF_PROG_TYPE_CGROUP_SOCKOPT,
+ BPF_PROG_TYPE_TRACING,
+ BPF_PROG_TYPE_STRUCT_OPS,
+ BPF_PROG_TYPE_EXT,
+ BPF_PROG_TYPE_LSM,
+ BPF_PROG_TYPE_SK_LOOKUP,
+ BPF_PROG_TYPE_SYSCALL,
+ BPF_PROG_TYPE_NETFILTER,
+ __MAX_BPF_PROG_TYPE
+};
+
+enum bpf_attach_type {
+ BPF_CGROUP_INET_INGRESS,
+ BPF_CGROUP_INET_EGRESS,
+ BPF_CGROUP_INET_SOCK_CREATE,
+ BPF_CGROUP_SOCK_OPS,
+ BPF_SK_SKB_STREAM_PARSER,
+ BPF_SK_SKB_STREAM_VERDICT,
+ BPF_CGROUP_DEVICE,
+ BPF_SK_MSG_VERDICT,
+ BPF_CGROUP_INET4_BIND,
+ BPF_CGROUP_INET6_BIND,
+ BPF_CGROUP_INET4_CONNECT,
+ BPF_CGROUP_INET6_CONNECT,
+ BPF_CGROUP_INET4_POST_BIND,
+ BPF_CGROUP_INET6_POST_BIND,
+ BPF_CGROUP_UDP4_SENDMSG,
+ BPF_CGROUP_UDP6_SENDMSG,
+ BPF_LIRC_MODE2,
+ BPF_FLOW_DISSECTOR,
+ BPF_CGROUP_SYSCTL,
+ BPF_CGROUP_UDP4_RECVMSG,
+ BPF_CGROUP_UDP6_RECVMSG,
+ BPF_CGROUP_GETSOCKOPT,
+ BPF_CGROUP_SETSOCKOPT,
+ BPF_TRACE_RAW_TP,
+ BPF_TRACE_FENTRY,
+ BPF_TRACE_FEXIT,
+ BPF_MODIFY_RETURN,
+ BPF_LSM_MAC,
+ BPF_TRACE_ITER,
+ BPF_CGROUP_INET4_GETPEERNAME,
+ BPF_CGROUP_INET6_GETPEERNAME,
+ BPF_CGROUP_INET4_GETSOCKNAME,
+ BPF_CGROUP_INET6_GETSOCKNAME,
+ BPF_XDP_DEVMAP,
+ BPF_CGROUP_INET_SOCK_RELEASE,
+ BPF_XDP_CPUMAP,
+ BPF_SK_LOOKUP,
+ BPF_XDP,
+ BPF_SK_SKB_VERDICT,
+ BPF_SK_REUSEPORT_SELECT,
+ BPF_SK_REUSEPORT_SELECT_OR_MIGRATE,
+ BPF_PERF_EVENT,
+ BPF_TRACE_KPROBE_MULTI,
+ BPF_LSM_CGROUP,
+ BPF_STRUCT_OPS,
+ BPF_NETFILTER,
+ BPF_TCX_INGRESS,
+ BPF_TCX_EGRESS,
+ BPF_TRACE_UPROBE_MULTI,
+ BPF_CGROUP_UNIX_CONNECT,
+ BPF_CGROUP_UNIX_SENDMSG,
+ BPF_CGROUP_UNIX_RECVMSG,
+ BPF_CGROUP_UNIX_GETPEERNAME,
+ BPF_CGROUP_UNIX_GETSOCKNAME,
+ BPF_NETKIT_PRIMARY,
+ BPF_NETKIT_PEER,
+ BPF_TRACE_KPROBE_SESSION,
+ BPF_TRACE_UPROBE_SESSION,
+ BPF_TRACE_FSESSION,
+ BPF_TRACE_FENTRY_MULTI,
+ BPF_TRACE_FEXIT_MULTI,
+ BPF_TRACE_FSESSION_MULTI,
+ __MAX_BPF_ATTACH_TYPE
+};
+
+
+
+
+
+
+enum bpf_link_type {
+ BPF_LINK_TYPE_UNSPEC = 0,
+ BPF_LINK_TYPE_RAW_TRACEPOINT = 1,
+ BPF_LINK_TYPE_TRACING = 2,
+ BPF_LINK_TYPE_CGROUP = 3,
+ BPF_LINK_TYPE_ITER = 4,
+ BPF_LINK_TYPE_NETNS = 5,
+ BPF_LINK_TYPE_XDP = 6,
+ BPF_LINK_TYPE_PERF_EVENT = 7,
+ BPF_LINK_TYPE_KPROBE_MULTI = 8,
+ BPF_LINK_TYPE_STRUCT_OPS = 9,
+ BPF_LINK_TYPE_NETFILTER = 10,
+ BPF_LINK_TYPE_TCX = 11,
+ BPF_LINK_TYPE_UPROBE_MULTI = 12,
+ BPF_LINK_TYPE_NETKIT = 13,
+ BPF_LINK_TYPE_SOCKMAP = 14,
+ BPF_LINK_TYPE_TRACING_MULTI = 15,
+ __MAX_BPF_LINK_TYPE,
+};
+
+
+
+enum bpf_perf_event_type {
+ BPF_PERF_EVENT_UNSPEC = 0,
+ BPF_PERF_EVENT_UPROBE = 1,
+ BPF_PERF_EVENT_URETPROBE = 2,
+ BPF_PERF_EVENT_KPROBE = 3,
+ BPF_PERF_EVENT_KRETPROBE = 4,
+ BPF_PERF_EVENT_TRACEPOINT = 5,
+ BPF_PERF_EVENT_EVENT = 6,
+};
+# 1322 "headers/include/linux/bpf.h"
+enum {
+ BPF_F_KPROBE_MULTI_RETURN = (1U << 0)
+};
+
+
+
+
+enum {
+
+ BPF_F_UPROBE_MULTI_RETURN = (1U << 0),
+
+
+ BPF_F_UPROBE_MULTI_PATH_FD = (1U << 1),
+};
+# 1396 "headers/include/linux/bpf.h"
+enum bpf_addr_space_cast {
+ BPF_ADDR_SPACE_CAST = 1,
+};
+
+
+enum {
+ BPF_ANY = 0,
+ BPF_NOEXIST = 1,
+ BPF_EXIST = 2,
+ BPF_F_LOCK = 4,
+ BPF_F_CPU = 8,
+ BPF_F_ALL_CPUS = 16,
+};
+
+
+enum {
+ BPF_F_NO_PREALLOC = (1U << 0),
+
+
+
+
+
+
+ BPF_F_NO_COMMON_LRU = (1U << 1),
+
+ BPF_F_NUMA_NODE = (1U << 2),
+
+
+ BPF_F_RDONLY = (1U << 3),
+ BPF_F_WRONLY = (1U << 4),
+
+
+ BPF_F_STACK_BUILD_ID = (1U << 5),
+
+
+ BPF_F_ZERO_SEED = (1U << 6),
+
+
+ BPF_F_RDONLY_PROG = (1U << 7),
+ BPF_F_WRONLY_PROG = (1U << 8),
+
+
+ BPF_F_CLONE = (1U << 9),
+
+
+ BPF_F_MMAPABLE = (1U << 10),
+
+
+ BPF_F_PRESERVE_ELEMS = (1U << 11),
+
+
+ BPF_F_INNER_MAP = (1U << 12),
+
+
+ BPF_F_LINK = (1U << 13),
+
+
+ BPF_F_PATH_FD = (1U << 14),
+
+
+ BPF_F_VTYPE_BTF_OBJ_FD = (1U << 15),
+
+
+ BPF_F_TOKEN_FD = (1U << 16),
+
+
+ BPF_F_SEGV_ON_FAULT = (1U << 17),
+
+
+ BPF_F_NO_USER_CONV = (1U << 18),
+
+
+ BPF_F_RB_OVERWRITE = (1U << 19),
+};
+# 1489 "headers/include/linux/bpf.h"
+enum bpf_stats_type {
+
+ BPF_STATS_RUN_TIME = 0,
+};
+
+enum bpf_stack_build_id_status {
+
+ BPF_STACK_BUILD_ID_EMPTY = 0,
+
+ BPF_STACK_BUILD_ID_VALID = 1,
+
+ BPF_STACK_BUILD_ID_IP = 2,
+};
+
+
+struct bpf_stack_build_id {
+ __s32 status;
+ unsigned char build_id[20];
+ union {
+  __u64 offset;
+  __u64 ip;
+ };
+};
+
+struct bpf_common_attr {
+ __u64 log_buf;
+ __u32 log_size;
+ __u32 log_level;
+ __u32 log_true_size;
+};
+
+
+
+enum {
+ BPF_STREAM_STDOUT = 1,
+ BPF_STREAM_STDERR = 2,
+};
+
+union bpf_attr {
+ struct {
+  __u32 map_type;
+  __u32 key_size;
+  __u32 value_size;
+  __u32 max_entries;
+  __u32 map_flags;
+
+
+  __u32 inner_map_fd;
+  __u32 numa_node;
+
+
+  char map_name[16U];
+  __u32 map_ifindex;
+  __u32 btf_fd;
+  __u32 btf_key_type_id;
+  __u32 btf_value_type_id;
+  __u32 btf_vmlinux_value_type_id;
+# 1563 "headers/include/linux/bpf.h"
+  __u64 map_extra;
+
+  __s32 value_type_btf_obj_fd;
+
+
+
+
+
+
+  __s32 map_token_fd;
+
+
+
+  __u64 excl_prog_hash;
+
+  __u32 excl_prog_hash_size;
+ };
+
+ struct {
+  __u32 map_fd;
+  __u64 key;
+  union {
+   __u64 value;
+   __u64 next_key;
+  };
+  __u64 flags;
+ };
+
+ struct {
+  __u64 in_batch;
+
+
+  __u64 out_batch;
+  __u64 keys;
+  __u64 values;
+  __u32 count;
+
+
+
+
+  __u32 map_fd;
+  __u64 elem_flags;
+  __u64 flags;
+ } batch;
+
+ struct {
+  __u32 prog_type;
+  __u32 insn_cnt;
+  __u64 insns;
+  __u64 license;
+  __u32 log_level;
+  __u32 log_size;
+  __u64 log_buf;
+  __u32 kern_version;
+  __u32 prog_flags;
+  char prog_name[16U];
+  __u32 prog_ifindex;
+
+
+
+
+  __u32 expected_attach_type;
+  __u32 prog_btf_fd;
+  __u32 func_info_rec_size;
+  __u64 func_info;
+  __u32 func_info_cnt;
+  __u32 line_info_rec_size;
+  __u64 line_info;
+  __u32 line_info_cnt;
+  __u32 attach_btf_id;
+  union {
+
+   __u32 attach_prog_fd;
+
+   __u32 attach_btf_obj_fd;
+  };
+  __u32 core_relo_cnt;
+  __u64 fd_array;
+  __u64 core_relos;
+  __u32 core_relo_rec_size;
+
+
+
+
+  __u32 log_true_size;
+
+
+
+  __s32 prog_token_fd;
+# 1661 "headers/include/linux/bpf.h"
+  __u32 fd_array_cnt;
+
+
+
+  __u64 signature;
+
+  __u32 signature_size;
+
+
+
+  __s32 keyring_id;
+ };
+
+ struct {
+  __u64 pathname;
+  __u32 bpf_fd;
+  __u32 file_flags;
+
+
+
+
+
+
+  __s32 path_fd;
+ };
+
+ struct {
+  union {
+   __u32 target_fd;
+   __u32 target_ifindex;
+  };
+  __u32 attach_bpf_fd;
+  __u32 attach_type;
+  __u32 attach_flags;
+  __u32 replace_bpf_fd;
+  union {
+   __u32 relative_fd;
+   __u32 relative_id;
+  };
+  __u64 expected_revision;
+ };
+
+ struct {
+  __u32 prog_fd;
+  __u32 retval;
+  __u32 data_size_in;
+  __u32 data_size_out;
+
+
+
+  __u64 data_in;
+  __u64 data_out;
+  __u32 repeat;
+  __u32 duration;
+  __u32 ctx_size_in;
+  __u32 ctx_size_out;
+
+
+
+  __u64 ctx_in;
+  __u64 ctx_out;
+  __u32 flags;
+  __u32 cpu;
+  __u32 batch_size;
+ } test;
+
+ struct {
+  union {
+   __u32 start_id;
+   __u32 prog_id;
+   __u32 map_id;
+   __u32 btf_id;
+   __u32 link_id;
+  };
+  __u32 next_id;
+  __u32 open_flags;
+  __s32 fd_by_id_token_fd;
+ };
+
+ struct {
+  __u32 bpf_fd;
+  __u32 info_len;
+  __u64 info;
+ } info;
+
+ struct {
+  union {
+   __u32 target_fd;
+   __u32 target_ifindex;
+  };
+  __u32 attach_type;
+  __u32 query_flags;
+  __u32 attach_flags;
+  __u64 prog_ids;
+  union {
+   __u32 prog_cnt;
+   __u32 count;
+  };
+  __u32 :32;
+
+
+
+  __u64 prog_attach_flags;
+  __u64 link_ids;
+  __u64 link_attach_flags;
+  __u64 revision;
+ } query;
+
+ struct {
+  __u64 name;
+  __u32 prog_fd;
+  __u32 :32;
+  __u64 cookie;
+ } raw_tracepoint;
+
+ struct {
+  __u64 btf;
+  __u64 btf_log_buf;
+  __u32 btf_size;
+  __u32 btf_log_size;
+  __u32 btf_log_level;
+
+
+
+
+  __u32 btf_log_true_size;
+  __u32 btf_flags;
+
+
+
+  __s32 btf_token_fd;
+ };
+
+ struct {
+  __u32 pid;
+  __u32 fd;
+  __u32 flags;
+  __u32 buf_len;
+  __u64 buf;
+
+
+
+
+  __u32 prog_id;
+  __u32 fd_type;
+  __u64 probe_offset;
+  __u64 probe_addr;
+ } task_fd_query;
+
+ struct {
+  union {
+   __u32 prog_fd;
+   __u32 map_fd;
+  };
+  union {
+   __u32 target_fd;
+   __u32 target_ifindex;
+  };
+  __u32 attach_type;
+  __u32 flags;
+  union {
+   __u32 target_btf_id;
+   struct {
+    __u64 iter_info;
+    __u32 iter_info_len;
+   };
+   struct {
+
+
+
+
+    __u64 bpf_cookie;
+   } perf_event;
+   struct {
+    __u32 flags;
+    __u32 cnt;
+    __u64 syms;
+    __u64 addrs;
+    __u64 cookies;
+   } kprobe_multi;
+   struct {
+
+    __u32 target_btf_id;
+
+
+
+
+    __u64 cookie;
+   } tracing;
+   struct {
+    __u32 pf;
+    __u32 hooknum;
+    __s32 priority;
+    __u32 flags;
+   } netfilter;
+   struct {
+    union {
+     __u32 relative_fd;
+     __u32 relative_id;
+    };
+    __u64 expected_revision;
+   } tcx;
+   struct {
+    __u64 path;
+    __u64 offsets;
+    __u64 ref_ctr_offsets;
+    __u64 cookies;
+    __u32 cnt;
+    __u32 flags;
+    __u32 pid;
+    __u32 path_fd;
+   } uprobe_multi;
+   struct {
+    union {
+     __u32 relative_fd;
+     __u32 relative_id;
+    };
+    __u64 expected_revision;
+   } netkit;
+   struct {
+    union {
+     __u32 relative_fd;
+     __u32 relative_id;
+    };
+    __u64 expected_revision;
+   } cgroup;
+   struct {
+    __u64 ids;
+    __u64 cookies;
+    __u32 cnt;
+   } tracing_multi;
+  };
+ } link_create;
+
+ struct {
+  __u32 link_fd;
+  union {
+
+   __u32 new_prog_fd;
+
+   __u32 new_map_fd;
+  };
+  __u32 flags;
+  union {
+
+
+
+   __u32 old_prog_fd;
+
+
+
+   __u32 old_map_fd;
+  };
+ } link_update;
+
+ struct {
+  __u32 link_fd;
+ } link_detach;
+
+ struct {
+  __u32 type;
+ } enable_stats;
+
+ struct {
+  __u32 link_fd;
+  __u32 flags;
+ } iter_create;
+
+ struct {
+  __u32 prog_fd;
+  __u32 map_fd;
+  __u32 flags;
+ } prog_bind_map;
+
+ struct {
+  __u32 flags;
+  __u32 bpffs_fd;
+ } token_create;
+
+ struct {
+  __u64 stream_buf;
+  __u32 stream_buf_len;
+  __u32 stream_id;
+  __u32 prog_fd;
+ } prog_stream_read;
+
+ struct {
+  __u32 map_fd;
+  __u32 prog_fd;
+  __u32 flags;
+ } prog_assoc_struct_ops;
+
+} ;
+# 6230 "headers/include/linux/bpf.h"
+enum bpf_func_id {
+ BPF_FUNC_unspec = 0, BPF_FUNC_map_lookup_elem = 1, BPF_FUNC_map_update_elem = 2, BPF_FUNC_map_delete_elem = 3, BPF_FUNC_probe_read = 4, BPF_FUNC_ktime_get_ns = 5, BPF_FUNC_trace_printk = 6, BPF_FUNC_get_prandom_u32 = 7, BPF_FUNC_get_smp_processor_id = 8, BPF_FUNC_skb_store_bytes = 9, BPF_FUNC_l3_csum_replace = 10, BPF_FUNC_l4_csum_replace = 11, BPF_FUNC_tail_call = 12, BPF_FUNC_clone_redirect = 13, BPF_FUNC_get_current_pid_tgid = 14, BPF_FUNC_get_current_uid_gid = 15, BPF_FUNC_get_current_comm = 16, BPF_FUNC_get_cgroup_classid = 17, BPF_FUNC_skb_vlan_push = 18, BPF_FUNC_skb_vlan_pop = 19, BPF_FUNC_skb_get_tunnel_key = 20, BPF_FUNC_skb_set_tunnel_key = 21, BPF_FUNC_perf_event_read = 22, BPF_FUNC_redirect = 23, BPF_FUNC_get_route_realm = 24, BPF_FUNC_perf_event_output = 25, BPF_FUNC_skb_load_bytes = 26, BPF_FUNC_get_stackid = 27, BPF_FUNC_csum_diff = 28, BPF_FUNC_skb_get_tunnel_opt = 29, BPF_FUNC_skb_set_tunnel_opt = 30, BPF_FUNC_skb_change_proto = 31, BPF_FUNC_skb_change_type = 32, BPF_FUNC_skb_under_cgroup = 33, BPF_FUNC_get_hash_recalc = 34, BPF_FUNC_get_current_task = 35, BPF_FUNC_probe_write_user = 36, BPF_FUNC_current_task_under_cgroup = 37, BPF_FUNC_skb_change_tail = 38, BPF_FUNC_skb_pull_data = 39, BPF_FUNC_csum_update = 40, BPF_FUNC_set_hash_invalid = 41, BPF_FUNC_get_numa_node_id = 42, BPF_FUNC_skb_change_head = 43, BPF_FUNC_xdp_adjust_head = 44, BPF_FUNC_probe_read_str = 45, BPF_FUNC_get_socket_cookie = 46, BPF_FUNC_get_socket_uid = 47, BPF_FUNC_set_hash = 48, BPF_FUNC_setsockopt = 49, BPF_FUNC_skb_adjust_room = 50, BPF_FUNC_redirect_map = 51, BPF_FUNC_sk_redirect_map = 52, BPF_FUNC_sock_map_update = 53, BPF_FUNC_xdp_adjust_meta = 54, BPF_FUNC_perf_event_read_value = 55, BPF_FUNC_perf_prog_read_value = 56, BPF_FUNC_getsockopt = 57, BPF_FUNC_override_return = 58, BPF_FUNC_sock_ops_cb_flags_set = 59, BPF_FUNC_msg_redirect_map = 60, BPF_FUNC_msg_apply_bytes = 61, BPF_FUNC_msg_cork_bytes = 62, BPF_FUNC_msg_pull_data = 63, BPF_FUNC_bind = 64, BPF_FUNC_xdp_adjust_tail = 65, BPF_FUNC_skb_get_xfrm_state = 66, BPF_FUNC_get_stack = 67, BPF_FUNC_skb_load_bytes_relative = 68, BPF_FUNC_fib_lookup = 69, BPF_FUNC_sock_hash_update = 70, BPF_FUNC_msg_redirect_hash = 71, BPF_FUNC_sk_redirect_hash = 72, BPF_FUNC_lwt_push_encap = 73, BPF_FUNC_lwt_seg6_store_bytes = 74, BPF_FUNC_lwt_seg6_adjust_srh = 75, BPF_FUNC_lwt_seg6_action = 76, BPF_FUNC_rc_repeat = 77, BPF_FUNC_rc_keydown = 78, BPF_FUNC_skb_cgroup_id = 79, BPF_FUNC_get_current_cgroup_id = 80, BPF_FUNC_get_local_storage = 81, BPF_FUNC_sk_select_reuseport = 82, BPF_FUNC_skb_ancestor_cgroup_id = 83, BPF_FUNC_sk_lookup_tcp = 84, BPF_FUNC_sk_lookup_udp = 85, BPF_FUNC_sk_release = 86, BPF_FUNC_map_push_elem = 87, BPF_FUNC_map_pop_elem = 88, BPF_FUNC_map_peek_elem = 89, BPF_FUNC_msg_push_data = 90, BPF_FUNC_msg_pop_data = 91, BPF_FUNC_rc_pointer_rel = 92, BPF_FUNC_spin_lock = 93, BPF_FUNC_spin_unlock = 94, BPF_FUNC_sk_fullsock = 95, BPF_FUNC_tcp_sock = 96, BPF_FUNC_skb_ecn_set_ce = 97, BPF_FUNC_get_listener_sock = 98, BPF_FUNC_skc_lookup_tcp = 99, BPF_FUNC_tcp_check_syncookie = 100, BPF_FUNC_sysctl_get_name = 101, BPF_FUNC_sysctl_get_current_value = 102, BPF_FUNC_sysctl_get_new_value = 103, BPF_FUNC_sysctl_set_new_value = 104, BPF_FUNC_strtol = 105, BPF_FUNC_strtoul = 106, BPF_FUNC_sk_storage_get = 107, BPF_FUNC_sk_storage_delete = 108, BPF_FUNC_send_signal = 109, BPF_FUNC_tcp_gen_syncookie = 110, BPF_FUNC_skb_output = 111, BPF_FUNC_probe_read_user = 112, BPF_FUNC_probe_read_kernel = 113, BPF_FUNC_probe_read_user_str = 114, BPF_FUNC_probe_read_kernel_str = 115, BPF_FUNC_tcp_send_ack = 116, BPF_FUNC_send_signal_thread = 117, BPF_FUNC_jiffies64 = 118, BPF_FUNC_read_branch_records = 119, BPF_FUNC_get_ns_current_pid_tgid = 120, BPF_FUNC_xdp_output = 121, BPF_FUNC_get_netns_cookie = 122, BPF_FUNC_get_current_ancestor_cgroup_id = 123, BPF_FUNC_sk_assign = 124, BPF_FUNC_ktime_get_boot_ns = 125, BPF_FUNC_seq_printf = 126, BPF_FUNC_seq_write = 127, BPF_FUNC_sk_cgroup_id = 128, BPF_FUNC_sk_ancestor_cgroup_id = 129, BPF_FUNC_ringbuf_output = 130, BPF_FUNC_ringbuf_reserve = 131, BPF_FUNC_ringbuf_submit = 132, BPF_FUNC_ringbuf_discard = 133, BPF_FUNC_ringbuf_query = 134, BPF_FUNC_csum_level = 135, BPF_FUNC_skc_to_tcp6_sock = 136, BPF_FUNC_skc_to_tcp_sock = 137, BPF_FUNC_skc_to_tcp_timewait_sock = 138, BPF_FUNC_skc_to_tcp_request_sock = 139, BPF_FUNC_skc_to_udp6_sock = 140, BPF_FUNC_get_task_stack = 141, BPF_FUNC_load_hdr_opt = 142, BPF_FUNC_store_hdr_opt = 143, BPF_FUNC_reserve_hdr_opt = 144, BPF_FUNC_inode_storage_get = 145, BPF_FUNC_inode_storage_delete = 146, BPF_FUNC_d_path = 147, BPF_FUNC_copy_from_user = 148, BPF_FUNC_snprintf_btf = 149, BPF_FUNC_seq_printf_btf = 150, BPF_FUNC_skb_cgroup_classid = 151, BPF_FUNC_redirect_neigh = 152, BPF_FUNC_per_cpu_ptr = 153, BPF_FUNC_this_cpu_ptr = 154, BPF_FUNC_redirect_peer = 155, BPF_FUNC_task_storage_get = 156, BPF_FUNC_task_storage_delete = 157, BPF_FUNC_get_current_task_btf = 158, BPF_FUNC_bprm_opts_set = 159, BPF_FUNC_ktime_get_coarse_ns = 160, BPF_FUNC_ima_inode_hash = 161, BPF_FUNC_sock_from_file = 162, BPF_FUNC_check_mtu = 163, BPF_FUNC_for_each_map_elem = 164, BPF_FUNC_snprintf = 165, BPF_FUNC_sys_bpf = 166, BPF_FUNC_btf_find_by_name_kind = 167, BPF_FUNC_sys_close = 168, BPF_FUNC_timer_init = 169, BPF_FUNC_timer_set_callback = 170, BPF_FUNC_timer_start = 171, BPF_FUNC_timer_cancel = 172, BPF_FUNC_get_func_ip = 173, BPF_FUNC_get_attach_cookie = 174, BPF_FUNC_task_pt_regs = 175, BPF_FUNC_get_branch_snapshot = 176, BPF_FUNC_trace_vprintk = 177, BPF_FUNC_skc_to_unix_sock = 178, BPF_FUNC_kallsyms_lookup_name = 179, BPF_FUNC_find_vma = 180, BPF_FUNC_loop = 181, BPF_FUNC_strncmp = 182, BPF_FUNC_get_func_arg = 183, BPF_FUNC_get_func_ret = 184, BPF_FUNC_get_func_arg_cnt = 185, BPF_FUNC_get_retval = 186, BPF_FUNC_set_retval = 187, BPF_FUNC_xdp_get_buff_len = 188, BPF_FUNC_xdp_load_bytes = 189, BPF_FUNC_xdp_store_bytes = 190, BPF_FUNC_copy_from_user_task = 191, BPF_FUNC_skb_set_tstamp = 192, BPF_FUNC_ima_file_hash = 193, BPF_FUNC_kptr_xchg = 194, BPF_FUNC_map_lookup_percpu_elem = 195, BPF_FUNC_skc_to_mptcp_sock = 196, BPF_FUNC_dynptr_from_mem = 197, BPF_FUNC_ringbuf_reserve_dynptr = 198, BPF_FUNC_ringbuf_submit_dynptr = 199, BPF_FUNC_ringbuf_discard_dynptr = 200, BPF_FUNC_dynptr_read = 201, BPF_FUNC_dynptr_write = 202, BPF_FUNC_dynptr_data = 203, BPF_FUNC_tcp_raw_gen_syncookie_ipv4 = 204, BPF_FUNC_tcp_raw_gen_syncookie_ipv6 = 205, BPF_FUNC_tcp_raw_check_syncookie_ipv4 = 206, BPF_FUNC_tcp_raw_check_syncookie_ipv6 = 207, BPF_FUNC_ktime_get_tai_ns = 208, BPF_FUNC_user_ringbuf_drain = 209, BPF_FUNC_cgrp_storage_get = 210, BPF_FUNC_cgrp_storage_delete = 211,
+ __BPF_FUNC_MAX_ID,
+};
+
+
+
+
+
+enum {
+ BPF_F_RECOMPUTE_CSUM = (1ULL << 0),
+ BPF_F_INVALIDATE_HASH = (1ULL << 1),
+};
+
+
+
+
+enum {
+ BPF_F_HDR_FIELD_MASK = 0xfULL,
+};
+
+
+enum {
+ BPF_F_PSEUDO_HDR = (1ULL << 4),
+ BPF_F_MARK_MANGLED_0 = (1ULL << 5),
+ BPF_F_MARK_ENFORCE = (1ULL << 6),
+ BPF_F_IPV6 = (1ULL << 7),
+};
+
+
+enum {
+ BPF_F_TUNINFO_IPV6 = (1ULL << 0),
+};
+
+
+enum {
+ BPF_F_SKIP_FIELD_MASK = 0xffULL,
+ BPF_F_USER_STACK = (1ULL << 8),
+
+ BPF_F_FAST_STACK_CMP = (1ULL << 9),
+ BPF_F_REUSE_STACKID = (1ULL << 10),
+
+ BPF_F_USER_BUILD_ID = (1ULL << 11),
+};
+
+
+enum {
+ BPF_F_ZERO_CSUM_TX = (1ULL << 1),
+ BPF_F_DONT_FRAGMENT = (1ULL << 2),
+ BPF_F_SEQ_NUMBER = (1ULL << 3),
+ BPF_F_NO_TUNNEL_KEY = (1ULL << 4),
+};
+
+
+enum {
+ BPF_F_TUNINFO_FLAGS = (1ULL << 4),
+};
+
+
+
+
+enum {
+ BPF_F_INDEX_MASK = 0xffffffffULL,
+ BPF_F_CURRENT_CPU = BPF_F_INDEX_MASK,
+
+ BPF_F_CTXLEN_MASK = (0xfffffULL << 32),
+};
+
+
+enum {
+ BPF_F_CURRENT_NETNS = (-1L),
+};
+
+
+enum {
+ BPF_CSUM_LEVEL_QUERY,
+ BPF_CSUM_LEVEL_INC,
+ BPF_CSUM_LEVEL_DEC,
+ BPF_CSUM_LEVEL_RESET,
+};
+
+
+enum bpf_adj_room_flags {
+ BPF_F_ADJ_ROOM_FIXED_GSO = (1ULL << 0),
+ BPF_F_ADJ_ROOM_ENCAP_L3_IPV4 = (1ULL << 1),
+ BPF_F_ADJ_ROOM_ENCAP_L3_IPV6 = (1ULL << 2),
+ BPF_F_ADJ_ROOM_ENCAP_L4_GRE = (1ULL << 3),
+ BPF_F_ADJ_ROOM_ENCAP_L4_UDP = (1ULL << 4),
+ BPF_F_ADJ_ROOM_NO_CSUM_RESET = (1ULL << 5),
+ BPF_F_ADJ_ROOM_ENCAP_L2_ETH = (1ULL << 6),
+ BPF_F_ADJ_ROOM_DECAP_L3_IPV4 = (1ULL << 7),
+ BPF_F_ADJ_ROOM_DECAP_L3_IPV6 = (1ULL << 8),
+ BPF_F_ADJ_ROOM_DECAP_L4_GRE = (1ULL << 9),
+ BPF_F_ADJ_ROOM_DECAP_L4_UDP = (1ULL << 10),
+ BPF_F_ADJ_ROOM_DECAP_IPXIP4 = (1ULL << 11),
+ BPF_F_ADJ_ROOM_DECAP_IPXIP6 = (1ULL << 12),
+};
+
+enum {
+ BPF_ADJ_ROOM_ENCAP_L2_MASK = 0xff,
+ BPF_ADJ_ROOM_ENCAP_L2_SHIFT = 56,
+};
+
+
+
+
+
+
+enum {
+ BPF_F_SYSCTL_BASE_NAME = (1ULL << 0),
+};
+
+
+enum {
+ BPF_LOCAL_STORAGE_GET_F_CREATE = (1ULL << 0),
+
+
+
+ BPF_SK_STORAGE_GET_F_CREATE = BPF_LOCAL_STORAGE_GET_F_CREATE,
+};
+
+
+enum {
+ BPF_F_GET_BRANCH_RECORDS_SIZE = (1ULL << 0),
+};
+
+
+
+
+enum {
+ BPF_RB_NO_WAKEUP = (1ULL << 0),
+ BPF_RB_FORCE_WAKEUP = (1ULL << 1),
+};
+
+
+enum {
+ BPF_RB_AVAIL_DATA = 0,
+ BPF_RB_RING_SIZE = 1,
+ BPF_RB_CONS_POS = 2,
+ BPF_RB_PROD_POS = 3,
+ BPF_RB_OVERWRITE_POS = 4,
+};
+
+
+enum {
+ BPF_RINGBUF_BUSY_BIT = (1U << 31),
+ BPF_RINGBUF_DISCARD_BIT = (1U << 30),
+ BPF_RINGBUF_HDR_SZ = 8,
+};
+
+
+enum {
+ BPF_SK_LOOKUP_F_REPLACE = (1ULL << 0),
+ BPF_SK_LOOKUP_F_NO_REUSEPORT = (1ULL << 1),
+};
+
+
+enum bpf_adj_room_mode {
+ BPF_ADJ_ROOM_NET,
+ BPF_ADJ_ROOM_MAC,
+};
+
+
+enum bpf_hdr_start_off {
+ BPF_HDR_START_MAC,
+ BPF_HDR_START_NET,
+};
+
+
+enum bpf_lwt_encap_mode {
+ BPF_LWT_ENCAP_SEG6,
+ BPF_LWT_ENCAP_SEG6_INLINE,
+ BPF_LWT_ENCAP_IP,
+};
+
+
+enum {
+ BPF_F_BPRM_SECUREEXEC = (1ULL << 0),
+};
+
+
+enum {
+ BPF_F_INGRESS = (1ULL << 0),
+ BPF_F_EGRESS = (1ULL << 1),
+ BPF_F_BROADCAST = (1ULL << 3),
+ BPF_F_EXCLUDE_INGRESS = (1ULL << 4),
+
+};
+# 6428 "headers/include/linux/bpf.h"
+enum {
+ BPF_SKB_TSTAMP_UNSPEC = 0,
+ BPF_SKB_TSTAMP_DELIVERY_MONO = 1,
+ BPF_SKB_CLOCK_REALTIME = 0,
+ BPF_SKB_CLOCK_MONOTONIC = 1,
+ BPF_SKB_CLOCK_TAI = 2,
+
+
+
+};
+
+
+
+
+struct __sk_buff {
+ __u32 len;
+ __u32 pkt_type;
+ __u32 mark;
+ __u32 queue_mapping;
+ __u32 protocol;
+ __u32 vlan_present;
+ __u32 vlan_tci;
+ __u32 vlan_proto;
+ __u32 priority;
+ __u32 ingress_ifindex;
+ __u32 ifindex;
+ __u32 tc_index;
+ __u32 cb[5];
+ __u32 hash;
+ __u32 tc_classid;
+ __u32 data;
+ __u32 data_end;
+ __u32 napi_id;
+
+
+ __u32 family;
+ __u32 remote_ip4;
+ __u32 local_ip4;
+ __u32 remote_ip6[4];
+ __u32 local_ip6[4];
+ __u32 remote_port;
+ __u32 local_port;
+
+
+ __u32 data_meta;
+ union { struct bpf_flow_keys * flow_keys; __u64 :64; } ;
+ __u64 tstamp;
+ __u32 wire_len;
+ __u32 gso_segs;
+ union { struct bpf_sock * sk; __u64 :64; } ;
+ __u32 gso_size;
+ __u8 tstamp_type;
+ __u32 :24;
+ __u64 hwtstamp;
+};
+
+struct bpf_tunnel_key {
+ __u32 tunnel_id;
+ union {
+  __u32 remote_ipv4;
+  __u32 remote_ipv6[4];
+ };
+ __u8 tunnel_tos;
+ __u8 tunnel_ttl;
+ union {
+  __u16 tunnel_ext;
+  __be16 tunnel_flags;
+ };
+ __u32 tunnel_label;
+ union {
+  __u32 local_ipv4;
+  __u32 local_ipv6[4];
+ };
+};
+
+
+
+
+struct bpf_xfrm_state {
+ __u32 reqid;
+ __u32 spi;
+ __u16 family;
+ __u16 ext;
+ union {
+  __u32 remote_ipv4;
+  __u32 remote_ipv6[4];
+ };
+};
+# 6524 "headers/include/linux/bpf.h"
+enum bpf_ret_code {
+ BPF_OK = 0,
+
+ BPF_DROP = 2,
+
+ BPF_REDIRECT = 7,
+# 6538 "headers/include/linux/bpf.h"
+ BPF_LWT_REROUTE = 128,
+
+
+
+
+ BPF_FLOW_DISSECTOR_CONTINUE = 129,
+};
+
+struct bpf_sock {
+ __u32 bound_dev_if;
+ __u32 family;
+ __u32 type;
+ __u32 protocol;
+ __u32 mark;
+ __u32 priority;
+
+ __u32 src_ip4;
+ __u32 src_ip6[4];
+ __u32 src_port;
+ __be16 dst_port;
+ __u16 :16;
+ __u32 dst_ip4;
+ __u32 dst_ip6[4];
+ __u32 state;
+ __s32 rx_queue_mapping;
+};
+
+struct bpf_tcp_sock {
+ __u32 snd_cwnd;
+ __u32 srtt_us;
+ __u32 rtt_min;
+ __u32 snd_ssthresh;
+ __u32 rcv_nxt;
+ __u32 snd_nxt;
+ __u32 snd_una;
+ __u32 mss_cache;
+ __u32 ecn_flags;
+ __u32 rate_delivered;
+ __u32 rate_interval_us;
+ __u32 packets_out;
+ __u32 retrans_out;
+ __u32 total_retrans;
+ __u32 segs_in;
+
+
+ __u32 data_segs_in;
+
+
+ __u32 segs_out;
+
+
+ __u32 data_segs_out;
+
+
+ __u32 lost_out;
+ __u32 sacked_out;
+ __u64 bytes_received;
+
+
+
+ __u64 bytes_acked;
+
+
+
+ __u32 dsack_dups;
+
+
+ __u32 delivered;
+ __u32 delivered_ce;
+ __u32 icsk_retransmits;
+};
+
+struct bpf_sock_tuple {
+ union {
+  struct {
+   __be32 saddr;
+   __be32 daddr;
+   __be16 sport;
+   __be16 dport;
+  } ipv4;
+  struct {
+   __be32 saddr[4];
+   __be32 daddr[4];
+   __be16 sport;
+   __be16 dport;
+  } ipv6;
+ };
+};
+
+
+
+
+
+
+
+enum tcx_action_base {
+ TCX_NEXT = -1,
+ TCX_PASS = 0,
+ TCX_DROP = 2,
+ TCX_REDIRECT = 7,
+};
+
+struct bpf_xdp_sock {
+ __u32 queue_id;
+};
+# 6651 "headers/include/linux/bpf.h"
+enum xdp_action {
+ XDP_ABORTED = 0,
+ XDP_DROP,
+ XDP_PASS,
+ XDP_TX,
+ XDP_REDIRECT,
+};
+
+
+
+
+struct xdp_md {
+ __u32 data;
+ __u32 data_end;
+ __u32 data_meta;
+
+ __u32 ingress_ifindex;
+ __u32 rx_queue_index;
+
+ __u32 egress_ifindex;
+};
+
+
+
+
+
+
+struct bpf_devmap_val {
+ __u32 ifindex;
+ union {
+  int fd;
+  __u32 id;
+ } bpf_prog;
+};
+
+
+
+
+
+
+struct bpf_cpumap_val {
+ __u32 qsize;
+ union {
+  int fd;
+  __u32 id;
+ } bpf_prog;
+};
+
+enum sk_action {
+ SK_DROP = 0,
+ SK_PASS,
+};
+
+
+
+
+struct sk_msg_md {
+ union { void * data; __u64 :64; } ;
+ union { void * data_end; __u64 :64; } ;
+
+ __u32 family;
+ __u32 remote_ip4;
+ __u32 local_ip4;
+ __u32 remote_ip6[4];
+ __u32 local_ip6[4];
+ __u32 remote_port;
+ __u32 local_port;
+ __u32 size;
+
+ union { struct bpf_sock * sk; __u64 :64; } ;
+};
+
+struct sk_reuseport_md {
+
+
+
+
+ union { void * data; __u64 :64; } ;
+
+ union { void * data_end; __u64 :64; } ;
+
+
+
+
+
+
+ __u32 len;
+
+
+
+
+ __u32 eth_protocol;
+ __u32 ip_protocol;
+ __u32 bind_inany;
+ __u32 hash;
+# 6758 "headers/include/linux/bpf.h"
+ union { struct bpf_sock * sk; __u64 :64; } ;
+ union { struct bpf_sock * migrating_sk; __u64 :64; } ;
+};
+
+
+
+struct bpf_prog_info {
+ __u32 type;
+ __u32 id;
+ __u8 tag[8];
+ __u32 jited_prog_len;
+ __u32 xlated_prog_len;
+ __u64 jited_prog_insns;
+ __u64 xlated_prog_insns;
+ __u64 load_time;
+ __u32 created_by_uid;
+ __u32 nr_map_ids;
+ __u64 map_ids;
+ char name[16U];
+ __u32 ifindex;
+ __u32 gpl_compatible:1;
+ __u32 :31;
+ __u64 netns_dev;
+ __u64 netns_ino;
+ __u32 nr_jited_ksyms;
+ __u32 nr_jited_func_lens;
+ __u64 jited_ksyms;
+ __u64 jited_func_lens;
+ __u32 btf_id;
+ __u32 func_info_rec_size;
+ __u64 func_info;
+ __u32 nr_func_info;
+ __u32 nr_line_info;
+ __u64 line_info;
+ __u64 jited_line_info;
+ __u32 nr_jited_line_info;
+ __u32 line_info_rec_size;
+ __u32 jited_line_info_rec_size;
+ __u32 nr_prog_tags;
+ __u64 prog_tags;
+ __u64 run_time_ns;
+ __u64 run_cnt;
+ __u64 recursion_misses;
+ __u32 verified_insns;
+ __u32 attach_btf_obj_id;
+ __u32 attach_btf_id;
+ __u32 :32;
+} ;
+
+struct bpf_map_info {
+ __u32 type;
+ __u32 id;
+ __u32 key_size;
+ __u32 value_size;
+ __u32 max_entries;
+ __u32 map_flags;
+ char name[16U];
+ __u32 ifindex;
+ __u32 btf_vmlinux_value_type_id;
+ __u64 netns_dev;
+ __u64 netns_ino;
+ __u32 btf_id;
+ __u32 btf_key_type_id;
+ __u32 btf_value_type_id;
+ __u32 btf_vmlinux_id;
+ __u64 map_extra;
+ __u64 hash;
+ __u32 hash_size;
+ __u32 :32;
+} ;
+
+struct bpf_btf_info {
+ __u64 btf;
+ __u32 btf_size;
+ __u32 id;
+ __u64 name;
+ __u32 name_len;
+ __u32 kernel_btf;
+} ;
+
+struct bpf_link_info {
+ __u32 type;
+ __u32 id;
+ __u32 prog_id;
+ union {
+  struct {
+   __u64 tp_name;
+   __u32 tp_name_len;
+   __u32 :32;
+   __u64 cookie;
+  } raw_tracepoint;
+  struct {
+   __u32 attach_type;
+   __u32 target_obj_id;
+   __u32 target_btf_id;
+   __u32 :32;
+   __u64 cookie;
+  } tracing;
+  struct {
+   __u64 cgroup_id;
+   __u32 attach_type;
+  } cgroup;
+  struct {
+   __u64 target_name;
+   __u32 target_name_len;
+
+
+
+
+
+   union {
+    struct {
+     __u32 map_id;
+    } map;
+   };
+   union {
+    struct {
+     __u64 cgroup_id;
+     __u32 order;
+    } cgroup;
+    struct {
+     __u32 tid;
+     __u32 pid;
+    } task;
+   };
+  } iter;
+  struct {
+   __u32 netns_ino;
+   __u32 attach_type;
+  } netns;
+  struct {
+   __u32 ifindex;
+  } xdp;
+  struct {
+   __u32 map_id;
+  } struct_ops;
+  struct {
+   __u32 pf;
+   __u32 hooknum;
+   __s32 priority;
+   __u32 flags;
+  } netfilter;
+  struct {
+   __u64 addrs;
+   __u32 count;
+   __u32 flags;
+   __u64 missed;
+   __u64 cookies;
+  } kprobe_multi;
+  struct {
+   __u64 path;
+   __u64 offsets;
+   __u64 ref_ctr_offsets;
+   __u64 cookies;
+   __u32 path_size;
+   __u32 count;
+   __u32 flags;
+   __u32 pid;
+  } uprobe_multi;
+  struct {
+   __u32 attach_type;
+   __u32 count;
+   __u32 btf_obj_id;
+   __u32 :32;
+   __u64 ids;
+   __u64 addrs;
+   __u64 cookies;
+  } tracing_multi;
+  struct {
+   __u32 type;
+   __u32 :32;
+   union {
+    struct {
+     __u64 file_name;
+     __u32 name_len;
+     __u32 offset;
+     __u64 cookie;
+     __u64 ref_ctr_offset;
+    } uprobe;
+    struct {
+     __u64 func_name;
+     __u32 name_len;
+     __u32 offset;
+     __u64 addr;
+     __u64 missed;
+     __u64 cookie;
+    } kprobe;
+    struct {
+     __u64 tp_name;
+     __u32 name_len;
+     __u32 :32;
+     __u64 cookie;
+    } tracepoint;
+    struct {
+     __u64 config;
+     __u32 type;
+     __u32 :32;
+     __u64 cookie;
+    } event;
+   };
+  } perf_event;
+  struct {
+   __u32 ifindex;
+   __u32 attach_type;
+  } tcx;
+  struct {
+   __u32 ifindex;
+   __u32 attach_type;
+  } netkit;
+  struct {
+   __u32 map_id;
+   __u32 attach_type;
+  } sockmap;
+ };
+} ;
+
+struct bpf_token_info {
+ __u64 allowed_cmds;
+ __u64 allowed_maps;
+ __u64 allowed_progs;
+ __u64 allowed_attachs;
+} ;
+
+
+
+
+
+struct bpf_sock_addr {
+ __u32 user_family;
+ __u32 user_ip4;
+
+
+ __u32 user_ip6[4];
+
+
+ __u32 user_port;
+
+
+ __u32 family;
+ __u32 type;
+ __u32 protocol;
+ __u32 msg_src_ip4;
+
+
+ __u32 msg_src_ip6[4];
+
+
+ union { struct bpf_sock * sk; __u64 :64; } ;
+};
+
+
+
+
+
+
+
+struct bpf_sock_ops {
+ __u32 op;
+ union {
+  __u32 args[4];
+  __u32 reply;
+  __u32 replylong[4];
+ };
+ __u32 family;
+ __u32 remote_ip4;
+ __u32 local_ip4;
+ __u32 remote_ip6[4];
+ __u32 local_ip6[4];
+ __u32 remote_port;
+ __u32 local_port;
+ __u32 is_fullsock;
+
+
+
+ __u32 snd_cwnd;
+ __u32 srtt_us;
+ __u32 bpf_sock_ops_cb_flags;
+ __u32 state;
+ __u32 rtt_min;
+ __u32 snd_ssthresh;
+ __u32 rcv_nxt;
+ __u32 snd_nxt;
+ __u32 snd_una;
+ __u32 mss_cache;
+ __u32 ecn_flags;
+ __u32 rate_delivered;
+ __u32 rate_interval_us;
+ __u32 packets_out;
+ __u32 retrans_out;
+ __u32 total_retrans;
+ __u32 segs_in;
+ __u32 data_segs_in;
+ __u32 segs_out;
+ __u32 data_segs_out;
+ __u32 lost_out;
+ __u32 sacked_out;
+ __u32 sk_txhash;
+ __u64 bytes_received;
+ __u64 bytes_acked;
+ union { struct bpf_sock * sk; __u64 :64; } ;
+# 7072 "headers/include/linux/bpf.h"
+ union { void * skb_data; __u64 :64; } ;
+ union { void * skb_data_end; __u64 :64; } ;
+ __u32 skb_len;
+
+
+
+ __u32 skb_tcp_flags;
+# 7088 "headers/include/linux/bpf.h"
+ __u64 skb_hwtstamp;
+};
+
+
+enum {
+ BPF_SOCK_OPS_RTO_CB_FLAG = (1<<0),
+ BPF_SOCK_OPS_RETRANS_CB_FLAG = (1<<1),
+ BPF_SOCK_OPS_STATE_CB_FLAG = (1<<2),
+ BPF_SOCK_OPS_RTT_CB_FLAG = (1<<3),
+# 7115 "headers/include/linux/bpf.h"
+ BPF_SOCK_OPS_PARSE_ALL_HDR_OPT_CB_FLAG = (1<<4),
+# 7124 "headers/include/linux/bpf.h"
+ BPF_SOCK_OPS_PARSE_UNKNOWN_HDR_OPT_CB_FLAG = (1<<5),
+# 7139 "headers/include/linux/bpf.h"
+ BPF_SOCK_OPS_WRITE_HDR_OPT_CB_FLAG = (1<<6),
+
+ BPF_SOCK_OPS_ALL_CB_FLAGS = 0x7F,
+};
+
+enum {
+ SK_BPF_CB_TX_TIMESTAMPING = 1<<0,
+ SK_BPF_CB_MASK = (SK_BPF_CB_TX_TIMESTAMPING - 1) |
+        SK_BPF_CB_TX_TIMESTAMPING
+};
+
+
+
+
+enum {
+ BPF_SOCK_OPS_VOID,
+ BPF_SOCK_OPS_TIMEOUT_INIT,
+
+
+ BPF_SOCK_OPS_RWND_INIT,
+
+
+
+ BPF_SOCK_OPS_TCP_CONNECT_CB,
+
+
+ BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB,
+
+
+
+ BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB,
+
+
+
+ BPF_SOCK_OPS_NEEDS_ECN,
+
+
+ BPF_SOCK_OPS_BASE_RTT,
+
+
+
+
+
+
+ BPF_SOCK_OPS_RTO_CB,
+
+
+
+
+ BPF_SOCK_OPS_RETRANS_CB,
+
+
+
+
+
+ BPF_SOCK_OPS_STATE_CB,
+
+
+
+ BPF_SOCK_OPS_TCP_LISTEN_CB,
+
+
+ BPF_SOCK_OPS_RTT_CB,
+
+
+
+ BPF_SOCK_OPS_PARSE_HDR_OPT_CB,
+# 7219 "headers/include/linux/bpf.h"
+ BPF_SOCK_OPS_HDR_OPT_LEN_CB,
+# 7236 "headers/include/linux/bpf.h"
+ BPF_SOCK_OPS_WRITE_HDR_OPT_CB,
+# 7262 "headers/include/linux/bpf.h"
+ BPF_SOCK_OPS_TSTAMP_SCHED_CB,
+
+
+
+
+ BPF_SOCK_OPS_TSTAMP_SND_SW_CB,
+
+
+
+ BPF_SOCK_OPS_TSTAMP_SND_HW_CB,
+
+
+
+ BPF_SOCK_OPS_TSTAMP_ACK_CB,
+
+
+
+
+ BPF_SOCK_OPS_TSTAMP_SENDMSG_CB,
+
+
+
+
+};
+
+
+
+
+
+
+enum {
+ BPF_TCP_ESTABLISHED = 1,
+ BPF_TCP_SYN_SENT,
+ BPF_TCP_SYN_RECV,
+ BPF_TCP_FIN_WAIT1,
+ BPF_TCP_FIN_WAIT2,
+ BPF_TCP_TIME_WAIT,
+ BPF_TCP_CLOSE,
+ BPF_TCP_CLOSE_WAIT,
+ BPF_TCP_LAST_ACK,
+ BPF_TCP_LISTEN,
+ BPF_TCP_CLOSING,
+ BPF_TCP_NEW_SYN_RECV,
+ BPF_TCP_BOUND_INACTIVE,
+
+ BPF_TCP_MAX_STATES
+};
+
+enum {
+ TCP_BPF_IW = 1001,
+ TCP_BPF_SNDCWND_CLAMP = 1002,
+ TCP_BPF_DELACK_MAX = 1003,
+ TCP_BPF_RTO_MIN = 1004,
+# 7347 "headers/include/linux/bpf.h"
+ TCP_BPF_SYN = 1005,
+ TCP_BPF_SYN_IP = 1006,
+ TCP_BPF_SYN_MAC = 1007,
+ TCP_BPF_SOCK_OPS_CB_FLAGS = 1008,
+ SK_BPF_CB_FLAGS = 1009,
+ SK_BPF_BYPASS_PROT_MEM = 1010,
+
+};
+
+enum {
+ BPF_LOAD_HDR_OPT_TCP_SYN = (1ULL << 0),
+};
+
+
+
+
+enum {
+ BPF_WRITE_HDR_TCP_CURRENT_MSS = 1,
+
+
+
+
+
+
+ BPF_WRITE_HDR_TCP_SYNACK_COOKIE = 2,
+
+
+};
+
+struct bpf_perf_event_value {
+ __u64 counter;
+ __u64 enabled;
+ __u64 running;
+};
+
+enum {
+ BPF_DEVCG_ACC_MKNOD = (1ULL << 0),
+ BPF_DEVCG_ACC_READ = (1ULL << 1),
+ BPF_DEVCG_ACC_WRITE = (1ULL << 2),
+};
+
+enum {
+ BPF_DEVCG_DEV_BLOCK = (1ULL << 0),
+ BPF_DEVCG_DEV_CHAR = (1ULL << 1),
+};
+
+struct bpf_cgroup_dev_ctx {
+
+ __u32 access_type;
+ __u32 major;
+ __u32 minor;
+};
+
+struct bpf_raw_tracepoint_args {
+ __u64 args[0];
+};
+
+
+
+
+enum {
+ BPF_FIB_LOOKUP_DIRECT = (1U << 0),
+ BPF_FIB_LOOKUP_OUTPUT = (1U << 1),
+ BPF_FIB_LOOKUP_SKIP_NEIGH = (1U << 2),
+ BPF_FIB_LOOKUP_TBID = (1U << 3),
+ BPF_FIB_LOOKUP_SRC = (1U << 4),
+ BPF_FIB_LOOKUP_MARK = (1U << 5),
+ BPF_FIB_LOOKUP_VLAN = (1U << 6),
+ BPF_FIB_LOOKUP_VLAN_INPUT = (1U << 7),
+};
+
+enum {
+ BPF_FIB_LKUP_RET_SUCCESS,
+ BPF_FIB_LKUP_RET_BLACKHOLE,
+ BPF_FIB_LKUP_RET_UNREACHABLE,
+ BPF_FIB_LKUP_RET_PROHIBIT,
+ BPF_FIB_LKUP_RET_NOT_FWDED,
+ BPF_FIB_LKUP_RET_FWD_DISABLED,
+ BPF_FIB_LKUP_RET_UNSUPP_LWT,
+ BPF_FIB_LKUP_RET_NO_NEIGH,
+ BPF_FIB_LKUP_RET_FRAG_NEEDED,
+ BPF_FIB_LKUP_RET_NO_SRC_ADDR,
+ BPF_FIB_LKUP_RET_VLAN_FAILURE,
+};
+
+struct bpf_fib_lookup {
+
+
+
+ __u8 family;
+
+
+ __u8 l4_protocol;
+ __be16 sport;
+ __be16 dport;
+
+ union {
+
+  __u16 tot_len;
+
+
+  __u16 mtu_result;
+ } ;
+
+
+
+ __u32 ifindex;
+
+ union {
+
+  __u8 tos;
+  __be32 flowinfo;
+
+
+  __u32 rt_metric;
+ };
+
+
+
+
+ union {
+  __be32 ipv4_src;
+  __u32 ipv6_src[4];
+ };
+
+
+
+
+
+ union {
+  __be32 ipv4_dst;
+  __u32 ipv6_dst[4];
+ };
+
+ union {
+  struct {
+
+
+
+
+
+
+
+   __be16 h_vlan_proto;
+   __be16 h_vlan_TCI;
+  };
+
+
+
+
+  __u32 tbid;
+ };
+
+ union {
+
+  struct {
+   __u32 mark;
+
+  };
+
+
+  struct {
+   __u8 smac[6];
+   __u8 dmac[6];
+  };
+ };
+};
+
+struct bpf_redir_neigh {
+
+ __u32 nh_family;
+
+ union {
+  __be32 ipv4_nh;
+  __u32 ipv6_nh[4];
+ };
+};
+
+
+enum bpf_check_mtu_flags {
+ BPF_MTU_CHK_SEGS = (1U << 0),
+};
+
+enum bpf_check_mtu_ret {
+ BPF_MTU_CHK_RET_SUCCESS,
+ BPF_MTU_CHK_RET_FRAG_NEEDED,
+ BPF_MTU_CHK_RET_SEGS_TOOBIG,
+};
+
+enum bpf_task_fd_type {
+ BPF_FD_TYPE_RAW_TRACEPOINT,
+ BPF_FD_TYPE_TRACEPOINT,
+ BPF_FD_TYPE_KPROBE,
+ BPF_FD_TYPE_KRETPROBE,
+ BPF_FD_TYPE_UPROBE,
+ BPF_FD_TYPE_URETPROBE,
+};
+
+enum {
+ BPF_FLOW_DISSECTOR_F_PARSE_1ST_FRAG = (1U << 0),
+ BPF_FLOW_DISSECTOR_F_STOP_AT_FLOW_LABEL = (1U << 1),
+ BPF_FLOW_DISSECTOR_F_STOP_AT_ENCAP = (1U << 2),
+};
+
+struct bpf_flow_keys {
+ __u16 nhoff;
+ __u16 thoff;
+ __u16 addr_proto;
+ __u8 is_frag;
+ __u8 is_first_frag;
+ __u8 is_encap;
+ __u8 ip_proto;
+ __be16 n_proto;
+ __be16 sport;
+ __be16 dport;
+ union {
+  struct {
+   __be32 ipv4_src;
+   __be32 ipv4_dst;
+  };
+  struct {
+   __u32 ipv6_src[4];
+   __u32 ipv6_dst[4];
+  };
+ };
+ __u32 flags;
+ __be32 flow_label;
+};
+
+struct bpf_func_info {
+ __u32 insn_off;
+ __u32 type_id;
+};
+
+
+
+
+struct bpf_line_info {
+ __u32 insn_off;
+ __u32 file_name_off;
+ __u32 line_off;
+ __u32 line_col;
+};
+
+struct bpf_spin_lock {
+ __u32 val;
+};
+
+struct bpf_timer {
+ __u64 __opaque[2];
+} ;
+
+struct bpf_task_work {
+ __u64 __opaque;
+} ;
+
+struct bpf_wq {
+ __u64 __opaque[2];
+} ;
+
+struct bpf_dynptr {
+ __u64 __opaque[2];
+} ;
+
+struct bpf_list_head {
+ __u64 __opaque[2];
+} ;
+
+struct bpf_list_node {
+ __u64 __opaque[3];
+} ;
+
+struct bpf_rb_root {
+ __u64 __opaque[2];
+} ;
+
+struct bpf_rb_node {
+ __u64 __opaque[4];
+} ;
+
+struct bpf_refcount {
+ __u32 __opaque[1];
+} ;
+
+struct bpf_sysctl {
+ __u32 write;
+
+
+ __u32 file_pos;
+
+
+};
+
+struct bpf_sockopt {
+ union { struct bpf_sock * sk; __u64 :64; } ;
+ union { void * optval; __u64 :64; } ;
+ union { void * optval_end; __u64 :64; } ;
+
+ __s32 level;
+ __s32 optname;
+ __s32 optlen;
+ __s32 retval;
+};
+
+struct bpf_pidns_info {
+ __u32 pid;
+ __u32 tgid;
+};
+
+
+struct bpf_sk_lookup {
+ union {
+  union { struct bpf_sock * sk; __u64 :64; } ;
+  __u64 cookie;
+ };
+
+ __u32 family;
+ __u32 protocol;
+ __u32 remote_ip4;
+ __u32 remote_ip6[4];
+ __be16 remote_port;
+ __u16 :16;
+ __u32 local_ip4;
+ __u32 local_ip6[4];
+ __u32 local_port;
+ __u32 ingress_ifindex;
+};
+# 7683 "headers/include/linux/bpf.h"
+struct btf_ptr {
+ void *ptr;
+ __u32 type_id;
+ __u32 flags;
+};
+# 7698 "headers/include/linux/bpf.h"
+enum {
+ BTF_F_COMPACT = (1ULL << 0),
+ BTF_F_NONAME = (1ULL << 1),
+ BTF_F_PTR_RAW = (1ULL << 2),
+ BTF_F_ZERO = (1ULL << 3),
+};
+
+
+
+
+
+enum bpf_core_relo_kind {
+ BPF_CORE_FIELD_BYTE_OFFSET = 0,
+ BPF_CORE_FIELD_BYTE_SIZE = 1,
+ BPF_CORE_FIELD_EXISTS = 2,
+ BPF_CORE_FIELD_SIGNED = 3,
+ BPF_CORE_FIELD_LSHIFT_U64 = 4,
+ BPF_CORE_FIELD_RSHIFT_U64 = 5,
+ BPF_CORE_TYPE_ID_LOCAL = 6,
+ BPF_CORE_TYPE_ID_TARGET = 7,
+ BPF_CORE_TYPE_EXISTS = 8,
+ BPF_CORE_TYPE_SIZE = 9,
+ BPF_CORE_ENUMVAL_EXISTS = 10,
+ BPF_CORE_ENUMVAL_VALUE = 11,
+ BPF_CORE_TYPE_MATCHES = 12,
+};
+# 7773 "headers/include/linux/bpf.h"
+struct bpf_core_relo {
+ __u32 insn_off;
+ __u32 type_id;
+ __u32 access_str_off;
+ enum bpf_core_relo_kind kind;
+};
+
+
+
+
+
+
+
+enum {
+ BPF_F_TIMER_ABS = (1ULL << 0),
+ BPF_F_TIMER_CPU_PIN = (1ULL << 1),
+};
+
+
+struct bpf_iter_num {
+
+
+
+ __u64 __opaque[1];
+} ;
+
+
+
+
+
+
+enum bpf_kfunc_flags {
+ BPF_F_PAD_ZEROS = (1ULL << 0),
+};
+# 7821 "headers/include/linux/bpf.h"
+struct bpf_insn_array_value {
+ __u32 orig_off;
+ __u32 xlated_off;
+ __u32 jitted_off;
+ __u32 :32;
+};
+# 3 "linux-uapi.c" 2
+# 1 "headers/include/linux/ethtool.h" 1
+# 17 "headers/include/linux/ethtool.h"
+# 1 "headers/include/linux/const.h" 1
+# 18 "headers/include/linux/ethtool.h" 2
+# 1 "headers/include/linux/typelimits.h" 1
+# 19 "headers/include/linux/ethtool.h" 2
+
+# 1 "headers/include/linux/if_ether.h" 1
+# 183 "headers/include/linux/if_ether.h"
+struct ethhdr {
+ unsigned char h_dest[6];
+ unsigned char h_source[6];
+ __be16 h_proto;
+} ;
+# 21 "headers/include/linux/ethtool.h" 2
+# 102 "headers/include/linux/ethtool.h"
+struct ethtool_cmd {
+ __u32 cmd;
+ __u32 supported;
+ __u32 advertising;
+ __u16 speed;
+ __u8 duplex;
+ __u8 port;
+ __u8 phy_address;
+ __u8 transceiver;
+ __u8 autoneg;
+ __u8 mdio_support;
+ __u32 maxtxpkt;
+ __u32 maxrxpkt;
+ __u16 speed_hi;
+ __u8 eth_tp_mdix;
+ __u8 eth_tp_mdix_ctrl;
+ __u32 lp_advertising;
+ __u32 reserved[2];
+};
+
+static inline void ethtool_cmd_speed_set(struct ethtool_cmd *ep,
+      __u32 speed)
+{
+ ep->speed = (__u16)(speed & 0xFFFF);
+ ep->speed_hi = (__u16)(speed >> 16);
+}
+
+static inline __u32 ethtool_cmd_speed(const struct ethtool_cmd *ep)
+{
+ return (ep->speed_hi << 16) | ep->speed;
+}
+# 182 "headers/include/linux/ethtool.h"
+struct ethtool_drvinfo {
+ __u32 cmd;
+ char driver[32];
+ char version[32];
+ char fw_version[32];
+ char bus_info[32];
+ char erom_version[32];
+ char reserved2[12];
+ __u32 n_priv_flags;
+ __u32 n_stats;
+ __u32 testinfo_len;
+ __u32 eedump_len;
+ __u32 regdump_len;
+};
+# 208 "headers/include/linux/ethtool.h"
+struct ethtool_wolinfo {
+ __u32 cmd;
+ __u32 supported;
+ __u32 wolopts;
+ __u8 sopass[6];
+};
+
+
+struct ethtool_value {
+ __u32 cmd;
+ __u32 data;
+};
+
+
+
+
+enum tunable_id {
+ ETHTOOL_ID_UNSPEC,
+ ETHTOOL_RX_COPYBREAK,
+ ETHTOOL_TX_COPYBREAK,
+ ETHTOOL_PFC_PREVENTION_TOUT,
+ ETHTOOL_TX_COPYBREAK_BUF_SIZE,
+
+
+
+
+ __ETHTOOL_TUNABLE_COUNT,
+};
+
+enum tunable_type_id {
+ ETHTOOL_TUNABLE_UNSPEC,
+ ETHTOOL_TUNABLE_U8,
+ ETHTOOL_TUNABLE_U16,
+ ETHTOOL_TUNABLE_U32,
+ ETHTOOL_TUNABLE_U64,
+ ETHTOOL_TUNABLE_STRING,
+ ETHTOOL_TUNABLE_S8,
+ ETHTOOL_TUNABLE_S16,
+ ETHTOOL_TUNABLE_S32,
+ ETHTOOL_TUNABLE_S64,
+};
+
+struct ethtool_tunable {
+ __u32 cmd;
+ __u32 id;
+ __u32 type_id;
+ __u32 len;
+ void *data[];
+};
+# 289 "headers/include/linux/ethtool.h"
+enum phy_tunable_id {
+ ETHTOOL_PHY_ID_UNSPEC,
+ ETHTOOL_PHY_DOWNSHIFT,
+ ETHTOOL_PHY_FAST_LINK_DOWN,
+ ETHTOOL_PHY_EDPD,
+ ETHTOOL_PHY_SHORT_CABLE_PRESET,
+ ETHTOOL_PHY_LPF_BW,
+ ETHTOOL_PHY_DSP_EQ_INIT_VALUE,
+
+
+
+
+ __ETHTOOL_PHY_TUNABLE_COUNT,
+};
+# 319 "headers/include/linux/ethtool.h"
+struct ethtool_regs {
+ __u32 cmd;
+ __u32 version;
+ __u32 len;
+ __u8 data[];
+};
+# 344 "headers/include/linux/ethtool.h"
+struct ethtool_eeprom {
+ __u32 cmd;
+ __u32 magic;
+ __u32 offset;
+ __u32 len;
+ __u8 data[];
+};
+# 370 "headers/include/linux/ethtool.h"
+struct ethtool_eee {
+ __u32 cmd;
+ __u32 supported;
+ __u32 advertised;
+ __u32 lp_advertised;
+ __u32 eee_active;
+ __u32 eee_enabled;
+ __u32 tx_lpi_enabled;
+ __u32 tx_lpi_timer;
+ __u32 reserved[2];
+};
+# 393 "headers/include/linux/ethtool.h"
+struct ethtool_modinfo {
+ __u32 cmd;
+ __u32 type;
+ __u32 eeprom_len;
+ __u32 reserved[8];
+};
+# 473 "headers/include/linux/ethtool.h"
+struct ethtool_coalesce {
+ __u32 cmd;
+ __u32 rx_coalesce_usecs;
+ __u32 rx_max_coalesced_frames;
+ __u32 rx_coalesce_usecs_irq;
+ __u32 rx_max_coalesced_frames_irq;
+ __u32 tx_coalesce_usecs;
+ __u32 tx_max_coalesced_frames;
+ __u32 tx_coalesce_usecs_irq;
+ __u32 tx_max_coalesced_frames_irq;
+ __u32 stats_block_coalesce_usecs;
+ __u32 use_adaptive_rx_coalesce;
+ __u32 use_adaptive_tx_coalesce;
+ __u32 pkt_rate_low;
+ __u32 rx_coalesce_usecs_low;
+ __u32 rx_max_coalesced_frames_low;
+ __u32 tx_coalesce_usecs_low;
+ __u32 tx_max_coalesced_frames_low;
+ __u32 pkt_rate_high;
+ __u32 rx_coalesce_usecs_high;
+ __u32 rx_max_coalesced_frames_high;
+ __u32 tx_coalesce_usecs_high;
+ __u32 tx_max_coalesced_frames_high;
+ __u32 rate_sample_interval;
+};
+# 524 "headers/include/linux/ethtool.h"
+struct ethtool_ringparam {
+ __u32 cmd;
+ __u32 rx_max_pending;
+ __u32 rx_mini_max_pending;
+ __u32 rx_jumbo_max_pending;
+ __u32 tx_max_pending;
+ __u32 rx_pending;
+ __u32 rx_mini_pending;
+ __u32 rx_jumbo_pending;
+ __u32 tx_pending;
+};
+# 552 "headers/include/linux/ethtool.h"
+struct ethtool_channels {
+ __u32 cmd;
+ __u32 max_rx;
+ __u32 max_tx;
+ __u32 max_other;
+ __u32 max_combined;
+ __u32 rx_count;
+ __u32 tx_count;
+ __u32 other_count;
+ __u32 combined_count;
+};
+# 586 "headers/include/linux/ethtool.h"
+struct ethtool_pauseparam {
+ __u32 cmd;
+ __u32 autoneg;
+ __u32 rx_pause;
+ __u32 tx_pause;
+};
+
+
+enum ethtool_link_ext_state {
+ ETHTOOL_LINK_EXT_STATE_AUTONEG,
+ ETHTOOL_LINK_EXT_STATE_LINK_TRAINING_FAILURE,
+ ETHTOOL_LINK_EXT_STATE_LINK_LOGICAL_MISMATCH,
+ ETHTOOL_LINK_EXT_STATE_BAD_SIGNAL_INTEGRITY,
+ ETHTOOL_LINK_EXT_STATE_NO_CABLE,
+ ETHTOOL_LINK_EXT_STATE_CABLE_ISSUE,
+ ETHTOOL_LINK_EXT_STATE_EEPROM_ISSUE,
+ ETHTOOL_LINK_EXT_STATE_CALIBRATION_FAILURE,
+ ETHTOOL_LINK_EXT_STATE_POWER_BUDGET_EXCEEDED,
+ ETHTOOL_LINK_EXT_STATE_OVERHEAT,
+ ETHTOOL_LINK_EXT_STATE_MODULE,
+ ETHTOOL_LINK_EXT_STATE_OTP_SPEED_VIOLATION,
+ ETHTOOL_LINK_EXT_STATE_BMC_REQUEST_DOWN,
+};
+
+
+enum ethtool_link_ext_substate_autoneg {
+ ETHTOOL_LINK_EXT_SUBSTATE_AN_NO_PARTNER_DETECTED = 1,
+ ETHTOOL_LINK_EXT_SUBSTATE_AN_ACK_NOT_RECEIVED,
+ ETHTOOL_LINK_EXT_SUBSTATE_AN_NEXT_PAGE_EXCHANGE_FAILED,
+ ETHTOOL_LINK_EXT_SUBSTATE_AN_NO_PARTNER_DETECTED_FORCE_MODE,
+ ETHTOOL_LINK_EXT_SUBSTATE_AN_FEC_MISMATCH_DURING_OVERRIDE,
+ ETHTOOL_LINK_EXT_SUBSTATE_AN_NO_HCD,
+};
+
+
+
+enum ethtool_link_ext_substate_link_training {
+ ETHTOOL_LINK_EXT_SUBSTATE_LT_KR_FRAME_LOCK_NOT_ACQUIRED = 1,
+ ETHTOOL_LINK_EXT_SUBSTATE_LT_KR_LINK_INHIBIT_TIMEOUT,
+ ETHTOOL_LINK_EXT_SUBSTATE_LT_KR_LINK_PARTNER_DID_NOT_SET_RECEIVER_READY,
+ ETHTOOL_LINK_EXT_SUBSTATE_LT_REMOTE_FAULT,
+};
+
+
+
+enum ethtool_link_ext_substate_link_logical_mismatch {
+ ETHTOOL_LINK_EXT_SUBSTATE_LLM_PCS_DID_NOT_ACQUIRE_BLOCK_LOCK = 1,
+ ETHTOOL_LINK_EXT_SUBSTATE_LLM_PCS_DID_NOT_ACQUIRE_AM_LOCK,
+ ETHTOOL_LINK_EXT_SUBSTATE_LLM_PCS_DID_NOT_GET_ALIGN_STATUS,
+ ETHTOOL_LINK_EXT_SUBSTATE_LLM_FC_FEC_IS_NOT_LOCKED,
+ ETHTOOL_LINK_EXT_SUBSTATE_LLM_RS_FEC_IS_NOT_LOCKED,
+};
+
+
+
+enum ethtool_link_ext_substate_bad_signal_integrity {
+ ETHTOOL_LINK_EXT_SUBSTATE_BSI_LARGE_NUMBER_OF_PHYSICAL_ERRORS = 1,
+ ETHTOOL_LINK_EXT_SUBSTATE_BSI_UNSUPPORTED_RATE,
+ ETHTOOL_LINK_EXT_SUBSTATE_BSI_SERDES_REFERENCE_CLOCK_LOST,
+ ETHTOOL_LINK_EXT_SUBSTATE_BSI_SERDES_ALOS,
+};
+
+
+enum ethtool_link_ext_substate_cable_issue {
+ ETHTOOL_LINK_EXT_SUBSTATE_CI_UNSUPPORTED_CABLE = 1,
+ ETHTOOL_LINK_EXT_SUBSTATE_CI_CABLE_TEST_FAILURE,
+};
+
+
+enum ethtool_link_ext_substate_module {
+ ETHTOOL_LINK_EXT_SUBSTATE_MODULE_CMIS_NOT_READY = 1,
+};
+# 691 "headers/include/linux/ethtool.h"
+enum ethtool_stringset {
+ ETH_SS_TEST = 0,
+ ETH_SS_STATS,
+ ETH_SS_PRIV_FLAGS,
+ ETH_SS_NTUPLE_FILTERS,
+ ETH_SS_FEATURES,
+ ETH_SS_RSS_HASH_FUNCS,
+ ETH_SS_TUNABLES,
+ ETH_SS_PHY_STATS,
+ ETH_SS_PHY_TUNABLES,
+ ETH_SS_LINK_MODES,
+ ETH_SS_MSG_CLASSES,
+ ETH_SS_WOL_MODES,
+ ETH_SS_SOF_TIMESTAMPING,
+ ETH_SS_TS_TX_TYPES,
+ ETH_SS_TS_RX_FILTERS,
+ ETH_SS_UDP_TUNNEL_TYPES,
+ ETH_SS_STATS_STD,
+ ETH_SS_STATS_ETH_PHY,
+ ETH_SS_STATS_ETH_MAC,
+ ETH_SS_STATS_ETH_CTRL,
+ ETH_SS_STATS_RMON,
+ ETH_SS_STATS_PHY,
+ ETH_SS_TS_FLAGS,
+
+
+ ETH_SS_COUNT
+};
+# 732 "headers/include/linux/ethtool.h"
+enum ethtool_mac_stats_src {
+ ETHTOOL_MAC_STATS_SRC_AGGREGATE,
+ ETHTOOL_MAC_STATS_SRC_EMAC,
+ ETHTOOL_MAC_STATS_SRC_PMAC,
+};
+# 746 "headers/include/linux/ethtool.h"
+enum ethtool_module_power_mode_policy {
+ ETHTOOL_MODULE_POWER_MODE_POLICY_HIGH = 1,
+ ETHTOOL_MODULE_POWER_MODE_POLICY_AUTO,
+};
+
+
+
+
+
+
+enum ethtool_module_power_mode {
+ ETHTOOL_MODULE_POWER_MODE_LOW = 1,
+ ETHTOOL_MODULE_POWER_MODE_HIGH,
+};
+# 778 "headers/include/linux/ethtool.h"
+enum ethtool_c33_pse_ext_state {
+ ETHTOOL_C33_PSE_EXT_STATE_ERROR_CONDITION = 1,
+ ETHTOOL_C33_PSE_EXT_STATE_MR_MPS_VALID,
+ ETHTOOL_C33_PSE_EXT_STATE_MR_PSE_ENABLE,
+ ETHTOOL_C33_PSE_EXT_STATE_OPTION_DETECT_TED,
+ ETHTOOL_C33_PSE_EXT_STATE_OPTION_VPORT_LIM,
+ ETHTOOL_C33_PSE_EXT_STATE_OVLD_DETECTED,
+ ETHTOOL_C33_PSE_EXT_STATE_PD_DLL_POWER_TYPE,
+ ETHTOOL_C33_PSE_EXT_STATE_POWER_NOT_AVAILABLE,
+ ETHTOOL_C33_PSE_EXT_STATE_SHORT_DETECTED,
+};
+# 803 "headers/include/linux/ethtool.h"
+enum ethtool_c33_pse_ext_substate_mr_mps_valid {
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_MR_MPS_VALID_DETECTED_UNDERLOAD = 1,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_MR_MPS_VALID_CONNECTION_OPEN,
+};
+# 836 "headers/include/linux/ethtool.h"
+enum ethtool_c33_pse_ext_substate_error_condition {
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_ERROR_CONDITION_NON_EXISTING_PORT = 1,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_ERROR_CONDITION_UNDEFINED_PORT,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_ERROR_CONDITION_INTERNAL_HW_FAULT,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_ERROR_CONDITION_COMM_ERROR_AFTER_FORCE_ON,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_ERROR_CONDITION_UNKNOWN_PORT_STATUS,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_ERROR_CONDITION_HOST_CRASH_TURN_OFF,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_ERROR_CONDITION_HOST_CRASH_FORCE_SHUTDOWN,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_ERROR_CONDITION_CONFIG_CHANGE,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_ERROR_CONDITION_DETECTED_OVER_TEMP,
+};
+# 858 "headers/include/linux/ethtool.h"
+enum ethtool_c33_pse_ext_substate_mr_pse_enable {
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_MR_PSE_ENABLE_DISABLE_PIN_ACTIVE = 1,
+};
+# 874 "headers/include/linux/ethtool.h"
+enum ethtool_c33_pse_ext_substate_option_detect_ted {
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_DETECT_TED_DET_IN_PROCESS = 1,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_DETECT_TED_CONNECTION_CHECK_ERROR,
+};
+# 893 "headers/include/linux/ethtool.h"
+enum ethtool_c33_pse_ext_substate_option_vport_lim {
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_VPORT_LIM_HIGH_VOLTAGE = 1,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_VPORT_LIM_LOW_VOLTAGE,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_OPTION_VPORT_LIM_VOLTAGE_INJECTION,
+};
+# 909 "headers/include/linux/ethtool.h"
+enum ethtool_c33_pse_ext_substate_ovld_detected {
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_OVLD_DETECTED_OVERLOAD = 1,
+};
+# 931 "headers/include/linux/ethtool.h"
+enum ethtool_c33_pse_ext_substate_power_not_available {
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_POWER_NOT_AVAILABLE_BUDGET_EXCEEDED = 1,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_POWER_NOT_AVAILABLE_PORT_PW_LIMIT_EXCEEDS_CONTROLLER_BUDGET,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_POWER_NOT_AVAILABLE_PD_REQUEST_EXCEEDS_PORT_LIMIT,
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_POWER_NOT_AVAILABLE_HW_PW_LIMIT,
+};
+# 948 "headers/include/linux/ethtool.h"
+enum ethtool_c33_pse_ext_substate_short_detected {
+ ETHTOOL_C33_PSE_EXT_SUBSTATE_SHORT_DETECTED_SHORT_CONDITION = 1,
+};
+
+
+
+
+
+
+
+enum ethtool_pse_types {
+ ETHTOOL_PSE_UNKNOWN = 1 << 0,
+ ETHTOOL_PSE_PODL = 1 << 1,
+ ETHTOOL_PSE_C33 = 1 << 2,
+};
+# 971 "headers/include/linux/ethtool.h"
+enum ethtool_c33_pse_admin_state {
+ ETHTOOL_C33_PSE_ADMIN_STATE_UNKNOWN = 1,
+ ETHTOOL_C33_PSE_ADMIN_STATE_DISABLED,
+ ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED,
+};
+# 997 "headers/include/linux/ethtool.h"
+enum ethtool_c33_pse_pw_d_status {
+ ETHTOOL_C33_PSE_PW_D_STATUS_UNKNOWN = 1,
+ ETHTOOL_C33_PSE_PW_D_STATUS_DISABLED,
+ ETHTOOL_C33_PSE_PW_D_STATUS_SEARCHING,
+ ETHTOOL_C33_PSE_PW_D_STATUS_DELIVERING,
+ ETHTOOL_C33_PSE_PW_D_STATUS_TEST,
+ ETHTOOL_C33_PSE_PW_D_STATUS_FAULT,
+ ETHTOOL_C33_PSE_PW_D_STATUS_OTHERFAULT,
+};
+# 1015 "headers/include/linux/ethtool.h"
+enum ethtool_podl_pse_admin_state {
+ ETHTOOL_PODL_PSE_ADMIN_STATE_UNKNOWN = 1,
+ ETHTOOL_PODL_PSE_ADMIN_STATE_DISABLED,
+ ETHTOOL_PODL_PSE_ADMIN_STATE_ENABLED,
+};
+# 1042 "headers/include/linux/ethtool.h"
+enum ethtool_podl_pse_pw_d_status {
+ ETHTOOL_PODL_PSE_PW_D_STATUS_UNKNOWN = 1,
+ ETHTOOL_PODL_PSE_PW_D_STATUS_DISABLED,
+ ETHTOOL_PODL_PSE_PW_D_STATUS_SEARCHING,
+ ETHTOOL_PODL_PSE_PW_D_STATUS_DELIVERING,
+ ETHTOOL_PODL_PSE_PW_D_STATUS_SLEEP,
+ ETHTOOL_PODL_PSE_PW_D_STATUS_IDLE,
+ ETHTOOL_PODL_PSE_PW_D_STATUS_ERROR,
+};
+# 1068 "headers/include/linux/ethtool.h"
+enum ethtool_mm_verify_status {
+ ETHTOOL_MM_VERIFY_STATUS_UNKNOWN,
+ ETHTOOL_MM_VERIFY_STATUS_INITIAL,
+ ETHTOOL_MM_VERIFY_STATUS_VERIFYING,
+ ETHTOOL_MM_VERIFY_STATUS_SUCCEEDED,
+ ETHTOOL_MM_VERIFY_STATUS_FAILED,
+ ETHTOOL_MM_VERIFY_STATUS_DISABLED,
+};
+# 1088 "headers/include/linux/ethtool.h"
+enum ethtool_module_fw_flash_status {
+ ETHTOOL_MODULE_FW_FLASH_STATUS_STARTED = 1,
+ ETHTOOL_MODULE_FW_FLASH_STATUS_IN_PROGRESS,
+ ETHTOOL_MODULE_FW_FLASH_STATUS_COMPLETED,
+ ETHTOOL_MODULE_FW_FLASH_STATUS_ERROR,
+};
+# 1114 "headers/include/linux/ethtool.h"
+struct ethtool_gstrings {
+ __u32 cmd;
+ __u32 string_set;
+ __u32 len;
+ __u8 data[];
+};
+# 1139 "headers/include/linux/ethtool.h"
+struct ethtool_sset_info {
+ __u32 cmd;
+ __u32 reserved;
+ __u64 sset_mask;
+ __u32 data[];
+};
+# 1156 "headers/include/linux/ethtool.h"
+enum ethtool_test_flags {
+ ETH_TEST_FL_OFFLINE = (1 << 0),
+ ETH_TEST_FL_FAILED = (1 << 1),
+ ETH_TEST_FL_EXTERNAL_LB = (1 << 2),
+ ETH_TEST_FL_EXTERNAL_LB_DONE = (1 << 3),
+};
+# 1178 "headers/include/linux/ethtool.h"
+struct ethtool_test {
+ __u32 cmd;
+ __u32 flags;
+ __u32 reserved;
+ __u32 len;
+ __u64 data[];
+};
+# 1204 "headers/include/linux/ethtool.h"
+struct ethtool_stats {
+ __u32 cmd;
+ __u32 n_stats;
+ __u64 data[];
+};
+# 1221 "headers/include/linux/ethtool.h"
+struct ethtool_perm_addr {
+ __u32 cmd;
+ __u32 size;
+ __u8 data[];
+};
+# 1236 "headers/include/linux/ethtool.h"
+enum ethtool_flags {
+ ETH_FLAG_TXVLAN = (1 << 7),
+ ETH_FLAG_RXVLAN = (1 << 8),
+ ETH_FLAG_LRO = (1 << 15),
+ ETH_FLAG_NTUPLE = (1 << 27),
+ ETH_FLAG_RXHASH = (1 << 28),
+};
+# 1260 "headers/include/linux/ethtool.h"
+struct ethtool_tcpip4_spec {
+ __be32 ip4src;
+ __be32 ip4dst;
+ __be16 psrc;
+ __be16 pdst;
+ __u8 tos;
+};
+# 1277 "headers/include/linux/ethtool.h"
+struct ethtool_ah_espip4_spec {
+ __be32 ip4src;
+ __be32 ip4dst;
+ __be32 spi;
+ __u8 tos;
+};
+# 1295 "headers/include/linux/ethtool.h"
+struct ethtool_usrip4_spec {
+ __be32 ip4src;
+ __be32 ip4dst;
+ __be32 l4_4_bytes;
+ __u8 tos;
+ __u8 ip_ver;
+ __u8 proto;
+};
+# 1314 "headers/include/linux/ethtool.h"
+struct ethtool_tcpip6_spec {
+ __be32 ip6src[4];
+ __be32 ip6dst[4];
+ __be16 psrc;
+ __be16 pdst;
+ __u8 tclass;
+};
+# 1331 "headers/include/linux/ethtool.h"
+struct ethtool_ah_espip6_spec {
+ __be32 ip6src[4];
+ __be32 ip6dst[4];
+ __be32 spi;
+ __u8 tclass;
+};
+# 1346 "headers/include/linux/ethtool.h"
+struct ethtool_usrip6_spec {
+ __be32 ip6src[4];
+ __be32 ip6dst[4];
+ __be32 l4_4_bytes;
+ __u8 tclass;
+ __u8 l4_proto;
+};
+
+union ethtool_flow_union {
+ struct ethtool_tcpip4_spec tcp_ip4_spec;
+ struct ethtool_tcpip4_spec udp_ip4_spec;
+ struct ethtool_tcpip4_spec sctp_ip4_spec;
+ struct ethtool_ah_espip4_spec ah_ip4_spec;
+ struct ethtool_ah_espip4_spec esp_ip4_spec;
+ struct ethtool_usrip4_spec usr_ip4_spec;
+ struct ethtool_tcpip6_spec tcp_ip6_spec;
+ struct ethtool_tcpip6_spec udp_ip6_spec;
+ struct ethtool_tcpip6_spec sctp_ip6_spec;
+ struct ethtool_ah_espip6_spec ah_ip6_spec;
+ struct ethtool_ah_espip6_spec esp_ip6_spec;
+ struct ethtool_usrip6_spec usr_ip6_spec;
+ struct ethhdr ether_spec;
+ __u8 hdata[52];
+};
+# 1383 "headers/include/linux/ethtool.h"
+struct ethtool_flow_ext {
+ __u8 padding[2];
+ unsigned char h_dest[6];
+ __be16 vlan_etype;
+ __be16 vlan_tci;
+ __be32 data[2];
+};
+# 1408 "headers/include/linux/ethtool.h"
+struct ethtool_rx_flow_spec {
+ __u32 flow_type;
+ union ethtool_flow_union h_u;
+ struct ethtool_flow_ext h_ext;
+ union ethtool_flow_union m_u;
+ struct ethtool_flow_ext m_ext;
+ __u64 ring_cookie;
+ __u32 location;
+};
+# 1432 "headers/include/linux/ethtool.h"
+static inline __u64 ethtool_get_flow_spec_ring(__u64 ring_cookie)
+{
+ return 0x00000000FFFFFFFFLL & ring_cookie;
+}
+
+static inline __u64 ethtool_get_flow_spec_ring_vf(__u64 ring_cookie)
+{
+ return (0x000000FF00000000LL & ring_cookie) >>
+    32;
+}
+# 1504 "headers/include/linux/ethtool.h"
+struct ethtool_rxnfc {
+ __u32 cmd;
+ __u32 flow_type;
+ __u64 data;
+ struct ethtool_rx_flow_spec fs;
+ union {
+  __u32 rule_cnt;
+  __u32 rss_context;
+ };
+ __u32 rule_locs[];
+};
+# 1530 "headers/include/linux/ethtool.h"
+struct ethtool_rxfh_indir {
+ __u32 cmd;
+ __u32 size;
+ __u32 ring_index[];
+};
+# 1568 "headers/include/linux/ethtool.h"
+struct ethtool_rxfh {
+ __u32 cmd;
+ __u32 rss_context;
+ __u32 indir_size;
+ __u32 key_size;
+ __u8 hfunc;
+ __u8 input_xfrm;
+ __u8 rsvd8[2];
+ __u32 rsvd32;
+ __u32 rss_config[];
+};
+# 1598 "headers/include/linux/ethtool.h"
+struct ethtool_rx_ntuple_flow_spec {
+ __u32 flow_type;
+ union {
+  struct ethtool_tcpip4_spec tcp_ip4_spec;
+  struct ethtool_tcpip4_spec udp_ip4_spec;
+  struct ethtool_tcpip4_spec sctp_ip4_spec;
+  struct ethtool_ah_espip4_spec ah_ip4_spec;
+  struct ethtool_ah_espip4_spec esp_ip4_spec;
+  struct ethtool_usrip4_spec usr_ip4_spec;
+  struct ethhdr ether_spec;
+  __u8 hdata[72];
+ } h_u, m_u;
+
+ __u16 vlan_tag;
+ __u16 vlan_tag_mask;
+ __u64 data;
+ __u64 data_mask;
+
+ __s32 action;
+
+
+};
+
+
+
+
+
+
+struct ethtool_rx_ntuple {
+ __u32 cmd;
+ struct ethtool_rx_ntuple_flow_spec fs;
+};
+
+
+enum ethtool_flash_op_type {
+ ETHTOOL_FLASH_ALL_REGIONS = 0,
+};
+
+
+struct ethtool_flash {
+ __u32 cmd;
+ __u32 region;
+ char data[128];
+};
+# 1657 "headers/include/linux/ethtool.h"
+struct ethtool_dump {
+ __u32 cmd;
+ __u32 version;
+ __u32 flag;
+ __u32 len;
+ __u8 data[];
+};
+# 1676 "headers/include/linux/ethtool.h"
+struct ethtool_get_features_block {
+ __u32 available;
+ __u32 requested;
+ __u32 active;
+ __u32 never_changed;
+};
+# 1691 "headers/include/linux/ethtool.h"
+struct ethtool_gfeatures {
+ __u32 cmd;
+ __u32 size;
+ struct ethtool_get_features_block features[];
+};
+
+
+
+
+
+
+struct ethtool_set_features_block {
+ __u32 valid;
+ __u32 requested;
+};
+
+
+
+
+
+
+
+struct ethtool_sfeatures {
+ __u32 cmd;
+ __u32 size;
+ struct ethtool_set_features_block features[];
+};
+# 1739 "headers/include/linux/ethtool.h"
+struct ethtool_ts_info {
+ __u32 cmd;
+ __u32 so_timestamping;
+ __s32 phc_index;
+ __u32 tx_types;
+ __u32 tx_reserved[3];
+ __u32 rx_filters;
+ __u32 rx_reserved[3];
+};
+# 1774 "headers/include/linux/ethtool.h"
+enum ethtool_sfeatures_retval_bits {
+ ETHTOOL_F_UNSUPPORTED__BIT,
+ ETHTOOL_F_WISH__BIT,
+ ETHTOOL_F_COMPAT__BIT,
+};
+# 1793 "headers/include/linux/ethtool.h"
+struct ethtool_per_queue_op {
+ __u32 cmd;
+ __u32 sub_command;
+ __u32 queue_mask[(((4096) + (32) - 1) / (32))];
+ char data[];
+};
+# 1829 "headers/include/linux/ethtool.h"
+struct ethtool_fecparam {
+ __u32 cmd;
+
+ __u32 active_fec;
+ __u32 fec;
+ __u32 reserved;
+};
+# 1850 "headers/include/linux/ethtool.h"
+enum ethtool_fec_config_bits {
+ ETHTOOL_FEC_NONE_BIT,
+ ETHTOOL_FEC_AUTO_BIT,
+ ETHTOOL_FEC_OFF_BIT,
+ ETHTOOL_FEC_RS_BIT,
+ ETHTOOL_FEC_BASER_BIT,
+ ETHTOOL_FEC_LLRS_BIT,
+};
+# 1966 "headers/include/linux/ethtool.h"
+enum ethtool_link_mode_bit_indices {
+ ETHTOOL_LINK_MODE_10baseT_Half_BIT = 0,
+ ETHTOOL_LINK_MODE_10baseT_Full_BIT = 1,
+ ETHTOOL_LINK_MODE_100baseT_Half_BIT = 2,
+ ETHTOOL_LINK_MODE_100baseT_Full_BIT = 3,
+ ETHTOOL_LINK_MODE_1000baseT_Half_BIT = 4,
+ ETHTOOL_LINK_MODE_1000baseT_Full_BIT = 5,
+ ETHTOOL_LINK_MODE_Autoneg_BIT = 6,
+ ETHTOOL_LINK_MODE_TP_BIT = 7,
+ ETHTOOL_LINK_MODE_AUI_BIT = 8,
+ ETHTOOL_LINK_MODE_MII_BIT = 9,
+ ETHTOOL_LINK_MODE_FIBRE_BIT = 10,
+ ETHTOOL_LINK_MODE_BNC_BIT = 11,
+ ETHTOOL_LINK_MODE_10000baseT_Full_BIT = 12,
+ ETHTOOL_LINK_MODE_Pause_BIT = 13,
+ ETHTOOL_LINK_MODE_Asym_Pause_BIT = 14,
+ ETHTOOL_LINK_MODE_2500baseX_Full_BIT = 15,
+ ETHTOOL_LINK_MODE_Backplane_BIT = 16,
+ ETHTOOL_LINK_MODE_1000baseKX_Full_BIT = 17,
+ ETHTOOL_LINK_MODE_10000baseKX4_Full_BIT = 18,
+ ETHTOOL_LINK_MODE_10000baseKR_Full_BIT = 19,
+ ETHTOOL_LINK_MODE_10000baseR_FEC_BIT = 20,
+ ETHTOOL_LINK_MODE_20000baseMLD2_Full_BIT = 21,
+ ETHTOOL_LINK_MODE_20000baseKR2_Full_BIT = 22,
+ ETHTOOL_LINK_MODE_40000baseKR4_Full_BIT = 23,
+ ETHTOOL_LINK_MODE_40000baseCR4_Full_BIT = 24,
+ ETHTOOL_LINK_MODE_40000baseSR4_Full_BIT = 25,
+ ETHTOOL_LINK_MODE_40000baseLR4_Full_BIT = 26,
+ ETHTOOL_LINK_MODE_56000baseKR4_Full_BIT = 27,
+ ETHTOOL_LINK_MODE_56000baseCR4_Full_BIT = 28,
+ ETHTOOL_LINK_MODE_56000baseSR4_Full_BIT = 29,
+ ETHTOOL_LINK_MODE_56000baseLR4_Full_BIT = 30,
+ ETHTOOL_LINK_MODE_25000baseCR_Full_BIT = 31,
+
+
+
+
+
+
+
+ ETHTOOL_LINK_MODE_25000baseKR_Full_BIT = 32,
+ ETHTOOL_LINK_MODE_25000baseSR_Full_BIT = 33,
+ ETHTOOL_LINK_MODE_50000baseCR2_Full_BIT = 34,
+ ETHTOOL_LINK_MODE_50000baseKR2_Full_BIT = 35,
+ ETHTOOL_LINK_MODE_100000baseKR4_Full_BIT = 36,
+ ETHTOOL_LINK_MODE_100000baseSR4_Full_BIT = 37,
+ ETHTOOL_LINK_MODE_100000baseCR4_Full_BIT = 38,
+ ETHTOOL_LINK_MODE_100000baseLR4_ER4_Full_BIT = 39,
+ ETHTOOL_LINK_MODE_50000baseSR2_Full_BIT = 40,
+ ETHTOOL_LINK_MODE_1000baseX_Full_BIT = 41,
+
+
+
+
+
+ ETHTOOL_LINK_MODE_10000baseCR_Full_BIT = 42,
+
+ ETHTOOL_LINK_MODE_10000baseSR_Full_BIT = 43,
+ ETHTOOL_LINK_MODE_10000baseLR_Full_BIT = 44,
+ ETHTOOL_LINK_MODE_10000baseLRM_Full_BIT = 45,
+ ETHTOOL_LINK_MODE_10000baseER_Full_BIT = 46,
+ ETHTOOL_LINK_MODE_2500baseT_Full_BIT = 47,
+ ETHTOOL_LINK_MODE_5000baseT_Full_BIT = 48,
+
+ ETHTOOL_LINK_MODE_FEC_NONE_BIT = 49,
+ ETHTOOL_LINK_MODE_FEC_RS_BIT = 50,
+ ETHTOOL_LINK_MODE_FEC_BASER_BIT = 51,
+ ETHTOOL_LINK_MODE_50000baseKR_Full_BIT = 52,
+ ETHTOOL_LINK_MODE_50000baseSR_Full_BIT = 53,
+ ETHTOOL_LINK_MODE_50000baseCR_Full_BIT = 54,
+ ETHTOOL_LINK_MODE_50000baseLR_ER_FR_Full_BIT = 55,
+ ETHTOOL_LINK_MODE_50000baseDR_Full_BIT = 56,
+ ETHTOOL_LINK_MODE_100000baseKR2_Full_BIT = 57,
+ ETHTOOL_LINK_MODE_100000baseSR2_Full_BIT = 58,
+ ETHTOOL_LINK_MODE_100000baseCR2_Full_BIT = 59,
+ ETHTOOL_LINK_MODE_100000baseLR2_ER2_FR2_Full_BIT = 60,
+ ETHTOOL_LINK_MODE_100000baseDR2_Full_BIT = 61,
+ ETHTOOL_LINK_MODE_200000baseKR4_Full_BIT = 62,
+ ETHTOOL_LINK_MODE_200000baseSR4_Full_BIT = 63,
+ ETHTOOL_LINK_MODE_200000baseLR4_ER4_FR4_Full_BIT = 64,
+ ETHTOOL_LINK_MODE_200000baseDR4_Full_BIT = 65,
+ ETHTOOL_LINK_MODE_200000baseCR4_Full_BIT = 66,
+ ETHTOOL_LINK_MODE_100baseT1_Full_BIT = 67,
+ ETHTOOL_LINK_MODE_1000baseT1_Full_BIT = 68,
+ ETHTOOL_LINK_MODE_400000baseKR8_Full_BIT = 69,
+ ETHTOOL_LINK_MODE_400000baseSR8_Full_BIT = 70,
+ ETHTOOL_LINK_MODE_400000baseLR8_ER8_FR8_Full_BIT = 71,
+ ETHTOOL_LINK_MODE_400000baseDR8_Full_BIT = 72,
+ ETHTOOL_LINK_MODE_400000baseCR8_Full_BIT = 73,
+ ETHTOOL_LINK_MODE_FEC_LLRS_BIT = 74,
+ ETHTOOL_LINK_MODE_100000baseKR_Full_BIT = 75,
+ ETHTOOL_LINK_MODE_100000baseSR_Full_BIT = 76,
+ ETHTOOL_LINK_MODE_100000baseLR_ER_FR_Full_BIT = 77,
+ ETHTOOL_LINK_MODE_100000baseCR_Full_BIT = 78,
+ ETHTOOL_LINK_MODE_100000baseDR_Full_BIT = 79,
+ ETHTOOL_LINK_MODE_200000baseKR2_Full_BIT = 80,
+ ETHTOOL_LINK_MODE_200000baseSR2_Full_BIT = 81,
+ ETHTOOL_LINK_MODE_200000baseLR2_ER2_FR2_Full_BIT = 82,
+ ETHTOOL_LINK_MODE_200000baseDR2_Full_BIT = 83,
+ ETHTOOL_LINK_MODE_200000baseCR2_Full_BIT = 84,
+ ETHTOOL_LINK_MODE_400000baseKR4_Full_BIT = 85,
+ ETHTOOL_LINK_MODE_400000baseSR4_Full_BIT = 86,
+ ETHTOOL_LINK_MODE_400000baseLR4_ER4_FR4_Full_BIT = 87,
+ ETHTOOL_LINK_MODE_400000baseDR4_Full_BIT = 88,
+ ETHTOOL_LINK_MODE_400000baseCR4_Full_BIT = 89,
+ ETHTOOL_LINK_MODE_100baseFX_Half_BIT = 90,
+ ETHTOOL_LINK_MODE_100baseFX_Full_BIT = 91,
+ ETHTOOL_LINK_MODE_10baseT1L_Full_BIT = 92,
+ ETHTOOL_LINK_MODE_800000baseCR8_Full_BIT = 93,
+ ETHTOOL_LINK_MODE_800000baseKR8_Full_BIT = 94,
+ ETHTOOL_LINK_MODE_800000baseDR8_Full_BIT = 95,
+ ETHTOOL_LINK_MODE_800000baseDR8_2_Full_BIT = 96,
+ ETHTOOL_LINK_MODE_800000baseSR8_Full_BIT = 97,
+ ETHTOOL_LINK_MODE_800000baseVR8_Full_BIT = 98,
+ ETHTOOL_LINK_MODE_10baseT1S_Full_BIT = 99,
+ ETHTOOL_LINK_MODE_10baseT1S_Half_BIT = 100,
+ ETHTOOL_LINK_MODE_10baseT1S_P2MP_Half_BIT = 101,
+ ETHTOOL_LINK_MODE_10baseT1BRR_Full_BIT = 102,
+ ETHTOOL_LINK_MODE_200000baseCR_Full_BIT = 103,
+ ETHTOOL_LINK_MODE_200000baseKR_Full_BIT = 104,
+ ETHTOOL_LINK_MODE_200000baseDR_Full_BIT = 105,
+ ETHTOOL_LINK_MODE_200000baseDR_2_Full_BIT = 106,
+ ETHTOOL_LINK_MODE_200000baseSR_Full_BIT = 107,
+ ETHTOOL_LINK_MODE_200000baseVR_Full_BIT = 108,
+ ETHTOOL_LINK_MODE_400000baseCR2_Full_BIT = 109,
+ ETHTOOL_LINK_MODE_400000baseKR2_Full_BIT = 110,
+ ETHTOOL_LINK_MODE_400000baseDR2_Full_BIT = 111,
+ ETHTOOL_LINK_MODE_400000baseDR2_2_Full_BIT = 112,
+ ETHTOOL_LINK_MODE_400000baseSR2_Full_BIT = 113,
+ ETHTOOL_LINK_MODE_400000baseVR2_Full_BIT = 114,
+ ETHTOOL_LINK_MODE_800000baseCR4_Full_BIT = 115,
+ ETHTOOL_LINK_MODE_800000baseKR4_Full_BIT = 116,
+ ETHTOOL_LINK_MODE_800000baseDR4_Full_BIT = 117,
+ ETHTOOL_LINK_MODE_800000baseDR4_2_Full_BIT = 118,
+ ETHTOOL_LINK_MODE_800000baseSR4_Full_BIT = 119,
+ ETHTOOL_LINK_MODE_800000baseVR4_Full_BIT = 120,
+ ETHTOOL_LINK_MODE_1600000baseCR8_Full_BIT = 121,
+ ETHTOOL_LINK_MODE_1600000baseKR8_Full_BIT = 122,
+ ETHTOOL_LINK_MODE_1600000baseDR8_Full_BIT = 123,
+ ETHTOOL_LINK_MODE_1600000baseDR8_2_Full_BIT = 124,
+
+
+ __ETHTOOL_LINK_MODE_MASK_NBITS
+};
+# 2224 "headers/include/linux/ethtool.h"
+static inline int ethtool_validate_speed(__u32 speed)
+{
+ return speed <= ((int)(~0U >> 1)) || speed == (__u32)-1;
+}
+
+
+
+
+
+
+static inline int ethtool_validate_duplex(__u8 duplex)
+{
+ switch (duplex) {
+ case 0x00:
+ case 0x01:
+ case 0xff:
+  return 1;
+ }
+
+ return 0;
+}
+# 2326 "headers/include/linux/ethtool.h"
+enum {
+
+ TCP_V4_FLOW = 0x01,
+ UDP_V4_FLOW = 0x02,
+ SCTP_V4_FLOW = 0x03,
+ AH_ESP_V4_FLOW = 0x04,
+ TCP_V6_FLOW = 0x05,
+ UDP_V6_FLOW = 0x06,
+ SCTP_V6_FLOW = 0x07,
+ AH_ESP_V6_FLOW = 0x08,
+ AH_V4_FLOW = 0x09,
+ ESP_V4_FLOW = 0x0a,
+ AH_V6_FLOW = 0x0b,
+ ESP_V6_FLOW = 0x0c,
+ IPV4_USER_FLOW = 0x0d,
+ IP_USER_FLOW = IPV4_USER_FLOW,
+ IPV6_USER_FLOW = 0x0e,
+ IPV4_FLOW = 0x10,
+ IPV6_FLOW = 0x11,
+ ETHER_FLOW = 0x12,
+
+
+
+
+
+
+ GTPU_V4_FLOW = 0x13,
+ GTPU_V6_FLOW = 0x14,
+
+
+
+
+
+
+
+ GTPC_V4_FLOW = 0x15,
+ GTPC_V6_FLOW = 0x16,
+
+
+
+
+
+
+ GTPC_TEID_V4_FLOW = 0x17,
+ GTPC_TEID_V6_FLOW = 0x18,
+
+
+
+
+
+
+ GTPU_EH_V4_FLOW = 0x19,
+ GTPU_EH_V6_FLOW = 0x1a,
+# 2388 "headers/include/linux/ethtool.h"
+ GTPU_UL_V4_FLOW = 0x1b,
+ GTPU_UL_V6_FLOW = 0x1c,
+ GTPU_DL_V4_FLOW = 0x1d,
+ GTPU_DL_V6_FLOW = 0x1e,
+
+ __FLOW_TYPE_COUNT,
+};
+# 2443 "headers/include/linux/ethtool.h"
+enum ethtool_reset_flags {
+
+
+
+
+
+ ETH_RESET_MGMT = 1 << 0,
+ ETH_RESET_IRQ = 1 << 1,
+ ETH_RESET_DMA = 1 << 2,
+ ETH_RESET_FILTER = 1 << 3,
+ ETH_RESET_OFFLOAD = 1 << 4,
+ ETH_RESET_MAC = 1 << 5,
+ ETH_RESET_PHY = 1 << 6,
+ ETH_RESET_RAM = 1 << 7,
+
+ ETH_RESET_AP = 1 << 8,
+
+ ETH_RESET_DEDICATED = 0x0000ffff,
+
+ ETH_RESET_ALL = 0xffffffff,
+
+};
+# 2572 "headers/include/linux/ethtool.h"
+struct ethtool_link_settings {
+ __u32 cmd;
+ __u32 speed;
+ __u8 duplex;
+ __u8 port;
+ __u8 phy_address;
+ __u8 autoneg;
+ __u8 mdio_support;
+ __u8 eth_tp_mdix;
+ __u8 eth_tp_mdix_ctrl;
+ __s8 link_mode_masks_nwords;
+ __u8 transceiver;
+ __u8 master_slave_cfg;
+ __u8 master_slave_state;
+ __u8 rate_matching;
+ __u32 reserved[7];
+
+
+
+
+
+ __u32 link_mode_masks[];
+
+
+
+
+
+};
+# 2611 "headers/include/linux/ethtool.h"
+enum phy_upstream {
+ PHY_UPSTREAM_MAC,
+ PHY_UPSTREAM_PHY,
+};
+# 4 "linux-uapi.c" 2
+# 1 "headers/include/linux/if_link.h" 1
+
+
+
+
+
+# 1 "headers/include/linux/netlink.h" 1
+
+
+
+
+
+# 1 "headers/include/linux/socket.h" 1
+# 10 "headers/include/linux/socket.h"
+typedef unsigned short __kernel_sa_family_t;
+
+
+
+
+
+struct __kernel_sockaddr_storage {
+ union {
+  struct {
+   __kernel_sa_family_t ss_family;
+
+   char __data[128 - sizeof(unsigned short)];
+
+
+  };
+  void *__align;
+ };
+};
+# 7 "headers/include/linux/netlink.h" 2
+# 37 "headers/include/linux/netlink.h"
+struct sockaddr_nl {
+ __kernel_sa_family_t nl_family;
+ unsigned short nl_pad;
+ __u32 nl_pid;
+        __u32 nl_groups;
+};
+# 52 "headers/include/linux/netlink.h"
+struct nlmsghdr {
+ __u32 nlmsg_len;
+ __u16 nlmsg_type;
+ __u16 nlmsg_flags;
+ __u32 nlmsg_seq;
+ __u32 nlmsg_pid;
+};
+# 119 "headers/include/linux/netlink.h"
+struct nlmsgerr {
+ int error;
+ struct nlmsghdr msg;
+# 131 "headers/include/linux/netlink.h"
+};
+# 150 "headers/include/linux/netlink.h"
+enum nlmsgerr_attrs {
+ NLMSGERR_ATTR_UNUSED,
+ NLMSGERR_ATTR_MSG,
+ NLMSGERR_ATTR_OFFS,
+ NLMSGERR_ATTR_COOKIE,
+ NLMSGERR_ATTR_POLICY,
+ NLMSGERR_ATTR_MISS_TYPE,
+ NLMSGERR_ATTR_MISS_NEST,
+
+ __NLMSGERR_ATTR_MAX,
+ NLMSGERR_ATTR_MAX = __NLMSGERR_ATTR_MAX - 1
+};
+# 176 "headers/include/linux/netlink.h"
+struct nl_pktinfo {
+ __u32 group;
+};
+
+struct nl_mmap_req {
+ unsigned int nm_block_size;
+ unsigned int nm_block_nr;
+ unsigned int nm_frame_size;
+ unsigned int nm_frame_nr;
+};
+
+struct nl_mmap_hdr {
+ unsigned int nm_status;
+ unsigned int nm_len;
+ __u32 nm_group;
+
+ __u32 nm_pid;
+ __u32 nm_uid;
+ __u32 nm_gid;
+};
+
+enum nl_mmap_status {
+ NL_MMAP_STATUS_UNUSED,
+ NL_MMAP_STATUS_RESERVED,
+ NL_MMAP_STATUS_VALID,
+ NL_MMAP_STATUS_COPY,
+ NL_MMAP_STATUS_SKIP,
+};
+
+
+
+
+
+
+
+enum {
+ NETLINK_UNCONNECTED = 0,
+ NETLINK_CONNECTED,
+};
+# 225 "headers/include/linux/netlink.h"
+struct nlattr {
+ __u16 nla_len;
+ __u16 nla_type;
+};
+# 261 "headers/include/linux/netlink.h"
+struct nla_bitfield32 {
+ __u32 value;
+ __u32 selector;
+};
+# 300 "headers/include/linux/netlink.h"
+enum netlink_attribute_type {
+ NL_ATTR_TYPE_INVALID,
+
+ NL_ATTR_TYPE_FLAG,
+
+ NL_ATTR_TYPE_U8,
+ NL_ATTR_TYPE_U16,
+ NL_ATTR_TYPE_U32,
+ NL_ATTR_TYPE_U64,
+
+ NL_ATTR_TYPE_S8,
+ NL_ATTR_TYPE_S16,
+ NL_ATTR_TYPE_S32,
+ NL_ATTR_TYPE_S64,
+
+ NL_ATTR_TYPE_BINARY,
+ NL_ATTR_TYPE_STRING,
+ NL_ATTR_TYPE_NUL_STRING,
+
+ NL_ATTR_TYPE_NESTED,
+ NL_ATTR_TYPE_NESTED_ARRAY,
+
+ NL_ATTR_TYPE_BITFIELD32,
+
+ NL_ATTR_TYPE_SINT,
+ NL_ATTR_TYPE_UINT,
+};
+# 359 "headers/include/linux/netlink.h"
+enum netlink_policy_type_attr {
+ NL_POLICY_TYPE_ATTR_UNSPEC,
+ NL_POLICY_TYPE_ATTR_TYPE,
+ NL_POLICY_TYPE_ATTR_MIN_VALUE_S,
+ NL_POLICY_TYPE_ATTR_MAX_VALUE_S,
+ NL_POLICY_TYPE_ATTR_MIN_VALUE_U,
+ NL_POLICY_TYPE_ATTR_MAX_VALUE_U,
+ NL_POLICY_TYPE_ATTR_MIN_LENGTH,
+ NL_POLICY_TYPE_ATTR_MAX_LENGTH,
+ NL_POLICY_TYPE_ATTR_POLICY_IDX,
+ NL_POLICY_TYPE_ATTR_POLICY_MAXTYPE,
+ NL_POLICY_TYPE_ATTR_BITFIELD32_MASK,
+ NL_POLICY_TYPE_ATTR_PAD,
+ NL_POLICY_TYPE_ATTR_MASK,
+
+
+ __NL_POLICY_TYPE_ATTR_MAX,
+ NL_POLICY_TYPE_ATTR_MAX = __NL_POLICY_TYPE_ATTR_MAX - 1
+};
+# 7 "headers/include/linux/if_link.h" 2
+
+
+struct rtnl_link_stats {
+ __u32 rx_packets;
+ __u32 tx_packets;
+ __u32 rx_bytes;
+ __u32 tx_bytes;
+ __u32 rx_errors;
+ __u32 tx_errors;
+ __u32 rx_dropped;
+ __u32 tx_dropped;
+ __u32 multicast;
+ __u32 collisions;
+
+ __u32 rx_length_errors;
+ __u32 rx_over_errors;
+ __u32 rx_crc_errors;
+ __u32 rx_frame_errors;
+ __u32 rx_fifo_errors;
+ __u32 rx_missed_errors;
+
+
+ __u32 tx_aborted_errors;
+ __u32 tx_carrier_errors;
+ __u32 tx_fifo_errors;
+ __u32 tx_heartbeat_errors;
+ __u32 tx_window_errors;
+
+
+ __u32 rx_compressed;
+ __u32 tx_compressed;
+
+ __u32 rx_nohandler;
+};
+# 218 "headers/include/linux/if_link.h"
+struct rtnl_link_stats64 {
+ __u64 rx_packets;
+ __u64 tx_packets;
+ __u64 rx_bytes;
+ __u64 tx_bytes;
+ __u64 rx_errors;
+ __u64 tx_errors;
+ __u64 rx_dropped;
+ __u64 tx_dropped;
+ __u64 multicast;
+ __u64 collisions;
+
+
+ __u64 rx_length_errors;
+ __u64 rx_over_errors;
+ __u64 rx_crc_errors;
+ __u64 rx_frame_errors;
+ __u64 rx_fifo_errors;
+ __u64 rx_missed_errors;
+
+
+ __u64 tx_aborted_errors;
+ __u64 tx_carrier_errors;
+ __u64 tx_fifo_errors;
+ __u64 tx_heartbeat_errors;
+ __u64 tx_window_errors;
+
+
+ __u64 rx_compressed;
+ __u64 tx_compressed;
+ __u64 rx_nohandler;
+
+ __u64 rx_otherhost_dropped;
+};
+
+
+
+
+struct rtnl_hw_stats64 {
+ __u64 rx_packets;
+ __u64 tx_packets;
+ __u64 rx_bytes;
+ __u64 tx_bytes;
+ __u64 rx_errors;
+ __u64 tx_errors;
+ __u64 rx_dropped;
+ __u64 tx_dropped;
+ __u64 multicast;
+};
+
+
+struct rtnl_link_ifmap {
+ __u64 mem_start;
+ __u64 mem_end;
+ __u64 base_addr;
+ __u16 irq;
+ __u8 dma;
+ __u8 port;
+};
+# 296 "headers/include/linux/if_link.h"
+enum {
+ IFLA_UNSPEC,
+ IFLA_ADDRESS,
+ IFLA_BROADCAST,
+ IFLA_IFNAME,
+ IFLA_MTU,
+ IFLA_LINK,
+ IFLA_QDISC,
+ IFLA_STATS,
+ IFLA_COST,
+
+ IFLA_PRIORITY,
+
+ IFLA_MASTER,
+
+ IFLA_WIRELESS,
+
+ IFLA_PROTINFO,
+
+ IFLA_TXQLEN,
+
+ IFLA_MAP,
+
+ IFLA_WEIGHT,
+
+ IFLA_OPERSTATE,
+ IFLA_LINKMODE,
+ IFLA_LINKINFO,
+
+ IFLA_NET_NS_PID,
+ IFLA_IFALIAS,
+ IFLA_NUM_VF,
+ IFLA_VFINFO_LIST,
+ IFLA_STATS64,
+ IFLA_VF_PORTS,
+ IFLA_PORT_SELF,
+ IFLA_AF_SPEC,
+ IFLA_GROUP,
+ IFLA_NET_NS_FD,
+ IFLA_EXT_MASK,
+ IFLA_PROMISCUITY,
+
+ IFLA_NUM_TX_QUEUES,
+ IFLA_NUM_RX_QUEUES,
+ IFLA_CARRIER,
+ IFLA_PHYS_PORT_ID,
+ IFLA_CARRIER_CHANGES,
+ IFLA_PHYS_SWITCH_ID,
+ IFLA_LINK_NETNSID,
+ IFLA_PHYS_PORT_NAME,
+ IFLA_PROTO_DOWN,
+ IFLA_GSO_MAX_SEGS,
+ IFLA_GSO_MAX_SIZE,
+ IFLA_PAD,
+ IFLA_XDP,
+ IFLA_EVENT,
+ IFLA_NEW_NETNSID,
+ IFLA_IF_NETNSID,
+ IFLA_TARGET_NETNSID = IFLA_IF_NETNSID,
+ IFLA_CARRIER_UP_COUNT,
+ IFLA_CARRIER_DOWN_COUNT,
+ IFLA_NEW_IFINDEX,
+ IFLA_MIN_MTU,
+ IFLA_MAX_MTU,
+ IFLA_PROP_LIST,
+ IFLA_ALT_IFNAME,
+ IFLA_PERM_ADDRESS,
+ IFLA_PROTO_DOWN_REASON,
+
+
+
+
+ IFLA_PARENT_DEV_NAME,
+ IFLA_PARENT_DEV_BUS_NAME,
+ IFLA_GRO_MAX_SIZE,
+ IFLA_TSO_MAX_SIZE,
+ IFLA_TSO_MAX_SEGS,
+ IFLA_ALLMULTI,
+
+ IFLA_DEVLINK_PORT,
+
+ IFLA_GSO_IPV4_MAX_SIZE,
+ IFLA_GRO_IPV4_MAX_SIZE,
+ IFLA_DPLL_PIN,
+ IFLA_MAX_PACING_OFFLOAD_HORIZON,
+ IFLA_NETNS_IMMUTABLE,
+ IFLA_HEADROOM,
+ IFLA_TAILROOM,
+ __IFLA_MAX
+};
+
+
+
+
+enum {
+ IFLA_PROTO_DOWN_REASON_UNSPEC,
+ IFLA_PROTO_DOWN_REASON_MASK,
+ IFLA_PROTO_DOWN_REASON_VALUE,
+
+ __IFLA_PROTO_DOWN_REASON_CNT,
+ IFLA_PROTO_DOWN_REASON_MAX = __IFLA_PROTO_DOWN_REASON_CNT - 1
+};
+
+
+
+
+
+enum {
+ IFLA_INET_UNSPEC,
+ IFLA_INET_CONF,
+ __IFLA_INET_MAX,
+};
+# 441 "headers/include/linux/if_link.h"
+enum {
+ IFLA_INET6_UNSPEC,
+ IFLA_INET6_FLAGS,
+ IFLA_INET6_CONF,
+ IFLA_INET6_STATS,
+ IFLA_INET6_MCAST,
+ IFLA_INET6_CACHEINFO,
+ IFLA_INET6_ICMP6STATS,
+ IFLA_INET6_TOKEN,
+ IFLA_INET6_ADDR_GEN_MODE,
+ IFLA_INET6_RA_MTU,
+ __IFLA_INET6_MAX
+};
+
+
+
+enum in6_addr_gen_mode {
+ IN6_ADDR_GEN_MODE_EUI64,
+ IN6_ADDR_GEN_MODE_NONE,
+ IN6_ADDR_GEN_MODE_STABLE_PRIVACY,
+ IN6_ADDR_GEN_MODE_RANDOM,
+};
+# 751 "headers/include/linux/if_link.h"
+enum {
+ IFLA_BR_UNSPEC,
+ IFLA_BR_FORWARD_DELAY,
+ IFLA_BR_HELLO_TIME,
+ IFLA_BR_MAX_AGE,
+ IFLA_BR_AGEING_TIME,
+ IFLA_BR_STP_STATE,
+ IFLA_BR_PRIORITY,
+ IFLA_BR_VLAN_FILTERING,
+ IFLA_BR_VLAN_PROTOCOL,
+ IFLA_BR_GROUP_FWD_MASK,
+ IFLA_BR_ROOT_ID,
+ IFLA_BR_BRIDGE_ID,
+ IFLA_BR_ROOT_PORT,
+ IFLA_BR_ROOT_PATH_COST,
+ IFLA_BR_TOPOLOGY_CHANGE,
+ IFLA_BR_TOPOLOGY_CHANGE_DETECTED,
+ IFLA_BR_HELLO_TIMER,
+ IFLA_BR_TCN_TIMER,
+ IFLA_BR_TOPOLOGY_CHANGE_TIMER,
+ IFLA_BR_GC_TIMER,
+ IFLA_BR_GROUP_ADDR,
+ IFLA_BR_FDB_FLUSH,
+ IFLA_BR_MCAST_ROUTER,
+ IFLA_BR_MCAST_SNOOPING,
+ IFLA_BR_MCAST_QUERY_USE_IFADDR,
+ IFLA_BR_MCAST_QUERIER,
+ IFLA_BR_MCAST_HASH_ELASTICITY,
+ IFLA_BR_MCAST_HASH_MAX,
+ IFLA_BR_MCAST_LAST_MEMBER_CNT,
+ IFLA_BR_MCAST_STARTUP_QUERY_CNT,
+ IFLA_BR_MCAST_LAST_MEMBER_INTVL,
+ IFLA_BR_MCAST_MEMBERSHIP_INTVL,
+ IFLA_BR_MCAST_QUERIER_INTVL,
+ IFLA_BR_MCAST_QUERY_INTVL,
+ IFLA_BR_MCAST_QUERY_RESPONSE_INTVL,
+ IFLA_BR_MCAST_STARTUP_QUERY_INTVL,
+ IFLA_BR_NF_CALL_IPTABLES,
+ IFLA_BR_NF_CALL_IP6TABLES,
+ IFLA_BR_NF_CALL_ARPTABLES,
+ IFLA_BR_VLAN_DEFAULT_PVID,
+ IFLA_BR_PAD,
+ IFLA_BR_VLAN_STATS_ENABLED,
+ IFLA_BR_MCAST_STATS_ENABLED,
+ IFLA_BR_MCAST_IGMP_VERSION,
+ IFLA_BR_MCAST_MLD_VERSION,
+ IFLA_BR_VLAN_STATS_PER_PORT,
+ IFLA_BR_MULTI_BOOLOPT,
+ IFLA_BR_MCAST_QUERIER_STATE,
+ IFLA_BR_FDB_N_LEARNED,
+ IFLA_BR_FDB_MAX_LEARNED,
+ IFLA_BR_STP_MODE,
+ __IFLA_BR_MAX,
+};
+# 832 "headers/include/linux/if_link.h"
+enum br_stp_mode {
+ BR_STP_MODE_AUTO,
+ BR_STP_MODE_USER,
+ BR_STP_MODE_KERNEL,
+ __BR_STP_MODE_MAX
+};
+
+
+
+struct ifla_bridge_id {
+ __u8 prio[2];
+ __u8 addr[6];
+};
+# 856 "headers/include/linux/if_link.h"
+enum {
+ BRIDGE_MODE_UNSPEC,
+ BRIDGE_MODE_HAIRPIN,
+};
+# 1108 "headers/include/linux/if_link.h"
+enum {
+ IFLA_BRPORT_UNSPEC,
+ IFLA_BRPORT_STATE,
+ IFLA_BRPORT_PRIORITY,
+ IFLA_BRPORT_COST,
+ IFLA_BRPORT_MODE,
+ IFLA_BRPORT_GUARD,
+ IFLA_BRPORT_PROTECT,
+ IFLA_BRPORT_FAST_LEAVE,
+ IFLA_BRPORT_LEARNING,
+ IFLA_BRPORT_UNICAST_FLOOD,
+ IFLA_BRPORT_PROXYARP,
+ IFLA_BRPORT_LEARNING_SYNC,
+ IFLA_BRPORT_PROXYARP_WIFI,
+ IFLA_BRPORT_ROOT_ID,
+ IFLA_BRPORT_BRIDGE_ID,
+ IFLA_BRPORT_DESIGNATED_PORT,
+ IFLA_BRPORT_DESIGNATED_COST,
+ IFLA_BRPORT_ID,
+ IFLA_BRPORT_NO,
+ IFLA_BRPORT_TOPOLOGY_CHANGE_ACK,
+ IFLA_BRPORT_CONFIG_PENDING,
+ IFLA_BRPORT_MESSAGE_AGE_TIMER,
+ IFLA_BRPORT_FORWARD_DELAY_TIMER,
+ IFLA_BRPORT_HOLD_TIMER,
+ IFLA_BRPORT_FLUSH,
+ IFLA_BRPORT_MULTICAST_ROUTER,
+ IFLA_BRPORT_PAD,
+ IFLA_BRPORT_MCAST_FLOOD,
+ IFLA_BRPORT_MCAST_TO_UCAST,
+ IFLA_BRPORT_VLAN_TUNNEL,
+ IFLA_BRPORT_BCAST_FLOOD,
+ IFLA_BRPORT_GROUP_FWD_MASK,
+ IFLA_BRPORT_NEIGH_SUPPRESS,
+ IFLA_BRPORT_ISOLATED,
+ IFLA_BRPORT_BACKUP_PORT,
+ IFLA_BRPORT_MRP_RING_OPEN,
+ IFLA_BRPORT_MRP_IN_OPEN,
+ IFLA_BRPORT_MCAST_EHT_HOSTS_LIMIT,
+ IFLA_BRPORT_MCAST_EHT_HOSTS_CNT,
+ IFLA_BRPORT_LOCKED,
+ IFLA_BRPORT_MAB,
+ IFLA_BRPORT_MCAST_N_GROUPS,
+ IFLA_BRPORT_MCAST_MAX_GROUPS,
+ IFLA_BRPORT_NEIGH_VLAN_SUPPRESS,
+ IFLA_BRPORT_BACKUP_NHID,
+ IFLA_BRPORT_NEIGH_FORWARD_GRAT,
+ __IFLA_BRPORT_MAX
+};
+
+
+struct ifla_cacheinfo {
+ __u32 max_reasm_len;
+ __u32 tstamp;
+ __u32 reachable_time;
+ __u32 retrans_time;
+};
+
+enum {
+ IFLA_INFO_UNSPEC,
+ IFLA_INFO_KIND,
+ IFLA_INFO_DATA,
+ IFLA_INFO_XSTATS,
+ IFLA_INFO_SLAVE_KIND,
+ IFLA_INFO_SLAVE_DATA,
+ __IFLA_INFO_MAX,
+};
+
+
+
+
+
+enum {
+ IFLA_VLAN_UNSPEC,
+ IFLA_VLAN_ID,
+ IFLA_VLAN_FLAGS,
+ IFLA_VLAN_EGRESS_QOS,
+ IFLA_VLAN_INGRESS_QOS,
+ IFLA_VLAN_PROTOCOL,
+ __IFLA_VLAN_MAX,
+};
+
+
+
+struct ifla_vlan_flags {
+ __u32 flags;
+ __u32 mask;
+};
+
+enum {
+ IFLA_VLAN_QOS_UNSPEC,
+ IFLA_VLAN_QOS_MAPPING,
+ __IFLA_VLAN_QOS_MAX
+};
+
+
+
+struct ifla_vlan_qos_mapping {
+ __u32 from;
+ __u32 to;
+};
+
+
+enum {
+ IFLA_MACVLAN_UNSPEC,
+ IFLA_MACVLAN_MODE,
+ IFLA_MACVLAN_FLAGS,
+ IFLA_MACVLAN_MACADDR_MODE,
+ IFLA_MACVLAN_MACADDR,
+ IFLA_MACVLAN_MACADDR_DATA,
+ IFLA_MACVLAN_MACADDR_COUNT,
+ IFLA_MACVLAN_BC_QUEUE_LEN,
+ IFLA_MACVLAN_BC_QUEUE_LEN_USED,
+ IFLA_MACVLAN_BC_CUTOFF,
+ __IFLA_MACVLAN_MAX,
+};
+
+
+
+enum macvlan_mode {
+ MACVLAN_MODE_PRIVATE = 1,
+ MACVLAN_MODE_VEPA = 2,
+ MACVLAN_MODE_BRIDGE = 4,
+ MACVLAN_MODE_PASSTHRU = 8,
+ MACVLAN_MODE_SOURCE = 16,
+};
+
+enum macvlan_macaddr_mode {
+ MACVLAN_MACADDR_ADD,
+ MACVLAN_MACADDR_DEL,
+ MACVLAN_MACADDR_FLUSH,
+ MACVLAN_MACADDR_SET,
+};
+
+
+
+
+
+enum {
+ IFLA_VRF_UNSPEC,
+ IFLA_VRF_TABLE,
+ __IFLA_VRF_MAX
+};
+
+
+
+enum {
+ IFLA_VRF_PORT_UNSPEC,
+ IFLA_VRF_PORT_TABLE,
+ __IFLA_VRF_PORT_MAX
+};
+
+
+
+
+enum {
+ IFLA_MACSEC_UNSPEC,
+ IFLA_MACSEC_SCI,
+ IFLA_MACSEC_PORT,
+ IFLA_MACSEC_ICV_LEN,
+ IFLA_MACSEC_CIPHER_SUITE,
+ IFLA_MACSEC_WINDOW,
+ IFLA_MACSEC_ENCODING_SA,
+ IFLA_MACSEC_ENCRYPT,
+ IFLA_MACSEC_PROTECT,
+ IFLA_MACSEC_INC_SCI,
+ IFLA_MACSEC_ES,
+ IFLA_MACSEC_SCB,
+ IFLA_MACSEC_REPLAY_PROTECT,
+ IFLA_MACSEC_VALIDATION,
+ IFLA_MACSEC_PAD,
+ IFLA_MACSEC_OFFLOAD,
+ __IFLA_MACSEC_MAX,
+};
+
+
+
+
+enum {
+ IFLA_XFRM_UNSPEC,
+ IFLA_XFRM_LINK,
+ IFLA_XFRM_IF_ID,
+ IFLA_XFRM_COLLECT_METADATA,
+ __IFLA_XFRM_MAX
+};
+
+
+
+enum macsec_validation_type {
+ MACSEC_VALIDATE_DISABLED = 0,
+ MACSEC_VALIDATE_CHECK = 1,
+ MACSEC_VALIDATE_STRICT = 2,
+ __MACSEC_VALIDATE_END,
+ MACSEC_VALIDATE_MAX = __MACSEC_VALIDATE_END - 1,
+};
+
+enum macsec_offload {
+ MACSEC_OFFLOAD_OFF = 0,
+ MACSEC_OFFLOAD_PHY = 1,
+ MACSEC_OFFLOAD_MAC = 2,
+ __MACSEC_OFFLOAD_END,
+ MACSEC_OFFLOAD_MAX = __MACSEC_OFFLOAD_END - 1,
+};
+
+
+enum {
+ IFLA_IPVLAN_UNSPEC,
+ IFLA_IPVLAN_MODE,
+ IFLA_IPVLAN_FLAGS,
+ __IFLA_IPVLAN_MAX
+};
+
+
+
+enum ipvlan_mode {
+ IPVLAN_MODE_L2 = 0,
+ IPVLAN_MODE_L3,
+ IPVLAN_MODE_L3S,
+ IPVLAN_MODE_MAX
+};
+
+
+
+
+
+struct tunnel_msg {
+ __u8 family;
+ __u8 flags;
+ __u16 reserved2;
+ __u32 ifindex;
+};
+
+
+enum netkit_action {
+ NETKIT_NEXT = -1,
+ NETKIT_PASS = 0,
+ NETKIT_DROP = 2,
+ NETKIT_REDIRECT = 7,
+};
+
+enum netkit_mode {
+ NETKIT_L2,
+ NETKIT_L3,
+};
+
+enum netkit_pairing {
+ NETKIT_DEVICE_PAIR,
+ NETKIT_DEVICE_SINGLE,
+};
+# 1366 "headers/include/linux/if_link.h"
+enum netkit_scrub {
+ NETKIT_SCRUB_NONE,
+ NETKIT_SCRUB_DEFAULT,
+};
+
+enum {
+ IFLA_NETKIT_UNSPEC,
+ IFLA_NETKIT_PEER_INFO,
+ IFLA_NETKIT_PRIMARY,
+ IFLA_NETKIT_POLICY,
+ IFLA_NETKIT_PEER_POLICY,
+ IFLA_NETKIT_MODE,
+ IFLA_NETKIT_SCRUB,
+ IFLA_NETKIT_PEER_SCRUB,
+ IFLA_NETKIT_HEADROOM,
+ IFLA_NETKIT_TAILROOM,
+ IFLA_NETKIT_PAIRING,
+ __IFLA_NETKIT_MAX,
+};
+# 1395 "headers/include/linux/if_link.h"
+enum {
+ VNIFILTER_ENTRY_STATS_UNSPEC,
+ VNIFILTER_ENTRY_STATS_RX_BYTES,
+ VNIFILTER_ENTRY_STATS_RX_PKTS,
+ VNIFILTER_ENTRY_STATS_RX_DROPS,
+ VNIFILTER_ENTRY_STATS_RX_ERRORS,
+ VNIFILTER_ENTRY_STATS_TX_BYTES,
+ VNIFILTER_ENTRY_STATS_TX_PKTS,
+ VNIFILTER_ENTRY_STATS_TX_DROPS,
+ VNIFILTER_ENTRY_STATS_TX_ERRORS,
+ VNIFILTER_ENTRY_STATS_PAD,
+ __VNIFILTER_ENTRY_STATS_MAX
+};
+
+
+enum {
+ VXLAN_VNIFILTER_ENTRY_UNSPEC,
+ VXLAN_VNIFILTER_ENTRY_START,
+ VXLAN_VNIFILTER_ENTRY_END,
+ VXLAN_VNIFILTER_ENTRY_GROUP,
+ VXLAN_VNIFILTER_ENTRY_GROUP6,
+ VXLAN_VNIFILTER_ENTRY_STATS,
+ __VXLAN_VNIFILTER_ENTRY_MAX
+};
+
+
+enum {
+ VXLAN_VNIFILTER_UNSPEC,
+ VXLAN_VNIFILTER_ENTRY,
+ __VXLAN_VNIFILTER_MAX
+};
+
+
+enum {
+ IFLA_VXLAN_UNSPEC,
+ IFLA_VXLAN_ID,
+ IFLA_VXLAN_GROUP,
+ IFLA_VXLAN_LINK,
+ IFLA_VXLAN_LOCAL,
+ IFLA_VXLAN_TTL,
+ IFLA_VXLAN_TOS,
+ IFLA_VXLAN_LEARNING,
+ IFLA_VXLAN_AGEING,
+ IFLA_VXLAN_LIMIT,
+ IFLA_VXLAN_PORT_RANGE,
+ IFLA_VXLAN_PROXY,
+ IFLA_VXLAN_RSC,
+ IFLA_VXLAN_L2MISS,
+ IFLA_VXLAN_L3MISS,
+ IFLA_VXLAN_PORT,
+ IFLA_VXLAN_GROUP6,
+ IFLA_VXLAN_LOCAL6,
+ IFLA_VXLAN_UDP_CSUM,
+ IFLA_VXLAN_UDP_ZERO_CSUM6_TX,
+ IFLA_VXLAN_UDP_ZERO_CSUM6_RX,
+ IFLA_VXLAN_REMCSUM_TX,
+ IFLA_VXLAN_REMCSUM_RX,
+ IFLA_VXLAN_GBP,
+ IFLA_VXLAN_REMCSUM_NOPARTIAL,
+ IFLA_VXLAN_COLLECT_METADATA,
+ IFLA_VXLAN_LABEL,
+ IFLA_VXLAN_GPE,
+ IFLA_VXLAN_TTL_INHERIT,
+ IFLA_VXLAN_DF,
+ IFLA_VXLAN_VNIFILTER,
+ IFLA_VXLAN_LOCALBYPASS,
+ IFLA_VXLAN_LABEL_POLICY,
+ IFLA_VXLAN_RESERVED_BITS,
+ IFLA_VXLAN_MC_ROUTE,
+ __IFLA_VXLAN_MAX
+};
+
+
+struct ifla_vxlan_port_range {
+ __be16 low;
+ __be16 high;
+};
+
+enum ifla_vxlan_df {
+ VXLAN_DF_UNSET = 0,
+ VXLAN_DF_SET,
+ VXLAN_DF_INHERIT,
+ __VXLAN_DF_END,
+ VXLAN_DF_MAX = __VXLAN_DF_END - 1,
+};
+
+enum ifla_vxlan_label_policy {
+ VXLAN_LABEL_FIXED = 0,
+ VXLAN_LABEL_INHERIT = 1,
+ __VXLAN_LABEL_END,
+ VXLAN_LABEL_MAX = __VXLAN_LABEL_END - 1,
+};
+
+
+enum {
+ IFLA_GENEVE_UNSPEC,
+ IFLA_GENEVE_ID,
+ IFLA_GENEVE_REMOTE,
+ IFLA_GENEVE_TTL,
+ IFLA_GENEVE_TOS,
+ IFLA_GENEVE_PORT,
+ IFLA_GENEVE_COLLECT_METADATA,
+ IFLA_GENEVE_REMOTE6,
+ IFLA_GENEVE_UDP_CSUM,
+ IFLA_GENEVE_UDP_ZERO_CSUM6_TX,
+ IFLA_GENEVE_UDP_ZERO_CSUM6_RX,
+ IFLA_GENEVE_LABEL,
+ IFLA_GENEVE_TTL_INHERIT,
+ IFLA_GENEVE_DF,
+ IFLA_GENEVE_INNER_PROTO_INHERIT,
+ IFLA_GENEVE_PORT_RANGE,
+ IFLA_GENEVE_GRO_HINT,
+ IFLA_GENEVE_LOCAL,
+ IFLA_GENEVE_LOCAL6,
+ __IFLA_GENEVE_MAX
+};
+
+
+enum ifla_geneve_df {
+ GENEVE_DF_UNSET = 0,
+ GENEVE_DF_SET,
+ GENEVE_DF_INHERIT,
+ __GENEVE_DF_END,
+ GENEVE_DF_MAX = __GENEVE_DF_END - 1,
+};
+
+struct ifla_geneve_port_range {
+ __be16 low;
+ __be16 high;
+};
+
+
+enum {
+ IFLA_BAREUDP_UNSPEC,
+ IFLA_BAREUDP_PORT,
+ IFLA_BAREUDP_ETHERTYPE,
+ IFLA_BAREUDP_SRCPORT_MIN,
+ IFLA_BAREUDP_MULTIPROTO_MODE,
+ __IFLA_BAREUDP_MAX
+};
+
+
+
+
+enum {
+ IFLA_PPP_UNSPEC,
+ IFLA_PPP_DEV_FD,
+ __IFLA_PPP_MAX
+};
+
+
+
+
+enum ifla_gtp_role {
+ GTP_ROLE_GGSN = 0,
+ GTP_ROLE_SGSN,
+};
+
+enum {
+ IFLA_GTP_UNSPEC,
+ IFLA_GTP_FD0,
+ IFLA_GTP_FD1,
+ IFLA_GTP_PDP_HASHSIZE,
+ IFLA_GTP_ROLE,
+ IFLA_GTP_CREATE_SOCKETS,
+ IFLA_GTP_RESTART_COUNT,
+ IFLA_GTP_LOCAL,
+ IFLA_GTP_LOCAL6,
+ __IFLA_GTP_MAX,
+};
+
+
+
+
+enum {
+ IFLA_BOND_UNSPEC,
+ IFLA_BOND_MODE,
+ IFLA_BOND_ACTIVE_SLAVE,
+ IFLA_BOND_MIIMON,
+ IFLA_BOND_UPDELAY,
+ IFLA_BOND_DOWNDELAY,
+ IFLA_BOND_USE_CARRIER,
+ IFLA_BOND_ARP_INTERVAL,
+ IFLA_BOND_ARP_IP_TARGET,
+ IFLA_BOND_ARP_VALIDATE,
+ IFLA_BOND_ARP_ALL_TARGETS,
+ IFLA_BOND_PRIMARY,
+ IFLA_BOND_PRIMARY_RESELECT,
+ IFLA_BOND_FAIL_OVER_MAC,
+ IFLA_BOND_XMIT_HASH_POLICY,
+ IFLA_BOND_RESEND_IGMP,
+ IFLA_BOND_NUM_PEER_NOTIF,
+ IFLA_BOND_ALL_SLAVES_ACTIVE,
+ IFLA_BOND_MIN_LINKS,
+ IFLA_BOND_LP_INTERVAL,
+ IFLA_BOND_PACKETS_PER_SLAVE,
+ IFLA_BOND_AD_LACP_RATE,
+ IFLA_BOND_AD_SELECT,
+ IFLA_BOND_AD_INFO,
+ IFLA_BOND_AD_ACTOR_SYS_PRIO,
+ IFLA_BOND_AD_USER_PORT_KEY,
+ IFLA_BOND_AD_ACTOR_SYSTEM,
+ IFLA_BOND_TLB_DYNAMIC_LB,
+ IFLA_BOND_PEER_NOTIF_DELAY,
+ IFLA_BOND_AD_LACP_ACTIVE,
+ IFLA_BOND_MISSED_MAX,
+ IFLA_BOND_NS_IP6_TARGET,
+ IFLA_BOND_COUPLED_CONTROL,
+ IFLA_BOND_BROADCAST_NEIGH,
+ IFLA_BOND_LACP_STRICT,
+ __IFLA_BOND_MAX,
+};
+
+
+
+enum {
+ IFLA_BOND_AD_INFO_UNSPEC,
+ IFLA_BOND_AD_INFO_AGGREGATOR,
+ IFLA_BOND_AD_INFO_NUM_PORTS,
+ IFLA_BOND_AD_INFO_ACTOR_KEY,
+ IFLA_BOND_AD_INFO_PARTNER_KEY,
+ IFLA_BOND_AD_INFO_PARTNER_MAC,
+ __IFLA_BOND_AD_INFO_MAX,
+};
+
+
+
+enum {
+ IFLA_BOND_SLAVE_UNSPEC,
+ IFLA_BOND_SLAVE_STATE,
+ IFLA_BOND_SLAVE_MII_STATUS,
+ IFLA_BOND_SLAVE_LINK_FAILURE_COUNT,
+ IFLA_BOND_SLAVE_PERM_HWADDR,
+ IFLA_BOND_SLAVE_QUEUE_ID,
+ IFLA_BOND_SLAVE_AD_AGGREGATOR_ID,
+ IFLA_BOND_SLAVE_AD_ACTOR_OPER_PORT_STATE,
+ IFLA_BOND_SLAVE_AD_PARTNER_OPER_PORT_STATE,
+ IFLA_BOND_SLAVE_PRIO,
+ IFLA_BOND_SLAVE_ACTOR_PORT_PRIO,
+ IFLA_BOND_SLAVE_AD_CHURN_ACTOR_STATE,
+ IFLA_BOND_SLAVE_AD_CHURN_PARTNER_STATE,
+ __IFLA_BOND_SLAVE_MAX,
+};
+
+
+
+
+
+enum {
+ IFLA_VF_INFO_UNSPEC,
+ IFLA_VF_INFO,
+ __IFLA_VF_INFO_MAX,
+};
+
+
+
+enum {
+ IFLA_VF_UNSPEC,
+ IFLA_VF_MAC,
+ IFLA_VF_VLAN,
+ IFLA_VF_TX_RATE,
+ IFLA_VF_SPOOFCHK,
+ IFLA_VF_LINK_STATE,
+ IFLA_VF_RATE,
+ IFLA_VF_RSS_QUERY_EN,
+
+
+ IFLA_VF_STATS,
+ IFLA_VF_TRUST,
+ IFLA_VF_IB_NODE_GUID,
+ IFLA_VF_IB_PORT_GUID,
+ IFLA_VF_VLAN_LIST,
+ IFLA_VF_BROADCAST,
+ __IFLA_VF_MAX,
+};
+
+
+
+struct ifla_vf_mac {
+ __u32 vf;
+ __u8 mac[32];
+};
+
+struct ifla_vf_broadcast {
+ __u8 broadcast[32];
+};
+
+struct ifla_vf_vlan {
+ __u32 vf;
+ __u32 vlan;
+ __u32 qos;
+};
+
+enum {
+ IFLA_VF_VLAN_INFO_UNSPEC,
+ IFLA_VF_VLAN_INFO,
+ __IFLA_VF_VLAN_INFO_MAX,
+};
+
+
+
+
+struct ifla_vf_vlan_info {
+ __u32 vf;
+ __u32 vlan;
+ __u32 qos;
+ __be16 vlan_proto;
+};
+
+struct ifla_vf_tx_rate {
+ __u32 vf;
+ __u32 rate;
+};
+
+struct ifla_vf_rate {
+ __u32 vf;
+ __u32 min_tx_rate;
+ __u32 max_tx_rate;
+};
+
+struct ifla_vf_spoofchk {
+ __u32 vf;
+ __u32 setting;
+};
+
+struct ifla_vf_guid {
+ __u32 vf;
+ __u64 guid;
+};
+
+enum {
+ IFLA_VF_LINK_STATE_AUTO,
+ IFLA_VF_LINK_STATE_ENABLE,
+ IFLA_VF_LINK_STATE_DISABLE,
+ __IFLA_VF_LINK_STATE_MAX,
+};
+
+struct ifla_vf_link_state {
+ __u32 vf;
+ __u32 link_state;
+};
+
+struct ifla_vf_rss_query_en {
+ __u32 vf;
+ __u32 setting;
+};
+
+enum {
+ IFLA_VF_STATS_RX_PACKETS,
+ IFLA_VF_STATS_TX_PACKETS,
+ IFLA_VF_STATS_RX_BYTES,
+ IFLA_VF_STATS_TX_BYTES,
+ IFLA_VF_STATS_BROADCAST,
+ IFLA_VF_STATS_MULTICAST,
+ IFLA_VF_STATS_PAD,
+ IFLA_VF_STATS_RX_DROPPED,
+ IFLA_VF_STATS_TX_DROPPED,
+ __IFLA_VF_STATS_MAX,
+};
+
+
+
+struct ifla_vf_trust {
+ __u32 vf;
+ __u32 setting;
+};
+# 1777 "headers/include/linux/if_link.h"
+enum {
+ IFLA_VF_PORT_UNSPEC,
+ IFLA_VF_PORT,
+ __IFLA_VF_PORT_MAX,
+};
+
+
+
+enum {
+ IFLA_PORT_UNSPEC,
+ IFLA_PORT_VF,
+ IFLA_PORT_PROFILE,
+ IFLA_PORT_VSI_TYPE,
+ IFLA_PORT_INSTANCE_UUID,
+ IFLA_PORT_HOST_UUID,
+ IFLA_PORT_REQUEST,
+ IFLA_PORT_RESPONSE,
+ __IFLA_PORT_MAX,
+};
+
+
+
+
+
+
+
+enum {
+ PORT_REQUEST_PREASSOCIATE = 0,
+ PORT_REQUEST_PREASSOCIATE_RR,
+ PORT_REQUEST_ASSOCIATE,
+ PORT_REQUEST_DISASSOCIATE,
+};
+
+enum {
+ PORT_VDP_RESPONSE_SUCCESS = 0,
+ PORT_VDP_RESPONSE_INVALID_FORMAT,
+ PORT_VDP_RESPONSE_INSUFFICIENT_RESOURCES,
+ PORT_VDP_RESPONSE_UNUSED_VTID,
+ PORT_VDP_RESPONSE_VTID_VIOLATION,
+ PORT_VDP_RESPONSE_VTID_VERSION_VIOALTION,
+ PORT_VDP_RESPONSE_OUT_OF_SYNC,
+
+ PORT_PROFILE_RESPONSE_SUCCESS = 0x100,
+ PORT_PROFILE_RESPONSE_INPROGRESS,
+ PORT_PROFILE_RESPONSE_INVALID,
+ PORT_PROFILE_RESPONSE_BADSTATE,
+ PORT_PROFILE_RESPONSE_INSUFFICIENT_RESOURCES,
+ PORT_PROFILE_RESPONSE_ERROR,
+};
+
+struct ifla_port_vsi {
+ __u8 vsi_mgr_id;
+ __u8 vsi_type_id[3];
+ __u8 vsi_type_version;
+ __u8 pad[3];
+};
+
+
+
+
+enum {
+ IFLA_IPOIB_UNSPEC,
+ IFLA_IPOIB_PKEY,
+ IFLA_IPOIB_MODE,
+ IFLA_IPOIB_UMCAST,
+ __IFLA_IPOIB_MAX
+};
+
+enum {
+ IPOIB_MODE_DATAGRAM = 0,
+ IPOIB_MODE_CONNECTED = 1,
+};
+
+
+
+
+
+
+
+enum {
+ HSR_PROTOCOL_HSR,
+ HSR_PROTOCOL_PRP,
+ HSR_PROTOCOL_MAX,
+};
+
+enum {
+ IFLA_HSR_UNSPEC,
+ IFLA_HSR_SLAVE1,
+ IFLA_HSR_SLAVE2,
+ IFLA_HSR_MULTICAST_SPEC,
+ IFLA_HSR_SUPERVISION_ADDR,
+ IFLA_HSR_SEQ_NR,
+ IFLA_HSR_VERSION,
+ IFLA_HSR_PROTOCOL,
+
+
+ IFLA_HSR_INTERLINK,
+ __IFLA_HSR_MAX,
+};
+
+
+
+
+
+struct if_stats_msg {
+ __u8 family;
+ __u8 pad1;
+ __u16 pad2;
+ __u32 ifindex;
+ __u32 filter_mask;
+};
+
+
+
+
+enum {
+ IFLA_STATS_UNSPEC,
+ IFLA_STATS_LINK_64,
+ IFLA_STATS_LINK_XSTATS,
+ IFLA_STATS_LINK_XSTATS_SLAVE,
+ IFLA_STATS_LINK_OFFLOAD_XSTATS,
+ IFLA_STATS_AF_SPEC,
+ __IFLA_STATS_MAX,
+};
+
+
+
+
+
+enum {
+ IFLA_STATS_GETSET_UNSPEC,
+ IFLA_STATS_GET_FILTERS,
+
+
+ IFLA_STATS_SET_OFFLOAD_XSTATS_L3_STATS,
+ __IFLA_STATS_GETSET_MAX,
+};
+# 1922 "headers/include/linux/if_link.h"
+enum {
+ LINK_XSTATS_TYPE_UNSPEC,
+ LINK_XSTATS_TYPE_BRIDGE,
+ LINK_XSTATS_TYPE_BOND,
+ __LINK_XSTATS_TYPE_MAX
+};
+
+
+
+enum {
+ IFLA_OFFLOAD_XSTATS_UNSPEC,
+ IFLA_OFFLOAD_XSTATS_CPU_HIT,
+ IFLA_OFFLOAD_XSTATS_HW_S_INFO,
+ IFLA_OFFLOAD_XSTATS_L3_STATS,
+ __IFLA_OFFLOAD_XSTATS_MAX
+};
+
+
+enum {
+ IFLA_OFFLOAD_XSTATS_HW_S_INFO_UNSPEC,
+ IFLA_OFFLOAD_XSTATS_HW_S_INFO_REQUEST,
+ IFLA_OFFLOAD_XSTATS_HW_S_INFO_USED,
+ __IFLA_OFFLOAD_XSTATS_HW_S_INFO_MAX,
+};
+# 1963 "headers/include/linux/if_link.h"
+enum {
+ XDP_ATTACHED_NONE = 0,
+ XDP_ATTACHED_DRV,
+ XDP_ATTACHED_SKB,
+ XDP_ATTACHED_HW,
+ XDP_ATTACHED_MULTI,
+};
+
+enum {
+ IFLA_XDP_UNSPEC,
+ IFLA_XDP_FD,
+ IFLA_XDP_ATTACHED,
+ IFLA_XDP_FLAGS,
+ IFLA_XDP_PROG_ID,
+ IFLA_XDP_DRV_PROG_ID,
+ IFLA_XDP_SKB_PROG_ID,
+ IFLA_XDP_HW_PROG_ID,
+ IFLA_XDP_EXPECTED_FD,
+ __IFLA_XDP_MAX,
+};
+
+
+
+enum {
+ IFLA_EVENT_NONE,
+ IFLA_EVENT_REBOOT,
+ IFLA_EVENT_FEATURES,
+ IFLA_EVENT_BONDING_FAILOVER,
+ IFLA_EVENT_NOTIFY_PEERS,
+ IFLA_EVENT_IGMP_RESEND,
+ IFLA_EVENT_BONDING_OPTIONS,
+};
+
+
+
+enum {
+ IFLA_TUN_UNSPEC,
+ IFLA_TUN_OWNER,
+ IFLA_TUN_GROUP,
+ IFLA_TUN_TYPE,
+ IFLA_TUN_PI,
+ IFLA_TUN_VNET_HDR,
+ IFLA_TUN_PERSIST,
+ IFLA_TUN_MULTI_QUEUE,
+ IFLA_TUN_NUM_QUEUES,
+ IFLA_TUN_NUM_DISABLED_QUEUES,
+ __IFLA_TUN_MAX,
+};
+# 2023 "headers/include/linux/if_link.h"
+enum {
+ IFLA_RMNET_UNSPEC,
+ IFLA_RMNET_MUX_ID,
+ IFLA_RMNET_FLAGS,
+ __IFLA_RMNET_MAX,
+};
+
+
+
+struct ifla_rmnet_flags {
+ __u32 flags;
+ __u32 mask;
+};
+
+
+
+enum {
+ IFLA_MCTP_UNSPEC,
+ IFLA_MCTP_NET,
+ IFLA_MCTP_PHYS_BINDING,
+ __IFLA_MCTP_MAX,
+};
+
+
+
+
+
+enum {
+ IFLA_DSA_UNSPEC,
+ IFLA_DSA_CONDUIT,
+
+ IFLA_DSA_MASTER = IFLA_DSA_CONDUIT,
+ __IFLA_DSA_MAX,
+};
+
+
+
+
+
+enum ovpn_mode {
+ OVPN_MODE_P2P,
+ OVPN_MODE_MP,
+};
+
+enum {
+ IFLA_OVPN_UNSPEC,
+ IFLA_OVPN_MODE,
+ __IFLA_OVPN_MAX,
+};
+# 5 "linux-uapi.c" 2
+# 1 "headers/include/linux/io_uring.h" 1
+# 11 "headers/include/linux/io_uring.h"
+# 1 "headers/include/linux/fs.h" 1
+# 13 "headers/include/linux/fs.h"
+# 1 "headers/include/linux/limits.h" 1
+# 14 "headers/include/linux/fs.h" 2
+# 1 "headers/include/linux/ioctl.h" 1
+
+
+
+
+# 1 "headers/include/asm/ioctl.h" 1
+# 1 "headers/include/asm-generic/ioctl.h" 1
+# 2 "headers/include/asm/ioctl.h" 2
+# 6 "headers/include/linux/ioctl.h" 2
+# 15 "headers/include/linux/fs.h" 2
+
+# 1 "headers/include/linux/fscrypt.h" 1
+# 42 "headers/include/linux/fscrypt.h"
+struct fscrypt_policy_v1 {
+ __u8 version;
+ __u8 contents_encryption_mode;
+ __u8 filenames_encryption_mode;
+ __u8 flags;
+ __u8 master_key_descriptor[8];
+};
+# 57 "headers/include/linux/fscrypt.h"
+struct fscrypt_key {
+ __u32 mode;
+ __u8 raw[64];
+ __u32 size;
+};
+
+
+
+
+
+
+struct fscrypt_policy_v2 {
+ __u8 version;
+ __u8 contents_encryption_mode;
+ __u8 filenames_encryption_mode;
+ __u8 flags;
+ __u8 log2_data_unit_size;
+ __u8 __reserved[3];
+ __u8 master_key_identifier[16];
+};
+
+
+struct fscrypt_get_policy_ex_arg {
+ __u64 policy_size;
+ union {
+  __u8 version;
+  struct fscrypt_policy_v1 v1;
+  struct fscrypt_policy_v2 v2;
+ } policy;
+};
+# 105 "headers/include/linux/fscrypt.h"
+struct fscrypt_key_specifier {
+ __u32 type;
+ __u32 __reserved;
+ union {
+  __u8 __reserved[32];
+  __u8 descriptor[8];
+  __u8 identifier[16];
+ } u;
+};
+
+
+
+
+
+struct fscrypt_provisioning_key_payload {
+ __u32 type;
+ __u32 flags;
+ __u8 raw[];
+};
+
+
+struct fscrypt_add_key_arg {
+ struct fscrypt_key_specifier key_spec;
+ __u32 raw_size;
+ __u32 key_id;
+
+ __u32 flags;
+ __u32 __reserved[7];
+ __u8 raw[];
+};
+
+
+struct fscrypt_remove_key_arg {
+ struct fscrypt_key_specifier key_spec;
+
+
+ __u32 removal_status_flags;
+ __u32 __reserved[5];
+};
+
+
+struct fscrypt_get_key_status_arg {
+
+ struct fscrypt_key_specifier key_spec;
+ __u32 __reserved[6];
+
+
+
+
+
+ __u32 status;
+
+ __u32 status_flags;
+ __u32 user_count;
+ __u32 __out_reserved[13];
+};
+# 17 "headers/include/linux/fs.h" 2
+
+
+# 1 "headers/include/linux/mount.h" 1
+# 98 "headers/include/linux/mount.h"
+enum fsconfig_command {
+ FSCONFIG_SET_FLAG = 0,
+ FSCONFIG_SET_STRING = 1,
+ FSCONFIG_SET_BINARY = 2,
+ FSCONFIG_SET_PATH = 3,
+ FSCONFIG_SET_PATH_EMPTY = 4,
+ FSCONFIG_SET_FD = 5,
+ FSCONFIG_CMD_CREATE = 6,
+ FSCONFIG_CMD_RECONFIGURE = 7,
+ FSCONFIG_CMD_CREATE_EXCL = 8,
+};
+# 134 "headers/include/linux/mount.h"
+struct mount_attr {
+ __u64 attr_set;
+ __u64 attr_clr;
+ __u64 propagation;
+ __u64 userns_fd;
+};
+# 158 "headers/include/linux/mount.h"
+struct statmount {
+ __u32 size;
+ __u32 mnt_opts;
+ __u64 mask;
+ __u32 sb_dev_major;
+ __u32 sb_dev_minor;
+ __u64 sb_magic;
+ __u32 sb_flags;
+ __u32 fs_type;
+ __u64 mnt_id;
+ __u64 mnt_parent_id;
+ __u32 mnt_id_old;
+ __u32 mnt_parent_id_old;
+ __u64 mnt_attr;
+ __u64 mnt_propagation;
+ __u64 mnt_peer_group;
+ __u64 mnt_master;
+ __u64 propagate_from;
+ __u32 mnt_root;
+ __u32 mnt_point;
+ __u64 mnt_ns_id;
+ __u32 fs_subtype;
+ __u32 sb_source;
+ __u32 opt_num;
+ __u32 opt_array;
+ __u32 opt_sec_num;
+ __u32 opt_sec_array;
+ __u64 supported_mask;
+ __u32 mnt_uidmap_num;
+ __u32 mnt_uidmap;
+ __u32 mnt_gidmap_num;
+ __u32 mnt_gidmap;
+ __u64 __spare2[43];
+ char str[];
+};
+# 201 "headers/include/linux/mount.h"
+struct mnt_id_req {
+ __u32 size;
+ union {
+  __u32 mnt_ns_fd;
+  __u32 mnt_fd;
+ };
+ __u64 mnt_id;
+ __u64 param;
+ __u64 mnt_ns_id;
+};
+# 20 "headers/include/linux/fs.h" 2
+# 66 "headers/include/linux/fs.h"
+enum procfs_ino {
+ PROCFS_ROOT_INO = 1,
+};
+
+struct file_clone_range {
+ __s64 src_fd;
+ __u64 src_offset;
+ __u64 src_length;
+ __u64 dest_offset;
+};
+
+struct fstrim_range {
+ __u64 start;
+ __u64 len;
+ __u64 minlen;
+};
+# 91 "headers/include/linux/fs.h"
+struct fsuuid2 {
+ __u8 len;
+ __u8 uuid[16];
+};
+
+struct fs_sysfs_path {
+ __u8 len;
+ __u8 name[128];
+};
+# 120 "headers/include/linux/fs.h"
+struct logical_block_metadata_cap {
+
+ __u32 lbmd_flags;
+
+
+
+
+ __u16 lbmd_interval;
+
+
+
+
+ __u8 lbmd_size;
+
+
+
+
+ __u8 lbmd_opaque_size;
+
+
+
+
+ __u8 lbmd_opaque_offset;
+
+ __u8 lbmd_pi_size;
+
+ __u8 lbmd_pi_offset;
+
+ __u8 lbmd_guard_tag_type;
+
+ __u8 lbmd_app_tag_size;
+
+ __u8 lbmd_ref_tag_size;
+
+ __u8 lbmd_storage_tag_size;
+ __u8 pad;
+};
+
+
+
+
+
+
+struct file_dedupe_range_info {
+ __s64 dest_fd;
+ __u64 dest_offset;
+ __u64 bytes_deduped;
+
+
+
+
+
+
+ __s32 status;
+ __u32 reserved;
+};
+
+
+struct file_dedupe_range {
+ __u64 src_offset;
+ __u64 src_length;
+ __u16 dest_count;
+ __u16 reserved1;
+ __u32 reserved2;
+ struct file_dedupe_range_info info[];
+};
+
+
+struct files_stat_struct {
+ unsigned long nr_files;
+ unsigned long nr_free_files;
+ unsigned long max_files;
+};
+
+struct inodes_stat_t {
+ long nr_inodes;
+ long nr_unused;
+ long dummy[5];
+};
+
+
+
+
+
+
+
+struct fsxattr {
+ __u32 fsx_xflags;
+ __u32 fsx_extsize;
+ __u32 fsx_nextents;
+ __u32 fsx_projid;
+ __u32 fsx_cowextsize;
+ unsigned char fsx_pad[8];
+};
+# 222 "headers/include/linux/fs.h"
+struct file_attr {
+ __u64 fa_xflags;
+ __u32 fa_extsize;
+ __u32 fa_nextents;
+ __u32 fa_projid;
+ __u32 fa_cowextsize;
+};
+# 421 "headers/include/linux/fs.h"
+typedef int __kernel_rwf_t;
+# 478 "headers/include/linux/fs.h"
+struct page_region {
+ __u64 start;
+ __u64 end;
+ __u64 categories;
+};
+# 504 "headers/include/linux/fs.h"
+struct pm_scan_arg {
+ __u64 size;
+ __u64 flags;
+ __u64 start;
+ __u64 end;
+ __u64 walk_end;
+ __u64 vec;
+ __u64 vec_len;
+ __u64 max_pages;
+ __u64 category_inverted;
+ __u64 category_mask;
+ __u64 category_anyof_mask;
+ __u64 return_mask;
+};
+
+
+
+
+enum procmap_query_flags {
+# 536 "headers/include/linux/fs.h"
+ PROCMAP_QUERY_VMA_READABLE = 0x01,
+ PROCMAP_QUERY_VMA_WRITABLE = 0x02,
+ PROCMAP_QUERY_VMA_EXECUTABLE = 0x04,
+ PROCMAP_QUERY_VMA_SHARED = 0x08,
+# 552 "headers/include/linux/fs.h"
+ PROCMAP_QUERY_COVERING_OR_NEXT_VMA = 0x10,
+ PROCMAP_QUERY_FILE_BACKED_VMA = 0x20,
+};
+# 579 "headers/include/linux/fs.h"
+struct procmap_query {
+
+ __u64 size;
+
+
+
+
+
+
+ __u64 query_flags;
+
+
+
+
+
+
+
+ __u64 query_addr;
+
+ __u64 vma_start;
+ __u64 vma_end;
+
+ __u64 vma_flags;
+
+ __u64 vma_page_size;
+
+
+
+
+
+ __u64 vma_offset;
+
+ __u64 inode;
+
+ __u32 dev_major;
+ __u32 dev_minor;
+# 634 "headers/include/linux/fs.h"
+ __u32 vma_name_size;
+# 654 "headers/include/linux/fs.h"
+ __u32 build_id_size;
+
+
+
+
+
+
+
+ __u64 vma_name_addr;
+
+
+
+
+
+
+
+ __u64 build_id_addr;
+};
+# 12 "headers/include/linux/io_uring.h" 2
+
+# 1 "headers/include/linux/io_uring/zcrx.h" 1
+# 15 "headers/include/linux/io_uring/zcrx.h"
+struct io_uring_zcrx_rqe {
+ __u64 off;
+ __u32 len;
+ __u32 __pad;
+};
+
+struct io_uring_zcrx_cqe {
+ __u64 off;
+ __u64 __pad;
+};
+
+
+
+
+
+struct io_uring_zcrx_offsets {
+ __u32 head;
+ __u32 tail;
+ __u32 rqes;
+ __u32 __resv2;
+ __u64 __resv[2];
+};
+
+enum io_uring_zcrx_area_flags {
+ IORING_ZCRX_AREA_DMABUF = 1,
+};
+
+struct io_uring_zcrx_area_reg {
+ __u64 addr;
+ __u64 len;
+ __u64 rq_area_token;
+ __u32 flags;
+ __u32 dmabuf_fd;
+ __u64 __resv2[2];
+};
+
+enum zcrx_reg_flags {
+ ZCRX_REG_IMPORT = 1,
+
+
+
+
+
+
+ ZCRX_REG_NODEV = 2,
+};
+
+enum zcrx_features {
+
+
+
+
+ ZCRX_FEATURE_RX_PAGE_SIZE = 1 << 0,
+ ZCRX_FEATURE_EVENT = 1 << 1,
+};
+
+enum zcrx_event_type {
+ ZCRX_EVENT_ALLOC_FAIL,
+ ZCRX_EVENT_COPY,
+
+ __ZCRX_EVENT_TYPE_LAST,
+};
+
+enum zcrx_event_desc_flags {
+
+ ZCRX_EVENT_DESC_FLAG_STATS = 1 << 0,
+};
+
+struct zcrx_stats {
+ __u64 copy_count;
+ __u64 copy_bytes;
+};
+
+struct zcrx_event_desc {
+ __u64 user_data;
+ __u32 type_mask;
+ __u32 flags;
+ __u64 stats_offset;
+ __u64 __resv2[9];
+};
+
+
+
+
+struct io_uring_zcrx_ifq_reg {
+ __u32 if_idx;
+ __u32 if_rxq;
+ __u32 rq_entries;
+ __u32 flags;
+
+ __u64 area_ptr;
+ __u64 region_ptr;
+
+ struct io_uring_zcrx_offsets offsets;
+ __u32 zcrx_id;
+ __u32 rx_buf_len;
+ __u64 event_desc;
+ __u64 __resv[2];
+};
+
+enum zcrx_ctrl_op {
+ ZCRX_CTRL_FLUSH_RQ,
+ ZCRX_CTRL_EXPORT,
+ ZCRX_CTRL_ARM_EVENT,
+ ZCRX_CTRL_ADD_AREA,
+
+ __ZCRX_CTRL_LAST,
+};
+
+struct zcrx_ctrl_flush_rq {
+ __u64 __resv[6];
+};
+
+struct zcrx_ctrl_export {
+ __u32 zcrx_fd;
+ __u32 __resv1[11];
+};
+
+struct zcrx_ctrl_arm_event {
+ __u32 event_type;
+ __u32 __resv[11];
+};
+
+struct zcrx_ctrl_add_area {
+ __u64 area_ptr;
+ __u64 __resv[5];
+};
+
+struct zcrx_ctrl {
+ __u32 zcrx_id;
+ __u32 op;
+ __u64 __resv[2];
+
+ union {
+  struct zcrx_ctrl_export zc_export;
+  struct zcrx_ctrl_flush_rq zc_flush;
+  struct zcrx_ctrl_arm_event zc_arm_event;
+  struct zcrx_ctrl_add_area zc_area;
+ };
+};
+# 14 "headers/include/linux/io_uring.h" 2
+# 22 "headers/include/linux/io_uring.h"
+# 1 "headers/include/linux/time_types.h" 1
+
+
+
+
+
+
+struct __kernel_timespec {
+ __kernel_time64_t tv_sec;
+ long long tv_nsec;
+};
+
+struct __kernel_itimerspec {
+ struct __kernel_timespec it_interval;
+ struct __kernel_timespec it_value;
+};
+# 25 "headers/include/linux/time_types.h"
+struct __kernel_old_timeval {
+ __kernel_long_t tv_sec;
+ __kernel_long_t tv_usec;
+};
+
+
+struct __kernel_old_timespec {
+ __kernel_old_time_t tv_sec;
+ __kernel_long_t tv_nsec;
+};
+
+struct __kernel_old_itimerval {
+ struct __kernel_old_timeval it_interval;
+ struct __kernel_old_timeval it_value;
+};
+
+struct __kernel_sock_timeval {
+ __s64 tv_sec;
+ __s64 tv_usec;
+};
+# 23 "headers/include/linux/io_uring.h" 2
+# 32 "headers/include/linux/io_uring.h"
+struct io_uring_sqe {
+ __u8 opcode;
+ __u8 flags;
+ __u16 ioprio;
+ __s32 fd;
+ union {
+  __u64 off;
+  __u64 addr2;
+  struct {
+   __u32 cmd_op;
+   __u32 __pad1;
+  };
+ };
+ union {
+  __u64 addr;
+  __u64 splice_off_in;
+  struct {
+   __u32 level;
+   __u32 optname;
+  };
+ };
+ __u32 len;
+ union {
+  __u32 rw_flags;
+  __u32 fsync_flags;
+  __u16 poll_events;
+  __u32 poll32_events;
+  __u32 sync_range_flags;
+  __u32 msg_flags;
+  __u32 timeout_flags;
+  __u32 accept_flags;
+  __u32 cancel_flags;
+  __u32 open_flags;
+  __u32 statx_flags;
+  __u32 fadvise_advice;
+  __u32 splice_flags;
+  __u32 rename_flags;
+  __u32 unlink_flags;
+  __u32 hardlink_flags;
+  __u32 xattr_flags;
+  __u32 msg_ring_flags;
+  __u32 uring_cmd_flags;
+  __u32 waitid_flags;
+  __u32 futex_flags;
+  __u32 install_fd_flags;
+  __u32 nop_flags;
+  __u32 pipe_flags;
+ };
+ __u64 user_data;
+
+ union {
+
+  __u16 buf_index;
+
+  __u16 buf_group;
+ } ;
+
+ __u16 personality;
+ union {
+  __s32 splice_fd_in;
+  __u32 file_index;
+  __u32 zcrx_ifq_idx;
+  __u32 optlen;
+  struct {
+   __u16 addr_len;
+   __u16 __pad3[1];
+  };
+  struct {
+   __u8 write_stream;
+   __u8 __pad4[3];
+  };
+ };
+ union {
+  struct {
+   __u64 addr3;
+   __u64 __pad2[1];
+  };
+  struct {
+   __u64 attr_ptr;
+   __u64 attr_type_mask;
+  };
+  __u64 optval;
+
+
+
+
+  __u8 cmd[0];
+ };
+};
+
+
+
+
+struct io_uring_attr_pi {
+  __u16 flags;
+  __u16 app_tag;
+  __u32 len;
+  __u64 addr;
+  __u64 seed;
+  __u64 rsvd;
+};
+# 143 "headers/include/linux/io_uring.h"
+enum io_uring_sqe_flags_bit {
+ IOSQE_FIXED_FILE_BIT,
+ IOSQE_IO_DRAIN_BIT,
+ IOSQE_IO_LINK_BIT,
+ IOSQE_IO_HARDLINK_BIT,
+ IOSQE_ASYNC_BIT,
+ IOSQE_BUFFER_SELECT_BIT,
+ IOSQE_CQE_SKIP_SUCCESS_BIT,
+};
+# 255 "headers/include/linux/io_uring.h"
+enum io_uring_op {
+ IORING_OP_NOP,
+ IORING_OP_READV,
+ IORING_OP_WRITEV,
+ IORING_OP_FSYNC,
+ IORING_OP_READ_FIXED,
+ IORING_OP_WRITE_FIXED,
+ IORING_OP_POLL_ADD,
+ IORING_OP_POLL_REMOVE,
+ IORING_OP_SYNC_FILE_RANGE,
+ IORING_OP_SENDMSG,
+ IORING_OP_RECVMSG,
+ IORING_OP_TIMEOUT,
+ IORING_OP_TIMEOUT_REMOVE,
+ IORING_OP_ACCEPT,
+ IORING_OP_ASYNC_CANCEL,
+ IORING_OP_LINK_TIMEOUT,
+ IORING_OP_CONNECT,
+ IORING_OP_FALLOCATE,
+ IORING_OP_OPENAT,
+ IORING_OP_CLOSE,
+ IORING_OP_FILES_UPDATE,
+ IORING_OP_STATX,
+ IORING_OP_READ,
+ IORING_OP_WRITE,
+ IORING_OP_FADVISE,
+ IORING_OP_MADVISE,
+ IORING_OP_SEND,
+ IORING_OP_RECV,
+ IORING_OP_OPENAT2,
+ IORING_OP_EPOLL_CTL,
+ IORING_OP_SPLICE,
+ IORING_OP_PROVIDE_BUFFERS,
+ IORING_OP_REMOVE_BUFFERS,
+ IORING_OP_TEE,
+ IORING_OP_SHUTDOWN,
+ IORING_OP_RENAMEAT,
+ IORING_OP_UNLINKAT,
+ IORING_OP_MKDIRAT,
+ IORING_OP_SYMLINKAT,
+ IORING_OP_LINKAT,
+ IORING_OP_MSG_RING,
+ IORING_OP_FSETXATTR,
+ IORING_OP_SETXATTR,
+ IORING_OP_FGETXATTR,
+ IORING_OP_GETXATTR,
+ IORING_OP_SOCKET,
+ IORING_OP_URING_CMD,
+ IORING_OP_SEND_ZC,
+ IORING_OP_SENDMSG_ZC,
+ IORING_OP_READ_MULTISHOT,
+ IORING_OP_WAITID,
+ IORING_OP_FUTEX_WAIT,
+ IORING_OP_FUTEX_WAKE,
+ IORING_OP_FUTEX_WAITV,
+ IORING_OP_FIXED_FD_INSTALL,
+ IORING_OP_FTRUNCATE,
+ IORING_OP_BIND,
+ IORING_OP_LISTEN,
+ IORING_OP_RECV_ZC,
+ IORING_OP_EPOLL_WAIT,
+ IORING_OP_READV_FIXED,
+ IORING_OP_WRITEV_FIXED,
+ IORING_OP_PIPE,
+ IORING_OP_NOP128,
+ IORING_OP_URING_CMD128,
+
+
+ IORING_OP_LAST,
+};
+# 463 "headers/include/linux/io_uring.h"
+enum io_uring_msg_ring_flags {
+ IORING_MSG_DATA,
+ IORING_MSG_SEND_FD,
+};
+# 500 "headers/include/linux/io_uring.h"
+struct io_uring_cqe {
+ __u64 user_data;
+ __s32 res;
+ __u32 flags;
+
+
+
+
+
+ __u64 big_cqe[];
+};
+# 561 "headers/include/linux/io_uring.h"
+struct io_sqring_offsets {
+ __u32 head;
+ __u32 tail;
+ __u32 ring_mask;
+ __u32 ring_entries;
+ __u32 flags;
+ __u32 dropped;
+ __u32 array;
+ __u32 resv1;
+ __u64 user_addr;
+};
+# 580 "headers/include/linux/io_uring.h"
+struct io_cqring_offsets {
+ __u32 head;
+ __u32 tail;
+ __u32 ring_mask;
+ __u32 ring_entries;
+ __u32 overflow;
+ __u32 cqes;
+ __u32 flags;
+ __u32 resv1;
+ __u64 user_addr;
+};
+# 614 "headers/include/linux/io_uring.h"
+struct io_uring_params {
+ __u32 sq_entries;
+ __u32 cq_entries;
+ __u32 flags;
+ __u32 sq_thread_cpu;
+ __u32 sq_thread_idle;
+ __u32 features;
+ __u32 wq_fd;
+ __u32 resv[3];
+ struct io_sqring_offsets sq_off;
+ struct io_cqring_offsets cq_off;
+};
+# 652 "headers/include/linux/io_uring.h"
+enum io_uring_register_op {
+ IORING_REGISTER_BUFFERS = 0,
+ IORING_UNREGISTER_BUFFERS = 1,
+ IORING_REGISTER_FILES = 2,
+ IORING_UNREGISTER_FILES = 3,
+ IORING_REGISTER_EVENTFD = 4,
+ IORING_UNREGISTER_EVENTFD = 5,
+ IORING_REGISTER_FILES_UPDATE = 6,
+ IORING_REGISTER_EVENTFD_ASYNC = 7,
+ IORING_REGISTER_PROBE = 8,
+ IORING_REGISTER_PERSONALITY = 9,
+ IORING_UNREGISTER_PERSONALITY = 10,
+ IORING_REGISTER_RESTRICTIONS = 11,
+ IORING_REGISTER_ENABLE_RINGS = 12,
+
+
+ IORING_REGISTER_FILES2 = 13,
+ IORING_REGISTER_FILES_UPDATE2 = 14,
+ IORING_REGISTER_BUFFERS2 = 15,
+ IORING_REGISTER_BUFFERS_UPDATE = 16,
+
+
+ IORING_REGISTER_IOWQ_AFF = 17,
+ IORING_UNREGISTER_IOWQ_AFF = 18,
+
+
+ IORING_REGISTER_IOWQ_MAX_WORKERS = 19,
+
+
+ IORING_REGISTER_RING_FDS = 20,
+ IORING_UNREGISTER_RING_FDS = 21,
+
+
+ IORING_REGISTER_PBUF_RING = 22,
+ IORING_UNREGISTER_PBUF_RING = 23,
+
+
+ IORING_REGISTER_SYNC_CANCEL = 24,
+
+
+ IORING_REGISTER_FILE_ALLOC_RANGE = 25,
+
+
+ IORING_REGISTER_PBUF_STATUS = 26,
+
+
+ IORING_REGISTER_NAPI = 27,
+ IORING_UNREGISTER_NAPI = 28,
+
+ IORING_REGISTER_CLOCK = 29,
+
+
+ IORING_REGISTER_CLONE_BUFFERS = 30,
+
+
+ IORING_REGISTER_SEND_MSG_RING = 31,
+
+
+ IORING_REGISTER_ZCRX_IFQ = 32,
+
+
+ IORING_REGISTER_RESIZE_RINGS = 33,
+
+ IORING_REGISTER_MEM_REGION = 34,
+
+
+ IORING_REGISTER_QUERY = 35,
+
+
+ IORING_REGISTER_ZCRX_CTRL = 36,
+
+
+ IORING_REGISTER_BPF_FILTER = 37,
+
+
+ IORING_REGISTER_LAST,
+
+
+ IORING_REGISTER_USE_REGISTERED_RING = 1U << 31
+};
+
+
+enum io_wq_type {
+ IO_WQ_BOUND,
+ IO_WQ_UNBOUND,
+};
+
+
+struct io_uring_files_update {
+ __u32 offset;
+ __u32 resv;
+ __u64 fds;
+};
+
+enum {
+
+ IORING_MEM_REGION_TYPE_USER = 1,
+};
+
+struct io_uring_region_desc {
+ __u64 user_addr;
+ __u64 size;
+ __u32 flags;
+ __u32 id;
+ __u64 mmap_offset;
+ __u64 __resv[4];
+};
+
+enum {
+
+ IORING_MEM_REGION_REG_WAIT_ARG = 1,
+};
+
+struct io_uring_mem_region_reg {
+ __u64 region_uptr;
+ __u64 flags;
+ __u64 __resv[2];
+};
+
+
+
+
+
+
+
+struct io_uring_rsrc_register {
+ __u32 nr;
+ __u32 flags;
+ __u64 resv2;
+ __u64 data;
+ __u64 tags;
+};
+
+struct io_uring_rsrc_update {
+ __u32 offset;
+ __u32 resv;
+ __u64 data;
+};
+
+struct io_uring_rsrc_update2 {
+ __u32 offset;
+ __u32 resv;
+ __u64 data;
+ __u64 tags;
+ __u32 nr;
+ __u32 resv2;
+};
+
+
+
+
+
+
+struct io_uring_probe_op {
+ __u8 op;
+ __u8 resv;
+ __u16 flags;
+ __u32 resv2;
+};
+
+struct io_uring_probe {
+ __u8 last_op;
+ __u8 ops_len;
+ __u16 resv;
+ __u32 resv2[3];
+ struct io_uring_probe_op ops[];
+};
+
+struct io_uring_restriction {
+ __u16 opcode;
+ union {
+  __u8 register_op;
+  __u8 sqe_op;
+  __u8 sqe_flags;
+ };
+ __u8 resv;
+ __u32 resv2[3];
+};
+
+struct io_uring_task_restriction {
+ __u16 flags;
+ __u16 nr_res;
+ __u32 resv[3];
+ struct { struct { } __empty_restrictions; struct io_uring_restriction restrictions[]; };
+};
+
+struct io_uring_clock_register {
+ __u32 clockid;
+ __u32 __resv[3];
+};
+
+enum {
+ IORING_REGISTER_SRC_REGISTERED = (1U << 0),
+ IORING_REGISTER_DST_REPLACE = (1U << 1),
+};
+
+struct io_uring_clone_buffers {
+ __u32 src_fd;
+ __u32 flags;
+ __u32 src_off;
+ __u32 dst_off;
+ __u32 nr;
+ __u32 pad[3];
+};
+
+struct io_uring_buf {
+ __u64 addr;
+ __u32 len;
+ __u16 bid;
+ __u16 resv;
+};
+
+struct io_uring_buf_ring {
+ union {
+
+
+
+
+  struct {
+   __u64 resv1;
+   __u32 resv2;
+   __u16 resv3;
+   __u16 tail;
+  };
+  struct { struct { } __empty_bufs; struct io_uring_buf bufs[]; };
+ };
+};
+# 897 "headers/include/linux/io_uring.h"
+enum io_uring_register_pbuf_ring_flags {
+ IOU_PBUF_RING_MMAP = 1,
+ IOU_PBUF_RING_INC = 2,
+};
+
+
+struct io_uring_buf_reg {
+ __u64 ring_addr;
+ __u32 ring_entries;
+ __u16 bgid;
+ __u16 flags;
+ __u32 min_left;
+ __u32 resv[5];
+};
+
+
+struct io_uring_buf_status {
+ __u32 buf_group;
+ __u32 head;
+ __u32 resv[8];
+};
+
+enum io_uring_napi_op {
+
+ IO_URING_NAPI_REGISTER_OP = 0,
+
+
+ IO_URING_NAPI_STATIC_ADD_ID = 1,
+ IO_URING_NAPI_STATIC_DEL_ID = 2
+};
+
+enum io_uring_napi_tracking_strategy {
+
+ IO_URING_NAPI_TRACKING_DYNAMIC = 0,
+ IO_URING_NAPI_TRACKING_STATIC = 1,
+ IO_URING_NAPI_TRACKING_INACTIVE = 255
+};
+
+
+struct io_uring_napi {
+ __u32 busy_poll_to;
+ __u8 prefer_busy_poll;
+
+
+ __u8 opcode;
+ __u8 pad[2];
+# 951 "headers/include/linux/io_uring.h"
+ __u32 op_param;
+ __u32 resv;
+};
+
+
+
+
+enum io_uring_register_restriction_op {
+
+ IORING_RESTRICTION_REGISTER_OP = 0,
+
+
+ IORING_RESTRICTION_SQE_OP = 1,
+
+
+ IORING_RESTRICTION_SQE_FLAGS_ALLOWED = 2,
+
+
+ IORING_RESTRICTION_SQE_FLAGS_REQUIRED = 3,
+
+ IORING_RESTRICTION_LAST
+};
+
+enum {
+ IORING_REG_WAIT_TS = (1U << 0),
+};
+
+
+
+
+
+
+
+struct io_uring_reg_wait {
+ struct __kernel_timespec ts;
+ __u32 min_wait_usec;
+ __u32 flags;
+ __u64 sigmask;
+ __u32 sigmask_sz;
+ __u32 pad[3];
+ __u64 pad2[2];
+};
+
+
+
+
+struct io_uring_getevents_arg {
+ __u64 sigmask;
+ __u32 sigmask_sz;
+ __u32 min_wait_usec;
+ __u64 ts;
+};
+
+
+
+
+struct io_uring_sync_cancel_reg {
+ __u64 addr;
+ __s32 fd;
+ __u32 flags;
+ struct __kernel_timespec timeout;
+ __u8 opcode;
+ __u8 pad[7];
+ __u64 pad2[3];
+};
+
+
+
+
+
+struct io_uring_file_index_range {
+ __u32 off;
+ __u32 len;
+ __u64 resv;
+};
+
+struct io_uring_recvmsg_out {
+ __u32 namelen;
+ __u32 controllen;
+ __u32 payloadlen;
+ __u32 flags;
+};
+
+
+
+
+enum io_uring_socket_op {
+ SOCKET_URING_OP_SIOCINQ = 0,
+ SOCKET_URING_OP_SIOCOUTQ,
+ SOCKET_URING_OP_GETSOCKOPT,
+ SOCKET_URING_OP_SETSOCKOPT,
+ SOCKET_URING_OP_TX_TIMESTAMP,
+ SOCKET_URING_OP_GETSOCKNAME,
+};
+# 1056 "headers/include/linux/io_uring.h"
+struct io_timespec {
+ __u64 tv_sec;
+ __u64 tv_nsec;
+};
+# 6 "linux-uapi.c" 2
+
+# 1 "headers/include/linux/nl80211.h" 1
+# 1433 "headers/include/linux/nl80211.h"
+enum nl80211_commands {
+
+ NL80211_CMD_UNSPEC,
+
+ NL80211_CMD_GET_WIPHY,
+ NL80211_CMD_SET_WIPHY,
+ NL80211_CMD_NEW_WIPHY,
+ NL80211_CMD_DEL_WIPHY,
+
+ NL80211_CMD_GET_INTERFACE,
+ NL80211_CMD_SET_INTERFACE,
+ NL80211_CMD_NEW_INTERFACE,
+ NL80211_CMD_DEL_INTERFACE,
+
+ NL80211_CMD_GET_KEY,
+ NL80211_CMD_SET_KEY,
+ NL80211_CMD_NEW_KEY,
+ NL80211_CMD_DEL_KEY,
+
+ NL80211_CMD_GET_BEACON,
+ NL80211_CMD_SET_BEACON,
+ NL80211_CMD_START_AP,
+ NL80211_CMD_NEW_BEACON = NL80211_CMD_START_AP,
+ NL80211_CMD_STOP_AP,
+ NL80211_CMD_DEL_BEACON = NL80211_CMD_STOP_AP,
+
+ NL80211_CMD_GET_STATION,
+ NL80211_CMD_SET_STATION,
+ NL80211_CMD_NEW_STATION,
+ NL80211_CMD_DEL_STATION,
+
+ NL80211_CMD_GET_MPATH,
+ NL80211_CMD_SET_MPATH,
+ NL80211_CMD_NEW_MPATH,
+ NL80211_CMD_DEL_MPATH,
+
+ NL80211_CMD_SET_BSS,
+
+ NL80211_CMD_SET_REG,
+ NL80211_CMD_REQ_SET_REG,
+
+ NL80211_CMD_GET_MESH_CONFIG,
+ NL80211_CMD_SET_MESH_CONFIG,
+
+ NL80211_CMD_SET_MGMT_EXTRA_IE ,
+
+ NL80211_CMD_GET_REG,
+
+ NL80211_CMD_GET_SCAN,
+ NL80211_CMD_TRIGGER_SCAN,
+ NL80211_CMD_NEW_SCAN_RESULTS,
+ NL80211_CMD_SCAN_ABORTED,
+
+ NL80211_CMD_REG_CHANGE,
+
+ NL80211_CMD_AUTHENTICATE,
+ NL80211_CMD_ASSOCIATE,
+ NL80211_CMD_DEAUTHENTICATE,
+ NL80211_CMD_DISASSOCIATE,
+
+ NL80211_CMD_MICHAEL_MIC_FAILURE,
+
+ NL80211_CMD_REG_BEACON_HINT,
+
+ NL80211_CMD_JOIN_IBSS,
+ NL80211_CMD_LEAVE_IBSS,
+
+ NL80211_CMD_TESTMODE,
+
+ NL80211_CMD_CONNECT,
+ NL80211_CMD_ROAM,
+ NL80211_CMD_DISCONNECT,
+
+ NL80211_CMD_SET_WIPHY_NETNS,
+
+ NL80211_CMD_GET_SURVEY,
+ NL80211_CMD_NEW_SURVEY_RESULTS,
+
+ NL80211_CMD_SET_PMKSA,
+ NL80211_CMD_DEL_PMKSA,
+ NL80211_CMD_FLUSH_PMKSA,
+
+ NL80211_CMD_REMAIN_ON_CHANNEL,
+ NL80211_CMD_CANCEL_REMAIN_ON_CHANNEL,
+
+ NL80211_CMD_SET_TX_BITRATE_MASK,
+
+ NL80211_CMD_REGISTER_FRAME,
+ NL80211_CMD_REGISTER_ACTION = NL80211_CMD_REGISTER_FRAME,
+ NL80211_CMD_FRAME,
+ NL80211_CMD_ACTION = NL80211_CMD_FRAME,
+ NL80211_CMD_FRAME_TX_STATUS,
+ NL80211_CMD_ACTION_TX_STATUS = NL80211_CMD_FRAME_TX_STATUS,
+
+ NL80211_CMD_SET_POWER_SAVE,
+ NL80211_CMD_GET_POWER_SAVE,
+
+ NL80211_CMD_SET_CQM,
+ NL80211_CMD_NOTIFY_CQM,
+
+ NL80211_CMD_SET_CHANNEL,
+ NL80211_CMD_SET_WDS_PEER,
+
+ NL80211_CMD_FRAME_WAIT_CANCEL,
+
+ NL80211_CMD_JOIN_MESH,
+ NL80211_CMD_LEAVE_MESH,
+
+ NL80211_CMD_UNPROT_DEAUTHENTICATE,
+ NL80211_CMD_UNPROT_DISASSOCIATE,
+
+ NL80211_CMD_NEW_PEER_CANDIDATE,
+
+ NL80211_CMD_GET_WOWLAN,
+ NL80211_CMD_SET_WOWLAN,
+
+ NL80211_CMD_START_SCHED_SCAN,
+ NL80211_CMD_STOP_SCHED_SCAN,
+ NL80211_CMD_SCHED_SCAN_RESULTS,
+ NL80211_CMD_SCHED_SCAN_STOPPED,
+
+ NL80211_CMD_SET_REKEY_OFFLOAD,
+
+ NL80211_CMD_PMKSA_CANDIDATE,
+
+ NL80211_CMD_TDLS_OPER,
+ NL80211_CMD_TDLS_MGMT,
+
+ NL80211_CMD_UNEXPECTED_FRAME,
+
+ NL80211_CMD_PROBE_PEER,
+
+ NL80211_CMD_REGISTER_BEACONS,
+
+ NL80211_CMD_UNEXPECTED_4ADDR_FRAME,
+
+ NL80211_CMD_SET_NOACK_MAP,
+
+ NL80211_CMD_CH_SWITCH_NOTIFY,
+
+ NL80211_CMD_START_P2P_DEVICE,
+ NL80211_CMD_STOP_P2P_DEVICE,
+
+ NL80211_CMD_CONN_FAILED,
+
+ NL80211_CMD_SET_MCAST_RATE,
+
+ NL80211_CMD_SET_MAC_ACL,
+
+ NL80211_CMD_RADAR_DETECT,
+
+ NL80211_CMD_GET_PROTOCOL_FEATURES,
+
+ NL80211_CMD_UPDATE_FT_IES,
+ NL80211_CMD_FT_EVENT,
+
+ NL80211_CMD_CRIT_PROTOCOL_START,
+ NL80211_CMD_CRIT_PROTOCOL_STOP,
+
+ NL80211_CMD_GET_COALESCE,
+ NL80211_CMD_SET_COALESCE,
+
+ NL80211_CMD_CHANNEL_SWITCH,
+
+ NL80211_CMD_VENDOR,
+
+ NL80211_CMD_SET_QOS_MAP,
+
+ NL80211_CMD_ADD_TX_TS,
+ NL80211_CMD_DEL_TX_TS,
+
+ NL80211_CMD_GET_MPP,
+
+ NL80211_CMD_JOIN_OCB,
+ NL80211_CMD_LEAVE_OCB,
+
+ NL80211_CMD_CH_SWITCH_STARTED_NOTIFY,
+
+ NL80211_CMD_TDLS_CHANNEL_SWITCH,
+ NL80211_CMD_TDLS_CANCEL_CHANNEL_SWITCH,
+
+ NL80211_CMD_WIPHY_REG_CHANGE,
+
+ NL80211_CMD_ABORT_SCAN,
+
+ NL80211_CMD_START_NAN,
+ NL80211_CMD_STOP_NAN,
+ NL80211_CMD_ADD_NAN_FUNCTION,
+ NL80211_CMD_DEL_NAN_FUNCTION,
+ NL80211_CMD_CHANGE_NAN_CONFIG,
+ NL80211_CMD_NAN_MATCH,
+
+ NL80211_CMD_SET_MULTICAST_TO_UNICAST,
+
+ NL80211_CMD_UPDATE_CONNECT_PARAMS,
+
+ NL80211_CMD_SET_PMK,
+ NL80211_CMD_DEL_PMK,
+
+ NL80211_CMD_PORT_AUTHORIZED,
+
+ NL80211_CMD_RELOAD_REGDB,
+
+ NL80211_CMD_EXTERNAL_AUTH,
+
+ NL80211_CMD_STA_OPMODE_CHANGED,
+
+ NL80211_CMD_CONTROL_PORT_FRAME,
+
+ NL80211_CMD_GET_FTM_RESPONDER_STATS,
+
+ NL80211_CMD_PEER_MEASUREMENT_START,
+ NL80211_CMD_PEER_MEASUREMENT_RESULT,
+ NL80211_CMD_PEER_MEASUREMENT_COMPLETE,
+
+ NL80211_CMD_NOTIFY_RADAR,
+
+ NL80211_CMD_UPDATE_OWE_INFO,
+
+ NL80211_CMD_PROBE_MESH_LINK,
+
+ NL80211_CMD_SET_TID_CONFIG,
+
+ NL80211_CMD_UNPROT_BEACON,
+
+ NL80211_CMD_CONTROL_PORT_FRAME_TX_STATUS,
+
+ NL80211_CMD_SET_SAR_SPECS,
+
+ NL80211_CMD_OBSS_COLOR_COLLISION,
+
+ NL80211_CMD_COLOR_CHANGE_REQUEST,
+
+ NL80211_CMD_COLOR_CHANGE_STARTED,
+ NL80211_CMD_COLOR_CHANGE_ABORTED,
+ NL80211_CMD_COLOR_CHANGE_COMPLETED,
+
+ NL80211_CMD_SET_FILS_AAD,
+
+ NL80211_CMD_ASSOC_COMEBACK,
+
+ NL80211_CMD_ADD_LINK,
+ NL80211_CMD_REMOVE_LINK,
+
+ NL80211_CMD_ADD_LINK_STA,
+ NL80211_CMD_MODIFY_LINK_STA,
+ NL80211_CMD_REMOVE_LINK_STA,
+
+ NL80211_CMD_SET_HW_TIMESTAMP,
+
+ NL80211_CMD_LINKS_REMOVED,
+
+ NL80211_CMD_SET_TID_TO_LINK_MAPPING,
+
+ NL80211_CMD_ASSOC_MLO_RECONF,
+ NL80211_CMD_EPCS_CFG,
+
+ NL80211_CMD_NAN_NEXT_DW_NOTIFICATION,
+ NL80211_CMD_NAN_CLUSTER_JOINED,
+
+ NL80211_CMD_INCUMBENT_SIGNAL_DETECT,
+
+ NL80211_CMD_NAN_SET_LOCAL_SCHED,
+
+ NL80211_CMD_NAN_SCHED_UPDATE_DONE,
+
+ NL80211_CMD_NAN_SET_PEER_SCHED,
+
+ NL80211_CMD_NAN_ULW_UPDATE,
+
+ NL80211_CMD_NAN_CHANNEL_EVAC,
+
+ NL80211_CMD_START_PD,
+ NL80211_CMD_STOP_PD,
+
+
+
+
+ __NL80211_CMD_AFTER_LAST,
+ NL80211_CMD_MAX = __NL80211_CMD_AFTER_LAST - 1
+};
+# 3192 "headers/include/linux/nl80211.h"
+enum nl80211_attrs {
+
+ NL80211_ATTR_UNSPEC,
+
+ NL80211_ATTR_WIPHY,
+ NL80211_ATTR_WIPHY_NAME,
+
+ NL80211_ATTR_IFINDEX,
+ NL80211_ATTR_IFNAME,
+ NL80211_ATTR_IFTYPE,
+
+ NL80211_ATTR_MAC,
+
+ NL80211_ATTR_KEY_DATA,
+ NL80211_ATTR_KEY_IDX,
+ NL80211_ATTR_KEY_CIPHER,
+ NL80211_ATTR_KEY_SEQ,
+ NL80211_ATTR_KEY_DEFAULT,
+
+ NL80211_ATTR_BEACON_INTERVAL,
+ NL80211_ATTR_DTIM_PERIOD,
+ NL80211_ATTR_BEACON_HEAD,
+ NL80211_ATTR_BEACON_TAIL,
+
+ NL80211_ATTR_STA_AID,
+ NL80211_ATTR_STA_FLAGS,
+ NL80211_ATTR_STA_LISTEN_INTERVAL,
+ NL80211_ATTR_STA_SUPPORTED_RATES,
+ NL80211_ATTR_STA_VLAN,
+ NL80211_ATTR_STA_INFO,
+
+ NL80211_ATTR_WIPHY_BANDS,
+
+ NL80211_ATTR_MNTR_FLAGS,
+
+ NL80211_ATTR_MESH_ID,
+ NL80211_ATTR_STA_PLINK_ACTION,
+ NL80211_ATTR_MPATH_NEXT_HOP,
+ NL80211_ATTR_MPATH_INFO,
+
+ NL80211_ATTR_BSS_CTS_PROT,
+ NL80211_ATTR_BSS_SHORT_PREAMBLE,
+ NL80211_ATTR_BSS_SHORT_SLOT_TIME,
+
+ NL80211_ATTR_HT_CAPABILITY,
+
+ NL80211_ATTR_SUPPORTED_IFTYPES,
+
+ NL80211_ATTR_REG_ALPHA2,
+ NL80211_ATTR_REG_RULES,
+
+ NL80211_ATTR_MESH_CONFIG,
+
+ NL80211_ATTR_BSS_BASIC_RATES,
+
+ NL80211_ATTR_WIPHY_TXQ_PARAMS,
+ NL80211_ATTR_WIPHY_FREQ,
+ NL80211_ATTR_WIPHY_CHANNEL_TYPE,
+
+ NL80211_ATTR_KEY_DEFAULT_MGMT,
+
+ NL80211_ATTR_MGMT_SUBTYPE,
+ NL80211_ATTR_IE,
+
+ NL80211_ATTR_MAX_NUM_SCAN_SSIDS,
+
+ NL80211_ATTR_SCAN_FREQUENCIES,
+ NL80211_ATTR_SCAN_SSIDS,
+ NL80211_ATTR_GENERATION,
+ NL80211_ATTR_BSS,
+
+ NL80211_ATTR_REG_INITIATOR,
+ NL80211_ATTR_REG_TYPE,
+
+ NL80211_ATTR_SUPPORTED_COMMANDS,
+
+ NL80211_ATTR_FRAME,
+ NL80211_ATTR_SSID,
+ NL80211_ATTR_AUTH_TYPE,
+ NL80211_ATTR_REASON_CODE,
+
+ NL80211_ATTR_KEY_TYPE,
+
+ NL80211_ATTR_MAX_SCAN_IE_LEN,
+ NL80211_ATTR_CIPHER_SUITES,
+
+ NL80211_ATTR_FREQ_BEFORE,
+ NL80211_ATTR_FREQ_AFTER,
+
+ NL80211_ATTR_FREQ_FIXED,
+
+
+ NL80211_ATTR_WIPHY_RETRY_SHORT,
+ NL80211_ATTR_WIPHY_RETRY_LONG,
+ NL80211_ATTR_WIPHY_FRAG_THRESHOLD,
+ NL80211_ATTR_WIPHY_RTS_THRESHOLD,
+
+ NL80211_ATTR_TIMED_OUT,
+
+ NL80211_ATTR_USE_MFP,
+
+ NL80211_ATTR_STA_FLAGS2,
+
+ NL80211_ATTR_CONTROL_PORT,
+
+ NL80211_ATTR_TESTDATA,
+
+ NL80211_ATTR_PRIVACY,
+
+ NL80211_ATTR_DISCONNECTED_BY_AP,
+ NL80211_ATTR_STATUS_CODE,
+
+ NL80211_ATTR_CIPHER_SUITES_PAIRWISE,
+ NL80211_ATTR_CIPHER_SUITE_GROUP,
+ NL80211_ATTR_WPA_VERSIONS,
+ NL80211_ATTR_AKM_SUITES,
+
+ NL80211_ATTR_REQ_IE,
+ NL80211_ATTR_RESP_IE,
+
+ NL80211_ATTR_PREV_BSSID,
+
+ NL80211_ATTR_KEY,
+ NL80211_ATTR_KEYS,
+
+ NL80211_ATTR_PID,
+
+ NL80211_ATTR_4ADDR,
+
+ NL80211_ATTR_SURVEY_INFO,
+
+ NL80211_ATTR_PMKID,
+ NL80211_ATTR_MAX_NUM_PMKIDS,
+
+ NL80211_ATTR_DURATION,
+
+ NL80211_ATTR_COOKIE,
+
+ NL80211_ATTR_WIPHY_COVERAGE_CLASS,
+
+ NL80211_ATTR_TX_RATES,
+
+ NL80211_ATTR_FRAME_MATCH,
+
+ NL80211_ATTR_ACK,
+
+ NL80211_ATTR_PS_STATE,
+
+ NL80211_ATTR_CQM,
+
+ NL80211_ATTR_LOCAL_STATE_CHANGE,
+
+ NL80211_ATTR_AP_ISOLATE,
+
+ NL80211_ATTR_WIPHY_TX_POWER_SETTING,
+ NL80211_ATTR_WIPHY_TX_POWER_LEVEL,
+
+ NL80211_ATTR_TX_FRAME_TYPES,
+ NL80211_ATTR_RX_FRAME_TYPES,
+ NL80211_ATTR_FRAME_TYPE,
+
+ NL80211_ATTR_CONTROL_PORT_ETHERTYPE,
+ NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT,
+
+ NL80211_ATTR_SUPPORT_IBSS_RSN,
+
+ NL80211_ATTR_WIPHY_ANTENNA_TX,
+ NL80211_ATTR_WIPHY_ANTENNA_RX,
+
+ NL80211_ATTR_MCAST_RATE,
+
+ NL80211_ATTR_OFFCHANNEL_TX_OK,
+
+ NL80211_ATTR_BSS_HT_OPMODE,
+
+ NL80211_ATTR_KEY_DEFAULT_TYPES,
+
+ NL80211_ATTR_MAX_REMAIN_ON_CHANNEL_DURATION,
+
+ NL80211_ATTR_MESH_SETUP,
+
+ NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX,
+ NL80211_ATTR_WIPHY_ANTENNA_AVAIL_RX,
+
+ NL80211_ATTR_SUPPORT_MESH_AUTH,
+ NL80211_ATTR_STA_PLINK_STATE,
+
+ NL80211_ATTR_WOWLAN_TRIGGERS,
+ NL80211_ATTR_WOWLAN_TRIGGERS_SUPPORTED,
+
+ NL80211_ATTR_SCHED_SCAN_INTERVAL,
+
+ NL80211_ATTR_INTERFACE_COMBINATIONS,
+ NL80211_ATTR_SOFTWARE_IFTYPES,
+
+ NL80211_ATTR_REKEY_DATA,
+
+ NL80211_ATTR_MAX_NUM_SCHED_SCAN_SSIDS,
+ NL80211_ATTR_MAX_SCHED_SCAN_IE_LEN,
+
+ NL80211_ATTR_SCAN_SUPP_RATES,
+
+ NL80211_ATTR_HIDDEN_SSID,
+
+ NL80211_ATTR_IE_PROBE_RESP,
+ NL80211_ATTR_IE_ASSOC_RESP,
+
+ NL80211_ATTR_STA_WME,
+ NL80211_ATTR_SUPPORT_AP_UAPSD,
+
+ NL80211_ATTR_ROAM_SUPPORT,
+
+ NL80211_ATTR_SCHED_SCAN_MATCH,
+ NL80211_ATTR_MAX_MATCH_SETS,
+
+ NL80211_ATTR_PMKSA_CANDIDATE,
+
+ NL80211_ATTR_TX_NO_CCK_RATE,
+
+ NL80211_ATTR_TDLS_ACTION,
+ NL80211_ATTR_TDLS_DIALOG_TOKEN,
+ NL80211_ATTR_TDLS_OPERATION,
+ NL80211_ATTR_TDLS_SUPPORT,
+ NL80211_ATTR_TDLS_EXTERNAL_SETUP,
+
+ NL80211_ATTR_DEVICE_AP_SME,
+
+ NL80211_ATTR_DONT_WAIT_FOR_ACK,
+
+ NL80211_ATTR_FEATURE_FLAGS,
+
+ NL80211_ATTR_PROBE_RESP_OFFLOAD,
+
+ NL80211_ATTR_PROBE_RESP,
+
+ NL80211_ATTR_DFS_REGION,
+
+ NL80211_ATTR_DISABLE_HT,
+ NL80211_ATTR_HT_CAPABILITY_MASK,
+
+ NL80211_ATTR_NOACK_MAP,
+
+ NL80211_ATTR_INACTIVITY_TIMEOUT,
+
+ NL80211_ATTR_RX_SIGNAL_DBM,
+
+ NL80211_ATTR_BG_SCAN_PERIOD,
+
+ NL80211_ATTR_WDEV,
+
+ NL80211_ATTR_USER_REG_HINT_TYPE,
+
+ NL80211_ATTR_CONN_FAILED_REASON,
+
+ NL80211_ATTR_AUTH_DATA,
+
+ NL80211_ATTR_VHT_CAPABILITY,
+
+ NL80211_ATTR_SCAN_FLAGS,
+
+ NL80211_ATTR_CHANNEL_WIDTH,
+ NL80211_ATTR_CENTER_FREQ1,
+ NL80211_ATTR_CENTER_FREQ2,
+
+ NL80211_ATTR_P2P_CTWINDOW,
+ NL80211_ATTR_P2P_OPPPS,
+
+ NL80211_ATTR_LOCAL_MESH_POWER_MODE,
+
+ NL80211_ATTR_ACL_POLICY,
+
+ NL80211_ATTR_MAC_ADDRS,
+
+ NL80211_ATTR_MAC_ACL_MAX,
+
+ NL80211_ATTR_RADAR_EVENT,
+
+ NL80211_ATTR_EXT_CAPA,
+ NL80211_ATTR_EXT_CAPA_MASK,
+
+ NL80211_ATTR_STA_CAPABILITY,
+ NL80211_ATTR_STA_EXT_CAPABILITY,
+
+ NL80211_ATTR_PROTOCOL_FEATURES,
+ NL80211_ATTR_SPLIT_WIPHY_DUMP,
+
+ NL80211_ATTR_DISABLE_VHT,
+ NL80211_ATTR_VHT_CAPABILITY_MASK,
+
+ NL80211_ATTR_MDID,
+ NL80211_ATTR_IE_RIC,
+
+ NL80211_ATTR_CRIT_PROT_ID,
+ NL80211_ATTR_MAX_CRIT_PROT_DURATION,
+
+ NL80211_ATTR_PEER_AID,
+
+ NL80211_ATTR_COALESCE_RULE,
+
+ NL80211_ATTR_CH_SWITCH_COUNT,
+ NL80211_ATTR_CH_SWITCH_BLOCK_TX,
+ NL80211_ATTR_CSA_IES,
+ NL80211_ATTR_CNTDWN_OFFS_BEACON,
+ NL80211_ATTR_CNTDWN_OFFS_PRESP,
+
+ NL80211_ATTR_RXMGMT_FLAGS,
+
+ NL80211_ATTR_STA_SUPPORTED_CHANNELS,
+
+ NL80211_ATTR_STA_SUPPORTED_OPER_CLASSES,
+
+ NL80211_ATTR_HANDLE_DFS,
+
+ NL80211_ATTR_SUPPORT_5_MHZ,
+ NL80211_ATTR_SUPPORT_10_MHZ,
+
+ NL80211_ATTR_OPMODE_NOTIF,
+
+ NL80211_ATTR_VENDOR_ID,
+ NL80211_ATTR_VENDOR_SUBCMD,
+ NL80211_ATTR_VENDOR_DATA,
+ NL80211_ATTR_VENDOR_EVENTS,
+
+ NL80211_ATTR_QOS_MAP,
+
+ NL80211_ATTR_MAC_HINT,
+ NL80211_ATTR_WIPHY_FREQ_HINT,
+
+ NL80211_ATTR_MAX_AP_ASSOC_STA,
+
+ NL80211_ATTR_TDLS_PEER_CAPABILITY,
+
+ NL80211_ATTR_SOCKET_OWNER,
+
+ NL80211_ATTR_CSA_C_OFFSETS_TX,
+ NL80211_ATTR_MAX_CSA_COUNTERS,
+
+ NL80211_ATTR_TDLS_INITIATOR,
+
+ NL80211_ATTR_USE_RRM,
+
+ NL80211_ATTR_WIPHY_DYN_ACK,
+
+ NL80211_ATTR_TSID,
+ NL80211_ATTR_USER_PRIO,
+ NL80211_ATTR_ADMITTED_TIME,
+
+ NL80211_ATTR_SMPS_MODE,
+
+ NL80211_ATTR_OPER_CLASS,
+
+ NL80211_ATTR_MAC_MASK,
+
+ NL80211_ATTR_WIPHY_SELF_MANAGED_REG,
+
+ NL80211_ATTR_EXT_FEATURES,
+
+ NL80211_ATTR_SURVEY_RADIO_STATS,
+
+ NL80211_ATTR_NETNS_FD,
+
+ NL80211_ATTR_SCHED_SCAN_DELAY,
+
+ NL80211_ATTR_REG_INDOOR,
+
+ NL80211_ATTR_MAX_NUM_SCHED_SCAN_PLANS,
+ NL80211_ATTR_MAX_SCAN_PLAN_INTERVAL,
+ NL80211_ATTR_MAX_SCAN_PLAN_ITERATIONS,
+ NL80211_ATTR_SCHED_SCAN_PLANS,
+
+ NL80211_ATTR_PBSS,
+
+ NL80211_ATTR_BSS_SELECT,
+
+ NL80211_ATTR_STA_SUPPORT_P2P_PS,
+
+ NL80211_ATTR_PAD,
+
+ NL80211_ATTR_IFTYPE_EXT_CAPA,
+
+ NL80211_ATTR_MU_MIMO_GROUP_DATA,
+ NL80211_ATTR_MU_MIMO_FOLLOW_MAC_ADDR,
+
+ NL80211_ATTR_SCAN_START_TIME_TSF,
+ NL80211_ATTR_SCAN_START_TIME_TSF_BSSID,
+ NL80211_ATTR_MEASUREMENT_DURATION,
+ NL80211_ATTR_MEASUREMENT_DURATION_MANDATORY,
+
+ NL80211_ATTR_MESH_PEER_AID,
+
+ NL80211_ATTR_NAN_MASTER_PREF,
+ NL80211_ATTR_BANDS,
+ NL80211_ATTR_NAN_FUNC,
+ NL80211_ATTR_NAN_MATCH,
+
+ NL80211_ATTR_FILS_KEK,
+ NL80211_ATTR_FILS_NONCES,
+
+ NL80211_ATTR_MULTICAST_TO_UNICAST_ENABLED,
+
+ NL80211_ATTR_BSSID,
+
+ NL80211_ATTR_SCHED_SCAN_RELATIVE_RSSI,
+ NL80211_ATTR_SCHED_SCAN_RSSI_ADJUST,
+
+ NL80211_ATTR_TIMEOUT_REASON,
+
+ NL80211_ATTR_FILS_ERP_USERNAME,
+ NL80211_ATTR_FILS_ERP_REALM,
+ NL80211_ATTR_FILS_ERP_NEXT_SEQ_NUM,
+ NL80211_ATTR_FILS_ERP_RRK,
+ NL80211_ATTR_FILS_CACHE_ID,
+
+ NL80211_ATTR_PMK,
+
+ NL80211_ATTR_SCHED_SCAN_MULTI,
+ NL80211_ATTR_SCHED_SCAN_MAX_REQS,
+
+ NL80211_ATTR_WANT_1X_4WAY_HS,
+ NL80211_ATTR_PMKR0_NAME,
+ NL80211_ATTR_PORT_AUTHORIZED,
+
+ NL80211_ATTR_EXTERNAL_AUTH_ACTION,
+ NL80211_ATTR_EXTERNAL_AUTH_SUPPORT,
+
+ NL80211_ATTR_NSS,
+ NL80211_ATTR_ACK_SIGNAL,
+
+ NL80211_ATTR_CONTROL_PORT_OVER_NL80211,
+
+ NL80211_ATTR_TXQ_STATS,
+ NL80211_ATTR_TXQ_LIMIT,
+ NL80211_ATTR_TXQ_MEMORY_LIMIT,
+ NL80211_ATTR_TXQ_QUANTUM,
+
+ NL80211_ATTR_HE_CAPABILITY,
+
+ NL80211_ATTR_FTM_RESPONDER,
+
+ NL80211_ATTR_FTM_RESPONDER_STATS,
+
+ NL80211_ATTR_TIMEOUT,
+
+ NL80211_ATTR_PEER_MEASUREMENTS,
+
+ NL80211_ATTR_AIRTIME_WEIGHT,
+ NL80211_ATTR_STA_TX_POWER_SETTING,
+ NL80211_ATTR_STA_TX_POWER,
+
+ NL80211_ATTR_SAE_PASSWORD,
+
+ NL80211_ATTR_TWT_RESPONDER,
+
+ NL80211_ATTR_HE_OBSS_PD,
+
+ NL80211_ATTR_WIPHY_EDMG_CHANNELS,
+ NL80211_ATTR_WIPHY_EDMG_BW_CONFIG,
+
+ NL80211_ATTR_VLAN_ID,
+
+ NL80211_ATTR_HE_BSS_COLOR,
+
+ NL80211_ATTR_IFTYPE_AKM_SUITES,
+
+ NL80211_ATTR_TID_CONFIG,
+
+ NL80211_ATTR_CONTROL_PORT_NO_PREAUTH,
+
+ NL80211_ATTR_PMK_LIFETIME,
+ NL80211_ATTR_PMK_REAUTH_THRESHOLD,
+
+ NL80211_ATTR_RECEIVE_MULTICAST,
+ NL80211_ATTR_WIPHY_FREQ_OFFSET,
+ NL80211_ATTR_CENTER_FREQ1_OFFSET,
+ NL80211_ATTR_SCAN_FREQ_KHZ,
+
+ NL80211_ATTR_HE_6GHZ_CAPABILITY,
+
+ NL80211_ATTR_FILS_DISCOVERY,
+
+ NL80211_ATTR_UNSOL_BCAST_PROBE_RESP,
+
+ NL80211_ATTR_S1G_CAPABILITY,
+ NL80211_ATTR_S1G_CAPABILITY_MASK,
+
+ NL80211_ATTR_SAE_PWE,
+
+ NL80211_ATTR_RECONNECT_REQUESTED,
+
+ NL80211_ATTR_SAR_SPEC,
+
+ NL80211_ATTR_DISABLE_HE,
+
+ NL80211_ATTR_OBSS_COLOR_BITMAP,
+
+ NL80211_ATTR_COLOR_CHANGE_COUNT,
+ NL80211_ATTR_COLOR_CHANGE_COLOR,
+ NL80211_ATTR_COLOR_CHANGE_ELEMS,
+
+ NL80211_ATTR_MBSSID_CONFIG,
+ NL80211_ATTR_MBSSID_ELEMS,
+
+ NL80211_ATTR_RADAR_BACKGROUND,
+
+ NL80211_ATTR_AP_SETTINGS_FLAGS,
+
+ NL80211_ATTR_EHT_CAPABILITY,
+
+ NL80211_ATTR_DISABLE_EHT,
+
+ NL80211_ATTR_MLO_LINKS,
+ NL80211_ATTR_MLO_LINK_ID,
+ NL80211_ATTR_MLD_ADDR,
+
+ NL80211_ATTR_MLO_SUPPORT,
+
+ NL80211_ATTR_MAX_NUM_AKM_SUITES,
+
+ NL80211_ATTR_EML_CAPABILITY,
+ NL80211_ATTR_MLD_CAPA_AND_OPS,
+
+ NL80211_ATTR_TX_HW_TIMESTAMP,
+ NL80211_ATTR_RX_HW_TIMESTAMP,
+ NL80211_ATTR_TD_BITMAP,
+
+ NL80211_ATTR_PUNCT_BITMAP,
+
+ NL80211_ATTR_MAX_HW_TIMESTAMP_PEERS,
+ NL80211_ATTR_HW_TIMESTAMP_ENABLED,
+
+ NL80211_ATTR_EMA_RNR_ELEMS,
+
+ NL80211_ATTR_MLO_LINK_DISABLED,
+
+ NL80211_ATTR_BSS_DUMP_INCLUDE_USE_DATA,
+
+ NL80211_ATTR_MLO_TTLM_DLINK,
+ NL80211_ATTR_MLO_TTLM_ULINK,
+
+ NL80211_ATTR_ASSOC_SPP_AMSDU,
+
+ NL80211_ATTR_WIPHY_RADIOS,
+ NL80211_ATTR_WIPHY_INTERFACE_COMBINATIONS,
+
+ NL80211_ATTR_VIF_RADIO_MASK,
+
+ NL80211_ATTR_SUPPORTED_SELECTORS,
+
+ NL80211_ATTR_MLO_RECONF_REM_LINKS,
+ NL80211_ATTR_EPCS,
+
+ NL80211_ATTR_EXT_MLD_CAPA_AND_OPS,
+
+ NL80211_ATTR_WIPHY_RADIO_INDEX,
+
+ NL80211_ATTR_S1G_LONG_BEACON_PERIOD,
+ NL80211_ATTR_S1G_SHORT_BEACON,
+ NL80211_ATTR_BSS_PARAM,
+ NL80211_ATTR_NAN_CONFIG,
+ NL80211_ATTR_NAN_NEW_CLUSTER,
+ NL80211_ATTR_NAN_CAPABILITIES,
+
+ NL80211_ATTR_S1G_PRIMARY_2MHZ,
+
+ NL80211_ATTR_EPP_PEER,
+
+ NL80211_ATTR_UHR_CAPABILITY,
+ NL80211_ATTR_DISABLE_UHR,
+
+ NL80211_ATTR_INCUMBENT_SIGNAL_INTERFERENCE_BITMAP,
+
+ NL80211_ATTR_UHR_OPERATION,
+
+ NL80211_ATTR_NAN_CHANNEL,
+ NL80211_ATTR_NAN_CHANNEL_ENTRY,
+ NL80211_ATTR_NAN_TIME_SLOTS,
+ NL80211_ATTR_NAN_RX_NSS,
+ NL80211_ATTR_NAN_AVAIL_BLOB,
+ NL80211_ATTR_NAN_SCHED_DEFERRED,
+ NL80211_ATTR_NAN_SCHED_UPDATE_SUCCESS,
+
+ NL80211_ATTR_NAN_NMI_MAC,
+
+ NL80211_ATTR_NAN_ULW,
+ NL80211_ATTR_NAN_COMMITTED_DW,
+ NL80211_ATTR_NAN_SEQ_ID,
+ NL80211_ATTR_NAN_MAX_CHAN_SWITCH_TIME,
+ NL80211_ATTR_NAN_PEER_MAPS,
+
+ NL80211_ATTR_ASSOC_ENCRYPTED,
+
+ NL80211_ATTR_NPCA_PRIMARY_FREQ,
+ NL80211_ATTR_NPCA_PUNCT_BITMAP,
+
+ NL80211_ATTR_STA_DUMP_LINK_STATS,
+
+
+
+ __NL80211_ATTR_AFTER_LAST,
+ NUM_NL80211_ATTR = __NL80211_ATTR_AFTER_LAST,
+ NL80211_ATTR_MAX = __NL80211_ATTR_AFTER_LAST - 1
+};
+# 3893 "headers/include/linux/nl80211.h"
+enum nl80211_iftype {
+ NL80211_IFTYPE_UNSPECIFIED,
+ NL80211_IFTYPE_ADHOC,
+ NL80211_IFTYPE_STATION,
+ NL80211_IFTYPE_AP,
+ NL80211_IFTYPE_AP_VLAN,
+ NL80211_IFTYPE_WDS,
+ NL80211_IFTYPE_MONITOR,
+ NL80211_IFTYPE_MESH_POINT,
+ NL80211_IFTYPE_P2P_CLIENT,
+ NL80211_IFTYPE_P2P_GO,
+ NL80211_IFTYPE_P2P_DEVICE,
+ NL80211_IFTYPE_OCB,
+ NL80211_IFTYPE_NAN,
+ NL80211_IFTYPE_NAN_DATA,
+ NL80211_IFTYPE_PD,
+
+
+ NUM_NL80211_IFTYPES,
+ NL80211_IFTYPE_MAX = NUM_NL80211_IFTYPES - 1
+};
+# 3940 "headers/include/linux/nl80211.h"
+enum nl80211_sta_flags {
+ __NL80211_STA_FLAG_INVALID,
+ NL80211_STA_FLAG_AUTHORIZED,
+ NL80211_STA_FLAG_SHORT_PREAMBLE,
+ NL80211_STA_FLAG_WME,
+ NL80211_STA_FLAG_MFP,
+ NL80211_STA_FLAG_AUTHENTICATED,
+ NL80211_STA_FLAG_TDLS_PEER,
+ NL80211_STA_FLAG_ASSOCIATED,
+ NL80211_STA_FLAG_SPP_AMSDU,
+
+
+ __NL80211_STA_FLAG_AFTER_LAST,
+ NL80211_STA_FLAG_MAX = __NL80211_STA_FLAG_AFTER_LAST - 1
+};
+# 3963 "headers/include/linux/nl80211.h"
+enum nl80211_sta_p2p_ps_status {
+ NL80211_P2P_PS_UNSUPPORTED = 0,
+ NL80211_P2P_PS_SUPPORTED,
+
+ NUM_NL80211_P2P_PS_STATUS,
+};
+# 3979 "headers/include/linux/nl80211.h"
+struct nl80211_sta_flag_update {
+ __u32 mask;
+ __u32 set;
+} ;
+
+
+
+
+
+
+
+enum nl80211_he_gi {
+ NL80211_RATE_INFO_HE_GI_0_8,
+ NL80211_RATE_INFO_HE_GI_1_6,
+ NL80211_RATE_INFO_HE_GI_3_2,
+};
+
+
+
+
+
+
+
+enum nl80211_he_ltf {
+ NL80211_RATE_INFO_HE_1XLTF,
+ NL80211_RATE_INFO_HE_2XLTF,
+ NL80211_RATE_INFO_HE_4XLTF,
+};
+# 4018 "headers/include/linux/nl80211.h"
+enum nl80211_he_ru_alloc {
+ NL80211_RATE_INFO_HE_RU_ALLOC_26,
+ NL80211_RATE_INFO_HE_RU_ALLOC_52,
+ NL80211_RATE_INFO_HE_RU_ALLOC_106,
+ NL80211_RATE_INFO_HE_RU_ALLOC_242,
+ NL80211_RATE_INFO_HE_RU_ALLOC_484,
+ NL80211_RATE_INFO_HE_RU_ALLOC_996,
+ NL80211_RATE_INFO_HE_RU_ALLOC_2x996,
+};
+
+
+
+
+
+
+
+enum nl80211_eht_gi {
+ NL80211_RATE_INFO_EHT_GI_0_8,
+ NL80211_RATE_INFO_EHT_GI_1_6,
+ NL80211_RATE_INFO_EHT_GI_3_2,
+};
+# 4048 "headers/include/linux/nl80211.h"
+enum nl80211_eht_ltf {
+ NL80211_RATE_INFO_EHT_1XLTF,
+ NL80211_RATE_INFO_EHT_2XLTF,
+ NL80211_RATE_INFO_EHT_4XLTF,
+ NL80211_RATE_INFO_EHT_6XLTF,
+ NL80211_RATE_INFO_EHT_8XLTF,
+};
+# 4075 "headers/include/linux/nl80211.h"
+enum nl80211_eht_ru_alloc {
+ NL80211_RATE_INFO_EHT_RU_ALLOC_26,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_52,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_52P26,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_106,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_106P26,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_242,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_484,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_484P242,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_996,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_996P484,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_996P484P242,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_2x996,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_2x996P484,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_3x996,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_3x996P484,
+ NL80211_RATE_INFO_EHT_RU_ALLOC_4x996,
+};
+# 4155 "headers/include/linux/nl80211.h"
+enum nl80211_rate_info {
+ __NL80211_RATE_INFO_INVALID,
+ NL80211_RATE_INFO_BITRATE,
+ NL80211_RATE_INFO_MCS,
+ NL80211_RATE_INFO_40_MHZ_WIDTH,
+ NL80211_RATE_INFO_SHORT_GI,
+ NL80211_RATE_INFO_BITRATE32,
+ NL80211_RATE_INFO_VHT_MCS,
+ NL80211_RATE_INFO_VHT_NSS,
+ NL80211_RATE_INFO_80_MHZ_WIDTH,
+ NL80211_RATE_INFO_80P80_MHZ_WIDTH,
+ NL80211_RATE_INFO_160_MHZ_WIDTH,
+ NL80211_RATE_INFO_10_MHZ_WIDTH,
+ NL80211_RATE_INFO_5_MHZ_WIDTH,
+ NL80211_RATE_INFO_HE_MCS,
+ NL80211_RATE_INFO_HE_NSS,
+ NL80211_RATE_INFO_HE_GI,
+ NL80211_RATE_INFO_HE_DCM,
+ NL80211_RATE_INFO_HE_RU_ALLOC,
+ NL80211_RATE_INFO_320_MHZ_WIDTH,
+ NL80211_RATE_INFO_EHT_MCS,
+ NL80211_RATE_INFO_EHT_NSS,
+ NL80211_RATE_INFO_EHT_GI,
+ NL80211_RATE_INFO_EHT_RU_ALLOC,
+ NL80211_RATE_INFO_S1G_MCS,
+ NL80211_RATE_INFO_S1G_NSS,
+ NL80211_RATE_INFO_1_MHZ_WIDTH,
+ NL80211_RATE_INFO_2_MHZ_WIDTH,
+ NL80211_RATE_INFO_4_MHZ_WIDTH,
+ NL80211_RATE_INFO_8_MHZ_WIDTH,
+ NL80211_RATE_INFO_16_MHZ_WIDTH,
+ NL80211_RATE_INFO_UHR_MCS,
+ NL80211_RATE_INFO_UHR_ELR,
+ NL80211_RATE_INFO_UHR_IM,
+
+
+ __NL80211_RATE_INFO_AFTER_LAST,
+ NL80211_RATE_INFO_MAX = __NL80211_RATE_INFO_AFTER_LAST - 1
+};
+# 4212 "headers/include/linux/nl80211.h"
+enum nl80211_sta_bss_param {
+ __NL80211_STA_BSS_PARAM_INVALID,
+ NL80211_STA_BSS_PARAM_CTS_PROT,
+ NL80211_STA_BSS_PARAM_SHORT_PREAMBLE,
+ NL80211_STA_BSS_PARAM_SHORT_SLOT_TIME,
+ NL80211_STA_BSS_PARAM_DTIM_PERIOD,
+ NL80211_STA_BSS_PARAM_BEACON_INTERVAL,
+
+
+ __NL80211_STA_BSS_PARAM_AFTER_LAST,
+ NL80211_STA_BSS_PARAM_MAX = __NL80211_STA_BSS_PARAM_AFTER_LAST - 1
+};
+# 4308 "headers/include/linux/nl80211.h"
+enum nl80211_sta_info {
+ __NL80211_STA_INFO_INVALID,
+ NL80211_STA_INFO_INACTIVE_TIME,
+ NL80211_STA_INFO_RX_BYTES,
+ NL80211_STA_INFO_TX_BYTES,
+ NL80211_STA_INFO_LLID,
+ NL80211_STA_INFO_PLID,
+ NL80211_STA_INFO_PLINK_STATE,
+ NL80211_STA_INFO_SIGNAL,
+ NL80211_STA_INFO_TX_BITRATE,
+ NL80211_STA_INFO_RX_PACKETS,
+ NL80211_STA_INFO_TX_PACKETS,
+ NL80211_STA_INFO_TX_RETRIES,
+ NL80211_STA_INFO_TX_FAILED,
+ NL80211_STA_INFO_SIGNAL_AVG,
+ NL80211_STA_INFO_RX_BITRATE,
+ NL80211_STA_INFO_BSS_PARAM,
+ NL80211_STA_INFO_CONNECTED_TIME,
+ NL80211_STA_INFO_STA_FLAGS,
+ NL80211_STA_INFO_BEACON_LOSS,
+ NL80211_STA_INFO_T_OFFSET,
+ NL80211_STA_INFO_LOCAL_PM,
+ NL80211_STA_INFO_PEER_PM,
+ NL80211_STA_INFO_NONPEER_PM,
+ NL80211_STA_INFO_RX_BYTES64,
+ NL80211_STA_INFO_TX_BYTES64,
+ NL80211_STA_INFO_CHAIN_SIGNAL,
+ NL80211_STA_INFO_CHAIN_SIGNAL_AVG,
+ NL80211_STA_INFO_EXPECTED_THROUGHPUT,
+ NL80211_STA_INFO_RX_DROP_MISC,
+ NL80211_STA_INFO_BEACON_RX,
+ NL80211_STA_INFO_BEACON_SIGNAL_AVG,
+ NL80211_STA_INFO_TID_STATS,
+ NL80211_STA_INFO_RX_DURATION,
+ NL80211_STA_INFO_PAD,
+ NL80211_STA_INFO_ACK_SIGNAL,
+ NL80211_STA_INFO_ACK_SIGNAL_AVG,
+ NL80211_STA_INFO_RX_MPDUS,
+ NL80211_STA_INFO_FCS_ERROR_COUNT,
+ NL80211_STA_INFO_CONNECTED_TO_GATE,
+ NL80211_STA_INFO_TX_DURATION,
+ NL80211_STA_INFO_AIRTIME_WEIGHT,
+ NL80211_STA_INFO_AIRTIME_LINK_METRIC,
+ NL80211_STA_INFO_ASSOC_AT_BOOTTIME,
+ NL80211_STA_INFO_CONNECTED_TO_AS,
+
+
+ __NL80211_STA_INFO_AFTER_LAST,
+ NL80211_STA_INFO_MAX = __NL80211_STA_INFO_AFTER_LAST - 1
+};
+# 4378 "headers/include/linux/nl80211.h"
+enum nl80211_tid_stats {
+ __NL80211_TID_STATS_INVALID,
+ NL80211_TID_STATS_RX_MSDU,
+ NL80211_TID_STATS_TX_MSDU,
+ NL80211_TID_STATS_TX_MSDU_RETRIES,
+ NL80211_TID_STATS_TX_MSDU_FAILED,
+ NL80211_TID_STATS_PAD,
+ NL80211_TID_STATS_TXQ_STATS,
+
+
+ NUM_NL80211_TID_STATS,
+ NL80211_TID_STATS_MAX = NUM_NL80211_TID_STATS - 1
+};
+# 4411 "headers/include/linux/nl80211.h"
+enum nl80211_txq_stats {
+ __NL80211_TXQ_STATS_INVALID,
+ NL80211_TXQ_STATS_BACKLOG_BYTES,
+ NL80211_TXQ_STATS_BACKLOG_PACKETS,
+ NL80211_TXQ_STATS_FLOWS,
+ NL80211_TXQ_STATS_DROPS,
+ NL80211_TXQ_STATS_ECN_MARKS,
+ NL80211_TXQ_STATS_OVERLIMIT,
+ NL80211_TXQ_STATS_OVERMEMORY,
+ NL80211_TXQ_STATS_COLLISIONS,
+ NL80211_TXQ_STATS_TX_BYTES,
+ NL80211_TXQ_STATS_TX_PACKETS,
+ NL80211_TXQ_STATS_MAX_FLOWS,
+
+
+ NUM_NL80211_TXQ_STATS,
+ NL80211_TXQ_STATS_MAX = NUM_NL80211_TXQ_STATS - 1
+};
+# 4439 "headers/include/linux/nl80211.h"
+enum nl80211_mpath_flags {
+ NL80211_MPATH_FLAG_ACTIVE = 1<<0,
+ NL80211_MPATH_FLAG_RESOLVING = 1<<1,
+ NL80211_MPATH_FLAG_SN_VALID = 1<<2,
+ NL80211_MPATH_FLAG_FIXED = 1<<3,
+ NL80211_MPATH_FLAG_RESOLVED = 1<<4,
+};
+# 4468 "headers/include/linux/nl80211.h"
+enum nl80211_mpath_info {
+ __NL80211_MPATH_INFO_INVALID,
+ NL80211_MPATH_INFO_FRAME_QLEN,
+ NL80211_MPATH_INFO_SN,
+ NL80211_MPATH_INFO_METRIC,
+ NL80211_MPATH_INFO_EXPTIME,
+ NL80211_MPATH_INFO_FLAGS,
+ NL80211_MPATH_INFO_DISCOVERY_TIMEOUT,
+ NL80211_MPATH_INFO_DISCOVERY_RETRIES,
+ NL80211_MPATH_INFO_HOP_COUNT,
+ NL80211_MPATH_INFO_PATH_CHANGE,
+
+
+ __NL80211_MPATH_INFO_AFTER_LAST,
+ NL80211_MPATH_INFO_MAX = __NL80211_MPATH_INFO_AFTER_LAST - 1
+};
+# 4518 "headers/include/linux/nl80211.h"
+enum nl80211_band_iftype_attr {
+ __NL80211_BAND_IFTYPE_ATTR_INVALID,
+
+ NL80211_BAND_IFTYPE_ATTR_IFTYPES,
+ NL80211_BAND_IFTYPE_ATTR_HE_CAP_MAC,
+ NL80211_BAND_IFTYPE_ATTR_HE_CAP_PHY,
+ NL80211_BAND_IFTYPE_ATTR_HE_CAP_MCS_SET,
+ NL80211_BAND_IFTYPE_ATTR_HE_CAP_PPE,
+ NL80211_BAND_IFTYPE_ATTR_HE_6GHZ_CAPA,
+ NL80211_BAND_IFTYPE_ATTR_VENDOR_ELEMS,
+ NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC,
+ NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY,
+ NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MCS_SET,
+ NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PPE,
+ NL80211_BAND_IFTYPE_ATTR_UHR_CAP_MAC,
+ NL80211_BAND_IFTYPE_ATTR_UHR_CAP_PHY,
+
+
+ __NL80211_BAND_IFTYPE_ATTR_AFTER_LAST,
+ NL80211_BAND_IFTYPE_ATTR_MAX = __NL80211_BAND_IFTYPE_ATTR_AFTER_LAST - 1
+};
+# 4570 "headers/include/linux/nl80211.h"
+enum nl80211_band_attr {
+ __NL80211_BAND_ATTR_INVALID,
+ NL80211_BAND_ATTR_FREQS,
+ NL80211_BAND_ATTR_RATES,
+
+ NL80211_BAND_ATTR_HT_MCS_SET,
+ NL80211_BAND_ATTR_HT_CAPA,
+ NL80211_BAND_ATTR_HT_AMPDU_FACTOR,
+ NL80211_BAND_ATTR_HT_AMPDU_DENSITY,
+
+ NL80211_BAND_ATTR_VHT_MCS_SET,
+ NL80211_BAND_ATTR_VHT_CAPA,
+ NL80211_BAND_ATTR_IFTYPE_DATA,
+
+ NL80211_BAND_ATTR_EDMG_CHANNELS,
+ NL80211_BAND_ATTR_EDMG_BW_CONFIG,
+
+ NL80211_BAND_ATTR_S1G_MCS_NSS_SET,
+ NL80211_BAND_ATTR_S1G_CAPA,
+
+
+ __NL80211_BAND_ATTR_AFTER_LAST,
+ NL80211_BAND_ATTR_MAX = __NL80211_BAND_ATTR_AFTER_LAST - 1
+};
+# 4613 "headers/include/linux/nl80211.h"
+enum nl80211_nan_phy_cap_attr {
+ __NL80211_NAN_PHY_CAP_ATTR_INVALID,
+
+
+ NL80211_NAN_PHY_CAP_ATTR_HT_MCS_SET,
+ NL80211_NAN_PHY_CAP_ATTR_HT_CAPA,
+ NL80211_NAN_PHY_CAP_ATTR_HT_AMPDU_FACTOR,
+ NL80211_NAN_PHY_CAP_ATTR_HT_AMPDU_DENSITY,
+
+
+ NL80211_NAN_PHY_CAP_ATTR_VHT_MCS_SET,
+ NL80211_NAN_PHY_CAP_ATTR_VHT_CAPA,
+
+
+ NL80211_NAN_PHY_CAP_ATTR_HE_MAC,
+ NL80211_NAN_PHY_CAP_ATTR_HE_PHY,
+ NL80211_NAN_PHY_CAP_ATTR_HE_MCS_SET,
+ NL80211_NAN_PHY_CAP_ATTR_HE_PPE,
+
+
+ __NL80211_NAN_PHY_CAP_ATTR_AFTER_LAST,
+ NL80211_NAN_PHY_CAP_ATTR_MAX = __NL80211_NAN_PHY_CAP_ATTR_AFTER_LAST - 1
+};
+# 4648 "headers/include/linux/nl80211.h"
+enum nl80211_wmm_rule {
+ __NL80211_WMMR_INVALID,
+ NL80211_WMMR_CW_MIN,
+ NL80211_WMMR_CW_MAX,
+ NL80211_WMMR_AIFSN,
+ NL80211_WMMR_TXOP,
+
+
+ __NL80211_WMMR_LAST,
+ NL80211_WMMR_MAX = __NL80211_WMMR_LAST - 1
+};
+# 4771 "headers/include/linux/nl80211.h"
+enum nl80211_frequency_attr {
+ __NL80211_FREQUENCY_ATTR_INVALID,
+ NL80211_FREQUENCY_ATTR_FREQ,
+ NL80211_FREQUENCY_ATTR_DISABLED,
+ NL80211_FREQUENCY_ATTR_NO_IR,
+ __NL80211_FREQUENCY_ATTR_NO_IBSS,
+ NL80211_FREQUENCY_ATTR_RADAR,
+ NL80211_FREQUENCY_ATTR_MAX_TX_POWER,
+ NL80211_FREQUENCY_ATTR_DFS_STATE,
+ NL80211_FREQUENCY_ATTR_DFS_TIME,
+ NL80211_FREQUENCY_ATTR_NO_HT40_MINUS,
+ NL80211_FREQUENCY_ATTR_NO_HT40_PLUS,
+ NL80211_FREQUENCY_ATTR_NO_80MHZ,
+ NL80211_FREQUENCY_ATTR_NO_160MHZ,
+ NL80211_FREQUENCY_ATTR_DFS_CAC_TIME,
+ NL80211_FREQUENCY_ATTR_INDOOR_ONLY,
+ NL80211_FREQUENCY_ATTR_IR_CONCURRENT,
+ NL80211_FREQUENCY_ATTR_NO_20MHZ,
+ NL80211_FREQUENCY_ATTR_NO_10MHZ,
+ NL80211_FREQUENCY_ATTR_WMM,
+ NL80211_FREQUENCY_ATTR_NO_HE,
+ NL80211_FREQUENCY_ATTR_OFFSET,
+ NL80211_FREQUENCY_ATTR_1MHZ,
+ NL80211_FREQUENCY_ATTR_2MHZ,
+ NL80211_FREQUENCY_ATTR_4MHZ,
+ NL80211_FREQUENCY_ATTR_8MHZ,
+ NL80211_FREQUENCY_ATTR_16MHZ,
+ NL80211_FREQUENCY_ATTR_NO_320MHZ,
+ NL80211_FREQUENCY_ATTR_NO_EHT,
+ NL80211_FREQUENCY_ATTR_PSD,
+ NL80211_FREQUENCY_ATTR_DFS_CONCURRENT,
+ NL80211_FREQUENCY_ATTR_NO_6GHZ_VLP_CLIENT,
+ NL80211_FREQUENCY_ATTR_NO_6GHZ_AFC_CLIENT,
+ NL80211_FREQUENCY_ATTR_CAN_MONITOR,
+ NL80211_FREQUENCY_ATTR_ALLOW_6GHZ_VLP_AP,
+ NL80211_FREQUENCY_ATTR_ALLOW_20MHZ_ACTIVITY,
+ NL80211_FREQUENCY_ATTR_NO_4MHZ,
+ NL80211_FREQUENCY_ATTR_NO_8MHZ,
+ NL80211_FREQUENCY_ATTR_NO_16MHZ,
+ NL80211_FREQUENCY_ATTR_S1G_NO_PRIMARY,
+ NL80211_FREQUENCY_ATTR_NO_UHR,
+ NL80211_FREQUENCY_ATTR_CAC_START_TIME,
+ NL80211_FREQUENCY_ATTR_PAD,
+
+
+ __NL80211_FREQUENCY_ATTR_AFTER_LAST,
+ NL80211_FREQUENCY_ATTR_MAX = __NL80211_FREQUENCY_ATTR_AFTER_LAST - 1
+};
+# 4841 "headers/include/linux/nl80211.h"
+enum nl80211_bitrate_attr {
+ __NL80211_BITRATE_ATTR_INVALID,
+ NL80211_BITRATE_ATTR_RATE,
+ NL80211_BITRATE_ATTR_2GHZ_SHORTPREAMBLE,
+
+
+ __NL80211_BITRATE_ATTR_AFTER_LAST,
+ NL80211_BITRATE_ATTR_MAX = __NL80211_BITRATE_ATTR_AFTER_LAST - 1
+};
+# 4867 "headers/include/linux/nl80211.h"
+enum nl80211_reg_initiator {
+ NL80211_REGDOM_SET_BY_CORE,
+ NL80211_REGDOM_SET_BY_USER,
+ NL80211_REGDOM_SET_BY_DRIVER,
+ NL80211_REGDOM_SET_BY_COUNTRY_IE,
+};
+# 4890 "headers/include/linux/nl80211.h"
+enum nl80211_reg_type {
+ NL80211_REGDOM_TYPE_COUNTRY,
+ NL80211_REGDOM_TYPE_WORLD,
+ NL80211_REGDOM_TYPE_CUSTOM_WORLD,
+ NL80211_REGDOM_TYPE_INTERSECTION,
+};
+# 4924 "headers/include/linux/nl80211.h"
+enum nl80211_reg_rule_attr {
+ __NL80211_REG_RULE_ATTR_INVALID,
+ NL80211_ATTR_REG_RULE_FLAGS,
+
+ NL80211_ATTR_FREQ_RANGE_START,
+ NL80211_ATTR_FREQ_RANGE_END,
+ NL80211_ATTR_FREQ_RANGE_MAX_BW,
+
+ NL80211_ATTR_POWER_RULE_MAX_ANT_GAIN,
+ NL80211_ATTR_POWER_RULE_MAX_EIRP,
+
+ NL80211_ATTR_DFS_CAC_TIME,
+
+ NL80211_ATTR_POWER_RULE_PSD,
+
+
+ __NL80211_REG_RULE_ATTR_AFTER_LAST,
+ NL80211_REG_RULE_ATTR_MAX = __NL80211_REG_RULE_ATTR_AFTER_LAST - 1
+};
+# 4972 "headers/include/linux/nl80211.h"
+enum nl80211_sched_scan_match_attr {
+ __NL80211_SCHED_SCAN_MATCH_ATTR_INVALID,
+
+ NL80211_SCHED_SCAN_MATCH_ATTR_SSID,
+ NL80211_SCHED_SCAN_MATCH_ATTR_RSSI,
+ NL80211_SCHED_SCAN_MATCH_ATTR_RELATIVE_RSSI,
+ NL80211_SCHED_SCAN_MATCH_ATTR_RSSI_ADJUST,
+ NL80211_SCHED_SCAN_MATCH_ATTR_BSSID,
+ NL80211_SCHED_SCAN_MATCH_PER_BAND_RSSI,
+
+
+ __NL80211_SCHED_SCAN_MATCH_ATTR_AFTER_LAST,
+ NL80211_SCHED_SCAN_MATCH_ATTR_MAX =
+  __NL80211_SCHED_SCAN_MATCH_ATTR_AFTER_LAST - 1
+};
+# 5029 "headers/include/linux/nl80211.h"
+enum nl80211_reg_rule_flags {
+ NL80211_RRF_NO_OFDM = 1 << 0,
+ NL80211_RRF_NO_CCK = 1 << 1,
+ NL80211_RRF_NO_INDOOR = 1 << 2,
+ NL80211_RRF_NO_OUTDOOR = 1 << 3,
+ NL80211_RRF_DFS = 1 << 4,
+ NL80211_RRF_PTP_ONLY = 1 << 5,
+ NL80211_RRF_PTMP_ONLY = 1 << 6,
+ NL80211_RRF_NO_IR = 1 << 7,
+ __NL80211_RRF_NO_IBSS = 1 << 8,
+ NL80211_RRF_AUTO_BW = 1 << 11,
+ NL80211_RRF_IR_CONCURRENT = 1 << 12,
+ NL80211_RRF_NO_HT40MINUS = 1 << 13,
+ NL80211_RRF_NO_HT40PLUS = 1 << 14,
+ NL80211_RRF_NO_80MHZ = 1 << 15,
+ NL80211_RRF_NO_160MHZ = 1 << 16,
+ NL80211_RRF_NO_HE = 1 << 17,
+ NL80211_RRF_NO_320MHZ = 1 << 18,
+ NL80211_RRF_NO_EHT = 1 << 19,
+ NL80211_RRF_PSD = 1 << 20,
+ NL80211_RRF_DFS_CONCURRENT = 1 << 21,
+ NL80211_RRF_NO_6GHZ_VLP_CLIENT = 1 << 22,
+ NL80211_RRF_NO_6GHZ_AFC_CLIENT = 1 << 23,
+ NL80211_RRF_ALLOW_6GHZ_VLP_AP = 1 << 24,
+ NL80211_RRF_ALLOW_20MHZ_ACTIVITY = 1 << 25,
+ NL80211_RRF_NO_UHR = 1 << 26,
+};
+# 5077 "headers/include/linux/nl80211.h"
+enum nl80211_dfs_regions {
+ NL80211_DFS_UNSET = 0,
+ NL80211_DFS_FCC = 1,
+ NL80211_DFS_ETSI = 2,
+ NL80211_DFS_JP = 3,
+};
+# 5101 "headers/include/linux/nl80211.h"
+enum nl80211_user_reg_hint_type {
+ NL80211_USER_REG_HINT_USER = 0,
+ NL80211_USER_REG_HINT_CELL_BASE = 1,
+ NL80211_USER_REG_HINT_INDOOR = 2,
+};
+# 5137 "headers/include/linux/nl80211.h"
+enum nl80211_survey_info {
+ __NL80211_SURVEY_INFO_INVALID,
+ NL80211_SURVEY_INFO_FREQUENCY,
+ NL80211_SURVEY_INFO_NOISE,
+ NL80211_SURVEY_INFO_IN_USE,
+ NL80211_SURVEY_INFO_TIME,
+ NL80211_SURVEY_INFO_TIME_BUSY,
+ NL80211_SURVEY_INFO_TIME_EXT_BUSY,
+ NL80211_SURVEY_INFO_TIME_RX,
+ NL80211_SURVEY_INFO_TIME_TX,
+ NL80211_SURVEY_INFO_TIME_SCAN,
+ NL80211_SURVEY_INFO_PAD,
+ NL80211_SURVEY_INFO_TIME_BSS_RX,
+ NL80211_SURVEY_INFO_FREQUENCY_OFFSET,
+
+
+ __NL80211_SURVEY_INFO_AFTER_LAST,
+ NL80211_SURVEY_INFO_MAX = __NL80211_SURVEY_INFO_AFTER_LAST - 1
+};
+# 5184 "headers/include/linux/nl80211.h"
+enum nl80211_mntr_flags {
+ __NL80211_MNTR_FLAG_INVALID,
+ NL80211_MNTR_FLAG_FCSFAIL,
+ NL80211_MNTR_FLAG_PLCPFAIL,
+ NL80211_MNTR_FLAG_CONTROL,
+ NL80211_MNTR_FLAG_OTHER_BSS,
+ NL80211_MNTR_FLAG_COOK_FRAMES,
+ NL80211_MNTR_FLAG_ACTIVE,
+ NL80211_MNTR_FLAG_SKIP_TX,
+
+
+ __NL80211_MNTR_FLAG_AFTER_LAST,
+ NL80211_MNTR_FLAG_MAX = __NL80211_MNTR_FLAG_AFTER_LAST - 1
+};
+# 5217 "headers/include/linux/nl80211.h"
+enum nl80211_mesh_power_mode {
+ NL80211_MESH_POWER_UNKNOWN,
+ NL80211_MESH_POWER_ACTIVE,
+ NL80211_MESH_POWER_LIGHT_SLEEP,
+ NL80211_MESH_POWER_DEEP_SLEEP,
+
+ __NL80211_MESH_POWER_AFTER_LAST,
+ NL80211_MESH_POWER_MAX = __NL80211_MESH_POWER_AFTER_LAST - 1
+};
+# 5350 "headers/include/linux/nl80211.h"
+enum nl80211_meshconf_params {
+ __NL80211_MESHCONF_INVALID,
+ NL80211_MESHCONF_RETRY_TIMEOUT,
+ NL80211_MESHCONF_CONFIRM_TIMEOUT,
+ NL80211_MESHCONF_HOLDING_TIMEOUT,
+ NL80211_MESHCONF_MAX_PEER_LINKS,
+ NL80211_MESHCONF_MAX_RETRIES,
+ NL80211_MESHCONF_TTL,
+ NL80211_MESHCONF_AUTO_OPEN_PLINKS,
+ NL80211_MESHCONF_HWMP_MAX_PREQ_RETRIES,
+ NL80211_MESHCONF_PATH_REFRESH_TIME,
+ NL80211_MESHCONF_MIN_DISCOVERY_TIMEOUT,
+ NL80211_MESHCONF_HWMP_ACTIVE_PATH_TIMEOUT,
+ NL80211_MESHCONF_HWMP_PREQ_MIN_INTERVAL,
+ NL80211_MESHCONF_HWMP_NET_DIAM_TRVS_TIME,
+ NL80211_MESHCONF_HWMP_ROOTMODE,
+ NL80211_MESHCONF_ELEMENT_TTL,
+ NL80211_MESHCONF_HWMP_RANN_INTERVAL,
+ NL80211_MESHCONF_GATE_ANNOUNCEMENTS,
+ NL80211_MESHCONF_HWMP_PERR_MIN_INTERVAL,
+ NL80211_MESHCONF_FORWARDING,
+ NL80211_MESHCONF_RSSI_THRESHOLD,
+ NL80211_MESHCONF_SYNC_OFFSET_MAX_NEIGHBOR,
+ NL80211_MESHCONF_HT_OPMODE,
+ NL80211_MESHCONF_HWMP_PATH_TO_ROOT_TIMEOUT,
+ NL80211_MESHCONF_HWMP_ROOT_INTERVAL,
+ NL80211_MESHCONF_HWMP_CONFIRMATION_INTERVAL,
+ NL80211_MESHCONF_POWER_MODE,
+ NL80211_MESHCONF_AWAKE_WINDOW,
+ NL80211_MESHCONF_PLINK_TIMEOUT,
+ NL80211_MESHCONF_CONNECTED_TO_GATE,
+ NL80211_MESHCONF_NOLEARN,
+ NL80211_MESHCONF_CONNECTED_TO_AS,
+
+
+ __NL80211_MESHCONF_ATTR_AFTER_LAST,
+ NL80211_MESHCONF_ATTR_MAX = __NL80211_MESHCONF_ATTR_AFTER_LAST - 1
+};
+# 5438 "headers/include/linux/nl80211.h"
+enum nl80211_mesh_setup_params {
+ __NL80211_MESH_SETUP_INVALID,
+ NL80211_MESH_SETUP_ENABLE_VENDOR_PATH_SEL,
+ NL80211_MESH_SETUP_ENABLE_VENDOR_METRIC,
+ NL80211_MESH_SETUP_IE,
+ NL80211_MESH_SETUP_USERSPACE_AUTH,
+ NL80211_MESH_SETUP_USERSPACE_AMPE,
+ NL80211_MESH_SETUP_ENABLE_VENDOR_SYNC,
+ NL80211_MESH_SETUP_USERSPACE_MPM,
+ NL80211_MESH_SETUP_AUTH_PROTOCOL,
+
+
+ __NL80211_MESH_SETUP_ATTR_AFTER_LAST,
+ NL80211_MESH_SETUP_ATTR_MAX = __NL80211_MESH_SETUP_ATTR_AFTER_LAST - 1
+};
+# 5468 "headers/include/linux/nl80211.h"
+enum nl80211_txq_attr {
+ __NL80211_TXQ_ATTR_INVALID,
+ NL80211_TXQ_ATTR_AC,
+ NL80211_TXQ_ATTR_TXOP,
+ NL80211_TXQ_ATTR_CWMIN,
+ NL80211_TXQ_ATTR_CWMAX,
+ NL80211_TXQ_ATTR_AIFS,
+
+
+ __NL80211_TXQ_ATTR_AFTER_LAST,
+ NL80211_TXQ_ATTR_MAX = __NL80211_TXQ_ATTR_AFTER_LAST - 1
+};
+
+enum nl80211_ac {
+ NL80211_AC_VO,
+ NL80211_AC_VI,
+ NL80211_AC_BE,
+ NL80211_AC_BK,
+ NL80211_NUM_ACS
+};
+# 5505 "headers/include/linux/nl80211.h"
+enum nl80211_channel_type {
+ NL80211_CHAN_NO_HT,
+ NL80211_CHAN_HT20,
+ NL80211_CHAN_HT40MINUS,
+ NL80211_CHAN_HT40PLUS
+};
+# 5527 "headers/include/linux/nl80211.h"
+enum nl80211_key_mode {
+ NL80211_KEY_RX_TX,
+ NL80211_KEY_NO_TX,
+ NL80211_KEY_SET_TX
+};
+# 5559 "headers/include/linux/nl80211.h"
+enum nl80211_chan_width {
+ NL80211_CHAN_WIDTH_20_NOHT,
+ NL80211_CHAN_WIDTH_20,
+ NL80211_CHAN_WIDTH_40,
+ NL80211_CHAN_WIDTH_80,
+ NL80211_CHAN_WIDTH_80P80,
+ NL80211_CHAN_WIDTH_160,
+ NL80211_CHAN_WIDTH_5,
+ NL80211_CHAN_WIDTH_10,
+ NL80211_CHAN_WIDTH_1,
+ NL80211_CHAN_WIDTH_2,
+ NL80211_CHAN_WIDTH_4,
+ NL80211_CHAN_WIDTH_8,
+ NL80211_CHAN_WIDTH_16,
+ NL80211_CHAN_WIDTH_320,
+};
+# 5587 "headers/include/linux/nl80211.h"
+enum nl80211_bss_scan_width {
+ NL80211_BSS_CHAN_WIDTH_20,
+ NL80211_BSS_CHAN_WIDTH_10,
+ NL80211_BSS_CHAN_WIDTH_5,
+ NL80211_BSS_CHAN_WIDTH_1,
+ NL80211_BSS_CHAN_WIDTH_2,
+};
+# 5604 "headers/include/linux/nl80211.h"
+enum nl80211_bss_use_for {
+ NL80211_BSS_USE_FOR_NORMAL = 1 << 0,
+ NL80211_BSS_USE_FOR_MLD_LINK = 1 << 1,
+};
+# 5617 "headers/include/linux/nl80211.h"
+enum nl80211_bss_cannot_use_reasons {
+ NL80211_BSS_CANNOT_USE_NSTR_NONPRIMARY = 1 << 0,
+ NL80211_BSS_CANNOT_USE_6GHZ_PWR_MISMATCH = 1 << 1,
+};
+# 5688 "headers/include/linux/nl80211.h"
+enum nl80211_bss {
+ __NL80211_BSS_INVALID,
+ NL80211_BSS_BSSID,
+ NL80211_BSS_FREQUENCY,
+ NL80211_BSS_TSF,
+ NL80211_BSS_BEACON_INTERVAL,
+ NL80211_BSS_CAPABILITY,
+ NL80211_BSS_INFORMATION_ELEMENTS,
+ NL80211_BSS_SIGNAL_MBM,
+ NL80211_BSS_SIGNAL_UNSPEC,
+ NL80211_BSS_STATUS,
+ NL80211_BSS_SEEN_MS_AGO,
+ NL80211_BSS_BEACON_IES,
+ NL80211_BSS_CHAN_WIDTH,
+ NL80211_BSS_BEACON_TSF,
+ NL80211_BSS_PRESP_DATA,
+ NL80211_BSS_LAST_SEEN_BOOTTIME,
+ NL80211_BSS_PAD,
+ NL80211_BSS_PARENT_TSF,
+ NL80211_BSS_PARENT_BSSID,
+ NL80211_BSS_CHAIN_SIGNAL,
+ NL80211_BSS_FREQUENCY_OFFSET,
+ NL80211_BSS_MLO_LINK_ID,
+ NL80211_BSS_MLD_ADDR,
+ NL80211_BSS_USE_FOR,
+ NL80211_BSS_CANNOT_USE_REASONS,
+
+
+ __NL80211_BSS_AFTER_LAST,
+ NL80211_BSS_MAX = __NL80211_BSS_AFTER_LAST - 1
+};
+# 5732 "headers/include/linux/nl80211.h"
+enum nl80211_bss_status {
+ NL80211_BSS_STATUS_AUTHENTICATED,
+ NL80211_BSS_STATUS_ASSOCIATED,
+ NL80211_BSS_STATUS_IBSS_JOINED,
+};
+# 5758 "headers/include/linux/nl80211.h"
+enum nl80211_auth_type {
+ NL80211_AUTHTYPE_OPEN_SYSTEM,
+ NL80211_AUTHTYPE_SHARED_KEY,
+ NL80211_AUTHTYPE_FT,
+ NL80211_AUTHTYPE_NETWORK_EAP,
+ NL80211_AUTHTYPE_SAE,
+ NL80211_AUTHTYPE_FILS_SK,
+ NL80211_AUTHTYPE_FILS_SK_PFS,
+ NL80211_AUTHTYPE_FILS_PK,
+ NL80211_AUTHTYPE_EPPKE,
+ NL80211_AUTHTYPE_IEEE8021X,
+
+
+ __NL80211_AUTHTYPE_NUM,
+ NL80211_AUTHTYPE_MAX = __NL80211_AUTHTYPE_NUM - 1,
+ NL80211_AUTHTYPE_AUTOMATIC
+};
+# 5783 "headers/include/linux/nl80211.h"
+enum nl80211_key_type {
+ NL80211_KEYTYPE_GROUP,
+ NL80211_KEYTYPE_PAIRWISE,
+ NL80211_KEYTYPE_PEERKEY,
+
+ NUM_NL80211_KEYTYPES
+};
+
+
+
+
+
+
+
+enum nl80211_mfp {
+ NL80211_MFP_NO,
+ NL80211_MFP_REQUIRED,
+ NL80211_MFP_OPTIONAL,
+};
+
+enum nl80211_wpa_versions {
+ NL80211_WPA_VERSION_1 = 1 << 0,
+ NL80211_WPA_VERSION_2 = 1 << 1,
+ NL80211_WPA_VERSION_3 = 1 << 2,
+};
+# 5818 "headers/include/linux/nl80211.h"
+enum nl80211_key_default_types {
+ __NL80211_KEY_DEFAULT_TYPE_INVALID,
+ NL80211_KEY_DEFAULT_TYPE_UNICAST,
+ NL80211_KEY_DEFAULT_TYPE_MULTICAST,
+
+ NUM_NL80211_KEY_DEFAULT_TYPES
+};
+# 5864 "headers/include/linux/nl80211.h"
+enum nl80211_key_attributes {
+ __NL80211_KEY_INVALID,
+ NL80211_KEY_DATA,
+ NL80211_KEY_IDX,
+ NL80211_KEY_CIPHER,
+ NL80211_KEY_SEQ,
+ NL80211_KEY_DEFAULT,
+ NL80211_KEY_DEFAULT_MGMT,
+ NL80211_KEY_TYPE,
+ NL80211_KEY_DEFAULT_TYPES,
+ NL80211_KEY_MODE,
+ NL80211_KEY_DEFAULT_BEACON,
+ NL80211_KEY_LTF_SEED,
+
+
+ __NL80211_KEY_AFTER_LAST,
+ NL80211_KEY_MAX = __NL80211_KEY_AFTER_LAST - 1
+};
+# 5906 "headers/include/linux/nl80211.h"
+enum nl80211_tx_rate_attributes {
+ __NL80211_TXRATE_INVALID,
+ NL80211_TXRATE_LEGACY,
+ NL80211_TXRATE_HT,
+ NL80211_TXRATE_VHT,
+ NL80211_TXRATE_GI,
+ NL80211_TXRATE_HE,
+ NL80211_TXRATE_HE_GI,
+ NL80211_TXRATE_HE_LTF,
+ NL80211_TXRATE_EHT,
+ NL80211_TXRATE_EHT_GI,
+ NL80211_TXRATE_EHT_LTF,
+
+
+ __NL80211_TXRATE_AFTER_LAST,
+ NL80211_TXRATE_MAX = __NL80211_TXRATE_AFTER_LAST - 1
+};
+# 5931 "headers/include/linux/nl80211.h"
+struct nl80211_txrate_vht {
+ __u16 mcs[8];
+};
+
+
+
+
+
+
+struct nl80211_txrate_he {
+ __u16 mcs[8];
+};
+
+enum nl80211_txrate_gi {
+ NL80211_TXRATE_DEFAULT_GI,
+ NL80211_TXRATE_FORCE_SGI,
+ NL80211_TXRATE_FORCE_LGI,
+};
+
+
+
+
+
+
+struct nl80211_txrate_eht {
+ __u16 mcs[16];
+};
+# 5970 "headers/include/linux/nl80211.h"
+enum nl80211_band {
+ NL80211_BAND_2GHZ,
+ NL80211_BAND_5GHZ,
+ NL80211_BAND_60GHZ,
+ NL80211_BAND_6GHZ,
+ NL80211_BAND_S1GHZ,
+ NL80211_BAND_LC,
+
+ NUM_NL80211_BANDS,
+};
+
+
+
+
+
+
+enum nl80211_ps_state {
+ NL80211_PS_DISABLED,
+ NL80211_PS_ENABLED,
+};
+# 6024 "headers/include/linux/nl80211.h"
+enum nl80211_attr_cqm {
+ __NL80211_ATTR_CQM_INVALID,
+ NL80211_ATTR_CQM_RSSI_THOLD,
+ NL80211_ATTR_CQM_RSSI_HYST,
+ NL80211_ATTR_CQM_RSSI_THRESHOLD_EVENT,
+ NL80211_ATTR_CQM_PKT_LOSS_EVENT,
+ NL80211_ATTR_CQM_TXE_RATE,
+ NL80211_ATTR_CQM_TXE_PKTS,
+ NL80211_ATTR_CQM_TXE_INTVL,
+ NL80211_ATTR_CQM_BEACON_LOSS_EVENT,
+ NL80211_ATTR_CQM_RSSI_LEVEL,
+
+
+ __NL80211_ATTR_CQM_AFTER_LAST,
+ NL80211_ATTR_CQM_MAX = __NL80211_ATTR_CQM_AFTER_LAST - 1
+};
+# 6049 "headers/include/linux/nl80211.h"
+enum nl80211_cqm_rssi_threshold_event {
+ NL80211_CQM_RSSI_THRESHOLD_EVENT_LOW,
+ NL80211_CQM_RSSI_THRESHOLD_EVENT_HIGH,
+ NL80211_CQM_RSSI_BEACON_LOSS_EVENT,
+};
+# 6062 "headers/include/linux/nl80211.h"
+enum nl80211_tx_power_setting {
+ NL80211_TX_POWER_AUTOMATIC,
+ NL80211_TX_POWER_LIMITED,
+ NL80211_TX_POWER_FIXED,
+};
+
+
+
+
+
+
+enum nl80211_tid_config {
+ NL80211_TID_CONFIG_ENABLE,
+ NL80211_TID_CONFIG_DISABLE,
+};
+
+
+
+
+
+
+enum nl80211_tx_rate_setting {
+ NL80211_TX_RATE_AUTOMATIC,
+ NL80211_TX_RATE_LIMITED,
+ NL80211_TX_RATE_FIXED,
+};
+# 6133 "headers/include/linux/nl80211.h"
+enum nl80211_tid_config_attr {
+ __NL80211_TID_CONFIG_ATTR_INVALID,
+ NL80211_TID_CONFIG_ATTR_PAD,
+ NL80211_TID_CONFIG_ATTR_VIF_SUPP,
+ NL80211_TID_CONFIG_ATTR_PEER_SUPP,
+ NL80211_TID_CONFIG_ATTR_OVERRIDE,
+ NL80211_TID_CONFIG_ATTR_TIDS,
+ NL80211_TID_CONFIG_ATTR_NOACK,
+ NL80211_TID_CONFIG_ATTR_RETRY_SHORT,
+ NL80211_TID_CONFIG_ATTR_RETRY_LONG,
+ NL80211_TID_CONFIG_ATTR_AMPDU_CTRL,
+ NL80211_TID_CONFIG_ATTR_RTSCTS_CTRL,
+ NL80211_TID_CONFIG_ATTR_AMSDU_CTRL,
+ NL80211_TID_CONFIG_ATTR_TX_RATE_TYPE,
+ NL80211_TID_CONFIG_ATTR_TX_RATE,
+
+
+ __NL80211_TID_CONFIG_ATTR_AFTER_LAST,
+ NL80211_TID_CONFIG_ATTR_MAX = __NL80211_TID_CONFIG_ATTR_AFTER_LAST - 1
+};
+# 6175 "headers/include/linux/nl80211.h"
+enum nl80211_packet_pattern_attr {
+ __NL80211_PKTPAT_INVALID,
+ NL80211_PKTPAT_MASK,
+ NL80211_PKTPAT_PATTERN,
+ NL80211_PKTPAT_OFFSET,
+
+ NUM_NL80211_PKTPAT,
+ MAX_NL80211_PKTPAT = NUM_NL80211_PKTPAT - 1,
+};
+# 6198 "headers/include/linux/nl80211.h"
+struct nl80211_pattern_support {
+ __u32 max_patterns;
+ __u32 min_pattern_len;
+ __u32 max_pattern_len;
+ __u32 max_pkt_offset;
+} ;
+# 6305 "headers/include/linux/nl80211.h"
+enum nl80211_wowlan_triggers {
+ __NL80211_WOWLAN_TRIG_INVALID,
+ NL80211_WOWLAN_TRIG_ANY,
+ NL80211_WOWLAN_TRIG_DISCONNECT,
+ NL80211_WOWLAN_TRIG_MAGIC_PKT,
+ NL80211_WOWLAN_TRIG_PKT_PATTERN,
+ NL80211_WOWLAN_TRIG_GTK_REKEY_SUPPORTED,
+ NL80211_WOWLAN_TRIG_GTK_REKEY_FAILURE,
+ NL80211_WOWLAN_TRIG_EAP_IDENT_REQUEST,
+ NL80211_WOWLAN_TRIG_4WAY_HANDSHAKE,
+ NL80211_WOWLAN_TRIG_RFKILL_RELEASE,
+ NL80211_WOWLAN_TRIG_WAKEUP_PKT_80211,
+ NL80211_WOWLAN_TRIG_WAKEUP_PKT_80211_LEN,
+ NL80211_WOWLAN_TRIG_WAKEUP_PKT_8023,
+ NL80211_WOWLAN_TRIG_WAKEUP_PKT_8023_LEN,
+ NL80211_WOWLAN_TRIG_TCP_CONNECTION,
+ NL80211_WOWLAN_TRIG_WAKEUP_TCP_MATCH,
+ NL80211_WOWLAN_TRIG_WAKEUP_TCP_CONNLOST,
+ NL80211_WOWLAN_TRIG_WAKEUP_TCP_NOMORETOKENS,
+ NL80211_WOWLAN_TRIG_NET_DETECT,
+ NL80211_WOWLAN_TRIG_NET_DETECT_RESULTS,
+ NL80211_WOWLAN_TRIG_UNPROTECTED_DEAUTH_DISASSOC,
+
+
+ NUM_NL80211_WOWLAN_TRIG,
+ MAX_NL80211_WOWLAN_TRIG = NUM_NL80211_WOWLAN_TRIG - 1
+};
+# 6366 "headers/include/linux/nl80211.h"
+struct nl80211_wowlan_tcp_data_seq {
+ __u32 start, offset, len;
+};
+# 6377 "headers/include/linux/nl80211.h"
+struct nl80211_wowlan_tcp_data_token {
+ __u32 offset, len;
+ __u8 token_stream[];
+};
+
+
+
+
+
+
+
+struct nl80211_wowlan_tcp_data_token_feature {
+ __u32 min_len, max_len, bufsize;
+};
+# 6424 "headers/include/linux/nl80211.h"
+enum nl80211_wowlan_tcp_attrs {
+ __NL80211_WOWLAN_TCP_INVALID,
+ NL80211_WOWLAN_TCP_SRC_IPV4,
+ NL80211_WOWLAN_TCP_DST_IPV4,
+ NL80211_WOWLAN_TCP_DST_MAC,
+ NL80211_WOWLAN_TCP_SRC_PORT,
+ NL80211_WOWLAN_TCP_DST_PORT,
+ NL80211_WOWLAN_TCP_DATA_PAYLOAD,
+ NL80211_WOWLAN_TCP_DATA_PAYLOAD_SEQ,
+ NL80211_WOWLAN_TCP_DATA_PAYLOAD_TOKEN,
+ NL80211_WOWLAN_TCP_DATA_INTERVAL,
+ NL80211_WOWLAN_TCP_WAKE_PAYLOAD,
+ NL80211_WOWLAN_TCP_WAKE_MASK,
+
+
+ NUM_NL80211_WOWLAN_TCP,
+ MAX_NL80211_WOWLAN_TCP = NUM_NL80211_WOWLAN_TCP - 1
+};
+# 6452 "headers/include/linux/nl80211.h"
+struct nl80211_coalesce_rule_support {
+ __u32 max_rules;
+ struct nl80211_pattern_support pat;
+ __u32 max_delay;
+} ;
+# 6469 "headers/include/linux/nl80211.h"
+enum nl80211_attr_coalesce_rule {
+ __NL80211_COALESCE_RULE_INVALID,
+ NL80211_ATTR_COALESCE_RULE_DELAY,
+ NL80211_ATTR_COALESCE_RULE_CONDITION,
+ NL80211_ATTR_COALESCE_RULE_PKT_PATTERN,
+
+
+ NUM_NL80211_ATTR_COALESCE_RULE,
+ NL80211_ATTR_COALESCE_RULE_MAX = NUM_NL80211_ATTR_COALESCE_RULE - 1
+};
+# 6487 "headers/include/linux/nl80211.h"
+enum nl80211_coalesce_condition {
+ NL80211_COALESCE_CONDITION_MATCH,
+ NL80211_COALESCE_CONDITION_NO_MATCH
+};
+# 6502 "headers/include/linux/nl80211.h"
+enum nl80211_iface_limit_attrs {
+ NL80211_IFACE_LIMIT_UNSPEC,
+ NL80211_IFACE_LIMIT_MAX,
+ NL80211_IFACE_LIMIT_TYPES,
+
+
+ NUM_NL80211_IFACE_LIMIT,
+ MAX_NL80211_IFACE_LIMIT = NUM_NL80211_IFACE_LIMIT - 1
+};
+# 6561 "headers/include/linux/nl80211.h"
+enum nl80211_if_combination_attrs {
+ NL80211_IFACE_COMB_UNSPEC,
+ NL80211_IFACE_COMB_LIMITS,
+ NL80211_IFACE_COMB_MAXNUM,
+ NL80211_IFACE_COMB_STA_AP_BI_MATCH,
+ NL80211_IFACE_COMB_NUM_CHANNELS,
+ NL80211_IFACE_COMB_RADAR_DETECT_WIDTHS,
+ NL80211_IFACE_COMB_RADAR_DETECT_REGIONS,
+ NL80211_IFACE_COMB_BI_MIN_GCD,
+
+
+ NUM_NL80211_IFACE_COMB,
+ MAX_NL80211_IFACE_COMB = NUM_NL80211_IFACE_COMB - 1
+};
+# 6595 "headers/include/linux/nl80211.h"
+enum nl80211_plink_state {
+ NL80211_PLINK_LISTEN,
+ NL80211_PLINK_OPN_SNT,
+ NL80211_PLINK_OPN_RCVD,
+ NL80211_PLINK_CNF_RCVD,
+ NL80211_PLINK_ESTAB,
+ NL80211_PLINK_HOLDING,
+ NL80211_PLINK_BLOCKED,
+
+
+ NUM_NL80211_PLINK_STATES,
+ MAX_NL80211_PLINK_STATES = NUM_NL80211_PLINK_STATES - 1
+};
+# 6617 "headers/include/linux/nl80211.h"
+enum nl80211_plink_action {
+ NL80211_PLINK_ACTION_NO_ACTION,
+ NL80211_PLINK_ACTION_OPEN,
+ NL80211_PLINK_ACTION_BLOCK,
+
+ NUM_NL80211_PLINK_ACTIONS,
+};
+# 6643 "headers/include/linux/nl80211.h"
+enum nl80211_rekey_data {
+ __NL80211_REKEY_DATA_INVALID,
+ NL80211_REKEY_DATA_KEK,
+ NL80211_REKEY_DATA_KCK,
+ NL80211_REKEY_DATA_REPLAY_CTR,
+ NL80211_REKEY_DATA_AKM,
+
+
+ NUM_NL80211_REKEY_DATA,
+ MAX_NL80211_REKEY_DATA = NUM_NL80211_REKEY_DATA - 1
+};
+# 6664 "headers/include/linux/nl80211.h"
+enum nl80211_hidden_ssid {
+ NL80211_HIDDEN_SSID_NOT_IN_USE,
+ NL80211_HIDDEN_SSID_ZERO_LEN,
+ NL80211_HIDDEN_SSID_ZERO_CONTENTS
+};
+# 6680 "headers/include/linux/nl80211.h"
+enum nl80211_sta_wme_attr {
+ __NL80211_STA_WME_INVALID,
+ NL80211_STA_WME_UAPSD_QUEUES,
+ NL80211_STA_WME_MAX_SP,
+
+
+ __NL80211_STA_WME_AFTER_LAST,
+ NL80211_STA_WME_MAX = __NL80211_STA_WME_AFTER_LAST - 1
+};
+# 6702 "headers/include/linux/nl80211.h"
+enum nl80211_pmksa_candidate_attr {
+ __NL80211_PMKSA_CANDIDATE_INVALID,
+ NL80211_PMKSA_CANDIDATE_INDEX,
+ NL80211_PMKSA_CANDIDATE_BSSID,
+ NL80211_PMKSA_CANDIDATE_PREAUTH,
+
+
+ NUM_NL80211_PMKSA_CANDIDATE,
+ MAX_NL80211_PMKSA_CANDIDATE = NUM_NL80211_PMKSA_CANDIDATE - 1
+};
+# 6721 "headers/include/linux/nl80211.h"
+enum nl80211_tdls_operation {
+ NL80211_TDLS_DISCOVERY_REQ,
+ NL80211_TDLS_SETUP,
+ NL80211_TDLS_TEARDOWN,
+ NL80211_TDLS_ENABLE_LINK,
+ NL80211_TDLS_DISABLE_LINK,
+};
+
+
+
+
+
+
+
+enum nl80211_ap_sme_features {
+ NL80211_AP_SME_SA_QUERY_OFFLOAD = 1 << 0,
+};
+# 6832 "headers/include/linux/nl80211.h"
+enum nl80211_feature_flags {
+ NL80211_FEATURE_SK_TX_STATUS = 1 << 0,
+ NL80211_FEATURE_HT_IBSS = 1 << 1,
+ NL80211_FEATURE_INACTIVITY_TIMER = 1 << 2,
+ NL80211_FEATURE_CELL_BASE_REG_HINTS = 1 << 3,
+ NL80211_FEATURE_P2P_DEVICE_NEEDS_CHANNEL = 1 << 4,
+ NL80211_FEATURE_SAE = 1 << 5,
+ NL80211_FEATURE_LOW_PRIORITY_SCAN = 1 << 6,
+ NL80211_FEATURE_SCAN_FLUSH = 1 << 7,
+ NL80211_FEATURE_AP_SCAN = 1 << 8,
+ NL80211_FEATURE_VIF_TXPOWER = 1 << 9,
+ NL80211_FEATURE_NEED_OBSS_SCAN = 1 << 10,
+ NL80211_FEATURE_P2P_GO_CTWIN = 1 << 11,
+ NL80211_FEATURE_P2P_GO_OPPPS = 1 << 12,
+
+ NL80211_FEATURE_ADVERTISE_CHAN_LIMITS = 1 << 14,
+ NL80211_FEATURE_FULL_AP_CLIENT_STATE = 1 << 15,
+ NL80211_FEATURE_USERSPACE_MPM = 1 << 16,
+ NL80211_FEATURE_ACTIVE_MONITOR = 1 << 17,
+ NL80211_FEATURE_AP_MODE_CHAN_WIDTH_CHANGE = 1 << 18,
+ NL80211_FEATURE_DS_PARAM_SET_IE_IN_PROBES = 1 << 19,
+ NL80211_FEATURE_WFA_TPC_IE_IN_PROBES = 1 << 20,
+ NL80211_FEATURE_QUIET = 1 << 21,
+ NL80211_FEATURE_TX_POWER_INSERTION = 1 << 22,
+ NL80211_FEATURE_ACKTO_ESTIMATION = 1 << 23,
+ NL80211_FEATURE_STATIC_SMPS = 1 << 24,
+ NL80211_FEATURE_DYNAMIC_SMPS = 1 << 25,
+ NL80211_FEATURE_SUPPORTS_WMM_ADMISSION = 1 << 26,
+ NL80211_FEATURE_MAC_ON_CREATE = 1 << 27,
+ NL80211_FEATURE_TDLS_CHANNEL_SWITCH = 1 << 28,
+ NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR = 1 << 29,
+ NL80211_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR = 1 << 30,
+ NL80211_FEATURE_ND_RANDOM_MAC_ADDR = 1U << 31,
+};
+# 7116 "headers/include/linux/nl80211.h"
+enum nl80211_ext_feature_index {
+ NL80211_EXT_FEATURE_VHT_IBSS,
+ NL80211_EXT_FEATURE_RRM,
+ NL80211_EXT_FEATURE_MU_MIMO_AIR_SNIFFER,
+ NL80211_EXT_FEATURE_SCAN_START_TIME,
+ NL80211_EXT_FEATURE_BSS_PARENT_TSF,
+ NL80211_EXT_FEATURE_SET_SCAN_DWELL,
+ NL80211_EXT_FEATURE_BEACON_RATE_LEGACY,
+ NL80211_EXT_FEATURE_BEACON_RATE_HT,
+ NL80211_EXT_FEATURE_BEACON_RATE_VHT,
+ NL80211_EXT_FEATURE_FILS_STA,
+ NL80211_EXT_FEATURE_MGMT_TX_RANDOM_TA,
+ NL80211_EXT_FEATURE_MGMT_TX_RANDOM_TA_CONNECTED,
+ NL80211_EXT_FEATURE_SCHED_SCAN_RELATIVE_RSSI,
+ NL80211_EXT_FEATURE_CQM_RSSI_LIST,
+ NL80211_EXT_FEATURE_FILS_SK_OFFLOAD,
+ NL80211_EXT_FEATURE_4WAY_HANDSHAKE_STA_PSK,
+ NL80211_EXT_FEATURE_4WAY_HANDSHAKE_STA_1X,
+ NL80211_EXT_FEATURE_FILS_MAX_CHANNEL_TIME,
+ NL80211_EXT_FEATURE_ACCEPT_BCAST_PROBE_RESP,
+ NL80211_EXT_FEATURE_OCE_PROBE_REQ_HIGH_TX_RATE,
+ NL80211_EXT_FEATURE_OCE_PROBE_REQ_DEFERRAL_SUPPRESSION,
+ NL80211_EXT_FEATURE_MFP_OPTIONAL,
+ NL80211_EXT_FEATURE_LOW_SPAN_SCAN,
+ NL80211_EXT_FEATURE_LOW_POWER_SCAN,
+ NL80211_EXT_FEATURE_HIGH_ACCURACY_SCAN,
+ NL80211_EXT_FEATURE_DFS_OFFLOAD,
+ NL80211_EXT_FEATURE_CONTROL_PORT_OVER_NL80211,
+ NL80211_EXT_FEATURE_ACK_SIGNAL_SUPPORT,
+
+ NL80211_EXT_FEATURE_DATA_ACK_SIGNAL_SUPPORT = NL80211_EXT_FEATURE_ACK_SIGNAL_SUPPORT,
+ NL80211_EXT_FEATURE_TXQS,
+ NL80211_EXT_FEATURE_SCAN_RANDOM_SN,
+ NL80211_EXT_FEATURE_SCAN_MIN_PREQ_CONTENT,
+ NL80211_EXT_FEATURE_CAN_REPLACE_PTK0,
+ NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER,
+ NL80211_EXT_FEATURE_AIRTIME_FAIRNESS,
+ NL80211_EXT_FEATURE_AP_PMKSA_CACHING,
+ NL80211_EXT_FEATURE_SCHED_SCAN_BAND_SPECIFIC_RSSI_THOLD,
+ NL80211_EXT_FEATURE_EXT_KEY_ID,
+ NL80211_EXT_FEATURE_STA_TX_PWR,
+ NL80211_EXT_FEATURE_SAE_OFFLOAD,
+ NL80211_EXT_FEATURE_VLAN_OFFLOAD,
+ NL80211_EXT_FEATURE_AQL,
+ NL80211_EXT_FEATURE_BEACON_PROTECTION,
+ NL80211_EXT_FEATURE_CONTROL_PORT_NO_PREAUTH,
+ NL80211_EXT_FEATURE_PROTECTED_TWT,
+ NL80211_EXT_FEATURE_DEL_IBSS_STA,
+ NL80211_EXT_FEATURE_MULTICAST_REGISTRATIONS,
+ NL80211_EXT_FEATURE_BEACON_PROTECTION_CLIENT,
+ NL80211_EXT_FEATURE_SCAN_FREQ_KHZ,
+ NL80211_EXT_FEATURE_CONTROL_PORT_OVER_NL80211_TX_STATUS,
+ NL80211_EXT_FEATURE_OPERATING_CHANNEL_VALIDATION,
+ NL80211_EXT_FEATURE_4WAY_HANDSHAKE_AP_PSK,
+ NL80211_EXT_FEATURE_SAE_OFFLOAD_AP,
+ NL80211_EXT_FEATURE_FILS_DISCOVERY,
+ NL80211_EXT_FEATURE_UNSOL_BCAST_PROBE_RESP,
+ NL80211_EXT_FEATURE_BEACON_RATE_HE,
+ NL80211_EXT_FEATURE_SECURE_LTF,
+ NL80211_EXT_FEATURE_SECURE_RTT,
+ NL80211_EXT_FEATURE_PROT_RANGE_NEGO_AND_MEASURE,
+ NL80211_EXT_FEATURE_BSS_COLOR,
+ NL80211_EXT_FEATURE_FILS_CRYPTO_OFFLOAD,
+ NL80211_EXT_FEATURE_RADAR_BACKGROUND,
+ NL80211_EXT_FEATURE_POWERED_ADDR_CHANGE,
+ NL80211_EXT_FEATURE_PUNCT,
+ NL80211_EXT_FEATURE_SECURE_NAN,
+ NL80211_EXT_FEATURE_AUTH_AND_DEAUTH_RANDOM_TA,
+ NL80211_EXT_FEATURE_OWE_OFFLOAD,
+ NL80211_EXT_FEATURE_OWE_OFFLOAD_AP,
+ NL80211_EXT_FEATURE_DFS_CONCURRENT,
+ NL80211_EXT_FEATURE_SPP_AMSDU_SUPPORT,
+ NL80211_EXT_FEATURE_BEACON_RATE_EHT,
+ NL80211_EXT_FEATURE_EPPKE,
+ NL80211_EXT_FEATURE_ASSOC_FRAME_ENCRYPTION,
+ NL80211_EXT_FEATURE_IEEE8021X_AUTH,
+ NL80211_EXT_FEATURE_ROC_ADDR_FILTER,
+ NL80211_EXT_FEATURE_SET_KEY_LTF_SEED,
+ NL80211_EXT_FEATURE_PROBE_AP,
+
+
+ NUM_NL80211_EXT_FEATURES,
+ MAX_NL80211_EXT_FEATURES = NUM_NL80211_EXT_FEATURES - 1
+};
+# 7215 "headers/include/linux/nl80211.h"
+enum nl80211_probe_resp_offload_support_attr {
+ NL80211_PROBE_RESP_OFFLOAD_SUPPORT_WPS = 1<<0,
+ NL80211_PROBE_RESP_OFFLOAD_SUPPORT_WPS2 = 1<<1,
+ NL80211_PROBE_RESP_OFFLOAD_SUPPORT_P2P = 1<<2,
+ NL80211_PROBE_RESP_OFFLOAD_SUPPORT_80211U = 1<<3,
+};
+
+
+
+
+
+
+
+enum nl80211_connect_failed_reason {
+ NL80211_CONN_FAIL_MAX_CLIENTS,
+ NL80211_CONN_FAIL_BLOCKED_CLIENT,
+};
+# 7241 "headers/include/linux/nl80211.h"
+enum nl80211_timeout_reason {
+ NL80211_TIMEOUT_UNSPECIFIED,
+ NL80211_TIMEOUT_SCAN,
+ NL80211_TIMEOUT_AUTH,
+ NL80211_TIMEOUT_ASSOC,
+};
+# 7320 "headers/include/linux/nl80211.h"
+enum nl80211_scan_flags {
+ NL80211_SCAN_FLAG_LOW_PRIORITY = 1<<0,
+ NL80211_SCAN_FLAG_FLUSH = 1<<1,
+ NL80211_SCAN_FLAG_AP = 1<<2,
+ NL80211_SCAN_FLAG_RANDOM_ADDR = 1<<3,
+ NL80211_SCAN_FLAG_FILS_MAX_CHANNEL_TIME = 1<<4,
+ NL80211_SCAN_FLAG_ACCEPT_BCAST_PROBE_RESP = 1<<5,
+ NL80211_SCAN_FLAG_OCE_PROBE_REQ_HIGH_TX_RATE = 1<<6,
+ NL80211_SCAN_FLAG_OCE_PROBE_REQ_DEFERRAL_SUPPRESSION = 1<<7,
+ NL80211_SCAN_FLAG_LOW_SPAN = 1<<8,
+ NL80211_SCAN_FLAG_LOW_POWER = 1<<9,
+ NL80211_SCAN_FLAG_HIGH_ACCURACY = 1<<10,
+ NL80211_SCAN_FLAG_RANDOM_SN = 1<<11,
+ NL80211_SCAN_FLAG_MIN_PREQ_CONTENT = 1<<12,
+ NL80211_SCAN_FLAG_FREQ_KHZ = 1<<13,
+ NL80211_SCAN_FLAG_COLOCATED_6GHZ = 1<<14,
+};
+# 7351 "headers/include/linux/nl80211.h"
+enum nl80211_acl_policy {
+ NL80211_ACL_POLICY_ACCEPT_UNLESS_LISTED,
+ NL80211_ACL_POLICY_DENY_UNLESS_LISTED,
+};
+# 7368 "headers/include/linux/nl80211.h"
+enum nl80211_smps_mode {
+ NL80211_SMPS_OFF,
+ NL80211_SMPS_STATIC,
+ NL80211_SMPS_DYNAMIC,
+
+ __NL80211_SMPS_AFTER_LAST,
+ NL80211_SMPS_MAX = __NL80211_SMPS_AFTER_LAST - 1
+};
+# 7398 "headers/include/linux/nl80211.h"
+enum nl80211_radar_event {
+ NL80211_RADAR_DETECTED,
+ NL80211_RADAR_CAC_FINISHED,
+ NL80211_RADAR_CAC_ABORTED,
+ NL80211_RADAR_NOP_FINISHED,
+ NL80211_RADAR_PRE_CAC_EXPIRED,
+ NL80211_RADAR_CAC_STARTED,
+};
+# 7418 "headers/include/linux/nl80211.h"
+enum nl80211_dfs_state {
+ NL80211_DFS_USABLE,
+ NL80211_DFS_UNAVAILABLE,
+ NL80211_DFS_AVAILABLE,
+};
+# 7432 "headers/include/linux/nl80211.h"
+enum nl80211_protocol_features {
+ NL80211_PROTOCOL_FEATURE_SPLIT_WIPHY_DUMP = 1 << 0,
+};
+# 7445 "headers/include/linux/nl80211.h"
+enum nl80211_crit_proto_id {
+ NL80211_CRIT_PROTO_UNSPEC,
+ NL80211_CRIT_PROTO_DHCP,
+ NL80211_CRIT_PROTO_EAPOL,
+ NL80211_CRIT_PROTO_APIPA,
+
+ NUM_NL80211_CRIT_PROTO
+};
+# 7468 "headers/include/linux/nl80211.h"
+enum nl80211_rxmgmt_flags {
+ NL80211_RXMGMT_FLAG_ANSWERED = 1 << 0,
+ NL80211_RXMGMT_FLAG_EXTERNAL_AUTH = 1 << 1,
+};
+# 7488 "headers/include/linux/nl80211.h"
+struct nl80211_vendor_cmd_info {
+ __u32 vendor_id;
+ __u32 subcmd;
+};
+# 7504 "headers/include/linux/nl80211.h"
+enum nl80211_tdls_peer_capability {
+ NL80211_TDLS_PEER_HT = 1<<0,
+ NL80211_TDLS_PEER_VHT = 1<<1,
+ NL80211_TDLS_PEER_WMM = 1<<2,
+ NL80211_TDLS_PEER_HE = 1<<3,
+};
+# 7524 "headers/include/linux/nl80211.h"
+enum nl80211_sched_scan_plan {
+ __NL80211_SCHED_SCAN_PLAN_INVALID,
+ NL80211_SCHED_SCAN_PLAN_INTERVAL,
+ NL80211_SCHED_SCAN_PLAN_ITERATIONS,
+
+
+ __NL80211_SCHED_SCAN_PLAN_AFTER_LAST,
+ NL80211_SCHED_SCAN_PLAN_MAX =
+  __NL80211_SCHED_SCAN_PLAN_AFTER_LAST - 1
+};
+# 7542 "headers/include/linux/nl80211.h"
+struct nl80211_bss_select_rssi_adjust {
+ __u8 band;
+ __s8 delta;
+} ;
+# 7569 "headers/include/linux/nl80211.h"
+enum nl80211_bss_select_attr {
+ __NL80211_BSS_SELECT_ATTR_INVALID,
+ NL80211_BSS_SELECT_ATTR_RSSI,
+ NL80211_BSS_SELECT_ATTR_BAND_PREF,
+ NL80211_BSS_SELECT_ATTR_RSSI_ADJUST,
+
+
+ __NL80211_BSS_SELECT_ATTR_AFTER_LAST,
+ NL80211_BSS_SELECT_ATTR_MAX = __NL80211_BSS_SELECT_ATTR_AFTER_LAST - 1
+};
+# 7591 "headers/include/linux/nl80211.h"
+enum nl80211_nan_function_type {
+ NL80211_NAN_FUNC_PUBLISH,
+ NL80211_NAN_FUNC_SUBSCRIBE,
+ NL80211_NAN_FUNC_FOLLOW_UP,
+
+
+ __NL80211_NAN_FUNC_TYPE_AFTER_LAST,
+ NL80211_NAN_FUNC_MAX_TYPE = __NL80211_NAN_FUNC_TYPE_AFTER_LAST - 1,
+};
+# 7609 "headers/include/linux/nl80211.h"
+enum nl80211_nan_publish_type {
+ NL80211_NAN_SOLICITED_PUBLISH = 1 << 0,
+ NL80211_NAN_UNSOLICITED_PUBLISH = 1 << 1,
+};
+# 7623 "headers/include/linux/nl80211.h"
+enum nl80211_nan_func_term_reason {
+ NL80211_NAN_FUNC_TERM_REASON_USER_REQUEST,
+ NL80211_NAN_FUNC_TERM_REASON_TTL_EXPIRED,
+ NL80211_NAN_FUNC_TERM_REASON_ERROR,
+};
+# 7675 "headers/include/linux/nl80211.h"
+enum nl80211_nan_func_attributes {
+ __NL80211_NAN_FUNC_INVALID,
+ NL80211_NAN_FUNC_TYPE,
+ NL80211_NAN_FUNC_SERVICE_ID,
+ NL80211_NAN_FUNC_PUBLISH_TYPE,
+ NL80211_NAN_FUNC_PUBLISH_BCAST,
+ NL80211_NAN_FUNC_SUBSCRIBE_ACTIVE,
+ NL80211_NAN_FUNC_FOLLOW_UP_ID,
+ NL80211_NAN_FUNC_FOLLOW_UP_REQ_ID,
+ NL80211_NAN_FUNC_FOLLOW_UP_DEST,
+ NL80211_NAN_FUNC_CLOSE_RANGE,
+ NL80211_NAN_FUNC_TTL,
+ NL80211_NAN_FUNC_SERVICE_INFO,
+ NL80211_NAN_FUNC_SRF,
+ NL80211_NAN_FUNC_RX_MATCH_FILTER,
+ NL80211_NAN_FUNC_TX_MATCH_FILTER,
+ NL80211_NAN_FUNC_INSTANCE_ID,
+ NL80211_NAN_FUNC_TERM_REASON,
+
+
+ NUM_NL80211_NAN_FUNC_ATTR,
+ NL80211_NAN_FUNC_ATTR_MAX = NUM_NL80211_NAN_FUNC_ATTR - 1
+};
+# 7714 "headers/include/linux/nl80211.h"
+enum nl80211_nan_srf_attributes {
+ __NL80211_NAN_SRF_INVALID,
+ NL80211_NAN_SRF_INCLUDE,
+ NL80211_NAN_SRF_BF,
+ NL80211_NAN_SRF_BF_IDX,
+ NL80211_NAN_SRF_MAC_ADDRS,
+
+
+ NUM_NL80211_NAN_SRF_ATTR,
+ NL80211_NAN_SRF_ATTR_MAX = NUM_NL80211_NAN_SRF_ATTR - 1,
+};
+# 7739 "headers/include/linux/nl80211.h"
+enum nl80211_nan_match_attributes {
+ __NL80211_NAN_MATCH_INVALID,
+ NL80211_NAN_MATCH_FUNC_LOCAL,
+ NL80211_NAN_MATCH_FUNC_PEER,
+
+
+ NUM_NL80211_NAN_MATCH_ATTR,
+ NL80211_NAN_MATCH_ATTR_MAX = NUM_NL80211_NAN_MATCH_ATTR - 1
+};
+# 7786 "headers/include/linux/nl80211.h"
+enum nl80211_nan_band_conf_attributes {
+ __NL80211_NAN_BAND_CONF_INVALID,
+ NL80211_NAN_BAND_CONF_BAND,
+ NL80211_NAN_BAND_CONF_FREQ,
+ NL80211_NAN_BAND_CONF_RSSI_CLOSE,
+ NL80211_NAN_BAND_CONF_RSSI_MIDDLE,
+ NL80211_NAN_BAND_CONF_WAKE_DW,
+ NL80211_NAN_BAND_CONF_DISABLE_SCAN,
+
+
+ NUM_NL80211_NAN_BAND_CONF_ATTR,
+ NL80211_NAN_BAND_CONF_ATTR_MAX = NUM_NL80211_NAN_BAND_CONF_ATTR - 1,
+};
+# 7834 "headers/include/linux/nl80211.h"
+enum nl80211_nan_conf_attributes {
+ __NL80211_NAN_CONF_INVALID,
+ NL80211_NAN_CONF_CLUSTER_ID,
+ NL80211_NAN_CONF_EXTRA_ATTRS,
+ NL80211_NAN_CONF_VENDOR_ELEMS,
+ NL80211_NAN_CONF_BAND_CONFIGS,
+ NL80211_NAN_CONF_SCAN_PERIOD,
+ NL80211_NAN_CONF_SCAN_DWELL_TIME,
+ NL80211_NAN_CONF_DISCOVERY_BEACON_INTERVAL,
+ NL80211_NAN_CONF_NOTIFY_DW,
+
+
+ NUM_NL80211_NAN_CONF_ATTR,
+ NL80211_NAN_CONF_ATTR_MAX = NUM_NL80211_NAN_CONF_ATTR - 1,
+};
+
+
+
+
+
+
+
+enum nl80211_external_auth_action {
+ NL80211_EXTERNAL_AUTH_START,
+ NL80211_EXTERNAL_AUTH_ABORT,
+};
+# 7875 "headers/include/linux/nl80211.h"
+enum nl80211_ftm_responder_attributes {
+ __NL80211_FTM_RESP_ATTR_INVALID,
+
+ NL80211_FTM_RESP_ATTR_ENABLED,
+ NL80211_FTM_RESP_ATTR_LCI,
+ NL80211_FTM_RESP_ATTR_CIVICLOC,
+
+
+ __NL80211_FTM_RESP_ATTR_LAST,
+ NL80211_FTM_RESP_ATTR_MAX = __NL80211_FTM_RESP_ATTR_LAST - 1,
+};
+# 7915 "headers/include/linux/nl80211.h"
+enum nl80211_ftm_responder_stats {
+ __NL80211_FTM_STATS_INVALID,
+ NL80211_FTM_STATS_SUCCESS_NUM,
+ NL80211_FTM_STATS_PARTIAL_NUM,
+ NL80211_FTM_STATS_FAILED_NUM,
+ NL80211_FTM_STATS_ASAP_NUM,
+ NL80211_FTM_STATS_NON_ASAP_NUM,
+ NL80211_FTM_STATS_TOTAL_DURATION_MSEC,
+ NL80211_FTM_STATS_UNKNOWN_TRIGGERS_NUM,
+ NL80211_FTM_STATS_RESCHEDULE_REQUESTS_NUM,
+ NL80211_FTM_STATS_OUT_OF_WINDOW_TRIGGERS_NUM,
+ NL80211_FTM_STATS_PAD,
+
+
+ __NL80211_FTM_STATS_AFTER_LAST,
+ NL80211_FTM_STATS_MAX = __NL80211_FTM_STATS_AFTER_LAST - 1
+};
+# 7941 "headers/include/linux/nl80211.h"
+enum nl80211_preamble {
+ NL80211_PREAMBLE_LEGACY,
+ NL80211_PREAMBLE_HT,
+ NL80211_PREAMBLE_VHT,
+ NL80211_PREAMBLE_DMG,
+ NL80211_PREAMBLE_HE,
+};
+# 7959 "headers/include/linux/nl80211.h"
+enum nl80211_peer_measurement_type {
+ NL80211_PMSR_TYPE_INVALID,
+
+ NL80211_PMSR_TYPE_FTM,
+
+ NUM_NL80211_PMSR_TYPES,
+ NL80211_PMSR_TYPE_MAX = NUM_NL80211_PMSR_TYPES - 1
+};
+# 7976 "headers/include/linux/nl80211.h"
+enum nl80211_peer_measurement_status {
+ NL80211_PMSR_STATUS_SUCCESS,
+ NL80211_PMSR_STATUS_REFUSED,
+ NL80211_PMSR_STATUS_TIMEOUT,
+ NL80211_PMSR_STATUS_FAILURE,
+};
+# 7996 "headers/include/linux/nl80211.h"
+enum nl80211_peer_measurement_req {
+ __NL80211_PMSR_REQ_ATTR_INVALID,
+
+ NL80211_PMSR_REQ_ATTR_DATA,
+ NL80211_PMSR_REQ_ATTR_GET_AP_TSF,
+
+
+ NUM_NL80211_PMSR_REQ_ATTRS,
+ NL80211_PMSR_REQ_ATTR_MAX = NUM_NL80211_PMSR_REQ_ATTRS - 1
+};
+# 8032 "headers/include/linux/nl80211.h"
+enum nl80211_peer_measurement_resp {
+ __NL80211_PMSR_RESP_ATTR_INVALID,
+
+ NL80211_PMSR_RESP_ATTR_DATA,
+ NL80211_PMSR_RESP_ATTR_STATUS,
+ NL80211_PMSR_RESP_ATTR_HOST_TIME,
+ NL80211_PMSR_RESP_ATTR_AP_TSF,
+ NL80211_PMSR_RESP_ATTR_FINAL,
+ NL80211_PMSR_RESP_ATTR_PAD,
+
+
+ NUM_NL80211_PMSR_RESP_ATTRS,
+ NL80211_PMSR_RESP_ATTR_MAX = NUM_NL80211_PMSR_RESP_ATTRS - 1
+};
+# 8058 "headers/include/linux/nl80211.h"
+enum nl80211_peer_measurement_ftm_req_type {
+ NL80211_PMSR_FTM_REQ_TYPE_INFRA,
+ NL80211_PMSR_FTM_REQ_TYPE_PD,
+
+
+ NUM_NL80211_PMSR_FTM_REQ_TYPE,
+ NL80211_PMSR_FTM_REQ_TYPE_MAX = NUM_NL80211_PMSR_FTM_REQ_TYPE - 1
+};
+# 8087 "headers/include/linux/nl80211.h"
+enum nl80211_peer_measurement_peer_attrs {
+ __NL80211_PMSR_PEER_ATTR_INVALID,
+
+ NL80211_PMSR_PEER_ATTR_ADDR,
+ NL80211_PMSR_PEER_ATTR_CHAN,
+ NL80211_PMSR_PEER_ATTR_REQ,
+ NL80211_PMSR_PEER_ATTR_RESP,
+ NL80211_PMSR_PEER_ATTR_REQ_TYPE,
+
+
+ NUM_NL80211_PMSR_PEER_ATTRS,
+ NL80211_PMSR_PEER_ATTR_MAX = NUM_NL80211_PMSR_PEER_ATTRS - 1,
+};
+# 8137 "headers/include/linux/nl80211.h"
+enum nl80211_peer_measurement_attrs {
+ __NL80211_PMSR_ATTR_INVALID,
+
+ NL80211_PMSR_ATTR_MAX_PEERS,
+ NL80211_PMSR_ATTR_REPORT_AP_TSF,
+ NL80211_PMSR_ATTR_RANDOMIZE_MAC_ADDR,
+ NL80211_PMSR_ATTR_TYPE_CAPA,
+ NL80211_PMSR_ATTR_PEERS,
+ NL80211_PMSR_ATTR_MAX_PEER_ISTA_ROLE,
+ NL80211_PMSR_ATTR_MAX_PEER_RSTA_ROLE,
+
+
+ NUM_NL80211_PMSR_ATTR,
+ NL80211_PMSR_ATTR_MAX = NUM_NL80211_PMSR_ATTR - 1
+};
+# 8257 "headers/include/linux/nl80211.h"
+enum nl80211_peer_measurement_ftm_capa {
+ __NL80211_PMSR_FTM_CAPA_ATTR_INVALID,
+
+ NL80211_PMSR_FTM_CAPA_ATTR_ASAP,
+ NL80211_PMSR_FTM_CAPA_ATTR_NON_ASAP,
+ NL80211_PMSR_FTM_CAPA_ATTR_REQ_LCI,
+ NL80211_PMSR_FTM_CAPA_ATTR_REQ_CIVICLOC,
+ NL80211_PMSR_FTM_CAPA_ATTR_PREAMBLES,
+ NL80211_PMSR_FTM_CAPA_ATTR_BANDWIDTHS,
+ NL80211_PMSR_FTM_CAPA_ATTR_MAX_BURSTS_EXPONENT,
+ NL80211_PMSR_FTM_CAPA_ATTR_MAX_FTMS_PER_BURST,
+ NL80211_PMSR_FTM_CAPA_ATTR_TRIGGER_BASED,
+ NL80211_PMSR_FTM_CAPA_ATTR_NON_TRIGGER_BASED,
+ NL80211_PMSR_FTM_CAPA_ATTR_6GHZ_SUPPORT,
+ NL80211_PMSR_FTM_CAPA_ATTR_MAX_TX_LTF_REP,
+ NL80211_PMSR_FTM_CAPA_ATTR_MAX_RX_LTF_REP,
+ NL80211_PMSR_FTM_CAPA_ATTR_MAX_TX_STS,
+ NL80211_PMSR_FTM_CAPA_ATTR_MAX_RX_STS,
+ NL80211_PMSR_FTM_CAPA_ATTR_MAX_TOTAL_LTF_TX,
+ NL80211_PMSR_FTM_CAPA_ATTR_MAX_TOTAL_LTF_RX,
+ NL80211_PMSR_FTM_CAPA_ATTR_RSTA_SUPPORT,
+ NL80211_PMSR_FTM_CAPA_ATTR_ISTA_CAPS,
+ NL80211_PMSR_FTM_CAPA_ATTR_RSTA_CAPS,
+ NL80211_PMSR_FTM_CAPA_ATTR_SUPPORT_NTB,
+ NL80211_PMSR_FTM_CAPA_ATTR_SUPPORT_TB,
+ NL80211_PMSR_FTM_CAPA_ATTR_SUPPORT_EDCA,
+ NL80211_PMSR_FTM_CAPA_ATTR_TYPE_CAPS,
+ NL80211_PMSR_FTM_CAPA_ATTR_CONCURRENT_ISTA_RSTA_SUPPORT,
+ NL80211_PMSR_FTM_CAPA_ATTR_MAX_NUM_TX_ANTENNAS,
+ NL80211_PMSR_FTM_CAPA_ATTR_MAX_NUM_RX_ANTENNAS,
+ NL80211_PMSR_FTM_CAPA_ATTR_MIN_INTERVAL_EDCA,
+ NL80211_PMSR_FTM_CAPA_ATTR_MIN_INTERVAL_NTB,
+ NL80211_PMSR_FTM_CAPA_ATTR_PD_PREAMBLES,
+ NL80211_PMSR_FTM_CAPA_ATTR_PD_BANDWIDTHS,
+
+
+ NUM_NL80211_PMSR_FTM_CAPA_ATTR,
+ NL80211_PMSR_FTM_CAPA_ATTR_MAX = NUM_NL80211_PMSR_FTM_CAPA_ATTR - 1
+};
+# 8313 "headers/include/linux/nl80211.h"
+enum nl80211_peer_measurement_ftm_type_capa {
+ __NL80211_PMSR_FTM_TYPE_CAPA_ATTR_INVALID,
+
+ NL80211_PMSR_FTM_TYPE_CAPA_ATTR_INFRA_SUPPORT,
+ NL80211_PMSR_FTM_TYPE_CAPA_ATTR_PD_SUPPORT,
+
+
+ NUM_NL80211_PMSR_FTM_TYPE_CAPA_ATTR,
+ NL80211_PMSR_FTM_TYPE_CAPA_ATTR_MAX = NUM_NL80211_PMSR_FTM_TYPE_CAPA_ATTR - 1
+};
+# 8428 "headers/include/linux/nl80211.h"
+enum nl80211_peer_measurement_ftm_req {
+ __NL80211_PMSR_FTM_REQ_ATTR_INVALID,
+
+ NL80211_PMSR_FTM_REQ_ATTR_ASAP,
+ NL80211_PMSR_FTM_REQ_ATTR_PREAMBLE,
+ NL80211_PMSR_FTM_REQ_ATTR_NUM_BURSTS_EXP,
+ NL80211_PMSR_FTM_REQ_ATTR_BURST_PERIOD,
+ NL80211_PMSR_FTM_REQ_ATTR_BURST_DURATION,
+ NL80211_PMSR_FTM_REQ_ATTR_FTMS_PER_BURST,
+ NL80211_PMSR_FTM_REQ_ATTR_NUM_FTMR_RETRIES,
+ NL80211_PMSR_FTM_REQ_ATTR_REQUEST_LCI,
+ NL80211_PMSR_FTM_REQ_ATTR_REQUEST_CIVICLOC,
+ NL80211_PMSR_FTM_REQ_ATTR_TRIGGER_BASED,
+ NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED,
+ NL80211_PMSR_FTM_REQ_ATTR_LMR_FEEDBACK,
+ NL80211_PMSR_FTM_REQ_ATTR_BSS_COLOR,
+ NL80211_PMSR_FTM_REQ_ATTR_RSTA,
+ NL80211_PMSR_FTM_REQ_ATTR_MIN_TIME_BETWEEN_MEASUREMENTS,
+ NL80211_PMSR_FTM_REQ_ATTR_MAX_TIME_BETWEEN_MEASUREMENTS,
+ NL80211_PMSR_FTM_REQ_ATTR_NOMINAL_TIME,
+ NL80211_PMSR_FTM_REQ_ATTR_AW_DURATION,
+ NL80211_PMSR_FTM_REQ_ATTR_NUM_MEASUREMENTS,
+ NL80211_PMSR_FTM_REQ_ATTR_PAD,
+ NL80211_PMSR_FTM_REQ_ATTR_INGRESS,
+ NL80211_PMSR_FTM_REQ_ATTR_EGRESS,
+ NL80211_PMSR_FTM_REQ_ATTR_PD_SUPPRESS_RESULTS,
+
+
+ NUM_NL80211_PMSR_FTM_REQ_ATTR,
+ NL80211_PMSR_FTM_REQ_ATTR_MAX = NUM_NL80211_PMSR_FTM_REQ_ATTR - 1
+};
+# 8476 "headers/include/linux/nl80211.h"
+enum nl80211_peer_measurement_ftm_failure_reasons {
+ NL80211_PMSR_FTM_FAILURE_UNSPECIFIED,
+ NL80211_PMSR_FTM_FAILURE_NO_RESPONSE,
+ NL80211_PMSR_FTM_FAILURE_REJECTED,
+ NL80211_PMSR_FTM_FAILURE_WRONG_CHANNEL,
+ NL80211_PMSR_FTM_FAILURE_PEER_NOT_CAPABLE,
+ NL80211_PMSR_FTM_FAILURE_INVALID_TIMESTAMP,
+ NL80211_PMSR_FTM_FAILURE_PEER_BUSY,
+ NL80211_PMSR_FTM_FAILURE_BAD_CHANGED_PARAMS,
+};
+# 8571 "headers/include/linux/nl80211.h"
+enum nl80211_peer_measurement_ftm_resp {
+ __NL80211_PMSR_FTM_RESP_ATTR_INVALID,
+
+ NL80211_PMSR_FTM_RESP_ATTR_FAIL_REASON,
+ NL80211_PMSR_FTM_RESP_ATTR_BURST_INDEX,
+ NL80211_PMSR_FTM_RESP_ATTR_NUM_FTMR_ATTEMPTS,
+ NL80211_PMSR_FTM_RESP_ATTR_NUM_FTMR_SUCCESSES,
+ NL80211_PMSR_FTM_RESP_ATTR_BUSY_RETRY_TIME,
+ NL80211_PMSR_FTM_RESP_ATTR_NUM_BURSTS_EXP,
+ NL80211_PMSR_FTM_RESP_ATTR_BURST_DURATION,
+ NL80211_PMSR_FTM_RESP_ATTR_FTMS_PER_BURST,
+ NL80211_PMSR_FTM_RESP_ATTR_RSSI_AVG,
+ NL80211_PMSR_FTM_RESP_ATTR_RSSI_SPREAD,
+ NL80211_PMSR_FTM_RESP_ATTR_TX_RATE,
+ NL80211_PMSR_FTM_RESP_ATTR_RX_RATE,
+ NL80211_PMSR_FTM_RESP_ATTR_RTT_AVG,
+ NL80211_PMSR_FTM_RESP_ATTR_RTT_VARIANCE,
+ NL80211_PMSR_FTM_RESP_ATTR_RTT_SPREAD,
+ NL80211_PMSR_FTM_RESP_ATTR_DIST_AVG,
+ NL80211_PMSR_FTM_RESP_ATTR_DIST_VARIANCE,
+ NL80211_PMSR_FTM_RESP_ATTR_DIST_SPREAD,
+ NL80211_PMSR_FTM_RESP_ATTR_LCI,
+ NL80211_PMSR_FTM_RESP_ATTR_CIVICLOC,
+ NL80211_PMSR_FTM_RESP_ATTR_PAD,
+ NL80211_PMSR_FTM_RESP_ATTR_BURST_PERIOD,
+ NL80211_PMSR_FTM_RESP_ATTR_TX_LTF_REPETITION_COUNT,
+ NL80211_PMSR_FTM_RESP_ATTR_RX_LTF_REPETITION_COUNT,
+ NL80211_PMSR_FTM_RESP_ATTR_MAX_TIME_BETWEEN_MEASUREMENTS,
+ NL80211_PMSR_FTM_RESP_ATTR_MIN_TIME_BETWEEN_MEASUREMENTS,
+ NL80211_PMSR_FTM_RESP_ATTR_NUM_TX_SPATIAL_STREAMS,
+ NL80211_PMSR_FTM_RESP_ATTR_NUM_RX_SPATIAL_STREAMS,
+ NL80211_PMSR_FTM_RESP_ATTR_NOMINAL_TIME,
+ NL80211_PMSR_FTM_RESP_ATTR_AVAILABILITY_WINDOW,
+ NL80211_PMSR_FTM_RESP_ATTR_CHANNEL_WIDTH,
+ NL80211_PMSR_FTM_RESP_ATTR_PREAMBLE,
+ NL80211_PMSR_FTM_RESP_ATTR_IS_DELAYED_LMR,
+
+
+ NUM_NL80211_PMSR_FTM_RESP_ATTR,
+ NL80211_PMSR_FTM_RESP_ATTR_MAX = NUM_NL80211_PMSR_FTM_RESP_ATTR - 1
+};
+# 8630 "headers/include/linux/nl80211.h"
+enum nl80211_obss_pd_attributes {
+ __NL80211_HE_OBSS_PD_ATTR_INVALID,
+
+ NL80211_HE_OBSS_PD_ATTR_MIN_OFFSET,
+ NL80211_HE_OBSS_PD_ATTR_MAX_OFFSET,
+ NL80211_HE_OBSS_PD_ATTR_NON_SRG_MAX_OFFSET,
+ NL80211_HE_OBSS_PD_ATTR_BSS_COLOR_BITMAP,
+ NL80211_HE_OBSS_PD_ATTR_PARTIAL_BSSID_BITMAP,
+ NL80211_HE_OBSS_PD_ATTR_SR_CTRL,
+
+
+ __NL80211_HE_OBSS_PD_ATTR_LAST,
+ NL80211_HE_OBSS_PD_ATTR_MAX = __NL80211_HE_OBSS_PD_ATTR_LAST - 1,
+};
+# 8656 "headers/include/linux/nl80211.h"
+enum nl80211_bss_color_attributes {
+ __NL80211_HE_BSS_COLOR_ATTR_INVALID,
+
+ NL80211_HE_BSS_COLOR_ATTR_COLOR,
+ NL80211_HE_BSS_COLOR_ATTR_DISABLED,
+ NL80211_HE_BSS_COLOR_ATTR_PARTIAL,
+
+
+ __NL80211_HE_BSS_COLOR_ATTR_LAST,
+ NL80211_HE_BSS_COLOR_ATTR_MAX = __NL80211_HE_BSS_COLOR_ATTR_LAST - 1,
+};
+# 8681 "headers/include/linux/nl80211.h"
+enum nl80211_iftype_akm_attributes {
+ __NL80211_IFTYPE_AKM_ATTR_INVALID,
+
+ NL80211_IFTYPE_AKM_ATTR_IFTYPES,
+ NL80211_IFTYPE_AKM_ATTR_SUITES,
+
+
+ __NL80211_IFTYPE_AKM_ATTR_LAST,
+ NL80211_IFTYPE_AKM_ATTR_MAX = __NL80211_IFTYPE_AKM_ATTR_LAST - 1,
+};
+# 8708 "headers/include/linux/nl80211.h"
+enum nl80211_fils_discovery_attributes {
+ __NL80211_FILS_DISCOVERY_ATTR_INVALID,
+
+ NL80211_FILS_DISCOVERY_ATTR_INT_MIN,
+ NL80211_FILS_DISCOVERY_ATTR_INT_MAX,
+ NL80211_FILS_DISCOVERY_ATTR_TMPL,
+
+
+ __NL80211_FILS_DISCOVERY_ATTR_LAST,
+ NL80211_FILS_DISCOVERY_ATTR_MAX = __NL80211_FILS_DISCOVERY_ATTR_LAST - 1
+};
+# 8742 "headers/include/linux/nl80211.h"
+enum nl80211_unsol_bcast_probe_resp_attributes {
+ __NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_INVALID,
+
+ NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_INT,
+ NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_TMPL,
+
+
+ __NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_LAST,
+ NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_MAX =
+  __NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_LAST - 1
+};
+# 8766 "headers/include/linux/nl80211.h"
+enum nl80211_sae_pwe_mechanism {
+ NL80211_SAE_PWE_UNSPECIFIED,
+ NL80211_SAE_PWE_HUNT_AND_PECK,
+ NL80211_SAE_PWE_HASH_TO_ELEMENT,
+ NL80211_SAE_PWE_BOTH,
+};
+# 8780 "headers/include/linux/nl80211.h"
+enum nl80211_sar_type {
+ NL80211_SAR_TYPE_POWER,
+
+
+
+
+ NUM_NL80211_SAR_TYPE,
+};
+# 8812 "headers/include/linux/nl80211.h"
+enum nl80211_sar_attrs {
+ __NL80211_SAR_ATTR_INVALID,
+
+ NL80211_SAR_ATTR_TYPE,
+ NL80211_SAR_ATTR_SPECS,
+
+ __NL80211_SAR_ATTR_LAST,
+ NL80211_SAR_ATTR_MAX = __NL80211_SAR_ATTR_LAST - 1,
+};
+# 8857 "headers/include/linux/nl80211.h"
+enum nl80211_sar_specs_attrs {
+ __NL80211_SAR_ATTR_SPECS_INVALID,
+
+ NL80211_SAR_ATTR_SPECS_POWER,
+ NL80211_SAR_ATTR_SPECS_RANGE_INDEX,
+ NL80211_SAR_ATTR_SPECS_START_FREQ,
+ NL80211_SAR_ATTR_SPECS_END_FREQ,
+
+ __NL80211_SAR_ATTR_SPECS_LAST,
+ NL80211_SAR_ATTR_SPECS_MAX = __NL80211_SAR_ATTR_SPECS_LAST - 1,
+};
+# 8916 "headers/include/linux/nl80211.h"
+enum nl80211_mbssid_config_attributes {
+ __NL80211_MBSSID_CONFIG_ATTR_INVALID,
+
+ NL80211_MBSSID_CONFIG_ATTR_MAX_INTERFACES,
+ NL80211_MBSSID_CONFIG_ATTR_MAX_EMA_PROFILE_PERIODICITY,
+ NL80211_MBSSID_CONFIG_ATTR_INDEX,
+ NL80211_MBSSID_CONFIG_ATTR_TX_IFINDEX,
+ NL80211_MBSSID_CONFIG_ATTR_EMA,
+ NL80211_MBSSID_CONFIG_ATTR_TX_LINK_ID,
+
+
+ __NL80211_MBSSID_CONFIG_ATTR_LAST,
+ NL80211_MBSSID_CONFIG_ATTR_MAX = __NL80211_MBSSID_CONFIG_ATTR_LAST - 1,
+};
+# 8942 "headers/include/linux/nl80211.h"
+enum nl80211_ap_settings_flags {
+ NL80211_AP_SETTINGS_EXTERNAL_AUTH_SUPPORT = 1 << 0,
+ NL80211_AP_SETTINGS_SA_QUERY_OFFLOAD_SUPPORT = 1 << 1,
+};
+# 8965 "headers/include/linux/nl80211.h"
+enum nl80211_wiphy_radio_attrs {
+ __NL80211_WIPHY_RADIO_ATTR_INVALID,
+
+ NL80211_WIPHY_RADIO_ATTR_INDEX,
+ NL80211_WIPHY_RADIO_ATTR_FREQ_RANGE,
+ NL80211_WIPHY_RADIO_ATTR_INTERFACE_COMBINATION,
+ NL80211_WIPHY_RADIO_ATTR_ANTENNA_MASK,
+ NL80211_WIPHY_RADIO_ATTR_RTS_THRESHOLD,
+
+
+ __NL80211_WIPHY_RADIO_ATTR_LAST,
+ NL80211_WIPHY_RADIO_ATTR_MAX = __NL80211_WIPHY_RADIO_ATTR_LAST - 1,
+};
+# 8992 "headers/include/linux/nl80211.h"
+enum nl80211_wiphy_radio_freq_range {
+ __NL80211_WIPHY_RADIO_FREQ_ATTR_INVALID,
+
+ NL80211_WIPHY_RADIO_FREQ_ATTR_START,
+ NL80211_WIPHY_RADIO_FREQ_ATTR_END,
+
+ __NL80211_WIPHY_RADIO_FREQ_ATTR_LAST,
+ NL80211_WIPHY_RADIO_FREQ_ATTR_MAX = __NL80211_WIPHY_RADIO_FREQ_ATTR_LAST - 1,
+};
+# 9013 "headers/include/linux/nl80211.h"
+enum nl80211_s1g_short_beacon_attrs {
+ __NL80211_S1G_SHORT_BEACON_ATTR_INVALID,
+
+ NL80211_S1G_SHORT_BEACON_ATTR_HEAD,
+ NL80211_S1G_SHORT_BEACON_ATTR_TAIL,
+
+
+ __NL80211_S1G_SHORT_BEACON_ATTR_LAST,
+ NL80211_S1G_SHORT_BEACON_ATTR_MAX =
+  __NL80211_S1G_SHORT_BEACON_ATTR_LAST - 1
+};
+# 9063 "headers/include/linux/nl80211.h"
+enum nl80211_nan_capabilities {
+ __NL80211_NAN_CAPABILITIES_INVALID,
+
+ NL80211_NAN_CAPA_CONFIGURABLE_SYNC,
+ NL80211_NAN_CAPA_USERSPACE_DE,
+ NL80211_NAN_CAPA_OP_MODE,
+ NL80211_NAN_CAPA_NUM_ANTENNAS,
+ NL80211_NAN_CAPA_MAX_CHANNEL_SWITCH_TIME,
+ NL80211_NAN_CAPA_CAPABILITIES,
+ NL80211_NAN_CAPA_PHY,
+
+ __NL80211_NAN_CAPABILITIES_LAST,
+ NL80211_NAN_CAPABILITIES_MAX = __NL80211_NAN_CAPABILITIES_LAST - 1,
+};
+# 9093 "headers/include/linux/nl80211.h"
+enum nl80211_nan_peer_map_attrs {
+ __NL80211_NAN_PEER_MAP_ATTR_INVALID,
+
+ NL80211_NAN_PEER_MAP_ATTR_MAP_ID,
+ NL80211_NAN_PEER_MAP_ATTR_TIME_SLOTS,
+
+
+ __NL80211_NAN_PEER_MAP_ATTR_LAST,
+ NL80211_NAN_PEER_MAP_ATTR_MAX = __NL80211_NAN_PEER_MAP_ATTR_LAST - 1,
+};
+# 8 "linux-uapi.c" 2
