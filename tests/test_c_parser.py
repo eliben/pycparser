@@ -2976,6 +2976,20 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_designated_initializer_with_typedef_name(self):
+        # Issue #215: a field designator can have the same name as a typedef.
+        tree = self.parse("""
+            typedef int Foo;
+            struct Bar { char Foo; };
+            void f(void) {
+                struct Bar bar = {.Foo = 'C'};
+            }
+        """)
+        init = tree.ext[2].body.block_items[0].init
+        self.assertEqual(
+            expand_init(init), [([["ID", "Foo"]], ["Constant", "char", "'C'"])]
+        )
+
     def test_function_definitions(self):
         def parse_fdef(str):
             return self.parse(str).ext[0]
