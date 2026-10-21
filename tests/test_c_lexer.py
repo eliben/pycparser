@@ -48,6 +48,30 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertTokensTypes("$dollar cent$", ["ID", "ID"])
         self.assertTokensTypes("i ^= 1;", ["ID", "XOREQUAL", "INT_CONST_DEC", "SEMI"])
 
+    def test_form_feed_and_vertical_tab_whitespace(self):
+        self.clex.input("\fint\vx;\n \t\f\vy;")
+        self.assertEqual(
+            [(t.type, t.value, t.lineno, t.column) for t in token_list(self.clex)],
+            [
+                ("INT", "int", 1, 2),
+                ("ID", "x", 1, 6),
+                ("SEMI", ";", 1, 7),
+                ("ID", "y", 2, 5),
+                ("SEMI", ";", 2, 6),
+            ],
+        )
+        self.assertTokensTypes(" \t\f\v", [])
+
+    def test_form_feed_and_vertical_tab_in_literals(self):
+        self.clex.input("\"a\fb\" '\v'")
+        self.assertEqual(
+            [(t.type, t.value, t.lineno, t.column) for t in token_list(self.clex)],
+            [
+                ("STRING_LITERAL", '"a\fb"', 1, 1),
+                ("CHAR_CONST", "'\v'", 1, 7),
+            ],
+        )
+
     def test_typedef_names_are_identifiers(self):
         self.assertTokensTypes(
             "typedef int T; T value;",
