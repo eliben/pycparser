@@ -527,12 +527,12 @@ class CGenerator:
     def visit_Case(self, n: c_ast.Case) -> str:
         s = self._generate_attributes(n.attributes) + " " if n.attributes else ""
         s += "case " + self._visit_expr(n.expr) + ":\n"
-        return s + self._generate_body(n.stmts, add_indent=True)
+        return s + self._generate_body(n.stmts or [], add_indent=True)
 
     def visit_Default(self, n: c_ast.Default) -> str:
         s = self._generate_attributes(n.attributes) + " " if n.attributes else ""
         s += "default:\n"
-        return s + self._generate_body(n.stmts, add_indent=True)
+        return s + self._generate_body(n.stmts or [], add_indent=True)
 
     def visit_Label(self, n: c_ast.Label) -> str:
         s = self._generate_attributes(n.attributes) + " " if n.attributes else ""

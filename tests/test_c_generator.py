@@ -213,6 +213,25 @@ class TestCtoC(unittest.TestCase):
         c, d = default.stmts[1:3]
         self.assertIs(declared_type(c), declared_type(d))
 
+    def test_switch_none_statement_lists(self):
+        ast = parse_to_ast("""
+            void f(int n) {
+                switch (n) {
+                case 0:
+                default:
+                case 1:
+                    break;
+                }
+            }
+        """)
+        # Issue #375: ASTs restored from JSON may use None for empty bodies.
+        case, default, _ = ast.ext[0].body.block_items[0].stmt.block_items
+        case.stmts = None
+        default.stmts = None
+
+        generated = c_generator.CGenerator().visit(ast)
+        self.assertTrue(compare_asts(ast, parse_to_ast(generated)))
+
     def test_switch_separate_type_definitions(self):
         src = """
             void f(int n) {
