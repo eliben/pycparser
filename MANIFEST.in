@@ -4,5 +4,5 @@ recursive-include pycparser *.py *.cfg
 recursive-include utils/fake_libc_include *.h
 include README.*
 include LICENSE
-include CHANGES
+include OLDER_CHANGES
 include setup.*
