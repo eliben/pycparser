@@ -58,6 +58,37 @@ class TestParsing(unittest.TestCase):
         self.assertIsInstance(ast2, c_ast.FileAST)
 
     @unittest.skipUnless(cpp_supported(), "cpp only works on Unix")
+    def test_va_arg_preserves_type(self):
+        # Issue #533: preprocessing with the fake headers must retain the type.
+        fake_libc = os.path.join(
+            os.path.dirname(__file__), "..", "utils", "fake_libc_include"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            filename = os.path.join(directory, "va_arg.c")
+            with open(filename, "w", encoding="utf-8") as source:
+                source.write("""
+                    #include <stdarg.h>
+                    int f(int first, ...) {
+                        va_list ap;
+                        va_start(ap, first);
+                        int value = va_arg(ap, int);
+                        va_end(ap);
+                        return value;
+                    }
+                """)
+            ast = parse_file(
+                filename,
+                use_cpp=True,
+                cpp_path=cpp_path(),
+                cpp_args=cpp_args(["-nostdinc", f"-I{fake_libc}"]),
+            )
+        call = ast.ext[-1].body.block_items[2].init
+        self.assertEqual(call.name.name, "__builtin_va_arg")
+        self.assertEqual(len(call.args.exprs), 2)
+        self.assertIsInstance(call.args.exprs[1], c_ast.Typename)
+        self.assertEqual(call.args.exprs[1].type.type.names, ["int"])
+
+    @unittest.skipUnless(cpp_supported(), "cpp only works on Unix")
     def test_cpp_funkydir(self):
         # This test contains Windows specific path escapes
         if sys.platform != "win32":

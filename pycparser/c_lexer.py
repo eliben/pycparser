@@ -516,6 +516,7 @@ _keywords: tuple[str, ...] = (
     "VOID",
     "VOLATILE",
     "WHILE",
+    "__BUILTIN_VA_ARG",
     "__INT128",
     "_BOOL",
     "_COMPLEX",

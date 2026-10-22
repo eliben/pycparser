@@ -280,6 +280,17 @@ class TestCtoC(unittest.TestCase):
             void f(void) { for (P p = 0, q = 0; ;) {} }
         """)
 
+    def test_builtin_va_arg(self):
+        self._assert_ctoc_correct("""
+            typedef void *va_list;
+            typedef int T;
+            void f(va_list ap) {
+                int n = __builtin_va_arg(ap, int);
+                const T *p = __builtin_va_arg(ap, const T *);
+                __builtin_va_arg(ap, int (*)(int))(n);
+            }
+        """)
+
     def test_alignment(self):
         self._assert_ctoc_correct("_Alignas(32) int b;")
         self._assert_ctoc_correct("int _Alignas(32) a;")

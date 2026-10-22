@@ -2141,6 +2141,8 @@ class CParser:
     # BNF: primary_expression : ID | constant | string_literal
     #                        | '(' expression ')' | generic_selection | offsetof
     #                        | '(' compound_statement ')'
+    #                        | '__builtin_va_arg' '('
+    #                          assignment_expression ',' type_name ')'
     def _parse_primary_expression(self) -> c_ast.Node:
         tok_type = self._peek_type()
         if tok_type == "ID":
@@ -2166,6 +2168,19 @@ class CParser:
             return expr
         if tok_type == "_GENERIC":
             return self._parse_generic_selection()
+        if tok_type == "__BUILTIN_VA_ARG":
+            tok = self._advance()
+            self._expect("LPAREN")
+            expr = self._parse_assignment_expression()
+            self._expect("COMMA")
+            typ = self._parse_type_name()
+            self._expect("RPAREN")
+            coord = self._tok_coord(tok)
+            return c_ast.FuncCall(
+                c_ast.ID(tok.value, coord),
+                c_ast.ExprList([expr, typ], coord),
+                coord,
+            )
         if tok_type == "OFFSETOF":
             off_tok = self._advance()
             self._expect("LPAREN")
@@ -2607,6 +2622,7 @@ _EXPR_START = {
     "_ALIGNOF",
     "_GENERIC",
     "OFFSETOF",
+    "__BUILTIN_VA_ARG",
 }
 
 _INT_CONST = {

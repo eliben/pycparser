@@ -205,7 +205,7 @@
 
 /* va_arg macros and type*/
 #define va_start(_ap, _type) __builtin_va_start((_ap))
-#define va_arg(_ap, _type) __builtin_va_arg((_ap))
+#define va_arg(_ap, _type) __builtin_va_arg((_ap), _type)
 #define va_end(_list)
 
 /* Vectors */

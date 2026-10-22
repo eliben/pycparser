@@ -1390,6 +1390,33 @@ class TestCParser_fundamentals(TestCParser_base):
             ],
         )
 
+    def test_builtin_va_arg(self):
+        # Issue #533: the second argument is a type, including typedef names.
+        ast = self.parse("""
+            typedef void *va_list;
+            typedef int T;
+            void f(va_list ap) {
+                __builtin_va_arg(ap, int);
+                __builtin_va_arg(ap, const T *);
+            }
+        """)
+        scalar, pointer = ast.ext[2].body.block_items
+        self.assertIsInstance(scalar, FuncCall)
+        self.assertEqual(scalar.name.name, "__builtin_va_arg")
+        self.assertIsInstance(scalar.args.exprs[0], ID)
+        self.assertEqual(scalar.args.exprs[0].name, "ap")
+        self.assertIsInstance(scalar.args.exprs[1], Typename)
+        self.assertEqual(scalar.args.exprs[1].type.type.names, ["int"])
+        typ = pointer.args.exprs[1]
+        self.assertIsInstance(typ, Typename)
+        self.assertIsInstance(typ.type, PtrDecl)
+        self.assertEqual(typ.type.type.quals, ["const"])
+        self.assertEqual(typ.type.type.type.names, ["T"])
+
+    def test_function_call_rejects_type_argument(self):
+        with self.assertRaises(ParseError):
+            self.parse("void f(void) { foo(int); }")
+
     def test_offsetof(self):
         def expand_ref(n):
             if isinstance(n, StructRef):
