@@ -177,6 +177,32 @@ The public interface of **pycparser** is well documented with comments in
 ``pycparser/c_parser.py``. For a detailed overview of the various AST nodes
 created by the parser, see ``pycparser/_c_ast.cfg``.
 
+The root node is a ``FileAST``, whose ``ext`` attribute is a list of top-level
+declarations and function definitions. Explore nodes through their named fields,
+and use ``show()`` on a subtree to inspect just that part of the AST::
+
+    from pycparser import CParser
+
+    ast = CParser().parse("int x; int f(void) { return x; }")
+    print(len(ast.ext))  # 2
+    func = ast.ext[1]
+    func.body.show()
+
+For generic exploration, call ``children()`` to get a tuple of ``(field_name,
+child_node)`` pairs for the immediate children. The tuple supports length and
+indexing directly::
+
+    children = func.children()
+    print(len(children))  # 2: decl and body
+    name, child = children[0]
+    print(name)  # decl
+    child.show()
+
+Iterating over a node directly (``for child in node``) yields just the child
+nodes, without their names. For a guided walkthrough, see
+`examples/explore_ast.py <examples/explore_ast.py>`_; for recursive traversal,
+see the ``NodeVisitor`` example in `examples/func_defs.py <examples/func_defs.py>`_.
+
 There's also a `FAQ available here <https://github.com/eliben/pycparser/wiki/FAQ>`_.
 In any case, you can always drop me an `email <eliben@gmail.com>`_ for help.
 

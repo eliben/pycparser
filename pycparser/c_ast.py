@@ -67,7 +67,13 @@ class Node:
         return result
 
     def children(self):
-        """A sequence of all children that are Nodes"""
+        """Return a tuple of (name, child) pairs for immediate child nodes.
+
+        Names identify the field and, for list fields, the index, such as
+        "type" or "ext[0]". Optional children that are None are omitted.
+        The returned tuple supports len() and indexing. Iterating over the
+        node itself yields just the child nodes, without their names.
+        """
 
     def show(
         self,
