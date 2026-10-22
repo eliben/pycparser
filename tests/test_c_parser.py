@@ -6675,6 +6675,56 @@ class TestCParser_typenames(TestCParser_base):
             """
         self.assertIsInstance(self.parse(s1), FileAST)
 
+    def test_enumerator_reuse_typedef_name(self):
+        # An enumerator in an inner scope shadows the typedef; the typedef is
+        # visible again after the block.
+        s = r"""
+            typedef char TT;
+            void foo(void) {
+              {
+                enum { TT = sizeof(TT) };
+                int x = TT * 2;
+              }
+              TT *y;
+            }
+            """
+        block, decl = self.parse(s).ext[1].body.block_items
+        enum, x = block.block_items
+        self.assertEqual(enum.type.values.enumerators[0].name, "TT")
+        self.assertEqual(
+            expand_init(enum.type.values.enumerators[0].value),
+            [
+                "UnaryOp",
+                "sizeof",
+                ["Typename", ["TypeDecl", ["IdentifierType", ["TT"]]]],
+            ],
+        )
+        self.assertEqual(
+            expand_init(x.init),
+            ["BinaryOp", ["ID", "TT"], "*", ["Constant", "int", "2"]],
+        )
+        self.assertEqual(
+            expand_decl(decl),
+            ["Decl", "y", ["PtrDecl", ["TypeDecl", ["IdentifierType", ["TT"]]]]],
+        )
+
+    def test_label_reuse_typedef_name(self):
+        # Labels have their own name space.
+        s = r"""
+            typedef char TT;
+            void foo(int a) {
+              goto TT;
+            TT:
+              if (a) TT: a++;
+            }
+            """
+        goto, label = self.parse(s).ext[1].body.block_items
+        self.assertEqual(goto.name, "TT")
+        self.assertIsInstance(label, Label)
+        self.assertEqual(label.name, "TT")
+        self.assertIsInstance(label.stmt.iftrue, Label)
+        self.assertEqual(label.stmt.iftrue.name, "TT")
+
     def test_for_loop_reuse_typedef_name(self):
         # Looking for an else peeks at TT while the loop's TT is still visible.
         s = """
