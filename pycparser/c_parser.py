@@ -157,6 +157,25 @@ class CParser:
         self._scope_stack[-1][name] = False
         self._typedef_checked_token = None
 
+    def _add_declarator_name(self, spec: "_DeclSpec", decl: c_ast.Node) -> None:
+        """Record a declarator's name as soon as the declarator is complete.
+
+        An identifier's scope begins just after its declarator (C11 6.2.1p7),
+        so the name must be visible to its own initializer and to the
+        following declarators of the same declaration, e.g. the T in
+        "int T, x = T * 2;" or "typedef int T, f(T x);".
+        _build_declarations records the names again once all are parsed.
+        """
+        tail = cast(Any, decl)
+        while not isinstance(tail, c_ast.TypeDecl):
+            tail = tail.type
+        if tail.declname is None:
+            return
+        if "typedef" in spec["storage"]:
+            self._add_typedef_name(tail.declname, tail.coord)
+        else:
+            self._add_identifier(tail.declname, tail.coord)
+
     def _is_type_in_scope(self, name: str) -> bool:
         """Is *name* a typedef-name in the current scope?"""
         for scope in reversed(self._scope_stack):
@@ -856,10 +875,11 @@ class CParser:
                 spec["type"] = [c_ast.IdentifierType(["int"], coord=spec_coord)]
             return [self._parse_function_definition(spec, decl)]
 
+        self._add_declarator_name(spec, decl)
         decl_dict: _DeclInfo = {"decl": decl}
         if self._accept("EQUALS"):
             decl_dict["init"] = self._parse_initializer()
-        decls = self._parse_init_declarator_list(first=decl_dict)
+        decls = self._parse_init_declarator_list(spec, first=decl_dict)
         decls = self._build_declarations(spec=spec, decls=decls, typedef_namespace=True)
         return self._parse_declaration_end(decls)
 
@@ -932,10 +952,10 @@ class CParser:
         decl_infos: list[_DeclInfo] | None = None
         if saw_type:
             if self._starts_declarator():
-                decl_infos = self._parse_init_declarator_list()
+                decl_infos = self._parse_init_declarator_list(spec)
         else:
             if self._starts_declarator(id_only=True):
-                decl_infos = self._parse_init_declarator_list(id_only=True)
+                decl_infos = self._parse_init_declarator_list(spec, id_only=True)
 
         decls: list[c_ast.Node]
         if decl_infos is None:
@@ -1159,21 +1179,27 @@ class CParser:
 
     # BNF: init_declarator_list : init_declarator (',' init_declarator)*
     def _parse_init_declarator_list(
-        self, first: Optional["_DeclInfo"] = None, id_only: bool = False
+        self,
+        spec: "_DeclSpec",
+        first: Optional["_DeclInfo"] = None,
+        id_only: bool = False,
     ) -> list["_DeclInfo"]:
         decls = (
             [first]
             if first is not None
-            else [self._parse_init_declarator(id_only=id_only)]
+            else [self._parse_init_declarator(spec, id_only=id_only)]
         )
 
         while self._accept("COMMA"):
-            decls.append(self._parse_init_declarator(id_only=id_only))
+            decls.append(self._parse_init_declarator(spec, id_only=id_only))
         return decls
 
     # BNF: init_declarator : declarator ('=' initializer)?
-    def _parse_init_declarator(self, id_only: bool = False) -> "_DeclInfo":
+    def _parse_init_declarator(
+        self, spec: "_DeclSpec", id_only: bool = False
+    ) -> "_DeclInfo":
         decl = self._parse_id_declarator() if id_only else self._parse_declarator()
+        self._add_declarator_name(spec, decl)
         if self._accept("EQUALS"):
             return {"decl": decl, "init": self._parse_initializer()}
         return {"decl": decl}

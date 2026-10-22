@@ -6596,11 +6596,43 @@ class TestCParser_typenames(TestCParser_base):
             ["Decl", "uu", ["TypeDecl", ["IdentifierType", ["int"]]]],
         )
 
-        # Don't test this until we have support for it
-        # self.assertEqual(expand_init(items[0].init),
-        #     ['UnaryOp', 'sizeof', ['Typename', ['TypeDecl', ['IdentifierType', ['TT']]]]])
-        # self.assertEqual(expand_init(items[2].init),
-        #     ['UnaryOp', 'sizeof', ['ID', 'TT']])
+        self.assertEqual(
+            expand_init(items[0].init),
+            [
+                "UnaryOp",
+                "sizeof",
+                ["Typename", ["TypeDecl", ["IdentifierType", ["TT"]]]],
+            ],
+        )
+        self.assertEqual(
+            expand_init(items[2].init), ["UnaryOp", "sizeof", ["ID", "TT"]]
+        )
+
+        # a name declared earlier in a declaration is in scope for the rest
+        s9 = r"""
+            typedef char TT;
+            void foo(void) {
+                int x, TT, uu = TT * 2;
+            }
+            typedef int T, f(T x);
+            """
+        s9_ast = self.parse(s9)
+        self.assertEqual(
+            expand_init(s9_ast.ext[1].body.block_items[2].init),
+            ["BinaryOp", ["ID", "TT"], "*", ["Constant", "int", "2"]],
+        )
+        self.assertEqual(
+            expand_decl(s9_ast.ext[3]),
+            [
+                "Typedef",
+                "f",
+                [
+                    "FuncDecl",
+                    [["Decl", "x", ["TypeDecl", ["IdentifierType", ["T"]]]]],
+                    ["TypeDecl", ["IdentifierType", ["int"]]],
+                ],
+            ],
+        )
 
     def test_parameter_reuse_typedef_name(self):
         # Parameter names shadow typedef names inside the body; the outer
