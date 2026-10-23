@@ -563,9 +563,13 @@ class CParser:
         tok_type = self._peek_type()
         if tok_type is None:
             return False
-        if tok_type in _STARTS_STATEMENT:
+        if tok_type in _STARTS_STATEMENT or self._starts_label():
             return True
         return self._starts_expression()
+
+    def _starts_label(self) -> bool:
+        # Labels have their own name space, so a typedef name can be a label.
+        return self._peek_type() in {"ID", "TYPEID"} and self._peek_type(2) == "COLON"
 
     def _starts_declarator(self, id_only: bool = False) -> bool:
         tok_type = self._peek_type()
@@ -1377,16 +1381,17 @@ class CParser:
 
     # BNF: enumerator : ID ('=' constant_expression)?
     def _parse_enumerator(self) -> c_ast.Node:
-        name_tok = self._expect("ID")
+        # An enumerator may shadow a typedef name from an enclosing scope.
+        name = self._parse_identifier_or_typeid()
         attributes = self._parse_attribute_specifier_sequence()
         if self._accept("EQUALS"):
             value = self._parse_constant_expression()
         else:
             value = None
         enum = c_ast.Enumerator(
-            name_tok.value,
+            name.name,
             value,
-            self._tok_coord(name_tok),
+            name.coord,
             attributes=attributes,
         )
         self._add_identifier(enum.name, enum.coord)
@@ -1749,7 +1754,7 @@ class CParser:
         match tok_type:
             case "CASE" | "DEFAULT":
                 return self._parse_labeled_statement()
-            case "ID" if self._peek_type(2) == "COLON":
+            case "ID" | "TYPEID" if self._peek_type(2) == "COLON":
                 return self._parse_labeled_statement()
             case "LBRACE":
                 return self._parse_compound_statement()
@@ -1778,14 +1783,14 @@ class CParser:
             attributes = self._parse_attribute_specifier_sequence()
             if self._accept("SEMI"):
                 return c_ast.AttributeDeclaration(attributes, attributes[0].coord)
-            if self._starts_declaration():
+            if self._starts_declaration() and not self._starts_label():
                 return self._attribute_declarations(
                     self._parse_declaration(), attributes
                 )
             return self._attribute_statement(self._parse_statement(), attributes)
         if self._peek_type() == "_STATIC_ASSERT":
             return self._parse_static_assert()
-        if self._starts_declaration():
+        if self._starts_declaration() and not self._starts_label():
             return self._parse_declaration()
         return self._parse_statement()
 
@@ -1821,7 +1826,7 @@ class CParser:
     def _parse_labeled_statement(self) -> c_ast.Node:
         tok_type = self._peek_type()
         match tok_type:
-            case "ID":
+            case "ID" | "TYPEID":
                 name_tok = self._advance()
                 self._expect("COLON")
                 if self._starts_statement():
@@ -1925,9 +1930,9 @@ class CParser:
         tok = self._advance()
         match tok.type:
             case "GOTO":
-                name_tok = self._expect("ID")
+                name = self._parse_identifier_or_typeid()
                 self._expect("SEMI")
-                return c_ast.Goto(name_tok.value, self._tok_coord(tok))
+                return c_ast.Goto(name.name, self._tok_coord(tok))
             case "BREAK":
                 self._expect("SEMI")
                 return c_ast.Break(self._tok_coord(tok))
