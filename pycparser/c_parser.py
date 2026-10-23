@@ -417,6 +417,10 @@ class CParser:
         for decl in decls:
             assert decl["decl"] is not None
             if is_typedef:
+                if decl.get("init") is not None:
+                    self._parse_error(
+                        "Invalid initializer for typedef", decl["decl"].coord
+                    )
                 declaration = c_ast.Typedef(
                     name=None,
                     quals=spec["qual"],
