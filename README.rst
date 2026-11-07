@@ -203,6 +203,44 @@ nodes, without their names. For a guided walkthrough, see
 `examples/explore_ast.py <examples/explore_ast.py>`_; for recursive traversal,
 see the ``NodeVisitor`` example in `examples/func_defs.py <examples/func_defs.py>`_.
 
+Source coordinates
+~~~~~~~~~~~~~~~~~~
+
+Parsed nodes have an ``endcoord`` attribute giving the exclusive end of their
+source syntax: the position immediately after its last character. Like
+``coord``, it is a ``Coord`` with a file name and one-based line and character
+column. For example::
+
+    ast = CParser().parse('int x = "asdf";', filename="example.c")
+    literal = ast.ext[0].init
+    print(literal.coord)     # example.c:1:9
+    print(literal.endcoord)  # example.c:1:15
+
+End positions use the original token spelling, including escapes, adjacent
+string literals, and closing delimiters. They exclude whitespace between tokens;
+a pragma's opaque payload retains any whitespace at the end of its directive.
+``#line`` directives affect both coordinates; a node spanning different
+logical files can have different start and end file names.
+
+Each declaration ends after its own declarator, initializer or bit-field width,
+before the separating comma or semicolon. Expression nodes exclude an enclosing
+expression statement's semicolon and parentheses that have no node of their own.
+Nodes for complete statements, such as ``Return`` and ``Compound``, include their
+closing semicolon or brace. Case nodes end with the last statement grouped under
+them; a fall-through label ends after its colon.
+
+The existing ``coord`` values are unchanged. They are not always the start of
+the entire syntax: for example, a declaration's ``coord`` points to its
+declarator, and an expression's ``coord`` can exclude leading parentheses.
+Consequently these coordinates are useful for diagnostics, but do not constitute
+a lossless source representation or a mapping back through macro expansion.
+
+Manually constructed nodes and implicit nodes without source syntax have
+``endcoord=None``. Node constructors accept ``endcoord`` as an optional
+keyword-only argument. It is metadata, excluded from child traversal,
+``attr_names``, ``repr()`` and ``show()``. Pickle and the JSON example preserve it;
+the JSON reader also accepts older data without end coordinates.
+
 There's also a `FAQ available here <https://github.com/eliben/pycparser/wiki/FAQ>`_.
 In any case, you can always drop me an `email <eliben@gmail.com>`_ for help.
 

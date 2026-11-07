@@ -73,11 +73,14 @@ def fix_switch_cases(switch_node: c_ast.Switch) -> c_ast.Switch:
         switch_node.stmt = attributed
         return switch_node
     if not isinstance(switch_node.stmt, c_ast.Compound):
+        _set_case_endcoords(switch_node.stmt)
         return switch_node
 
     # The new Compound child for the Switch, which will collect children in the
     # correct order
-    new_compound = c_ast.Compound([], switch_node.stmt.coord)
+    new_compound = c_ast.Compound(
+        [], switch_node.stmt.coord, endcoord=switch_node.stmt.endcoord
+    )
 
     # The last Case/Default node
     last_case: c_ast.Case | c_ast.Default | None = None
@@ -102,8 +105,28 @@ def fix_switch_cases(switch_node: c_ast.Switch) -> c_ast.Switch:
             else:
                 last_case.stmts.append(child)
 
+    _set_case_endcoords(new_compound)
+
     switch_node.stmt = new_compound
     return switch_node
+
+
+def _set_case_endcoords(stmt: c_ast.Node) -> None:
+    # Case labels can occur inside other statements, or form the entire body
+    # of a switch without braces. Update children before parents, retaining the
+    # colon endpoint on labels made empty by fall-through normalization.
+    pending = [stmt]
+    cases = []
+    while pending:
+        node = pending.pop()
+        if isinstance(node, c_ast.Switch):
+            continue  # An inner switch has already normalized its own cases.
+        if isinstance(node, (c_ast.Case, c_ast.Default)):
+            cases.append(node)
+        pending.extend(child for _, child in node.children())
+    for case in reversed(cases):
+        if case.stmts and case.stmts[-1].endcoord is not None:
+            case.endcoord = case.stmts[-1].endcoord
 
 
 def _extract_nested_case(
@@ -192,6 +215,7 @@ def _fix_atomic_specifiers_once(
         # Preserve the declarator coord for _Atomic(T) so TypeDecl doesn't lose
         # its location when we replace the wrapper Typename.
         typ.coord = parent.coord
+        typ.endcoord = parent.endcoord
     # Qualifiers outside _Atomic(T) apply to T itself. In particular, const in
     # const _Atomic(int *) qualifies the pointer, not the pointed-to int.
     typ.quals = parent.quals + typ.quals

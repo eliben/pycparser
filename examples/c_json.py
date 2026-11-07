@@ -104,6 +104,8 @@ def to_dict(node: c_ast.Node) -> dict[str, Any]:
     else:
         result["coord"] = None
 
+    result["endcoord"] = str(node.endcoord) if node.endcoord else None
+
     # Child attributes
     for child_name, child in node.children():
         # Child strings are either simple (e.g. 'value') or arrays (e.g. 'block_items[1]')
@@ -186,7 +188,7 @@ def from_dict(node_dict: dict[str, Any]) -> c_ast.Node:
     # to node constructors.
     objs = {}
     for key, value in node_dict.items():
-        if key == "coord":
+        if key in {"coord", "endcoord"}:
             objs[key] = _parse_coord(value)
         else:
             objs[key] = _convert_to_obj(value)

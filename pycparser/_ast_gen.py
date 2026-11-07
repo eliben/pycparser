@@ -115,9 +115,9 @@ class NodeCfg:
         # Defaulted fields are keyword-only so adding one doesn't shift coord
         # in existing positional calls. Both supported defaults use None here;
         # list defaults are initialized separately for each instance below.
-        if self.defaults:
-            args.append("*")
-            args.extend(f"{name}=None" for name in self.defaults)
+        args.append("*")
+        args.extend(f"{name}=None" for name in self.defaults)
+        args.append("endcoord=None")
         arglist = f"({', '.join(args)})"
 
         # Keep coord and __weakref__ last: Node.__repr__ relies on their
@@ -128,7 +128,7 @@ class NodeCfg:
         src += f"    __slots__ = ({slots})\n"
         src += f"    def __init__{arglist}:\n"
 
-        for name in self.all_entries + ["coord"]:
+        for name in self.all_entries + ["coord", "endcoord"]:
             if self.defaults.get(name) == "[]":
                 src += f"        self.{name} = [] if {name} is None else {name}\n"
             else:
@@ -216,11 +216,13 @@ def _repr(obj):
         return repr(obj)
 
 class Node:
-    __slots__ = ()
+    # Inherited storage keeps subclass field lists and repr unchanged.
+    __slots__ = ("endcoord",)
     """ Abstract base class for AST nodes.
     """
     attr_names: ClassVar[tuple[str, ...]] = ()
     coord: Any | None
+    endcoord: Any | None
     def __repr__(self):
         """ Generates a python representation of the current node
         """
