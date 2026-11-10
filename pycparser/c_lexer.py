@@ -157,20 +157,41 @@ class CLexer:
         """
         text = self._lexdata
         pos = self._pos
+        char = text[pos]
         # Attribute arguments are balanced token sequences, not C expressions.
         # Keep them opaque so the parser does not interpret their contents as
         # C expressions or declarations.
         if self._in_attribute:
-            if text[pos] == "(":
+            if char == "(":
                 return self._attribute_arguments()
             if match := _attribute_end.match(text, pos):
                 self._in_attribute = False
                 return self._attribute_token("ATTRIBUTE_END", match.end())
         # Only run regexp check if we are starting an attribute, to avoid
         # costly regex matching for every token.
-        elif text[pos] == "[" and (match := _attribute_begin.match(text, pos)):
+        elif char == "[" and (match := _attribute_begin.match(text, pos)):
             self._in_attribute = True
             return self._attribute_token("ATTRIBUTE_BEGIN", match.end())
+        # An identifier start other than a literal prefix (L, u, U) can only
+        # begin an identifier or keyword, so match it without the master regex.
+        if char in _identifier_only_first_chars:
+            m = _identifier_pattern.match(text, pos)
+            assert m is not None
+            end = m.end()
+            value = text[pos:end]
+            tok_type = (
+                "ID" if self._in_attribute else self._keyword_map.get(value, "ID")
+            )
+            tok = self._make_token(tok_type, value, pos)
+            self._pos = end
+            return tok
+        # A plain string literal can't also match BAD_STRING_LITERAL, the only
+        # master-regex alternative before it that can start with '"'. Match it
+        # directly to skip the costly failed attempt at a bad escape.
+        if char == '"' and (m := _string_literal_pattern.match(text, pos)):
+            tok = self._make_token("STRING_LITERAL", m.group(), pos)
+            self._pos = m.end()
+            return tok
         # We pick the longest match between:
         # - the master regex (identifiers, literals, error patterns, etc.)
         # - fixed operator/punctuator literals from the bucket for text[pos]
@@ -185,7 +206,7 @@ class CLexer:
         # token that should take precedence.
         best = None
 
-        if m := _regex_master.match(text, pos):
+        if char in _regex_first_chars and (m := _regex_master.match(text, pos)):
             tok_type = m.lastgroup
             # All master-regex alternatives are named; lastgroup shouldn't be None.
             assert tok_type is not None
@@ -194,7 +215,7 @@ class CLexer:
             action, msg = _regex_actions[tok_type]
             best = (length, tok_type, value, action, msg)
 
-        if bucket := _fixed_tokens_by_first.get(text[pos]):
+        if bucket := _fixed_tokens_by_first.get(char):
             for entry in bucket:
                 if text.startswith(entry.literal, pos):
                     length = len(entry.literal)
@@ -209,7 +230,7 @@ class CLexer:
                     break
 
         if best is None:
-            self._error(f"Illegal character {text[pos]!r}", pos)
+            self._error(f"Illegal character {char!r}", pos)
             self._pos += 1
             return None
 
@@ -788,6 +809,17 @@ for _rule in _regex_rules:
 # `lastgroup` to recover which token kind fired; this avoids iterating over all
 # regexes on every character while keeping the same token-level semantics.
 _regex_master: re.Pattern[str] = re.compile("|".join(_regex_pattern_parts))
+_identifier_pattern: re.Pattern[str] = re.compile(_identifier)
+_string_literal_pattern: re.Pattern[str] = re.compile(_string_literal)
+# Identifier start characters that cannot begin a literal prefix (L, u, U).
+_identifier_only_first_chars = frozenset(
+    "abcdefghijklmnopqrstvwxyzABCDEFGHIJKMNOPQRSTVWXYZ_$"
+)
+# Every master-regex alternative starts with one of these characters. Other
+# characters (most punctuators) can skip the regex and go to the fixed tokens.
+_regex_first_chars = frozenset(
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$.'\"/"
+)
 
 
 @dataclass(frozen=True)
