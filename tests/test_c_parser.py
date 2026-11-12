@@ -1252,6 +1252,11 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertRaises(ParseError, self.parse, "void f(typedef int);")
         self.assertRaises(ParseError, self.parse, "void f(int a, typedef int *p);")
 
+    def test_typedef_with_initializer(self):
+        self.assertRaises(ParseError, self.parse, "typedef int x = 1;")
+        self.assertRaises(ParseError, self.parse, "typedef int a, b = 2;")
+        self.assertRaises(ParseError, self.parse, "void f(void) { typedef int t = 5; }")
+
     def test_atomic_specifier_qualifiers(self):
         decl = self.parse("const _Atomic(volatile int *) p;").ext[0]
         # The outer const qualifies the atomic pointer, while volatile stays
