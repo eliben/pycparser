@@ -579,9 +579,9 @@ class CParser:
 
     def _peek_declarator_name_info(self) -> tuple[str | None, bool]:
         mark = self._mark()
-        tok_type, saw_paren = self._scan_declarator_name_info()
+        tok_type, after_lparen = self._scan_declarator_name_info()
         self._reset(mark)
-        return tok_type, saw_paren
+        return tok_type, after_lparen
 
     def _parse_any_declarator(
         self, allow_abstract: bool = False, typeid_paren_as_abstract: bool = False
@@ -590,9 +590,10 @@ class CParser:
         #   int foo(int (aa));   -> aa is a name (ID)
         #   typedef char TT;
         #   int bar(int (TT));   -> TT is a type (TYPEID) in parens
-        name_type, saw_paren = self._peek_declarator_name_info()
+        #   int baz(int (*TT));  -> TT is a name; a type can't follow '*'
+        name_type, after_lparen = self._peek_declarator_name_info()
         if name_type is None or (
-            typeid_paren_as_abstract and name_type == "TYPEID" and saw_paren
+            typeid_paren_as_abstract and name_type == "TYPEID" and after_lparen
         ):
             if not allow_abstract:
                 tok = self._peek()
@@ -602,38 +603,36 @@ class CParser:
             return decl, False
 
         if name_type == "TYPEID":
-            if typeid_paren_as_abstract:
-                decl = self._parse_typeid_noparen_declarator()
-            else:
-                decl = self._parse_typeid_declarator()
+            decl = self._parse_typeid_declarator()
         else:
             decl = self._parse_id_declarator()
         return decl, True
 
-    def _scan_declarator_name_info(self) -> tuple[str | None, bool]:
-        saw_paren = False
+    def _scan_declarator_name_info(
+        self, after_lparen: bool = False
+    ) -> tuple[str | None, bool]:
+        """Scan to the declarator's name and return its token type and whether
+        the name directly follows a '('."""
         while self._accept("TIMES"):
+            after_lparen = False
             self._parse_attribute_specifier_sequence()
             while self._peek_type() in _TYPE_QUALIFIER:
                 self._advance()
 
         tok = self._peek()
         if tok is None:
-            return None, saw_paren
+            return None, False
         if tok.type in {"ID", "TYPEID"}:
             self._advance()
-            return tok.type, saw_paren
+            return tok.type, after_lparen
         if tok.type == "LPAREN":
-            saw_paren = True
             self._advance()
-            tok_type, nested_paren = self._scan_declarator_name_info()
-            if nested_paren:
-                saw_paren = True
+            tok_type, after_lparen = self._scan_declarator_name_info(True)
             depth = 1
             while True:
                 tok = self._peek()
                 if tok is None:
-                    return None, saw_paren
+                    return None, after_lparen
                 if tok.type == "LPAREN":
                     depth += 1
                 elif tok.type == "RPAREN":
@@ -643,8 +642,8 @@ class CParser:
                         break
                     continue
                 self._advance()
-            return tok_type, saw_paren
-        return None, saw_paren
+            return tok_type, after_lparen
+        return None, False
 
     def _starts_direct_abstract_declarator(self) -> bool:
         return self._peek_type() in {"LPAREN", "LBRACKET"}
@@ -1410,10 +1409,6 @@ class CParser:
     # BNF: typeid_declarator : declarator with TYPEID name
     def _parse_typeid_declarator(self) -> c_ast.Node:
         return self._parse_declarator_kind(kind="typeid", allow_paren=True)
-
-    # BNF: typeid_noparen_declarator : declarator without parenthesized name
-    def _parse_typeid_noparen_declarator(self) -> c_ast.Node:
-        return self._parse_declarator_kind(kind="typeid", allow_paren=False)
 
     # BNF: declarator_kind : pointer? direct_declarator(kind)
     def _parse_declarator_kind(self, kind: str, allow_paren: bool) -> c_ast.Node:

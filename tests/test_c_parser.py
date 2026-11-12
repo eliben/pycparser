@@ -6459,6 +6459,60 @@ class TestCParser_typenames(TestCParser_base):
             ],
         )
 
+    def test_typedef_name_as_parenthesized_parameter_name(self):
+        # The typedef-name rule above only applies when the name directly
+        # follows '('. After a '*' a type name can't appear, so TT is the
+        # parameter's name.
+        s1 = r"""
+        typedef char TT;
+        int foo(void (*TT)(void));
+        int bar(int (* const TT[2]));
+        TT x;
+        """
+        s1_ast = self.parse(s1)
+        self.assertEqual(
+            expand_decl(s1_ast.ext[1].type.args.params[0]),
+            [
+                "Decl",
+                "TT",
+                [
+                    "PtrDecl",
+                    [
+                        "FuncDecl",
+                        [["Typename", ["TypeDecl", ["IdentifierType", ["void"]]]]],
+                        ["TypeDecl", ["IdentifierType", ["void"]]],
+                    ],
+                ],
+            ],
+        )
+        self.assertEqual(
+            expand_decl(s1_ast.ext[2].type.args.params[0]),
+            [
+                "Decl",
+                "TT",
+                [
+                    "ArrayDecl",
+                    "2",
+                    [],
+                    ["PtrDecl", ["const"], ["TypeDecl", ["IdentifierType", ["int"]]]],
+                ],
+            ],
+        )
+        self.assertEqual(
+            expand_decl(s1_ast.ext[3]),
+            ["Decl", "x", ["TypeDecl", ["IdentifierType", ["TT"]]]],
+        )
+
+        # In a definition the parameter hides the typedef in the body.
+        s2 = r"""
+        typedef char TT;
+        void foo(void (*TT)(void)) {
+          TT();
+        }
+        """
+        s2_ast = self.parse(s2)
+        self.assertIsInstance(s2_ast.ext[1].body.block_items[0], FuncCall)
+
     def test_innerscope_reuse_typedef_name(self):
         # identifiers can be reused in inner scopes; the original should be
         # restored at the end of the block
