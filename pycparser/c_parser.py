@@ -1404,18 +1404,18 @@ class CParser:
 
     # BNF: id_declarator : declarator with ID name
     def _parse_id_declarator(self) -> c_ast.Node:
-        return self._parse_declarator_kind(kind="id", allow_paren=True)
+        return self._parse_declarator_kind(kind="id")
 
     # BNF: typeid_declarator : declarator with TYPEID name
     def _parse_typeid_declarator(self) -> c_ast.Node:
-        return self._parse_declarator_kind(kind="typeid", allow_paren=True)
+        return self._parse_declarator_kind(kind="typeid")
 
     # BNF: declarator_kind : pointer? direct_declarator(kind)
-    def _parse_declarator_kind(self, kind: str, allow_paren: bool) -> c_ast.Node:
+    def _parse_declarator_kind(self, kind: str) -> c_ast.Node:
         ptr = None
         if self._peek_type() == "TIMES":
             ptr = self._parse_pointer()
-        direct = self._parse_direct_declarator(kind, allow_paren=allow_paren)
+        direct = self._parse_direct_declarator(kind)
         if ptr is not None:
             return self._type_modify_decl(direct, ptr)
         return direct
@@ -1423,11 +1423,9 @@ class CParser:
     # BNF: direct_declarator : ID | TYPEID | '(' declarator ')'
     #                        | direct_declarator '[' ... ']'
     #                        | direct_declarator '(' ... ')'
-    def _parse_direct_declarator(
-        self, kind: str, allow_paren: bool = True
-    ) -> c_ast.Node:
-        if allow_paren and self._accept("LPAREN"):
-            decl = self._parse_declarator_kind(kind, allow_paren=True)
+    def _parse_direct_declarator(self, kind: str) -> c_ast.Node:
+        if self._accept("LPAREN"):
+            decl = self._parse_declarator_kind(kind)
             self._expect("RPAREN")
         else:
             if kind == "id":
