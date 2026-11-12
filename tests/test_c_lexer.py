@@ -846,7 +846,13 @@ class TestCLexerFastPaths(unittest.TestCase):
     def test_identifier_only_first_chars(self):
         from pycparser import c_lexer
 
+        # These characters must start an identifier and no competing token. The
+        # positive check catches invalid starts such as '@', which match no
+        # token rule and would therefore pass all the negative checks.
         for char in c_lexer._identifier_only_first_chars:
+            self.assertIsNotNone(
+                c_lexer._identifier_pattern.fullmatch(char), repr(char)
+            )
             for rule in c_lexer._regex_rules:
                 if rule.tok_type == "ID":
                     continue
