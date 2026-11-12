@@ -8,7 +8,7 @@
 # ------------------------------------------------------------------------------
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Literal, assert_never
 
@@ -22,6 +22,19 @@ class Token:
     lineno: int
     column: int
     filename: str
+    end_lineno: int = field(init=False, repr=False, compare=False)
+    end_column: int = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        # Keep the raw spelling's end even when attribute arguments subsequently
+        # remove their parentheses from value.
+        newlines = self.value.count("\n")
+        self.end_lineno = self.lineno + newlines
+        self.end_column = (
+            len(self.value) - self.value.rfind("\n")
+            if newlines
+            else self.column + len(self.value)
+        )
 
 
 class CLexer:
