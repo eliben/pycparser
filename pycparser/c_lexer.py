@@ -10,6 +10,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
+from string import ascii_letters, digits
 from typing import Literal, assert_never
 
 Dialect = Literal["legacy", "c23"]
@@ -812,14 +813,10 @@ _regex_master: re.Pattern[str] = re.compile("|".join(_regex_pattern_parts))
 _identifier_pattern: re.Pattern[str] = re.compile(_identifier)
 _string_literal_pattern: re.Pattern[str] = re.compile(_string_literal)
 # Identifier start characters that cannot begin a literal prefix (L, u, U).
-_identifier_only_first_chars = frozenset(
-    "abcdefghijklmnopqrstvwxyzABCDEFGHIJKMNOPQRSTVWXYZ_$"
-)
+_identifier_only_first_chars = frozenset(ascii_letters + "_$").difference("LuU")
 # Every master-regex alternative starts with one of these characters. Other
 # characters (most punctuators) can skip the regex and go to the fixed tokens.
-_regex_first_chars = frozenset(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$.'\"/"
-)
+_regex_first_chars = frozenset(ascii_letters + digits + "_$.'\"/")
 
 
 @dataclass(frozen=True)
