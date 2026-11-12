@@ -823,5 +823,39 @@ class TestCLexerErrors(unittest.TestCase):
         self.assertLexerError("/*", ERR_COMMENT)
 
 
+class TestCLexerFastPaths(unittest.TestCase):
+    """The lexer skips the master regex based on the first character of a
+    token. These tests check that the character sets match the regex rules.
+    """
+
+    SUFFIXES = ("", "x", "1", "'", '"', "'x'", '"x"', '8"x"', "8'x'", "*", "/", ".5")
+
+    def test_regex_first_chars(self):
+        from pycparser import c_lexer
+
+        chars = [chr(code) for code in range(0x300)]
+        chars += ["\u00e9", "\u65e5", "\U0001f389"]
+        for char in chars:
+            if char in c_lexer._regex_first_chars:
+                continue
+            for suffix in self.SUFFIXES:
+                self.assertIsNone(
+                    c_lexer._regex_master.match(char + suffix), repr(char + suffix)
+                )
+
+    def test_identifier_only_first_chars(self):
+        from pycparser import c_lexer
+
+        for char in c_lexer._identifier_only_first_chars:
+            for rule in c_lexer._regex_rules:
+                if rule.tok_type == "ID":
+                    continue
+                for suffix in self.SUFFIXES:
+                    self.assertIsNone(
+                        re.match(rule.regex_pattern, char + suffix),
+                        f"{rule.tok_type} {char + suffix!r}",
+                    )
+
+
 if __name__ == "__main__":
     unittest.main()
