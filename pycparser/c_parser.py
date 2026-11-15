@@ -1485,6 +1485,13 @@ class CParser:
                 attributes=self._parse_attribute_specifier_sequence(),
             )
 
+        def accept_vla_star():
+            # '[*]' is a VLA of unspecified size. A '*' followed by anything
+            # else starts the size expression, as in 'int a[*p]'.
+            if self._peek_type() == "TIMES" and self._peek_type(2) == "RBRACKET":
+                return self._advance()
+            return None
+
         if self._accept("STATIC"):
             dim_quals = ["static"] + (self._parse_type_qualifier_list() or [])
             dim = self._parse_assignment_expression()
@@ -1498,7 +1505,7 @@ class CParser:
                 dim = self._parse_assignment_expression()
                 self._expect("RBRACKET")
                 return make_array_decl(dim, dim_quals)
-            times_tok = self._accept("TIMES")
+            times_tok = accept_vla_star()
             if times_tok:
                 self._expect("RBRACKET")
                 dim = c_ast.ID(times_tok.value, self._tok_coord(times_tok))
@@ -1509,7 +1516,7 @@ class CParser:
             self._expect("RBRACKET")
             return make_array_decl(dim, dim_quals)
 
-        times_tok = self._accept("TIMES")
+        times_tok = accept_vla_star()
         if times_tok:
             self._expect("RBRACKET")
             dim = c_ast.ID(times_tok.value, self._tok_coord(times_tok))

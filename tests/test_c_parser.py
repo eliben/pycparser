@@ -3415,6 +3415,31 @@ class TestCParser_fundamentals(TestCParser_base):
         self.assertIsInstance(ps2.ext[0].body.block_items[1].type.dim, Assignment)
         self.assertIsInstance(ps2.ext[0].body.block_items[2].type.dim, ID)
 
+    def test_vla_dim_starting_with_star(self):
+        ps = self.parse(r"""
+            void f(int *p, int a[const *p], int b[const *]);
+            void g(int *p) {
+                int x[*p];
+                int y[*p * 2];
+                int n = sizeof(int[*p]);
+            }
+        """)
+        params = ps.ext[0].type.args.params
+        self.assertEqual(params[1].type.dim_quals, ["const"])
+        self.assertIsInstance(params[1].type.dim, UnaryOp)
+        self.assertEqual(params[1].type.dim.op, "*")
+        self.assertEqual(params[2].type.dim_quals, ["const"])
+        self.assertIsInstance(params[2].type.dim, ID)
+        self.assertEqual(params[2].type.dim.name, "*")
+
+        items = ps.ext[1].body.block_items
+        self.assertIsInstance(items[0].type.dim, UnaryOp)
+        self.assertEqual(items[0].type.dim.op, "*")
+        self.assertIsInstance(items[1].type.dim, BinaryOp)
+        self.assertEqual(items[1].type.dim.op, "*")
+        self.assertIsInstance(items[1].type.dim.left, UnaryOp)
+        self.assertIsInstance(items[2].init.expr.type.dim, UnaryOp)
+
     def test_pragma(self):
         s1 = r"""
             #pragma bar
