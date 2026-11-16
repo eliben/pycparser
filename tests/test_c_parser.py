@@ -174,6 +174,11 @@ class TestCParser_fundamentals(TestCParser_base):
             ["Decl", "foo", ["TypeDecl", ["IdentifierType", ["int"]]]],
         )
 
+    def test_line_directive_filename_escaped_quote(self):
+        filename = r'ends-in-quote\"'
+        ast = self.parse(f'#line 7 "{filename}"\nint value;')
+        self.assert_coord(ast.ext[0], 7, 5, filename)
+
     def test_line_directive_update_in_errors(self):
         s1 = """
         \t # \t line \t 8 \t "baz.c" \t

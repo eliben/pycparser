@@ -438,7 +438,7 @@ class CLexer:
             fail("invalid #line directive", pos)
             return
 
-        pp_filename = m.group(0).lstrip('"').rstrip('"')
+        pp_filename = m.group(0)[1:-1]
         pos += len(m.group(0))
 
         # Consume arbitrary sequence of numeric flags after the directive
