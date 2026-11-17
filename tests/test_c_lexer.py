@@ -637,6 +637,16 @@ class TestCLexerNoErrors(unittest.TestCase):
         self.assertEqual(t5.lineno, 99999)
         self.assertEqual(self.clex.filename, r"include/me.h")
 
+    def test_preprocessor_line_escaped_quotes(self):
+        for directive in ("#line", "#"):
+            for filename in (r'ends-in-quote\"', r'\"quoted\"', ""):
+                with self.subTest(directive=directive, filename=filename):
+                    self.clex.input(f'{directive} 10 "{filename}"\nvalue')
+                    token = require_token(self.clex.token())
+                    self.assertEqual(token.filename, filename)
+                    self.assertEqual(token.lineno, 10)
+                    self.assertEqual(self.clex.filename, filename)
+
     def test_preprocessor_line_funny(self):
         str = r"""
         #line 10 "..\6\joe.h"
