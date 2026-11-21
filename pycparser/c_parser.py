@@ -2266,6 +2266,12 @@ class CParser:
                 _PREDEFINED_CONST[tok.type], tok.value, self._tok_coord(tok)
             )
 
+        # A multicharacter constant has type int (C11 6.4.4.4p10) and carries no
+        # integer suffix, so the classification below, which reads the last
+        # three characters of the spelling, does not apply to it.
+        if tok.type == "INT_CONST_CHAR":
+            return c_ast.Constant("int", tok.value, self._tok_coord(tok))
+
         if tok.type in _INT_CONST:
             # Integer suffixes are at most three characters (e.g. ull, wbu).
             suffix = tok.value[-3:].lower()

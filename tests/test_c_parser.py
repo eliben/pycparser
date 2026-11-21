@@ -2979,6 +2979,24 @@ class TestCParser_fundamentals(TestCParser_base):
             self.get_decl_init(d63), ["Constant", "unsigned long long int", "1LLU"]
         )
 
+    def test_multicharacter_constants(self):
+        d1 = "int i = 'ab';"
+        self.assertEqual(self.get_decl_init(d1), ["Constant", "int", "'ab'"])
+
+        # The characters of a multicharacter constant are not an integer
+        # suffix, even when they look like one.
+        d2 = "int i = 'll';"
+        self.assertEqual(self.get_decl_init(d2), ["Constant", "int", "'ll'"])
+
+        d3 = "int i = 'ul';"
+        self.assertEqual(self.get_decl_init(d3), ["Constant", "int", "'ul'"])
+
+        d4 = "int i = 'uu';"
+        self.assertEqual(self.get_decl_init(d4), ["Constant", "int", "'uu'"])
+
+        d5 = "int i = 'wb';"
+        self.assertEqual(self.get_decl_init(d5), ["Constant", "int", "'wb'"])
+
     def test_decl_named_inits(self):
         d1 = "int a = {.k = 16};"
         self.assertEqual(
